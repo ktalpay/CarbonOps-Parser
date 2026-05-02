@@ -108,6 +108,8 @@ Phase 1 implements only `postgres` as the database provider. `mysql` and `mssql`
 
 See [docs/configuration-model.md](docs/configuration-model.md).
 
+The shared conceptual example lives at [config/carbonops.config.example.yaml](config/carbonops.config.example.yaml).
+
 ## Database Model Summary
 
 PostgreSQL is the Phase 1 persistence target. The model includes:
@@ -123,6 +125,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 
 - [Architecture](docs/architecture.md)
 - [Configuration Model](docs/configuration-model.md)
+- [Configuration Example](config/carbonops.config.example.yaml)
 - [Background Job Model](docs/background-job-model.md)
 - [Database Model](docs/database-model.md)
 - [Database Startup](docs/database-startup.md)
