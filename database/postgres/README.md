@@ -4,15 +4,15 @@ PostgreSQL is the only database provider implemented in Phase 1.
 
 The conceptual configuration model recognizes `postgres`, `mysql`, and `mssql`, but Phase 1 should fail fast for any provider other than `postgres`.
 
-## Planned Schema Script
+## Initial Schema Script
 
-The initial schema script is expected to live at:
+The initial schema script lives at:
 
 ```text
 database/postgres/001_initial_schema.sql
 ```
 
-Do not add that SQL file until the schema implementation task. CO-002A documents the contract only.
+The script creates the `carbonops` schema, enables `pgcrypto` for UUID generation, and creates the Phase 1 shared ingestion metadata tables plus source-specific DEFRA/DESNZ, GHG Protocol, and IPCC EFDB table groups.
 
 ## Schema Contract
 
@@ -39,3 +39,5 @@ This startup behavior belongs to both:
 - `src/dotnet`
 
 The SQL contract should be shared by both implementation paths. Python and .NET may have different startup code, but they should create and use the same PostgreSQL schema.
+
+Both implementations should use `001_initial_schema.sql` directly or equivalent startup table creation logic that stays aligned with it.
