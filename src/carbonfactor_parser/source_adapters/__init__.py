@@ -18,6 +18,9 @@ from carbonfactor_parser.source_adapters.execution_result import (
     has_errors,
     has_warnings,
 )
+from carbonfactor_parser.source_adapters.execution_result_validation import (
+    validate_source_adapter_execution_result,
+)
 from carbonfactor_parser.source_adapters.hashing import (
     sha256_hex_from_bytes,
     sha256_hex_from_file,
@@ -53,5 +56,6 @@ __all__ = [
     "sha256_hex_from_file",
     "sha256_hex_from_text",
     "validate_ingestion_run_summary",
+    "validate_source_adapter_execution_result",
     "validate_source_document_metadata",
 ]
