@@ -16,6 +16,8 @@ See `examples/parser_result_contract_example.py` for an in-memory parser result 
 
 See `examples/example_in_memory_parser_usage.py` for a small usage example built from artificial in-memory records.
 
+See [Source-Specific Parser Skeleton Boundaries](source-specific-parser-skeleton-boundaries.md) for the boundary before adding source-specific parser skeletons.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:
