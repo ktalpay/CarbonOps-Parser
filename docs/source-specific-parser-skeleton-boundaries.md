@@ -41,6 +41,8 @@ A future source-specific parser skeleton may introduce source-family naming, but
 
 `ExampleSourceSpecificParser` is the current artificial source-specific parser skeleton. It labels parser output with caller-provided source-family metadata and accepts only caller-supplied artificial records.
 
+See `examples/example_source_specific_parser_usage.py` for a deterministic usage example built from caller-supplied artificial records.
+
 ## DEFRA/DESNZ Parser Status
 
 No DEFRA/DESNZ parser exists yet.
