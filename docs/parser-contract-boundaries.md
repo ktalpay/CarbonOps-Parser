@@ -22,6 +22,8 @@ See [Source-Specific Parser Skeleton Boundaries](source-specific-parser-skeleton
 
 See `examples/example_source_specific_parser_usage.py` for a small source-family-labelled parser usage example.
 
+See [DEFRA/DESNZ Parser Skeleton Boundaries](defra-desnz-parser-skeleton-boundaries.md) before adding any DEFRA/DESNZ parser skeleton.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:

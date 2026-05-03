@@ -28,6 +28,8 @@ See `examples/defra_desnz_fixture_manifest_example.py` for a fixture-only exampl
 
 See [Parser Handoff Boundary](parser-handoff-boundary.md) for the separation between fixture manifests and future parser execution.
 
+See [DEFRA/DESNZ Parser Skeleton Boundaries](defra-desnz-parser-skeleton-boundaries.md) before adding any DEFRA/DESNZ parser skeleton.
+
 ## Not Implemented
 
 The skeleton does not provide:
