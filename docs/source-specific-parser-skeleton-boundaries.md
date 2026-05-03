@@ -43,6 +43,8 @@ A future source-specific parser skeleton may introduce source-family naming, but
 
 See `examples/example_source_specific_parser_usage.py` for a deterministic usage example built from caller-supplied artificial records.
 
+See [DEFRA/DESNZ Parser Skeleton Boundaries](defra-desnz-parser-skeleton-boundaries.md) before adding any DEFRA/DESNZ parser skeleton.
+
 ## DEFRA/DESNZ Parser Status
 
 No DEFRA/DESNZ parser exists yet.
