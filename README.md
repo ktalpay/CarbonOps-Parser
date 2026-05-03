@@ -95,6 +95,60 @@ python -m pytest
 
 Pytest configuration is kept in [pyproject.toml](pyproject.toml), including the `src` package import path used by the tests.
 
+## Public API Examples
+
+The `carbonfactor_parser.source_adapters` package exposes source adapter contracts and lightweight helpers for tests, prototypes, and implementation slices.
+
+Hash source content without reading or downloading files:
+
+```python
+from carbonfactor_parser.source_adapters import (
+    sha256_hex_from_bytes,
+    sha256_hex_from_text,
+)
+
+content_hash = sha256_hex_from_bytes(b"sample source content")
+note_hash = sha256_hex_from_text("sample metadata note")
+```
+
+Create and validate metadata for an existing local file:
+
+```python
+from pathlib import Path
+
+from carbonfactor_parser.source_adapters import (
+    SourceFamily,
+    build_source_document_from_file,
+    validate_source_document_metadata,
+)
+
+document = build_source_document_from_file(
+    source_family=SourceFamily.DEFRA_DESNZ,
+    source_name="Example local factor file",
+    file_path=Path("data/raw/example/source.csv"),
+)
+
+metadata_issues = validate_source_document_metadata(document)
+```
+
+Create and validate an ingestion summary contract:
+
+```python
+from carbonfactor_parser.source_adapters import (
+    SourceFamily,
+    create_ingestion_run_summary,
+    validate_ingestion_run_summary,
+)
+
+summary = create_ingestion_run_summary(
+    ingestion_id="example-run-001",
+    source_family=SourceFamily.DEFRA_DESNZ,
+    source_name="Example local factor file",
+)
+
+summary_issues = validate_ingestion_run_summary(summary)
+```
+
 ## Source Support
 
 Each Phase 1 source family will have its own schedule, source version/hash check, parser, validation rules, archive layout, and source-specific tables.
