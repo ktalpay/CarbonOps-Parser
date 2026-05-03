@@ -43,6 +43,8 @@ A DEFRA/DESNZ parser skeleton must not add by default:
 
 `ExampleSourceSpecificParser` demonstrates source-family-labelled parser shape, but it is artificial and not DEFRA/DESNZ-specific.
 
+`DefraDesnzParser` is the current DEFRA/DESNZ-labelled artificial parser skeleton. It accepts caller-supplied artificial records and returns `ParserResult` without reading files or applying DEFRA/DESNZ format rules.
+
 ## Fixture Policy
 
 DEFRA/DESNZ parser skeleton fixtures must remain tiny and artificial.
