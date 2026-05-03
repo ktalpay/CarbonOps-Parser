@@ -75,6 +75,8 @@ Phase 1 uses shared ingestion metadata tables plus source-specific master/detail
 
 The Python implementation is planned first because it is practical for source discovery, spreadsheet inspection, parser mapping, validation, and data engineering workflows.
 
+The initial Python source adapter contracts live under `src/carbonfactor_parser/source_adapters`.
+
 See [src/python/README.md](src/python/README.md).
 
 ### .NET
