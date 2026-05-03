@@ -24,6 +24,8 @@ See `examples/example_source_specific_parser_usage.py` for a small source-family
 
 See [DEFRA/DESNZ Parser Skeleton Boundaries](defra-desnz-parser-skeleton-boundaries.md) before adding any DEFRA/DESNZ parser skeleton.
 
+See [Real Format Parser Boundary](real-format-parser-boundary.md) before adding any parser that reads local file contents.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:
