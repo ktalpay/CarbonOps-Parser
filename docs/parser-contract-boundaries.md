@@ -32,6 +32,8 @@ See `examples/parser_input_mapping_example.py` for a small parser input mapping 
 
 `ArtificialFixtureParser` demonstrates parser-result creation from fixture mapping metadata without reading local files.
 
+See `examples/example_artificial_fixture_parser_usage.py` for a compact artificial fixture parser usage example.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:
