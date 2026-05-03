@@ -18,6 +18,9 @@ from carbonfactor_parser.source_adapters.execution_result import (
     has_errors,
     has_warnings,
 )
+from carbonfactor_parser.source_adapters.execution_result_factory import (
+    create_source_adapter_execution_result,
+)
 from carbonfactor_parser.source_adapters.execution_result_validation import (
     validate_source_adapter_execution_result,
 )
@@ -50,6 +53,7 @@ __all__ = [
     "SourceFamily",
     "build_source_document_from_file",
     "create_ingestion_run_summary",
+    "create_source_adapter_execution_result",
     "has_errors",
     "has_warnings",
     "sha256_hex_from_bytes",
