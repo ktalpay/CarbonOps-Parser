@@ -24,6 +24,8 @@ The adapter remains non-recursive and does not inspect file contents.
 
 `DefraDesnzFixtureManifest` describes already-discovered local fixture documents before any later parser or ingestion handoff. It is a model-only manifest and does not read fixture contents.
 
+See `examples/defra_desnz_fixture_manifest_example.py` for a fixture-only example that discovers local artificial documents and builds the manifest.
+
 ## Not Implemented
 
 The skeleton does not provide:
