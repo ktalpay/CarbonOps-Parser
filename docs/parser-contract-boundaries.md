@@ -8,6 +8,8 @@ Parser contracts should be added in a later task. This document describes the in
 
 The current source adapter and fixture manifest layers do not parse document contents. They provide source document references, metadata, and local fixture descriptions for future handoff.
 
+`ParserIssue`, `ParserIssueSeverity`, `ParserResultSummary`, and `ParserResult` now provide a minimal source-agnostic parser result contract skeleton. They do not execute parsers or read source files.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:

@@ -12,6 +12,8 @@ Parser execution may be added later as its own documented and testable boundary.
 
 See [Parser Contract Boundaries](parser-contract-boundaries.md) for the intended scope of future parser contract code.
 
+The current parser contract skeleton describes parser result handoff data only; it does not execute parser logic.
+
 ## Inputs To A Future Parser Boundary
 
 Conservative handoff inputs may include:
