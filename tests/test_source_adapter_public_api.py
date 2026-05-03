@@ -4,6 +4,7 @@ from carbonfactor_parser.source_adapters import (
     AdapterParseResult,
     IngestionRunStatus,
     IngestionRunSummary,
+    NoOpSourceAdapter,
     SourceAdapter,
     SourceAdapterExecutionResult,
     SourceAdapterRegistry,
@@ -28,6 +29,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "AdapterParseResult",
     "IngestionRunStatus",
     "IngestionRunSummary",
+    "NoOpSourceAdapter",
     "SourceAdapter",
     "SourceAdapterExecutionResult",
     "SourceAdapterRegistry",
@@ -53,6 +55,7 @@ def test_expected_public_symbols_import_from_package() -> None:
         "AdapterParseResult": AdapterParseResult,
         "IngestionRunStatus": IngestionRunStatus,
         "IngestionRunSummary": IngestionRunSummary,
+        "NoOpSourceAdapter": NoOpSourceAdapter,
         "SourceAdapter": SourceAdapter,
         "SourceAdapterExecutionResult": SourceAdapterExecutionResult,
         "SourceAdapterRegistry": SourceAdapterRegistry,
@@ -100,6 +103,7 @@ def test_all_excludes_internal_and_private_names() -> None:
         "ingestion_run",
         "ingestion_run_factory",
         "ingestion_run_validation",
+        "noop_adapter",
         "registry",
         "_PUBLIC_EXPORTS",
     }
@@ -108,6 +112,6 @@ def test_all_excludes_internal_and_private_names() -> None:
     assert all(not name.startswith("_") for name in source_adapters.__all__)
 
 
-def test_test_fakes_are_not_exposed_from_production_package() -> None:
+def test_test_fakes_are_not_exposed_from_runtime_package() -> None:
     assert "FakeSourceAdapter" not in source_adapters.__all__
     assert not hasattr(source_adapters, "FakeSourceAdapter")
