@@ -2,6 +2,7 @@ import carbonfactor_parser.source_adapters as source_adapters
 from carbonfactor_parser.source_adapters import (
     AdapterDiscoveryResult,
     AdapterParseResult,
+    ExampleSourceAdapter,
     IngestionRunStatus,
     IngestionRunSummary,
     LocalFileSourceAdapter,
@@ -30,6 +31,7 @@ from carbonfactor_parser.source_adapters import (
 EXPECTED_PUBLIC_SYMBOLS = (
     "AdapterDiscoveryResult",
     "AdapterParseResult",
+    "ExampleSourceAdapter",
     "IngestionRunStatus",
     "IngestionRunSummary",
     "LocalFileSourceAdapter",
@@ -59,6 +61,7 @@ def test_expected_public_symbols_import_from_package() -> None:
     imported_symbols = {
         "AdapterDiscoveryResult": AdapterDiscoveryResult,
         "AdapterParseResult": AdapterParseResult,
+        "ExampleSourceAdapter": ExampleSourceAdapter,
         "IngestionRunStatus": IngestionRunStatus,
         "IngestionRunSummary": IngestionRunSummary,
         "LocalFileSourceAdapter": LocalFileSourceAdapter,
@@ -105,6 +108,7 @@ def test_all_excludes_internal_and_private_names() -> None:
         "contracts",
         "document_builder",
         "document_validation",
+        "example_source_adapter",
         "execution_result",
         "execution_result_factory",
         "execution_result_validation",

@@ -13,6 +13,9 @@ from carbonfactor_parser.source_adapters.document_builder import (
 from carbonfactor_parser.source_adapters.document_validation import (
     validate_source_document_metadata,
 )
+from carbonfactor_parser.source_adapters.example_source_adapter import (
+    ExampleSourceAdapter,
+)
 from carbonfactor_parser.source_adapters.execution_result import (
     SourceAdapterExecutionResult,
     has_errors,
@@ -50,6 +53,7 @@ from carbonfactor_parser.source_adapters.summary import (
 __all__ = (
     "AdapterDiscoveryResult",
     "AdapterParseResult",
+    "ExampleSourceAdapter",
     "IngestionRunStatus",
     "IngestionRunSummary",
     "LocalFileSourceAdapter",
