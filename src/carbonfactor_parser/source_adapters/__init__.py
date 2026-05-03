@@ -13,6 +13,11 @@ from carbonfactor_parser.source_adapters.document_builder import (
 from carbonfactor_parser.source_adapters.document_validation import (
     validate_source_document_metadata,
 )
+from carbonfactor_parser.source_adapters.execution_result import (
+    SourceAdapterExecutionResult,
+    has_errors,
+    has_warnings,
+)
 from carbonfactor_parser.source_adapters.hashing import (
     sha256_hex_from_bytes,
     sha256_hex_from_file,
@@ -36,11 +41,14 @@ __all__ = [
     "IngestionRunStatus",
     "IngestionRunSummary",
     "SourceAdapter",
+    "SourceAdapterExecutionResult",
     "SourceAdapterRegistry",
     "SourceDocument",
     "SourceFamily",
     "build_source_document_from_file",
     "create_ingestion_run_summary",
+    "has_errors",
+    "has_warnings",
     "sha256_hex_from_bytes",
     "sha256_hex_from_file",
     "sha256_hex_from_text",
