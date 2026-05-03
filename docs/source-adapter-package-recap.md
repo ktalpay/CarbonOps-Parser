@@ -88,6 +88,8 @@ See [Source Adapter Configuration Boundaries](source-adapter-configuration-bound
 
 See [Source-Specific Adapter Skeleton Guidance](source-specific-adapter-skeleton-guidance.md) before adding future source-specific adapter skeletons.
 
+See [DEFRA/DESNZ Adapter Skeleton Boundaries](defra-desnz-adapter-skeleton-boundaries.md) for the current DEFRA/DESNZ skeleton scope.
+
 ## Execution Result Layer
 
 The execution result layer connects a source document, adapter parse result, and ingestion run summary into one immutable contract.
