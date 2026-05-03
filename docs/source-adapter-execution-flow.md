@@ -27,6 +27,8 @@ See [Source Adapter Error And Warning Handling](source-adapter-error-warning-han
 
 See [Source Adapter Configuration Boundaries](source-adapter-configuration-boundaries.md) for guidance on what should be configured on adapters versus future runtime layers.
 
+See [Source-Specific Adapter Skeleton Guidance](source-specific-adapter-skeleton-guidance.md) for future source-specific skeleton boundaries.
+
 ```mermaid
 flowchart TD
     caller["Caller or test"]
