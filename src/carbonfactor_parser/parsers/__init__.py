@@ -11,13 +11,21 @@ from carbonfactor_parser.parsers.example_parser import ExampleInMemoryParser
 from carbonfactor_parser.parsers.example_source_specific_parser import (
     ExampleSourceSpecificParser,
 )
+from carbonfactor_parser.parsers.input_mapping import (
+    ParserInputMapping,
+    ParserInputMappingEntry,
+    build_fixture_parser_input_mapping,
+)
 
 __all__ = (
     "DefraDesnzParser",
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
+    "ParserInputMapping",
+    "ParserInputMappingEntry",
     "ParserIssue",
     "ParserIssueSeverity",
     "ParserResult",
     "ParserResultSummary",
+    "build_fixture_parser_input_mapping",
 )

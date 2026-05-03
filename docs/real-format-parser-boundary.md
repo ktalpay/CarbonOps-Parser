@@ -43,6 +43,8 @@ Copied source-owner tables or real factor values should be avoided unless a late
 
 The local public safety validation script must pass before review.
 
+`ParserInputMapping` and `ParserInputMappingEntry` provide a fixture-only model for preparing already-known `SourceDocument` references before any future parser reads local fixture contents.
+
 ## DEFRA/DESNZ Implications
 
 `DefraDesnzParser` is currently artificial and in-memory only.

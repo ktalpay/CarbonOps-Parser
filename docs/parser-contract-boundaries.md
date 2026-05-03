@@ -26,6 +26,8 @@ See [DEFRA/DESNZ Parser Skeleton Boundaries](defra-desnz-parser-skeleton-boundar
 
 See [Real Format Parser Boundary](real-format-parser-boundary.md) before adding any parser that reads local file contents.
 
+`ParserInputMapping` provides a fixture-only mapping model for already-known `SourceDocument` references before future parser input handoff.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:
