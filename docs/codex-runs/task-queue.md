@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-027A: Add source-agnostic parser result contract skeleton.
+- CO-027B: Add parser result contract example.
 
 ## Next
 
-- CO-027B: Add source adapter public API reference documentation.
+- CO-028A: Add source adapter public API reference documentation.
 
 ## Backlog
 
-- CO-028A: Add local adapter edge-case documentation.
+- CO-028B: Add local adapter edge-case documentation.
 
 ## Completed
 
@@ -35,3 +35,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-025B: Added DEFRA/DESNZ fixture manifest example.
 - CO-026A: Documented parser handoff boundary.
 - CO-026B: Documented parser contract boundaries.
+- CO-027A: Added source-agnostic parser result contract skeleton.

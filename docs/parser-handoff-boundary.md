@@ -14,6 +14,8 @@ See [Parser Contract Boundaries](parser-contract-boundaries.md) for the intended
 
 The current parser contract skeleton describes parser result handoff data only; it does not execute parser logic.
 
+See `examples/parser_result_contract_example.py` for a source-agnostic in-memory result example.
+
 ## Inputs To A Future Parser Boundary
 
 Conservative handoff inputs may include:
