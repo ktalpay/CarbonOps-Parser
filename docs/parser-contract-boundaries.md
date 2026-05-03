@@ -14,6 +14,8 @@ See `examples/parser_result_contract_example.py` for an in-memory parser result 
 
 `ExampleInMemoryParser` provides an artificial parser-shaped skeleton that accepts caller-supplied records and returns `ParserResult` without file access.
 
+See `examples/example_in_memory_parser_usage.py` for a small usage example built from artificial in-memory records.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:
