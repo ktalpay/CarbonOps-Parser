@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-031C: Add fixture-only parser input mapping example.
+- CO-032A: Add artificial fixture parser skeleton.
 
 ## Next
 
-- CO-032A: Add parser issue validation helper.
+- CO-032B: Add artificial fixture parser usage example.
 
 ## Backlog
 
-- CO-032B: Add parser result validation helper.
+- CO-033A: Add parser issue validation helper.
 
 ## Completed
 
@@ -47,3 +47,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-030C: Added DEFRA/DESNZ artificial parser usage example.
 - CO-031A: Documented real format parser boundary.
 - CO-031B: Added fixture-only parser input mapping model.
+- CO-031C: Added fixture-only parser input mapping example.

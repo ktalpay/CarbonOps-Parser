@@ -47,6 +47,8 @@ The local public safety validation script must pass before review.
 
 See `examples/parser_input_mapping_example.py` for a deterministic fixture-only mapping example.
 
+`ArtificialFixtureParser` consumes `ParserInputMapping` and produces artificial `ParserResult` records from mapping metadata only.
+
 ## DEFRA/DESNZ Implications
 
 `DefraDesnzParser` is currently artificial and in-memory only.
