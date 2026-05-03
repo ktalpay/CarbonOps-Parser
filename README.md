@@ -129,6 +129,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Background Job Model](docs/background-job-model.md)
 - [Database Model](docs/database-model.md)
 - [Database Startup](docs/database-startup.md)
+- [Ingestion Metadata Model](docs/ingestion-metadata-model.md)
 - [Engineering Standards](docs/engineering-standards.md)
 - [Linux Service Setup](docs/linux-service-setup.md)
 - [Source Support](docs/source-support.md)
