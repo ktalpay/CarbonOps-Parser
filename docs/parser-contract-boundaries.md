@@ -38,6 +38,8 @@ See `examples/example_artificial_fixture_parser_usage.py` for a compact artifici
 
 See `examples/parser_pipeline_summary_example.py` for a small fixture-only pipeline summary usage example.
 
+See [Normalization Boundary](normalization-boundary.md) before adding parser-to-normalization handoff contracts or examples.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:

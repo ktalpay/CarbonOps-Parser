@@ -213,6 +213,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Source-Specific Parser Skeleton Boundaries](docs/source-specific-parser-skeleton-boundaries.md)
 - [DEFRA/DESNZ Parser Skeleton Boundaries](docs/defra-desnz-parser-skeleton-boundaries.md)
 - [Real Format Parser Boundary](docs/real-format-parser-boundary.md)
+- [Normalization Boundary](docs/normalization-boundary.md)
 - [Source Adapter Package Recap](docs/source-adapter-package-recap.md)
 - [Roadmap](docs/roadmap.md)
 - [Task Breakdown](docs/task-breakdown.md)
