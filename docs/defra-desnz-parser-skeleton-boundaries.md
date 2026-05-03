@@ -45,6 +45,8 @@ A DEFRA/DESNZ parser skeleton must not add by default:
 
 `DefraDesnzParser` is the current DEFRA/DESNZ-labelled artificial parser skeleton. It accepts caller-supplied artificial records and returns `ParserResult` without reading files or applying DEFRA/DESNZ format rules.
 
+See `examples/defra_desnz_parser_usage_example.py` for a deterministic usage example built from caller-supplied artificial records.
+
 ## Fixture Policy
 
 DEFRA/DESNZ parser skeleton fixtures must remain tiny and artificial.

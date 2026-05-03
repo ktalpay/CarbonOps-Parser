@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-030B: Add DEFRA/DESNZ artificial parser skeleton.
+- CO-030C: Add DEFRA/DESNZ artificial parser usage example.
 
 ## Next
 
-- CO-030C: Add DEFRA/DESNZ artificial parser usage example.
+- CO-031A: Add parser issue validation helper.
 
 ## Backlog
 
-- CO-031A: Add parser issue validation helper.
+- CO-031B: Add parser result validation helper.
 
 ## Completed
 
@@ -43,3 +43,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-029B: Added artificial source-specific parser skeleton.
 - CO-029C: Added artificial source-specific parser usage example.
 - CO-030A: Documented DEFRA/DESNZ parser skeleton boundaries.
+- CO-030B: Added DEFRA/DESNZ artificial parser skeleton.

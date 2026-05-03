@@ -47,6 +47,8 @@ See [DEFRA/DESNZ Parser Skeleton Boundaries](defra-desnz-parser-skeleton-boundar
 
 `DefraDesnzParser` is a DEFRA/DESNZ-labelled artificial parser skeleton and should remain within that boundary until real parsing is explicitly scoped.
 
+See `examples/defra_desnz_parser_usage_example.py` for the corresponding artificial DEFRA/DESNZ parser usage example.
+
 ## DEFRA/DESNZ Parser Status
 
 No DEFRA/DESNZ parser exists yet.
