@@ -25,3 +25,4 @@ Next-task selection remains human-approved unless a future workflow task changes
 - [Task Queue](task-queue.md)
 - [Reviewer Checklist](reviewer-checklist.md)
 - [Prompt Template](prompt-template.md)
+- [Local Public Safety Validation](local-public-safety-validation.md)
