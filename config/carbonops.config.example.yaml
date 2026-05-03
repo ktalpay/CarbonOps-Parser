@@ -1,0 +1,75 @@
+# CarbonOps-Parser shared conceptual configuration example.
+# Python and .NET implementations may map this model into language-specific config files.
+
+app:
+  name: CarbonOps-Parser
+  environment: local
+  logLevel: info
+
+database:
+  # Phase 1 implements PostgreSQL only.
+  # mysql and mssql are reserved for future configuration compatibility.
+  provider: postgres
+  connectionString: "Host=localhost;Port=5432;Database=carbonops_parser;Username=carbonops;Password=change-me"
+  schema: carbonops
+
+storage:
+  rawArchivePath: "./data/raw"
+
+execution:
+  maxRetryCount: 3
+  retryDelaySeconds: 60
+  singleInstanceLock: true
+  lockTimeoutMinutes: 30
+
+sources:
+  ghgProtocol:
+    enabled: true
+    sourceCode: GHG_PROTOCOL
+    # Placeholder URL for source discovery. Confirm exact source URLs before implementation.
+    checkUrl: "https://example.org/sources/ghg-protocol/check"
+    # Placeholder URL for source discovery. Confirm exact source URLs before implementation.
+    downloadUrl: "https://example.org/sources/ghg-protocol/download"
+    schedule:
+      period: month
+      interval: 1
+      dayOfMonth: 1
+      time: "04:00"
+      timezone: "UTC"
+    import:
+      mode: check_latest_then_import
+      duplicatePolicy: skip_if_same_hash
+
+  defraDesnz:
+    enabled: true
+    sourceCode: DEFRA_DESNZ
+    # Placeholder URL for source discovery. Confirm exact source URLs before implementation.
+    checkUrl: "https://example.org/sources/defra-desnz/check"
+    # Placeholder URL for source discovery. Confirm exact source URLs before implementation.
+    downloadUrl: "https://example.org/sources/defra-desnz/download"
+    schedule:
+      period: year
+      interval: 1
+      dayOfMonth: 1
+      time: "04:30"
+      timezone: "UTC"
+    import:
+      mode: check_latest_then_import
+      duplicatePolicy: skip_if_same_hash
+
+  ipccEfdb:
+    enabled: true
+    sourceCode: IPCC_EFDB
+    # Placeholder URL for source discovery. Confirm exact source URLs before implementation.
+    checkUrl: "https://example.org/sources/ipcc-efdb/check"
+    # Placeholder URL for source discovery. Confirm exact source URLs before implementation.
+    downloadUrl: "https://example.org/sources/ipcc-efdb/download"
+    schedule:
+      period: month
+      interval: 1
+      dayOfMonth: 1
+      time: "05:00"
+      timezone: "UTC"
+    import:
+      mode: check_latest_then_import
+      duplicatePolicy: skip_if_same_hash
