@@ -17,6 +17,10 @@ from carbonfactor_parser.parsers.input_mapping import (
     ParserInputMappingEntry,
     build_fixture_parser_input_mapping,
 )
+from carbonfactor_parser.parsers.pipeline_summary import (
+    ParserPipelineSummary,
+    summarize_parser_pipeline,
+)
 
 __all__ = (
     "ArtificialFixtureParser",
@@ -27,7 +31,9 @@ __all__ = (
     "ParserInputMappingEntry",
     "ParserIssue",
     "ParserIssueSeverity",
+    "ParserPipelineSummary",
     "ParserResult",
     "ParserResultSummary",
     "build_fixture_parser_input_mapping",
+    "summarize_parser_pipeline",
 )
