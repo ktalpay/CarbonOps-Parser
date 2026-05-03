@@ -85,6 +85,16 @@ The .NET implementation is planned as an independent Worker Service path that fo
 
 See [src/dotnet/README.md](src/dotnet/README.md).
 
+## Developer Tests
+
+Run the lightweight Python test suite from the repository root:
+
+```bash
+python -m pytest
+```
+
+Pytest configuration is kept in [pyproject.toml](pyproject.toml), including the `src` package import path used by the tests.
+
 ## Source Support
 
 Each Phase 1 source family will have its own schedule, source version/hash check, parser, validation rules, archive layout, and source-specific tables.
