@@ -18,6 +18,8 @@ See `examples/example_in_memory_parser_usage.py` for a small usage example built
 
 See [Source-Specific Parser Skeleton Boundaries](source-specific-parser-skeleton-boundaries.md) for the boundary before adding source-specific parser skeletons.
 
+`ExampleSourceSpecificParser` provides an artificial source-family-labelled parser skeleton without file parsing or source-specific format assumptions.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:
