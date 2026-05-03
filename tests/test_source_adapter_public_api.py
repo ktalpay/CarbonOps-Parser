@@ -8,6 +8,7 @@ from carbonfactor_parser.source_adapters import (
     NoOpSourceAdapter,
     SourceAdapter,
     SourceAdapterExecutionResult,
+    SourceAdapterResultSummary,
     SourceAdapterRegistry,
     SourceDocument,
     SourceFamily,
@@ -19,6 +20,7 @@ from carbonfactor_parser.source_adapters import (
     sha256_hex_from_bytes,
     sha256_hex_from_file,
     sha256_hex_from_text,
+    summarize_source_adapter_result,
     validate_ingestion_run_summary,
     validate_source_adapter_execution_result,
     validate_source_document_metadata,
@@ -34,6 +36,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "NoOpSourceAdapter",
     "SourceAdapter",
     "SourceAdapterExecutionResult",
+    "SourceAdapterResultSummary",
     "SourceAdapterRegistry",
     "SourceDocument",
     "SourceFamily",
@@ -45,6 +48,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "sha256_hex_from_bytes",
     "sha256_hex_from_file",
     "sha256_hex_from_text",
+    "summarize_source_adapter_result",
     "validate_ingestion_run_summary",
     "validate_source_adapter_execution_result",
     "validate_source_document_metadata",
@@ -61,6 +65,7 @@ def test_expected_public_symbols_import_from_package() -> None:
         "NoOpSourceAdapter": NoOpSourceAdapter,
         "SourceAdapter": SourceAdapter,
         "SourceAdapterExecutionResult": SourceAdapterExecutionResult,
+        "SourceAdapterResultSummary": SourceAdapterResultSummary,
         "SourceAdapterRegistry": SourceAdapterRegistry,
         "SourceDocument": SourceDocument,
         "SourceFamily": SourceFamily,
@@ -72,6 +77,7 @@ def test_expected_public_symbols_import_from_package() -> None:
         "sha256_hex_from_bytes": sha256_hex_from_bytes,
         "sha256_hex_from_file": sha256_hex_from_file,
         "sha256_hex_from_text": sha256_hex_from_text,
+        "summarize_source_adapter_result": summarize_source_adapter_result,
         "validate_ingestion_run_summary": validate_ingestion_run_summary,
         "validate_source_adapter_execution_result": (
             validate_source_adapter_execution_result
@@ -109,6 +115,7 @@ def test_all_excludes_internal_and_private_names() -> None:
         "local_file_adapter",
         "noop_adapter",
         "registry",
+        "summary",
         "_PUBLIC_EXPORTS",
     }
 
