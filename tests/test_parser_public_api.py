@@ -1,6 +1,7 @@
 import carbonfactor_parser.parsers as parsers
 from carbonfactor_parser.parsers import (
     ExampleInMemoryParser,
+    ExampleSourceSpecificParser,
     ParserIssue,
     ParserIssueSeverity,
     ParserResult,
@@ -10,6 +11,7 @@ from carbonfactor_parser.parsers import (
 
 EXPECTED_PUBLIC_SYMBOLS = (
     "ExampleInMemoryParser",
+    "ExampleSourceSpecificParser",
     "ParserIssue",
     "ParserIssueSeverity",
     "ParserResult",
@@ -20,6 +22,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
 def test_expected_parser_public_symbols_import_from_package() -> None:
     imported_symbols = {
         "ExampleInMemoryParser": ExampleInMemoryParser,
+        "ExampleSourceSpecificParser": ExampleSourceSpecificParser,
         "ParserIssue": ParserIssue,
         "ParserIssueSeverity": ParserIssueSeverity,
         "ParserResult": ParserResult,
@@ -44,4 +47,5 @@ def test_parser_all_names_resolve_to_package_attributes() -> None:
 def test_parser_all_excludes_internal_module_names() -> None:
     assert "contracts" not in parsers.__all__
     assert "example_parser" not in parsers.__all__
+    assert "example_source_specific_parser" not in parsers.__all__
     assert all(not name.startswith("_") for name in parsers.__all__)

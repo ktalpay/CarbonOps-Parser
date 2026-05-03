@@ -39,6 +39,8 @@ A source-specific parser skeleton must not add by default:
 
 A future source-specific parser skeleton may introduce source-family naming, but it should still avoid real format logic unless that behavior is explicitly scoped in a later task.
 
+`ExampleSourceSpecificParser` is the current artificial source-specific parser skeleton. It labels parser output with caller-provided source-family metadata and accepts only caller-supplied artificial records.
+
 ## DEFRA/DESNZ Parser Status
 
 No DEFRA/DESNZ parser exists yet.
