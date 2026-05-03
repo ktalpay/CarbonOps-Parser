@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-028B: Add artificial parser usage example.
+- CO-029A: Document source-specific parser skeleton boundaries.
 
 ## Next
 
-- CO-029A: Add local adapter edge-case documentation.
+- CO-029B: Add parser issue validation helper.
 
 ## Backlog
 
-- CO-029B: Add parser issue validation helper.
+- CO-030A: Add artificial source-specific parser skeleton.
 
 ## Completed
 
@@ -38,3 +38,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-027A: Added source-agnostic parser result contract skeleton.
 - CO-027B: Added parser result contract example.
 - CO-028A: Added artificial in-memory parser skeleton.
+- CO-028B: Added artificial parser usage example.

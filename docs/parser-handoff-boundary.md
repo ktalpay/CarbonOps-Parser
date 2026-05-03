@@ -20,6 +20,8 @@ See `examples/parser_result_contract_example.py` for a source-agnostic in-memory
 
 See `examples/example_in_memory_parser_usage.py` for a deterministic in-memory parser usage example.
 
+See [Source-Specific Parser Skeleton Boundaries](source-specific-parser-skeleton-boundaries.md) before adding source-specific parser skeletons.
+
 ## Inputs To A Future Parser Boundary
 
 Conservative handoff inputs may include:
