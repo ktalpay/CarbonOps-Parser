@@ -23,6 +23,8 @@ The intended flow is:
 
 The current adapter contract exposes `discover()` and `parse(document)`. `SourceAdapterExecutionResult` is a passive result contract for later execution slices; it is not produced by `SourceAdapterRegistry` or by `discover()`.
 
+See [Source Adapter Error And Warning Handling](source-adapter-error-warning-handling.md) for guidance on discovery warnings and execution handoff errors.
+
 ```mermaid
 flowchart TD
     caller["Caller or test"]
