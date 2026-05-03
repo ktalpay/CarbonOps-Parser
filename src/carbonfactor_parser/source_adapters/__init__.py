@@ -39,6 +39,7 @@ from carbonfactor_parser.source_adapters.ingestion_run_factory import (
 from carbonfactor_parser.source_adapters.ingestion_run_validation import (
     validate_ingestion_run_summary,
 )
+from carbonfactor_parser.source_adapters.local_file_adapter import LocalFileSourceAdapter
 from carbonfactor_parser.source_adapters.noop_adapter import NoOpSourceAdapter
 from carbonfactor_parser.source_adapters.registry import SourceAdapterRegistry
 
@@ -47,6 +48,7 @@ __all__ = (
     "AdapterParseResult",
     "IngestionRunStatus",
     "IngestionRunSummary",
+    "LocalFileSourceAdapter",
     "NoOpSourceAdapter",
     "SourceAdapter",
     "SourceAdapterExecutionResult",
