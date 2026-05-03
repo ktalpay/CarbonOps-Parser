@@ -206,6 +206,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Source Adapter Execution Flow](docs/source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](docs/source-adapter-error-warning-handling.md)
 - [Source Adapter Configuration Boundaries](docs/source-adapter-configuration-boundaries.md)
+- [Source-Specific Adapter Skeleton Guidance](docs/source-specific-adapter-skeleton-guidance.md)
 - [Source Adapter Package Recap](docs/source-adapter-package-recap.md)
 - [Roadmap](docs/roadmap.md)
 - [Task Breakdown](docs/task-breakdown.md)

@@ -82,6 +82,8 @@ See [Source Adapter Execution Flow](source-adapter-execution-flow.md) for the in
 
 See [Source Adapter Configuration Boundaries](source-adapter-configuration-boundaries.md) for adapter construction and runtime configuration boundaries.
 
+See [Source-Specific Adapter Skeleton Guidance](source-specific-adapter-skeleton-guidance.md) before adding future source-specific adapter skeletons.
+
 ## Execution Result Layer
 
 The execution result layer connects a source document, adapter parse result, and ingestion run summary into one immutable contract.
