@@ -28,6 +28,8 @@ See [Real Format Parser Boundary](real-format-parser-boundary.md) before adding 
 
 `ParserInputMapping` provides a fixture-only mapping model for already-known `SourceDocument` references before future parser input handoff.
 
+See `examples/parser_input_mapping_example.py` for a small parser input mapping example built from artificial fixture document references.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:
