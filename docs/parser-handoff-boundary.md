@@ -18,6 +18,8 @@ See `examples/parser_result_contract_example.py` for a source-agnostic in-memory
 
 `ExampleInMemoryParser` demonstrates parser implementation shape without reading files or interpreting source-specific formats.
 
+See `examples/example_in_memory_parser_usage.py` for a deterministic in-memory parser usage example.
+
 ## Inputs To A Future Parser Boundary
 
 Conservative handoff inputs may include:

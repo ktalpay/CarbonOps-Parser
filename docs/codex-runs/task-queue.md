@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-028A: Add artificial in-memory parser skeleton.
+- CO-028B: Add artificial parser usage example.
 
 ## Next
 
-- CO-028B: Add source adapter public API reference documentation.
+- CO-029A: Add local adapter edge-case documentation.
 
 ## Backlog
 
-- CO-029A: Add local adapter edge-case documentation.
+- CO-029B: Add parser issue validation helper.
 
 ## Completed
 
@@ -37,3 +37,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-026B: Documented parser contract boundaries.
 - CO-027A: Added source-agnostic parser result contract skeleton.
 - CO-027B: Added parser result contract example.
+- CO-028A: Added artificial in-memory parser skeleton.
