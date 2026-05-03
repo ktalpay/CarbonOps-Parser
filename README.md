@@ -135,6 +135,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Source Support](docs/source-support.md)
 - [Source Discovery](docs/source-discovery.md)
 - [Source Ingestion Boundaries](docs/source-ingestion-boundaries.md)
+- [Source Adapter Contract](docs/source-adapter-contract.md)
 - [Roadmap](docs/roadmap.md)
 - [Task Breakdown](docs/task-breakdown.md)
 - [Limitations](docs/limitations.md)
