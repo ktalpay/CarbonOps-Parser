@@ -22,6 +22,8 @@ See `examples/example_in_memory_parser_usage.py` for a deterministic in-memory p
 
 See [Source-Specific Parser Skeleton Boundaries](source-specific-parser-skeleton-boundaries.md) before adding source-specific parser skeletons.
 
+See [Real Format Parser Boundary](real-format-parser-boundary.md) before adding any parser that reads local file contents.
+
 ## Inputs To A Future Parser Boundary
 
 Conservative handoff inputs may include:

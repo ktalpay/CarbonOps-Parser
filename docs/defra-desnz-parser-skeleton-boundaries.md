@@ -47,6 +47,8 @@ A DEFRA/DESNZ parser skeleton must not add by default:
 
 See `examples/defra_desnz_parser_usage_example.py` for a deterministic usage example built from caller-supplied artificial records.
 
+See [Real Format Parser Boundary](real-format-parser-boundary.md) before adding any DEFRA/DESNZ parser that reads local file contents.
+
 ## Fixture Policy
 
 DEFRA/DESNZ parser skeleton fixtures must remain tiny and artificial.
