@@ -16,6 +16,11 @@ from carbonfactor_parser.source_adapters.document_validation import (
 from carbonfactor_parser.source_adapters.defra_desnz_adapter import (
     DefraDesnzSourceAdapter,
 )
+from carbonfactor_parser.source_adapters.defra_desnz_manifest import (
+    DefraDesnzFixtureManifest,
+    DefraDesnzFixtureManifestEntry,
+    build_defra_desnz_fixture_manifest,
+)
 from carbonfactor_parser.source_adapters.example_source_adapter import (
     ExampleSourceAdapter,
 )
@@ -56,6 +61,8 @@ from carbonfactor_parser.source_adapters.summary import (
 __all__ = (
     "AdapterDiscoveryResult",
     "AdapterParseResult",
+    "DefraDesnzFixtureManifest",
+    "DefraDesnzFixtureManifestEntry",
     "DefraDesnzSourceAdapter",
     "ExampleSourceAdapter",
     "IngestionRunStatus",
@@ -68,6 +75,7 @@ __all__ = (
     "SourceAdapterRegistry",
     "SourceDocument",
     "SourceFamily",
+    "build_defra_desnz_fixture_manifest",
     "build_source_document_from_file",
     "create_ingestion_run_summary",
     "create_source_adapter_execution_result",

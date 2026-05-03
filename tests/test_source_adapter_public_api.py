@@ -2,6 +2,8 @@ import carbonfactor_parser.source_adapters as source_adapters
 from carbonfactor_parser.source_adapters import (
     AdapterDiscoveryResult,
     AdapterParseResult,
+    DefraDesnzFixtureManifest,
+    DefraDesnzFixtureManifestEntry,
     DefraDesnzSourceAdapter,
     ExampleSourceAdapter,
     IngestionRunStatus,
@@ -14,6 +16,7 @@ from carbonfactor_parser.source_adapters import (
     SourceAdapterRegistry,
     SourceDocument,
     SourceFamily,
+    build_defra_desnz_fixture_manifest,
     build_source_document_from_file,
     create_ingestion_run_summary,
     create_source_adapter_execution_result,
@@ -32,6 +35,8 @@ from carbonfactor_parser.source_adapters import (
 EXPECTED_PUBLIC_SYMBOLS = (
     "AdapterDiscoveryResult",
     "AdapterParseResult",
+    "DefraDesnzFixtureManifest",
+    "DefraDesnzFixtureManifestEntry",
     "DefraDesnzSourceAdapter",
     "ExampleSourceAdapter",
     "IngestionRunStatus",
@@ -44,6 +49,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "SourceAdapterRegistry",
     "SourceDocument",
     "SourceFamily",
+    "build_defra_desnz_fixture_manifest",
     "build_source_document_from_file",
     "create_ingestion_run_summary",
     "create_source_adapter_execution_result",
@@ -63,6 +69,8 @@ def test_expected_public_symbols_import_from_package() -> None:
     imported_symbols = {
         "AdapterDiscoveryResult": AdapterDiscoveryResult,
         "AdapterParseResult": AdapterParseResult,
+        "DefraDesnzFixtureManifest": DefraDesnzFixtureManifest,
+        "DefraDesnzFixtureManifestEntry": DefraDesnzFixtureManifestEntry,
         "DefraDesnzSourceAdapter": DefraDesnzSourceAdapter,
         "ExampleSourceAdapter": ExampleSourceAdapter,
         "IngestionRunStatus": IngestionRunStatus,
@@ -75,6 +83,7 @@ def test_expected_public_symbols_import_from_package() -> None:
         "SourceAdapterRegistry": SourceAdapterRegistry,
         "SourceDocument": SourceDocument,
         "SourceFamily": SourceFamily,
+        "build_defra_desnz_fixture_manifest": build_defra_desnz_fixture_manifest,
         "build_source_document_from_file": build_source_document_from_file,
         "create_ingestion_run_summary": create_ingestion_run_summary,
         "create_source_adapter_execution_result": create_source_adapter_execution_result,
@@ -110,6 +119,7 @@ def test_all_excludes_internal_and_private_names() -> None:
     excluded_names = {
         "contracts",
         "defra_desnz_adapter",
+        "defra_desnz_manifest",
         "document_builder",
         "document_validation",
         "example_source_adapter",
