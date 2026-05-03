@@ -57,6 +57,8 @@ Callers should inspect:
 
 For examples and future ingestion boundaries, `summarize_source_adapter_result()` can convert an `AdapterDiscoveryResult` or `SourceAdapterExecutionResult` into compact counts and deterministic source metadata. It is a lightweight helper, not a broader output layer.
 
+See [examples/source_adapter_summary_example.py](../examples/source_adapter_summary_example.py) for a deterministic local fixture example.
+
 The current `SourceAdapterExecutionResult` contract does not include a separate success or failure status field. Consumers should inspect `errors` directly, or use `has_errors(result)` when working with execution result values.
 
 Consumers should not assume:
