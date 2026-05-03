@@ -45,6 +45,8 @@ The local public safety validation script must pass before review.
 
 `ParserInputMapping` and `ParserInputMappingEntry` provide a fixture-only model for preparing already-known `SourceDocument` references before any future parser reads local fixture contents.
 
+See `examples/parser_input_mapping_example.py` for a deterministic fixture-only mapping example.
+
 ## DEFRA/DESNZ Implications
 
 `DefraDesnzParser` is currently artificial and in-memory only.
