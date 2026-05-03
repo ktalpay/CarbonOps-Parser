@@ -74,6 +74,10 @@ They do not check file existence beyond helper behavior, reach remote locations,
 
 It supports registration, lookup, containment checks, and stable source family listing. It does not auto-discover plugins, import source-specific adapter modules, instantiate adapters, or hold process-wide singleton state.
 
+The registry is a lightweight composition point for examples and tests. It is not a dependency injection container or framework boundary.
+
+The example at `examples/source_adapter_registry_example.py` shows how to register `NoOpSourceAdapter` and `LocalFileSourceAdapter`, resolve an adapter by `SourceFamily`, and call `discover()` through the existing adapter contract.
+
 ## Execution Result Layer
 
 The execution result layer connects a source document, adapter parse result, and ingestion run summary into one immutable contract.
