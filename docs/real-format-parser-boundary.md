@@ -49,6 +49,8 @@ See `examples/parser_input_mapping_example.py` for a deterministic fixture-only 
 
 `ArtificialFixtureParser` consumes `ParserInputMapping` and produces artificial `ParserResult` records from mapping metadata only.
 
+See `examples/example_artificial_fixture_parser_usage.py` for a deterministic usage example.
+
 ## DEFRA/DESNZ Implications
 
 `DefraDesnzParser` is currently artificial and in-memory only.
