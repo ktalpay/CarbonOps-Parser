@@ -1,4 +1,4 @@
-"""Conceptual source adapter contracts."""
+"""Intentional public exports for source adapter contracts and helpers."""
 
 from carbonfactor_parser.source_adapters.contracts import (
     AdapterDiscoveryResult,
@@ -41,7 +41,7 @@ from carbonfactor_parser.source_adapters.ingestion_run_validation import (
 )
 from carbonfactor_parser.source_adapters.registry import SourceAdapterRegistry
 
-__all__ = [
+__all__ = (
     "AdapterDiscoveryResult",
     "AdapterParseResult",
     "IngestionRunStatus",
@@ -62,4 +62,4 @@ __all__ = [
     "validate_ingestion_run_summary",
     "validate_source_adapter_execution_result",
     "validate_source_document_metadata",
-]
+)
