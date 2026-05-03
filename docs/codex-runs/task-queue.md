@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-029B: Add artificial source-specific parser skeleton.
+- CO-029C: Add artificial source-specific parser usage example.
 
 ## Next
 
-- CO-029C: Add artificial source-specific parser usage example.
+- CO-030A: Add parser issue validation helper.
 
 ## Backlog
 
-- CO-030A: Add parser issue validation helper.
+- CO-030B: Add parser result validation helper.
 
 ## Completed
 
@@ -40,3 +40,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-028A: Added artificial in-memory parser skeleton.
 - CO-028B: Added artificial parser usage example.
 - CO-029A: Documented source-specific parser skeleton boundaries.
+- CO-029B: Added artificial source-specific parser skeleton.
