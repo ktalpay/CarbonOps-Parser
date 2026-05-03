@@ -13,6 +13,9 @@ from carbonfactor_parser.source_adapters.document_builder import (
 from carbonfactor_parser.source_adapters.document_validation import (
     validate_source_document_metadata,
 )
+from carbonfactor_parser.source_adapters.defra_desnz_adapter import (
+    DefraDesnzSourceAdapter,
+)
 from carbonfactor_parser.source_adapters.example_source_adapter import (
     ExampleSourceAdapter,
 )
@@ -53,6 +56,7 @@ from carbonfactor_parser.source_adapters.summary import (
 __all__ = (
     "AdapterDiscoveryResult",
     "AdapterParseResult",
+    "DefraDesnzSourceAdapter",
     "ExampleSourceAdapter",
     "IngestionRunStatus",
     "IngestionRunSummary",

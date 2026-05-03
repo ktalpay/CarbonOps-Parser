@@ -17,6 +17,7 @@ The package currently provides:
 - No-op adapter for package smoke tests.
 - Local file adapter skeleton for deterministic non-recursive file discovery.
 - Artificial source-specific adapter skeleton for local pattern tests.
+- DEFRA/DESNZ source adapter skeleton for local artificial fixture discovery.
 - In-memory adapter registry behavior.
 - SHA-256 hashing helpers for bytes, text, and local files.
 - Source document construction from explicit local file metadata.
@@ -44,6 +45,7 @@ The package currently provides:
 | `noop_adapter.py` | No-op adapter for contract smoke tests and registry examples |
 | `local_file_adapter.py` | Local file adapter skeleton for non-recursive directory discovery |
 | `example_source_adapter.py` | Artificial source-specific adapter skeleton for deterministic local discovery patterns |
+| `defra_desnz_adapter.py` | DEFRA/DESNZ source adapter skeleton for local artificial fixture discovery only |
 | `__init__.py` | Intentional public API exports |
 
 ## Contract Layer
@@ -103,6 +105,8 @@ Public exports include current contracts, helper functions, validation helpers, 
 `LocalFileSourceAdapter` is exported as a skeleton for local file discovery. It lists files from one directory and emits `SourceDocument` references without parsing source contents.
 
 `ExampleSourceAdapter` is exported as an artificial source-specific skeleton. It demonstrates source-key, extension, and name filtering patterns without representing a real source.
+
+`DefraDesnzSourceAdapter` is exported as a DEFRA/DESNZ identity skeleton. It discovers local artificial fixtures with deterministic filtering and does not perform real ingestion.
 
 Module names and private implementation details are not part of the public API. README examples should import from `carbonfactor_parser.source_adapters` unless a later task documents a narrower module-level need.
 

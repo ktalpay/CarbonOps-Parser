@@ -2,6 +2,7 @@ import carbonfactor_parser.source_adapters as source_adapters
 from carbonfactor_parser.source_adapters import (
     AdapterDiscoveryResult,
     AdapterParseResult,
+    DefraDesnzSourceAdapter,
     ExampleSourceAdapter,
     IngestionRunStatus,
     IngestionRunSummary,
@@ -31,6 +32,7 @@ from carbonfactor_parser.source_adapters import (
 EXPECTED_PUBLIC_SYMBOLS = (
     "AdapterDiscoveryResult",
     "AdapterParseResult",
+    "DefraDesnzSourceAdapter",
     "ExampleSourceAdapter",
     "IngestionRunStatus",
     "IngestionRunSummary",
@@ -61,6 +63,7 @@ def test_expected_public_symbols_import_from_package() -> None:
     imported_symbols = {
         "AdapterDiscoveryResult": AdapterDiscoveryResult,
         "AdapterParseResult": AdapterParseResult,
+        "DefraDesnzSourceAdapter": DefraDesnzSourceAdapter,
         "ExampleSourceAdapter": ExampleSourceAdapter,
         "IngestionRunStatus": IngestionRunStatus,
         "IngestionRunSummary": IngestionRunSummary,
@@ -106,6 +109,7 @@ def test_all_names_resolve_to_package_attributes() -> None:
 def test_all_excludes_internal_and_private_names() -> None:
     excluded_names = {
         "contracts",
+        "defra_desnz_adapter",
         "document_builder",
         "document_validation",
         "example_source_adapter",

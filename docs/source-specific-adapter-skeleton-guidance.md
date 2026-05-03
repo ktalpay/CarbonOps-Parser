@@ -74,6 +74,8 @@ Tests should use artificial local fixtures unless a later task explicitly approv
 
 `ExampleSourceAdapter` provides an artificial local skeleton that demonstrates this pattern without representing a real source.
 
+`DefraDesnzSourceAdapter` provides a local fixture-based DEFRA/DESNZ identity skeleton. It demonstrates naming and prefix-filter boundaries only; it is not real ingestion.
+
 ## Documentation Expectations
 
 Skeleton PRs should document:
