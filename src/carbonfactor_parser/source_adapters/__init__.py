@@ -10,6 +10,9 @@ from carbonfactor_parser.source_adapters.contracts import (
 from carbonfactor_parser.source_adapters.document_builder import (
     build_source_document_from_file,
 )
+from carbonfactor_parser.source_adapters.document_validation import (
+    validate_source_document_metadata,
+)
 from carbonfactor_parser.source_adapters.hashing import (
     sha256_hex_from_bytes,
     sha256_hex_from_file,
@@ -28,4 +31,5 @@ __all__ = [
     "sha256_hex_from_bytes",
     "sha256_hex_from_file",
     "sha256_hex_from_text",
+    "validate_source_document_metadata",
 ]
