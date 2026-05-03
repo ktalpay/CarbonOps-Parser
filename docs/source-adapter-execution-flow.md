@@ -75,6 +75,8 @@ See [examples/source_adapter_registry_example.py](../examples/source_adapter_reg
 - Resolves adapters by `SourceFamily`.
 - Calls `discover()` through the resolved adapter.
 
+See [examples/local_source_fixture_discovery_example.py](../examples/local_source_fixture_discovery_example.py) for a deterministic fixture discovery example using artificial local files.
+
 ## Future Extension Points
 
 Future tasks may add:
