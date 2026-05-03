@@ -7,6 +7,9 @@ from carbonfactor_parser.source_adapters.contracts import (
     SourceDocument,
     SourceFamily,
 )
+from carbonfactor_parser.source_adapters.document_builder import (
+    build_source_document_from_file,
+)
 from carbonfactor_parser.source_adapters.hashing import (
     sha256_hex_from_bytes,
     sha256_hex_from_file,
@@ -21,6 +24,7 @@ __all__ = [
     "SourceAdapterRegistry",
     "SourceDocument",
     "SourceFamily",
+    "build_source_document_from_file",
     "sha256_hex_from_bytes",
     "sha256_hex_from_file",
     "sha256_hex_from_text",
