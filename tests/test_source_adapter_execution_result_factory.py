@@ -1,49 +1,22 @@
-from datetime import datetime, timezone
-
 from carbonfactor_parser.source_adapters import (
-    AdapterParseResult,
-    IngestionRunStatus,
-    IngestionRunSummary,
     SourceAdapterExecutionResult,
-    SourceDocument,
-    SourceFamily,
     create_source_adapter_execution_result,
     has_errors,
     has_warnings,
     validate_source_adapter_execution_result,
 )
-
-
-def sample_document() -> SourceDocument:
-    return SourceDocument(
-        source_family=SourceFamily.DEFRA_DESNZ,
-        source_name="DEFRA local file",
-        file_reference="data/raw/defra/source.xlsx",
-        retrieved_at=datetime(2026, 5, 3, 12, 0, tzinfo=timezone.utc),
-        content_hash="a" * 64,
-    )
-
-
-def sample_parse_result() -> AdapterParseResult:
-    return AdapterParseResult(records=[{"row": 2}])
-
-
-def sample_ingestion_summary() -> IngestionRunSummary:
-    return IngestionRunSummary(
-        ingestion_id="run-001",
-        source_family=SourceFamily.DEFRA_DESNZ,
-        source_name="DEFRA local file",
-        status=IngestionRunStatus.PARSED,
-        records_discovered=1,
-        records_parsed=1,
-    )
+from fakes import (
+    make_adapter_parse_result,
+    make_ingestion_run_summary,
+    make_source_document,
+)
 
 
 def test_factory_returns_source_adapter_execution_result() -> None:
     result = create_source_adapter_execution_result(
-        document=sample_document(),
-        parse_result=sample_parse_result(),
-        ingestion_summary=sample_ingestion_summary(),
+        document=make_source_document(),
+        parse_result=make_adapter_parse_result(),
+        ingestion_summary=make_ingestion_run_summary(),
     )
 
     assert isinstance(result, SourceAdapterExecutionResult)
@@ -51,9 +24,9 @@ def test_factory_returns_source_adapter_execution_result() -> None:
 
 def test_default_warnings_and_errors_are_empty_tuples() -> None:
     result = create_source_adapter_execution_result(
-        document=sample_document(),
-        parse_result=sample_parse_result(),
-        ingestion_summary=sample_ingestion_summary(),
+        document=make_source_document(),
+        parse_result=make_adapter_parse_result(),
+        ingestion_summary=make_ingestion_run_summary(),
     )
 
     assert result.warnings == ()
@@ -62,9 +35,9 @@ def test_default_warnings_and_errors_are_empty_tuples() -> None:
 
 def test_list_warnings_and_errors_are_converted_to_tuples() -> None:
     result = create_source_adapter_execution_result(
-        document=sample_document(),
-        parse_result=sample_parse_result(),
-        ingestion_summary=sample_ingestion_summary(),
+        document=make_source_document(),
+        parse_result=make_adapter_parse_result(),
+        ingestion_summary=make_ingestion_run_summary(),
         warnings=["first warning", "second warning"],
         errors=["first error", "second error"],
     )
@@ -78,9 +51,9 @@ def test_tuple_warnings_and_errors_are_preserved() -> None:
     errors = ("first error", "second error")
 
     result = create_source_adapter_execution_result(
-        document=sample_document(),
-        parse_result=sample_parse_result(),
-        ingestion_summary=sample_ingestion_summary(),
+        document=make_source_document(),
+        parse_result=make_adapter_parse_result(),
+        ingestion_summary=make_ingestion_run_summary(),
         warnings=warnings,
         errors=errors,
     )
@@ -94,9 +67,9 @@ def test_warning_and_error_list_mutation_after_creation_does_not_mutate_result()
     errors = ["first error"]
 
     result = create_source_adapter_execution_result(
-        document=sample_document(),
-        parse_result=sample_parse_result(),
-        ingestion_summary=sample_ingestion_summary(),
+        document=make_source_document(),
+        parse_result=make_adapter_parse_result(),
+        ingestion_summary=make_ingestion_run_summary(),
         warnings=warnings,
         errors=errors,
     )
@@ -108,9 +81,9 @@ def test_warning_and_error_list_mutation_after_creation_does_not_mutate_result()
 
 
 def test_source_objects_are_preserved_by_identity() -> None:
-    document = sample_document()
-    parse_result = sample_parse_result()
-    ingestion_summary = sample_ingestion_summary()
+    document = make_source_document()
+    parse_result = make_adapter_parse_result()
+    ingestion_summary = make_ingestion_run_summary()
 
     result = create_source_adapter_execution_result(
         document=document,
@@ -125,9 +98,9 @@ def test_source_objects_are_preserved_by_identity() -> None:
 
 def test_returned_result_passes_validation_for_valid_input() -> None:
     result = create_source_adapter_execution_result(
-        document=sample_document(),
-        parse_result=sample_parse_result(),
-        ingestion_summary=sample_ingestion_summary(),
+        document=make_source_document(),
+        parse_result=make_adapter_parse_result(),
+        ingestion_summary=make_ingestion_run_summary(),
         warnings=("sample warning",),
         errors=(),
     )
@@ -137,9 +110,9 @@ def test_returned_result_passes_validation_for_valid_input() -> None:
 
 def test_has_errors_and_has_warnings_work_with_factory_created_results() -> None:
     result = create_source_adapter_execution_result(
-        document=sample_document(),
-        parse_result=sample_parse_result(),
-        ingestion_summary=sample_ingestion_summary(),
+        document=make_source_document(),
+        parse_result=make_adapter_parse_result(),
+        ingestion_summary=make_ingestion_run_summary(),
         warnings=["sample warning"],
         errors=["sample error"],
     )

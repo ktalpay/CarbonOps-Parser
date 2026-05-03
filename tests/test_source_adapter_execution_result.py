@@ -1,32 +1,23 @@
 from dataclasses import FrozenInstanceError
-from datetime import datetime, timezone
 
 import pytest
 
 from carbonfactor_parser.source_adapters import (
     AdapterParseResult,
-    IngestionRunStatus,
-    IngestionRunSummary,
     SourceAdapterExecutionResult,
-    SourceDocument,
-    SourceFamily,
     has_errors,
     has_warnings,
 )
+from fakes import (
+    make_adapter_parse_result,
+    make_execution_result,
+    make_ingestion_run_summary,
+    make_source_document,
+)
 
 
-def sample_document() -> SourceDocument:
-    return SourceDocument(
-        source_family=SourceFamily.DEFRA_DESNZ,
-        source_name="DEFRA local file",
-        file_reference="data/raw/defra/source.xlsx",
-        retrieved_at=datetime(2026, 5, 3, 12, 0, tzinfo=timezone.utc),
-        content_hash="a" * 64,
-    )
-
-
-def sample_parse_result() -> AdapterParseResult:
-    return AdapterParseResult(
+def sample_parse_result_with_notes() -> AdapterParseResult:
+    return make_adapter_parse_result(
         records=[{"row": 2}],
         rejected_records=[{"row": 3, "reason": "missing value"}],
         warnings=["sample parse warning"],
@@ -34,24 +25,16 @@ def sample_parse_result() -> AdapterParseResult:
     )
 
 
-def sample_ingestion_summary() -> IngestionRunSummary:
-    return IngestionRunSummary(
-        ingestion_id="run-001",
-        source_family=SourceFamily.DEFRA_DESNZ,
-        source_name="DEFRA local file",
-        status=IngestionRunStatus.PARSED,
+def test_execution_result_can_be_created_with_required_objects() -> None:
+    document = make_source_document()
+    parse_result = sample_parse_result_with_notes()
+    ingestion_summary = make_ingestion_run_summary(
         records_discovered=2,
         records_parsed=1,
         records_rejected=1,
         validation_issue_count=1,
         normalization_note_count=1,
     )
-
-
-def test_execution_result_can_be_created_with_required_objects() -> None:
-    document = sample_document()
-    parse_result = sample_parse_result()
-    ingestion_summary = sample_ingestion_summary()
 
     result = SourceAdapterExecutionResult(
         document=document,
@@ -65,11 +48,7 @@ def test_execution_result_can_be_created_with_required_objects() -> None:
 
 
 def test_warnings_and_errors_default_to_empty_tuples() -> None:
-    result = SourceAdapterExecutionResult(
-        document=sample_document(),
-        parse_result=sample_parse_result(),
-        ingestion_summary=sample_ingestion_summary(),
-    )
+    result = make_execution_result()
 
     assert result.warnings == ()
     assert result.errors == ()
@@ -80,9 +59,9 @@ def test_warning_and_error_tuples_are_preserved() -> None:
     errors = ("adapter error",)
 
     result = SourceAdapterExecutionResult(
-        document=sample_document(),
-        parse_result=sample_parse_result(),
-        ingestion_summary=sample_ingestion_summary(),
+        document=make_source_document(),
+        parse_result=make_adapter_parse_result(),
+        ingestion_summary=make_ingestion_run_summary(),
         warnings=warnings,
         errors=errors,
     )
@@ -92,22 +71,22 @@ def test_warning_and_error_tuples_are_preserved() -> None:
 
 
 def test_execution_result_is_frozen() -> None:
-    result = SourceAdapterExecutionResult(
-        document=sample_document(),
-        parse_result=sample_parse_result(),
-        ingestion_summary=sample_ingestion_summary(),
-    )
+    result = make_execution_result()
 
     with pytest.raises(FrozenInstanceError):
         result.errors = ("new error",)
 
 
 def test_contract_does_not_modify_parse_result_or_ingestion_summary() -> None:
-    parse_result = sample_parse_result()
-    ingestion_summary = sample_ingestion_summary()
+    parse_result = sample_parse_result_with_notes()
+    ingestion_summary = make_ingestion_run_summary(
+        records_discovered=2,
+        records_parsed=1,
+        records_rejected=1,
+    )
 
     result = SourceAdapterExecutionResult(
-        document=sample_document(),
+        document=make_source_document(),
         parse_result=parse_result,
         ingestion_summary=ingestion_summary,
         warnings=("adapter warning",),
@@ -124,42 +103,24 @@ def test_contract_does_not_modify_parse_result_or_ingestion_summary() -> None:
 
 
 def test_has_errors_returns_false_for_empty_errors() -> None:
-    result = SourceAdapterExecutionResult(
-        document=sample_document(),
-        parse_result=sample_parse_result(),
-        ingestion_summary=sample_ingestion_summary(),
-    )
+    result = make_execution_result()
 
     assert has_errors(result) is False
 
 
 def test_has_errors_returns_true_for_non_empty_errors() -> None:
-    result = SourceAdapterExecutionResult(
-        document=sample_document(),
-        parse_result=sample_parse_result(),
-        ingestion_summary=sample_ingestion_summary(),
-        errors=("adapter error",),
-    )
+    result = make_execution_result(errors=("adapter error",))
 
     assert has_errors(result) is True
 
 
 def test_has_warnings_returns_false_for_empty_warnings() -> None:
-    result = SourceAdapterExecutionResult(
-        document=sample_document(),
-        parse_result=sample_parse_result(),
-        ingestion_summary=sample_ingestion_summary(),
-    )
+    result = make_execution_result()
 
     assert has_warnings(result) is False
 
 
 def test_has_warnings_returns_true_for_non_empty_warnings() -> None:
-    result = SourceAdapterExecutionResult(
-        document=sample_document(),
-        parse_result=sample_parse_result(),
-        ingestion_summary=sample_ingestion_summary(),
-        warnings=("adapter warning",),
-    )
+    result = make_execution_result(warnings=("adapter warning",))
 
     assert has_warnings(result) is True

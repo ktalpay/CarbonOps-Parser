@@ -7,6 +7,7 @@ from carbonfactor_parser.source_adapters import (
     SourceDocument,
     SourceFamily,
 )
+from fakes import FakeSourceAdapter, make_adapter_parse_result, make_source_document
 
 
 def test_source_family_values_exist() -> None:
@@ -72,34 +73,26 @@ def test_adapter_parse_result_represents_handoff_notes() -> None:
 
 
 def test_in_test_fake_adapter_satisfies_protocol() -> None:
-    class FakeAdapter:
-        @property
-        def source_family(self) -> SourceFamily:
-            return SourceFamily.IPCC_EFDB
-
-        def discover(self) -> AdapterDiscoveryResult:
-            return AdapterDiscoveryResult(
-                documents=[
-                    SourceDocument(
-                        source_family=self.source_family,
-                        source_name="IPCC EFDB export",
-                        file_reference="data/raw/ipcc_efdb/example.csv",
-                    )
-                ],
-                warnings=["sample warning"],
-            )
-
-        def parse(self, document: SourceDocument) -> AdapterParseResult:
-            return AdapterParseResult(
-                records=[
-                    {
-                        "source_family": document.source_family.value,
-                        "source_name": document.source_name,
-                    }
-                ]
-            )
-
-    adapter = FakeAdapter()
+    document = make_source_document(
+        source_family=SourceFamily.IPCC_EFDB,
+        source_name="IPCC EFDB export",
+        file_reference="data/raw/ipcc_efdb/example.csv",
+    )
+    adapter = FakeSourceAdapter(
+        source_family=SourceFamily.IPCC_EFDB,
+        discovery_result=AdapterDiscoveryResult(
+            documents=[document],
+            warnings=["sample warning"],
+        ),
+        parse_result=make_adapter_parse_result(
+            records=[
+                {
+                    "source_family": document.source_family.value,
+                    "source_name": document.source_name,
+                }
+            ]
+        ),
+    )
     discovery = adapter.discover()
     parse_result = adapter.parse(discovery.documents[0])
 

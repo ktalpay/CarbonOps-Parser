@@ -1,32 +1,15 @@
 import pytest
 
 from carbonfactor_parser.source_adapters import (
-    AdapterDiscoveryResult,
-    AdapterParseResult,
     SourceAdapterRegistry,
-    SourceDocument,
     SourceFamily,
 )
-
-
-class FakeAdapter:
-    def __init__(self, source_family: SourceFamily) -> None:
-        self._source_family = source_family
-
-    @property
-    def source_family(self) -> SourceFamily:
-        return self._source_family
-
-    def discover(self) -> AdapterDiscoveryResult:
-        return AdapterDiscoveryResult()
-
-    def parse(self, document: SourceDocument) -> AdapterParseResult:
-        return AdapterParseResult(records=[{"source_name": document.source_name}])
+from fakes import FakeSourceAdapter
 
 
 def test_fake_adapter_can_be_registered_and_retrieved() -> None:
     registry = SourceAdapterRegistry()
-    adapter = FakeAdapter(SourceFamily.DEFRA_DESNZ)
+    adapter = FakeSourceAdapter(source_family=SourceFamily.DEFRA_DESNZ)
 
     registry.register(adapter)
 
@@ -35,13 +18,13 @@ def test_fake_adapter_can_be_registered_and_retrieved() -> None:
 
 def test_duplicate_registration_for_source_family_is_rejected() -> None:
     registry = SourceAdapterRegistry()
-    registry.register(FakeAdapter(SourceFamily.GHG_PROTOCOL))
+    registry.register(FakeSourceAdapter(source_family=SourceFamily.GHG_PROTOCOL))
 
     with pytest.raises(
         ValueError,
         match="Source adapter already registered for ghg_protocol.",
     ):
-        registry.register(FakeAdapter(SourceFamily.GHG_PROTOCOL))
+        registry.register(FakeSourceAdapter(source_family=SourceFamily.GHG_PROTOCOL))
 
 
 def test_missing_source_family_lookup_raises_key_error() -> None:
@@ -56,7 +39,7 @@ def test_missing_source_family_lookup_raises_key_error() -> None:
 
 def test_contains_returns_expected_values() -> None:
     registry = SourceAdapterRegistry()
-    registry.register(FakeAdapter(SourceFamily.IPCC_EFDB))
+    registry.register(FakeSourceAdapter(source_family=SourceFamily.IPCC_EFDB))
 
     assert registry.contains(SourceFamily.IPCC_EFDB) is True
     assert registry.contains(SourceFamily.DEFRA_DESNZ) is False
@@ -64,8 +47,8 @@ def test_contains_returns_expected_values() -> None:
 
 def test_source_families_returns_registered_families_predictably() -> None:
     registry = SourceAdapterRegistry()
-    registry.register(FakeAdapter(SourceFamily.DEFRA_DESNZ))
-    registry.register(FakeAdapter(SourceFamily.GHG_PROTOCOL))
+    registry.register(FakeSourceAdapter(source_family=SourceFamily.DEFRA_DESNZ))
+    registry.register(FakeSourceAdapter(source_family=SourceFamily.GHG_PROTOCOL))
 
     assert registry.source_families() == (
         SourceFamily.DEFRA_DESNZ,
@@ -77,7 +60,7 @@ def test_registry_state_does_not_leak_across_instances() -> None:
     first = SourceAdapterRegistry()
     second = SourceAdapterRegistry()
 
-    first.register(FakeAdapter(SourceFamily.DEFRA_DESNZ))
+    first.register(FakeSourceAdapter(source_family=SourceFamily.DEFRA_DESNZ))
 
     assert first.contains(SourceFamily.DEFRA_DESNZ) is True
     assert second.contains(SourceFamily.DEFRA_DESNZ) is False
