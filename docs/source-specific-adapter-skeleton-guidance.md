@@ -76,6 +76,8 @@ Tests should use artificial local fixtures unless a later task explicitly approv
 
 `DefraDesnzSourceAdapter` provides a local fixture-based DEFRA/DESNZ identity skeleton. It demonstrates naming and prefix-filter boundaries only; it is not real ingestion.
 
+See [DEFRA/DESNZ Adapter Skeleton Boundaries](defra-desnz-adapter-skeleton-boundaries.md) for the current DEFRA/DESNZ skeleton boundary.
+
 ## Documentation Expectations
 
 Skeleton PRs should document:
