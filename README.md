@@ -202,6 +202,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Source Discovery](docs/source-discovery.md)
 - [Source Ingestion Boundaries](docs/source-ingestion-boundaries.md)
 - [Source Adapter Contract](docs/source-adapter-contract.md)
+- [Source Adapter Execution Flow](docs/source-adapter-execution-flow.md)
 - [Source Adapter Package Recap](docs/source-adapter-package-recap.md)
 - [Roadmap](docs/roadmap.md)
 - [Task Breakdown](docs/task-breakdown.md)
