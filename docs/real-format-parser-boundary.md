@@ -53,6 +53,8 @@ See `examples/example_artificial_fixture_parser_usage.py` for a deterministic us
 
 See `examples/fixture_parser_pipeline_example.py` for the fixture-only discovery-to-parser handoff example.
 
+`ParserPipelineSummary` and `summarize_parser_pipeline()` provide compact counts from already-computed discovery, mapping, and parser result objects.
+
 ## DEFRA/DESNZ Implications
 
 `DefraDesnzParser` is currently artificial and in-memory only.

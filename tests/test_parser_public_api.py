@@ -8,9 +8,11 @@ from carbonfactor_parser.parsers import (
     ParserInputMappingEntry,
     ParserIssue,
     ParserIssueSeverity,
+    ParserPipelineSummary,
     ParserResult,
     ParserResultSummary,
     build_fixture_parser_input_mapping,
+    summarize_parser_pipeline,
 )
 
 
@@ -23,9 +25,11 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "ParserInputMappingEntry",
     "ParserIssue",
     "ParserIssueSeverity",
+    "ParserPipelineSummary",
     "ParserResult",
     "ParserResultSummary",
     "build_fixture_parser_input_mapping",
+    "summarize_parser_pipeline",
 )
 
 
@@ -39,9 +43,11 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "ParserInputMappingEntry": ParserInputMappingEntry,
         "ParserIssue": ParserIssue,
         "ParserIssueSeverity": ParserIssueSeverity,
+        "ParserPipelineSummary": ParserPipelineSummary,
         "ParserResult": ParserResult,
         "ParserResultSummary": ParserResultSummary,
         "build_fixture_parser_input_mapping": build_fixture_parser_input_mapping,
+        "summarize_parser_pipeline": summarize_parser_pipeline,
     }
 
     assert tuple(imported_symbols) == EXPECTED_PUBLIC_SYMBOLS
@@ -66,4 +72,5 @@ def test_parser_all_excludes_internal_module_names() -> None:
     assert "example_source_specific_parser" not in parsers.__all__
     assert "fixture_parser" not in parsers.__all__
     assert "input_mapping" not in parsers.__all__
+    assert "pipeline_summary" not in parsers.__all__
     assert all(not name.startswith("_") for name in parsers.__all__)

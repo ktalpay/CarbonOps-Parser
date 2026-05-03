@@ -34,6 +34,8 @@ See `examples/parser_input_mapping_example.py` for a small parser input mapping 
 
 See `examples/example_artificial_fixture_parser_usage.py` for a compact artificial fixture parser usage example.
 
+`ParserPipelineSummary` summarizes already-computed discovery, mapping, and parser result objects without running discovery or parser behavior.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:
