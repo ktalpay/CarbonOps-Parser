@@ -18,6 +18,7 @@ The package currently provides:
 - Local file adapter skeleton for deterministic non-recursive file discovery.
 - Artificial source-specific adapter skeleton for local pattern tests.
 - DEFRA/DESNZ source adapter skeleton for local artificial fixture discovery.
+- DEFRA/DESNZ fixture manifest model for discovered local fixture documents.
 - In-memory adapter registry behavior.
 - SHA-256 hashing helpers for bytes, text, and local files.
 - Source document construction from explicit local file metadata.
@@ -46,6 +47,7 @@ The package currently provides:
 | `local_file_adapter.py` | Local file adapter skeleton for non-recursive directory discovery |
 | `example_source_adapter.py` | Artificial source-specific adapter skeleton for deterministic local discovery patterns |
 | `defra_desnz_adapter.py` | DEFRA/DESNZ source adapter skeleton for local artificial fixture discovery only |
+| `defra_desnz_manifest.py` | DEFRA/DESNZ fixture manifest model for already-discovered local fixture documents |
 | `__init__.py` | Intentional public API exports |
 
 ## Contract Layer
@@ -109,6 +111,8 @@ Public exports include current contracts, helper functions, validation helpers, 
 `ExampleSourceAdapter` is exported as an artificial source-specific skeleton. It demonstrates source-key, extension, and name filtering patterns without representing a real source.
 
 `DefraDesnzSourceAdapter` is exported as a DEFRA/DESNZ identity skeleton. It discovers local artificial fixtures with deterministic filtering and does not perform real ingestion.
+
+`DefraDesnzFixtureManifest` and `build_defra_desnz_fixture_manifest` are exported as model-only helpers for describing discovered local fixture documents before future parser or ingestion handoff.
 
 Module names and private implementation details are not part of the public API. README examples should import from `carbonfactor_parser.source_adapters` unless a later task documents a narrower module-level need.
 

@@ -22,6 +22,8 @@ The skeleton currently:
 
 The adapter remains non-recursive and does not inspect file contents.
 
+`DefraDesnzFixtureManifest` describes already-discovered local fixture documents before any later parser or ingestion handoff. It is a model-only manifest and does not read fixture contents.
+
 ## Not Implemented
 
 The skeleton does not provide:
