@@ -108,6 +108,8 @@ The public API is the set of names exported by `carbonfactor_parser.source_adapt
 
 Public exports include current contracts, helper functions, validation helpers, factories, hashing helpers, registry behavior, and small execution result status helpers.
 
+Parser result contracts are exported separately from `carbonfactor_parser.parsers`.
+
 `NoOpSourceAdapter` is also exported for contract smoke tests and registry examples. It does not represent a real source family implementation.
 
 `LocalFileSourceAdapter` is exported as a skeleton for local file discovery. It lists files from one directory and emits `SourceDocument` references without parsing source contents.
