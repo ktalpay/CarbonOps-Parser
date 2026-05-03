@@ -78,6 +78,8 @@ The registry is a lightweight composition point for examples and tests. It is no
 
 The example at `examples/source_adapter_registry_example.py` shows how to register `NoOpSourceAdapter` and `LocalFileSourceAdapter`, resolve an adapter by `SourceFamily`, and call `discover()` through the existing adapter contract.
 
+See [Source Adapter Execution Flow](source-adapter-execution-flow.md) for the intended flow from registry resolution to discovered source document handoff.
+
 ## Execution Result Layer
 
 The execution result layer connects a source document, adapter parse result, and ingestion run summary into one immutable contract.
