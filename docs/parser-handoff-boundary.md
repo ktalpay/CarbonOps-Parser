@@ -10,6 +10,8 @@ Source adapters discover and describe `SourceDocument` references. Fixture manif
 
 Parser execution may be added later as its own documented and testable boundary.
 
+See [Parser Contract Boundaries](parser-contract-boundaries.md) for the intended scope of future parser contract code.
+
 ## Inputs To A Future Parser Boundary
 
 Conservative handoff inputs may include:

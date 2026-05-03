@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-026A: Document parser handoff boundary.
+- CO-026B: Document parser contract boundaries.
 
 ## Next
 
-- CO-026B: Add source adapter public API reference documentation.
+- CO-027A: Add source adapter public API reference documentation.
 
 ## Backlog
 
-- CO-027A: Add local adapter edge-case documentation.
+- CO-027B: Add local adapter edge-case documentation.
 
 ## Completed
 
@@ -33,3 +33,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-024A: Added local public safety validation script.
 - CO-025A: Added DEFRA/DESNZ fixture manifest model skeleton.
 - CO-025B: Added DEFRA/DESNZ fixture manifest example.
+- CO-026A: Documented parser handoff boundary.
