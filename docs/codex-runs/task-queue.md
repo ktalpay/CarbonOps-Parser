@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-032B: Add artificial fixture parser usage example.
+- CO-033A: Add fixture-only parser pipeline example.
 
 ## Next
 
-- CO-033A: Add parser issue validation helper.
+- CO-033B: Add parser issue validation helper.
 
 ## Backlog
 
-- CO-033B: Add parser result validation helper.
+- CO-034A: Add parser result validation helper.
 
 ## Completed
 
@@ -49,3 +49,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-031B: Added fixture-only parser input mapping model.
 - CO-031C: Added fixture-only parser input mapping example.
 - CO-032A: Added artificial fixture parser skeleton.
+- CO-032B: Added artificial fixture parser usage example.

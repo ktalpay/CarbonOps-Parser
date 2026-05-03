@@ -24,6 +24,8 @@ See [Source-Specific Parser Skeleton Boundaries](source-specific-parser-skeleton
 
 See [Real Format Parser Boundary](real-format-parser-boundary.md) before adding any parser that reads local file contents.
 
+See `examples/fixture_parser_pipeline_example.py` for a fixture-only example of discovery, parser input mapping, and artificial parser result handoff.
+
 ## Inputs To A Future Parser Boundary
 
 Conservative handoff inputs may include:
