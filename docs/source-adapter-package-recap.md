@@ -16,6 +16,7 @@ The package currently provides:
 - Adapter discovery and parse result contracts.
 - No-op adapter for package smoke tests.
 - Local file adapter skeleton for deterministic non-recursive file discovery.
+- Artificial source-specific adapter skeleton for local pattern tests.
 - In-memory adapter registry behavior.
 - SHA-256 hashing helpers for bytes, text, and local files.
 - Source document construction from explicit local file metadata.
@@ -42,6 +43,7 @@ The package currently provides:
 | `execution_result_validation.py` | Structural execution result validation |
 | `noop_adapter.py` | No-op adapter for contract smoke tests and registry examples |
 | `local_file_adapter.py` | Local file adapter skeleton for non-recursive directory discovery |
+| `example_source_adapter.py` | Artificial source-specific adapter skeleton for deterministic local discovery patterns |
 | `__init__.py` | Intentional public API exports |
 
 ## Contract Layer
@@ -100,6 +102,8 @@ Public exports include current contracts, helper functions, validation helpers, 
 
 `LocalFileSourceAdapter` is exported as a skeleton for local file discovery. It lists files from one directory and emits `SourceDocument` references without parsing source contents.
 
+`ExampleSourceAdapter` is exported as an artificial source-specific skeleton. It demonstrates source-key, extension, and name filtering patterns without representing a real source.
+
 Module names and private implementation details are not part of the public API. README examples should import from `carbonfactor_parser.source_adapters` unless a later task documents a narrower module-level need.
 
 ## Test-Only Utilities Boundary
@@ -112,7 +116,7 @@ Test fake utilities live under `tests/`.
 
 The current package does not:
 
-- Add real GHG Protocol, DEFRA / DESNZ, or IPCC EFDB adapters.
+- Add real source-family adapters.
 - Discover source files.
 - Download source files.
 - Parse source-specific document formats.

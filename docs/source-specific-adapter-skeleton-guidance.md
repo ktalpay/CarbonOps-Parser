@@ -72,6 +72,8 @@ Source-specific skeleton tests should cover:
 
 Tests should use artificial local fixtures unless a later task explicitly approves a different source boundary.
 
+`ExampleSourceAdapter` provides an artificial local skeleton that demonstrates this pattern without representing a real source.
+
 ## Documentation Expectations
 
 Skeleton PRs should document:

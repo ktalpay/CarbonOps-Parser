@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-022A: Add source-specific adapter skeleton guidance.
+- CO-022B: Add artificial source-specific adapter skeleton.
 
 ## Next
 
-- CO-022B: Add local adapter edge-case documentation.
+- CO-023A: Add source adapter public API reference documentation.
 
 ## Backlog
 
-- CO-023A: Add source adapter public API reference documentation.
+- CO-023B: Add local adapter edge-case documentation.
 
 ## Completed
 
@@ -26,3 +26,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-020B: Added source adapter summary example.
 - CO-021A: Documented source adapter configuration boundaries.
 - CO-021B: Added static source adapter configuration example.
+- CO-022A: Documented source-specific adapter skeleton guidance.
