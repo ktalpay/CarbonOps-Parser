@@ -55,6 +55,8 @@ See `examples/fixture_parser_pipeline_example.py` for the fixture-only discovery
 
 `ParserPipelineSummary` and `summarize_parser_pipeline()` provide compact counts from already-computed discovery, mapping, and parser result objects.
 
+See `examples/parser_pipeline_summary_example.py` for a deterministic fixture-only pipeline summary example.
+
 ## DEFRA/DESNZ Implications
 
 `DefraDesnzParser` is currently artificial and in-memory only.

@@ -36,6 +36,8 @@ See `examples/example_artificial_fixture_parser_usage.py` for a compact artifici
 
 `ParserPipelineSummary` summarizes already-computed discovery, mapping, and parser result objects without running discovery or parser behavior.
 
+See `examples/parser_pipeline_summary_example.py` for a small fixture-only pipeline summary usage example.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:
