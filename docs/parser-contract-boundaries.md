@@ -30,6 +30,8 @@ See [Real Format Parser Boundary](real-format-parser-boundary.md) before adding 
 
 See `examples/parser_input_mapping_example.py` for a small parser input mapping example built from artificial fixture document references.
 
+`ArtificialFixtureParser` demonstrates parser-result creation from fixture mapping metadata without reading local files.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:
