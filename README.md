@@ -208,6 +208,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Source Adapter Configuration Boundaries](docs/source-adapter-configuration-boundaries.md)
 - [Source-Specific Adapter Skeleton Guidance](docs/source-specific-adapter-skeleton-guidance.md)
 - [DEFRA/DESNZ Adapter Skeleton Boundaries](docs/defra-desnz-adapter-skeleton-boundaries.md)
+- [Parser Handoff Boundary](docs/parser-handoff-boundary.md)
 - [Source Adapter Package Recap](docs/source-adapter-package-recap.md)
 - [Roadmap](docs/roadmap.md)
 - [Task Breakdown](docs/task-breakdown.md)
