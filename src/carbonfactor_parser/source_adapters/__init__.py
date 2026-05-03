@@ -22,6 +22,9 @@ from carbonfactor_parser.source_adapters.ingestion_run import (
     IngestionRunStatus,
     IngestionRunSummary,
 )
+from carbonfactor_parser.source_adapters.ingestion_run_validation import (
+    validate_ingestion_run_summary,
+)
 from carbonfactor_parser.source_adapters.registry import SourceAdapterRegistry
 
 __all__ = [
@@ -37,5 +40,6 @@ __all__ = [
     "sha256_hex_from_bytes",
     "sha256_hex_from_file",
     "sha256_hex_from_text",
+    "validate_ingestion_run_summary",
     "validate_source_document_metadata",
 ]
