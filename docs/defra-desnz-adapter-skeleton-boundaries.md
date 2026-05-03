@@ -26,6 +26,8 @@ The adapter remains non-recursive and does not inspect file contents.
 
 See `examples/defra_desnz_fixture_manifest_example.py` for a fixture-only example that discovers local artificial documents and builds the manifest.
 
+See [Parser Handoff Boundary](parser-handoff-boundary.md) for the separation between fixture manifests and future parser execution.
+
 ## Not Implemented
 
 The skeleton does not provide:

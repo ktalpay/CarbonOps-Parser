@@ -29,6 +29,8 @@ See [Source Adapter Configuration Boundaries](source-adapter-configuration-bound
 
 See [Source-Specific Adapter Skeleton Guidance](source-specific-adapter-skeleton-guidance.md) for future source-specific skeleton boundaries.
 
+See [Parser Handoff Boundary](parser-handoff-boundary.md) for the separation between discovered documents, fixture manifests, and future parser execution.
+
 ```mermaid
 flowchart TD
     caller["Caller or test"]

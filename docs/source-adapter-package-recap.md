@@ -92,6 +92,8 @@ See [Source-Specific Adapter Skeleton Guidance](source-specific-adapter-skeleton
 
 See [DEFRA/DESNZ Adapter Skeleton Boundaries](defra-desnz-adapter-skeleton-boundaries.md) for the current DEFRA/DESNZ skeleton scope.
 
+See [Parser Handoff Boundary](parser-handoff-boundary.md) for the boundary between source discovery, fixture manifests, and future parser execution.
+
 ## Execution Result Layer
 
 The execution result layer connects a source document, adapter parse result, and ingestion run summary into one immutable contract.
