@@ -55,6 +55,8 @@ Callers should inspect:
 - Execution handoff warnings from `SourceAdapterExecutionResult.warnings`.
 - Execution handoff errors from `SourceAdapterExecutionResult.errors`.
 
+For examples and future ingestion boundaries, `summarize_source_adapter_result()` can convert an `AdapterDiscoveryResult` or `SourceAdapterExecutionResult` into compact counts and deterministic source metadata. It is a lightweight helper, not a broader output layer.
+
 The current `SourceAdapterExecutionResult` contract does not include a separate success or failure status field. Consumers should inspect `errors` directly, or use `has_errors(result)` when working with execution result values.
 
 Consumers should not assume:

@@ -42,6 +42,10 @@ from carbonfactor_parser.source_adapters.ingestion_run_validation import (
 from carbonfactor_parser.source_adapters.local_file_adapter import LocalFileSourceAdapter
 from carbonfactor_parser.source_adapters.noop_adapter import NoOpSourceAdapter
 from carbonfactor_parser.source_adapters.registry import SourceAdapterRegistry
+from carbonfactor_parser.source_adapters.summary import (
+    SourceAdapterResultSummary,
+    summarize_source_adapter_result,
+)
 
 __all__ = (
     "AdapterDiscoveryResult",
@@ -52,6 +56,7 @@ __all__ = (
     "NoOpSourceAdapter",
     "SourceAdapter",
     "SourceAdapterExecutionResult",
+    "SourceAdapterResultSummary",
     "SourceAdapterRegistry",
     "SourceDocument",
     "SourceFamily",
@@ -63,6 +68,7 @@ __all__ = (
     "sha256_hex_from_bytes",
     "sha256_hex_from_file",
     "sha256_hex_from_text",
+    "summarize_source_adapter_result",
     "validate_ingestion_run_summary",
     "validate_source_adapter_execution_result",
     "validate_source_document_metadata",
