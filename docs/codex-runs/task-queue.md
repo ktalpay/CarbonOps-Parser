@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-021A: Document source adapter configuration boundaries.
+- CO-021B: Add static source adapter configuration example.
 
 ## Next
 
-- CO-021B: Add tests for local fixture example edge cases.
+- CO-022A: Add source adapter public API reference documentation.
 
 ## Backlog
 
-- CO-022A: Add source adapter public API reference documentation.
+- CO-022B: Add local adapter edge-case documentation.
 
 ## Completed
 
@@ -24,3 +24,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-020A: Added source adapter summary helper.
 - CO-AUTO-001: Added Codex task queue and review workflow scaffolding.
 - CO-020B: Added source adapter summary example.
+- CO-021A: Documented source adapter configuration boundaries.
