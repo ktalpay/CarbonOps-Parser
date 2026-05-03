@@ -12,6 +12,8 @@ The current source adapter and fixture manifest layers do not parse document con
 
 See `examples/parser_result_contract_example.py` for an in-memory parser result contract example.
 
+`ExampleInMemoryParser` provides an artificial parser-shaped skeleton that accepts caller-supplied records and returns `ParserResult` without file access.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:
