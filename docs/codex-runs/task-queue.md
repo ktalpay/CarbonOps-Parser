@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-025A: Add DEFRA/DESNZ fixture manifest model skeleton.
+- CO-025B: Add DEFRA/DESNZ fixture manifest example.
 
 ## Next
 
-- CO-025B: Add source adapter public API reference documentation.
+- CO-026A: Add source adapter public API reference documentation.
 
 ## Backlog
 
-- CO-026A: Add local adapter edge-case documentation.
+- CO-026B: Add local adapter edge-case documentation.
 
 ## Completed
 
@@ -31,3 +31,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-023A: Added DEFRA/DESNZ source adapter skeleton.
 - CO-023B: Documented DEFRA/DESNZ adapter skeleton boundaries.
 - CO-024A: Added local public safety validation script.
+- CO-025A: Added DEFRA/DESNZ fixture manifest model skeleton.

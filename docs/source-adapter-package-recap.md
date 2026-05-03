@@ -114,6 +114,8 @@ Public exports include current contracts, helper functions, validation helpers, 
 
 `DefraDesnzFixtureManifest` and `build_defra_desnz_fixture_manifest` are exported as model-only helpers for describing discovered local fixture documents before future parser or ingestion handoff.
 
+The example at `examples/defra_desnz_fixture_manifest_example.py` shows the local fixture discovery-to-manifest handoff.
+
 Module names and private implementation details are not part of the public API. README examples should import from `carbonfactor_parser.source_adapters` unless a later task documents a narrower module-level need.
 
 ## Test-Only Utilities Boundary
