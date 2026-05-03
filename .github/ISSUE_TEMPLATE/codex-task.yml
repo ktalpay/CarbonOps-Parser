@@ -1,0 +1,80 @@
+name: Codex task
+description: Define a small Codex-assisted repository task
+title: "[Codex Task]: "
+labels:
+  - codex-task
+body:
+  - type: input
+    id: task_id
+    attributes:
+      label: Task ID
+      description: Example: CO-021A
+      placeholder: CO-021A
+    validations:
+      required: true
+  - type: input
+    id: task_title
+    attributes:
+      label: Task title
+      placeholder: Add a concise task title
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Summarize relevant repository context.
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: State the outcome expected from this task.
+    validations:
+      required: true
+  - type: textarea
+    id: strict_scope
+    attributes:
+      label: Strict scope
+      description: List explicit boundaries and non-goals.
+    validations:
+      required: true
+  - type: textarea
+    id: expected_changes
+    attributes:
+      label: Expected changes
+      description: List expected files or implementation areas.
+    validations:
+      required: true
+  - type: textarea
+    id: tests_checks
+    attributes:
+      label: Tests/checks
+      description: List validation commands and checks to run.
+      value: |
+        - python -m pytest
+        - git diff --check
+    validations:
+      required: true
+  - type: input
+    id: commit_message
+    attributes:
+      label: Commit message
+      placeholder: "CO-021A: add concise task description"
+    validations:
+      required: true
+  - type: textarea
+    id: deferred_items
+    attributes:
+      label: Deferred items
+      description: List items intentionally out of scope.
+    validations:
+      required: false
+  - type: textarea
+    id: reviewer_focus
+    attributes:
+      label: Reviewer focus
+      description: Tell reviewers what risks or boundaries to inspect.
+    validations:
+      required: true

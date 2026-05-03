@@ -196,6 +196,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Database Model](docs/database-model.md)
 - [Database Startup](docs/database-startup.md)
 - [Ingestion Metadata Model](docs/ingestion-metadata-model.md)
+- [Codex-Assisted Runs](docs/codex-runs/README.md)
 - [Engineering Standards](docs/engineering-standards.md)
 - [Linux Service Setup](docs/linux-service-setup.md)
 - [Source Support](docs/source-support.md)

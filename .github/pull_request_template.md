@@ -1,24 +1,30 @@
 # Summary
 
-Describe the change briefly.
+Briefly describe the task and outcome.
 
-## Checklist
+## Changes
 
-- [ ] I have not included confidential data, credentials, or private source files.
-- [ ] I included the source name and version or file name when relevant.
-- [ ] I selected the implementation target below.
-- [ ] I included reproduction or verification steps when relevant.
-- [ ] I kept the change focused.
+-
 
-## Implementation Target
+## Validation
 
-- [ ] Python
-- [ ] .NET
-- [ ] Docs
-- [ ] Database
-- [ ] Shared
+- [ ] Tests/checks run and listed:
+- [ ] `git diff --check` passed
 
-## Verification
+## Scope Guard Checklist
 
+- [ ] No confidential data
+- [ ] No production/compliance/legal claims
+- [ ] No source-specific ingestion unless requested
+- [ ] No parser/database/scheduler/downloader coupling unless requested
+- [ ] No external dependencies unless requested
+- [ ] One commit only
+- [ ] Tests/checks run and listed
 
-## Notes
+## Deferred Items
+
+-
+
+## Reviewer Notes
+
+-
