@@ -8,6 +8,8 @@ Parser output describes records and parser-level issues. It does not standardize
 
 Normalization contracts and implementation should be added only in later explicit tasks. This document records the intended boundary before that work begins.
 
+`NormalizationIssue`, `NormalizationIssueSeverity`, `NormalizedRecord`, `NormalizationResultSummary`, and `NormalizationResult` now provide a minimal source-agnostic normalization contract skeleton. They do not execute normalization, convert units, or write records.
+
 ## What Parser Output Represents
 
 `ParserResult` contains parsed or artificial records plus parser-level issues.

@@ -40,6 +40,8 @@ See `examples/parser_pipeline_summary_example.py` for a small fixture-only pipel
 
 See [Normalization Boundary](normalization-boundary.md) before adding parser-to-normalization handoff contracts or examples.
 
+The normalization package now exposes source-agnostic normalization result contracts for later handoff work, without changing parser contracts.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:
