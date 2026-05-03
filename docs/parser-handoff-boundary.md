@@ -16,6 +16,8 @@ The current parser contract skeleton describes parser result handoff data only; 
 
 See `examples/parser_result_contract_example.py` for a source-agnostic in-memory result example.
 
+`ExampleInMemoryParser` demonstrates parser implementation shape without reading files or interpreting source-specific formats.
+
 ## Inputs To A Future Parser Boundary
 
 Conservative handoff inputs may include:
