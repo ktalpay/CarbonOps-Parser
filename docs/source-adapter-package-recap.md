@@ -15,6 +15,7 @@ The package currently provides:
 - Source family and source document contracts.
 - Adapter discovery and parse result contracts.
 - No-op adapter for package smoke tests.
+- Local file adapter skeleton for deterministic non-recursive file discovery.
 - In-memory adapter registry behavior.
 - SHA-256 hashing helpers for bytes, text, and local files.
 - Source document construction from explicit local file metadata.
@@ -40,6 +41,7 @@ The package currently provides:
 | `execution_result_factory.py` | Helper for creating execution result values with safe tuple defaults |
 | `execution_result_validation.py` | Structural execution result validation |
 | `noop_adapter.py` | No-op adapter for contract smoke tests and registry examples |
+| `local_file_adapter.py` | Local file adapter skeleton for non-recursive directory discovery |
 | `__init__.py` | Intentional public API exports |
 
 ## Contract Layer
@@ -85,6 +87,8 @@ The public API is the set of names exported by `carbonfactor_parser.source_adapt
 Public exports include current contracts, helper functions, validation helpers, factories, hashing helpers, registry behavior, and small execution result status helpers.
 
 `NoOpSourceAdapter` is also exported for contract smoke tests and registry examples. It does not represent a real source family implementation.
+
+`LocalFileSourceAdapter` is exported as a skeleton for local file discovery. It lists files from one directory and emits `SourceDocument` references without parsing source contents.
 
 Module names and private implementation details are not part of the public API. README examples should import from `carbonfactor_parser.source_adapters` unless a later task documents a narrower module-level need.
 
