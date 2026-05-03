@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-022B: Add artificial source-specific adapter skeleton.
+- CO-023A: Add DEFRA/DESNZ source adapter skeleton.
 
 ## Next
 
-- CO-023A: Add source adapter public API reference documentation.
+- CO-023B: Add source adapter public API reference documentation.
 
 ## Backlog
 
-- CO-023B: Add local adapter edge-case documentation.
+- CO-024A: Add local adapter edge-case documentation.
 
 ## Completed
 
@@ -27,3 +27,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-021A: Documented source adapter configuration boundaries.
 - CO-021B: Added static source adapter configuration example.
 - CO-022A: Documented source-specific adapter skeleton guidance.
+- CO-022B: Added artificial source-specific adapter skeleton.
