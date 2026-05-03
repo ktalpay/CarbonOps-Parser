@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-023B: Document DEFRA/DESNZ adapter skeleton boundaries.
+- CO-024A: Add local public safety validation script.
 
 ## Next
 
-- CO-024A: Add source adapter public API reference documentation.
+- CO-024B: Add source adapter public API reference documentation.
 
 ## Backlog
 
-- CO-024B: Add local adapter edge-case documentation.
+- CO-025A: Add local adapter edge-case documentation.
 
 ## Completed
 
@@ -29,3 +29,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-022A: Documented source-specific adapter skeleton guidance.
 - CO-022B: Added artificial source-specific adapter skeleton.
 - CO-023A: Added DEFRA/DESNZ source adapter skeleton.
+- CO-023B: Documented DEFRA/DESNZ adapter skeleton boundaries.
