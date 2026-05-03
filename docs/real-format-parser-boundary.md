@@ -57,6 +57,8 @@ See `examples/fixture_parser_pipeline_example.py` for the fixture-only discovery
 
 See `examples/parser_pipeline_summary_example.py` for a deterministic fixture-only pipeline summary example.
 
+See [Normalization Boundary](normalization-boundary.md) before adding parser-to-normalization handoff behavior.
+
 ## DEFRA/DESNZ Implications
 
 `DefraDesnzParser` is currently artificial and in-memory only.

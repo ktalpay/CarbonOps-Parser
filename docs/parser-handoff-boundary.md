@@ -26,6 +26,8 @@ See [Real Format Parser Boundary](real-format-parser-boundary.md) before adding 
 
 See `examples/fixture_parser_pipeline_example.py` for a fixture-only example of discovery, parser input mapping, and artificial parser result handoff.
 
+See [Normalization Boundary](normalization-boundary.md) before treating parser output as input to future normalized record work.
+
 ## Inputs To A Future Parser Boundary
 
 Conservative handoff inputs may include:
