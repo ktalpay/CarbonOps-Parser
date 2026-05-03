@@ -51,6 +51,8 @@ See `examples/parser_input_mapping_example.py` for a deterministic fixture-only 
 
 See `examples/example_artificial_fixture_parser_usage.py` for a deterministic usage example.
 
+See `examples/fixture_parser_pipeline_example.py` for the fixture-only discovery-to-parser handoff example.
+
 ## DEFRA/DESNZ Implications
 
 `DefraDesnzParser` is currently artificial and in-memory only.
