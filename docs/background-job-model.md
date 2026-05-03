@@ -10,7 +10,7 @@ Each source family has its own schedule:
 - DEFRA/DESNZ
 - IPCC EFDB
 
-Schedules should support daily, weekly, and monthly periods with explicit time and timezone settings. A schedule for one source should not force another source to run.
+Schedules should support daily, weekly, monthly, and yearly periods with explicit time and timezone settings. A schedule for one source should not force another source to run.
 
 ## Job Lifecycle
 
