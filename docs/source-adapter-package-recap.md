@@ -94,6 +94,8 @@ See [DEFRA/DESNZ Adapter Skeleton Boundaries](defra-desnz-adapter-skeleton-bound
 
 See [Parser Handoff Boundary](parser-handoff-boundary.md) for the boundary between source discovery, fixture manifests, and future parser execution.
 
+See [Parser Contract Boundaries](parser-contract-boundaries.md) before adding parser contract code.
+
 ## Execution Result Layer
 
 The execution result layer connects a source document, adapter parse result, and ingestion run summary into one immutable contract.
