@@ -10,6 +10,8 @@ The current source adapter and fixture manifest layers do not parse document con
 
 `ParserIssue`, `ParserIssueSeverity`, `ParserResultSummary`, and `ParserResult` now provide a minimal source-agnostic parser result contract skeleton. They do not execute parsers or read source files.
 
+See `examples/parser_result_contract_example.py` for an in-memory parser result contract example.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:
