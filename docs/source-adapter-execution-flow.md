@@ -25,6 +25,8 @@ The current adapter contract exposes `discover()` and `parse(document)`. `Source
 
 See [Source Adapter Error And Warning Handling](source-adapter-error-warning-handling.md) for guidance on discovery warnings and execution handoff errors.
 
+See [Source Adapter Configuration Boundaries](source-adapter-configuration-boundaries.md) for guidance on what should be configured on adapters versus future runtime layers.
+
 ```mermaid
 flowchart TD
     caller["Caller or test"]

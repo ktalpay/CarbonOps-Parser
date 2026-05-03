@@ -80,6 +80,8 @@ The example at `examples/source_adapter_registry_example.py` shows how to regist
 
 See [Source Adapter Execution Flow](source-adapter-execution-flow.md) for the intended flow from registry resolution to discovered source document handoff.
 
+See [Source Adapter Configuration Boundaries](source-adapter-configuration-boundaries.md) for adapter construction and runtime configuration boundaries.
+
 ## Execution Result Layer
 
 The execution result layer connects a source document, adapter parse result, and ingestion run summary into one immutable contract.
