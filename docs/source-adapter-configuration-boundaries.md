@@ -1,6 +1,6 @@
 # Source Adapter Configuration Boundaries
 
-Source adapter configuration should describe discovery inputs for an adapter instance. It should not define ingestion runtime behavior, parser behavior, persistence behavior, schedules, downloads, or secret handling.
+Source adapter configuration should describe discovery inputs for an adapter instance. It should not define ingestion runtime behavior, parser behavior, persistence behavior, schedules, downloads, or sensitive runtime value handling.
 
 ## Purpose
 
@@ -21,6 +21,8 @@ Conservative adapter-level configuration may include:
 
 Adapter-level configuration should stay deterministic and local unless a later task explicitly adds another boundary.
 
+See `examples/source_adapter_static_configuration_example.py` for a static in-code example that constructs a local file adapter without adding a runtime configuration loader.
+
 ## Outside Adapter Scope
 
 These concerns belong outside source adapter construction:
@@ -29,7 +31,7 @@ These concerns belong outside source adapter construction:
 - Scheduler cadence.
 - Retry and cancellation policy.
 - Remote download endpoints.
-- Authentication secrets.
+- Sensitive runtime values.
 - Parser selection.
 - Normalization rules.
 - Persistence logging.
@@ -47,7 +49,7 @@ It should not:
 - Read environment variables.
 - Auto-wire adapters.
 - Auto-discover runtime adapters.
-- Manage secrets.
+- Manage sensitive runtime values.
 - Create database, scheduler, downloader, parser, or persistence objects.
 
 The registry remains a small lookup mechanism keyed by `SourceFamily`.
@@ -61,7 +63,7 @@ The registry remains a small lookup mechanism keyed by `SourceFamily`.
 | Database connection string | No | Persistence/runtime concern |
 | Schedule interval | No | Scheduler concern |
 | Parser format mapping | No | Parser or ingestion boundary concern |
-| Remote access secret | No | Secret handling belongs outside this package |
+| Remote access value | No | Sensitive runtime value handling belongs outside this package |
 | Recursive discovery | Deferred | Not implemented; may be explicit adapter option later |
 | Source display name | Sometimes | Adapter option only when used as source metadata |
 
@@ -72,7 +74,7 @@ This document does not define:
 - A configuration file format.
 - Runtime configuration loader behavior.
 - Dependency injection or autowiring.
-- Secret management.
+- Sensitive runtime value management.
 - Source-specific runtime setup.
 - Compliance or legal determinations.
 
@@ -83,7 +85,7 @@ Future tasks may add:
 - Typed adapter options dataclasses if constructor parameters grow.
 - A separate ingestion/runtime configuration boundary.
 - A separate scheduler configuration boundary.
-- Secret handling outside this package.
+- Sensitive runtime value handling outside this package.
 - Source-specific adapter options after source structure review.
 
 Each extension should keep adapter construction separate from parser, persistence, scheduler, downloader, and operations concerns.
