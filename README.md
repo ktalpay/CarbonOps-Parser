@@ -253,6 +253,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Artificial Manifest Collection Validation Summary](docs/artificial-manifest-collection-validation-summary.md)
 - [Artificial Manifest Metadata Phase Recap](docs/artificial-manifest-metadata-phase-recap.md)
 - [Artificial Manifest Next Phase Option Matrix](docs/artificial-manifest-next-phase-option-matrix.md)
+- [Artificial In-Memory Manifest Usage Example](docs/artificial-in-memory-manifest-usage-example.md)
 - [Source Adapter Contract](docs/source-adapter-contract.md)
 - [Source Adapter Execution Flow](docs/source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](docs/source-adapter-error-warning-handling.md)
