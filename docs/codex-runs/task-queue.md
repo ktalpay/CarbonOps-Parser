@@ -4,7 +4,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- No active task currently queued after CO-058B completion.
+- No active task currently queued after CO-059A completion.
 
 ## Next
 
@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-059A: Documented source acquisition boundary.
 - CO-058B: Documented production readiness sequencing roadmap.
 - CO-058A: Documented production readiness gap analysis.
 - CO-015A: Added local file source adapter skeleton.
