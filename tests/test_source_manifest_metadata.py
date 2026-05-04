@@ -4,12 +4,14 @@ import pytest
 
 import carbonfactor_parser
 from carbonfactor_parser import (
+    ArtificialSourceManifestMetadata as RootManifestMetadata,
+    ArtificialSourceManifestMetadataCollection as RootManifestCollection,
     ArtificialSourceManifestValidationSummary as RootManifestValidationSummary,
 )
 from carbonfactor_parser import source_manifest
-from carbonfactor_parser import ArtificialSourceManifestMetadata as RootManifestMetadata
 from carbonfactor_parser.source_manifest import (
     ArtificialSourceManifestMetadata,
+    ArtificialSourceManifestMetadataCollection,
     ArtificialSourceManifestValidationSummary,
 )
 
@@ -23,6 +25,17 @@ def valid_manifest_metadata() -> ArtificialSourceManifestMetadata:
         record_count=2,
         generated_by="artificial-manifest-builder",
         notes=("artificial-note-a", "artificial-note-b"),
+    )
+
+
+def second_manifest_metadata() -> ArtificialSourceManifestMetadata:
+    return ArtificialSourceManifestMetadata(
+        manifest_id="artificial-manifest-002",
+        source_family="second_artificial_source_family",
+        dataset_name="second-artificial-dataset",
+        version_label="second-static-version-label",
+        record_count=1,
+        notes=("second-artificial-note",),
     )
 
 
@@ -169,14 +182,100 @@ def test_dataset_name_is_artificial_label_only() -> None:
     assert metadata.dataset_name == "not/a/filesystem/path.csv"
 
 
+def test_artificial_manifest_metadata_collection_can_be_created_with_one_manifest() -> None:
+    metadata = valid_manifest_metadata()
+    collection = ArtificialSourceManifestMetadataCollection((metadata,))
+
+    assert collection.manifests == (metadata,)
+    assert collection.count == 1
+    assert collection.manifest_ids == ("artificial-manifest-001",)
+    assert collection.source_families == ("artificial_source_acquisition",)
+
+
+def test_artificial_manifest_metadata_collection_can_be_created_with_multiple_manifests() -> None:
+    first_metadata = valid_manifest_metadata()
+    second_metadata = second_manifest_metadata()
+
+    collection = ArtificialSourceManifestMetadataCollection(
+        (second_metadata, first_metadata),
+    )
+
+    assert collection.manifests == (second_metadata, first_metadata)
+    assert collection.count == 2
+    assert collection.manifest_ids == (
+        "artificial-manifest-002",
+        "artificial-manifest-001",
+    )
+    assert collection.source_families == (
+        "artificial_source_acquisition",
+        "second_artificial_source_family",
+    )
+
+
+def test_artificial_manifest_metadata_collection_stores_incoming_list_as_tuple() -> None:
+    metadata = valid_manifest_metadata()
+
+    collection = ArtificialSourceManifestMetadataCollection(
+        [metadata],  # type: ignore[arg-type]
+    )
+
+    assert collection.manifests == (metadata,)
+
+
+def test_artificial_manifest_metadata_collection_allows_empty_collection() -> None:
+    collection = ArtificialSourceManifestMetadataCollection()
+
+    assert collection.manifests == ()
+    assert collection.count == 0
+    assert collection.manifest_ids == ()
+    assert collection.source_families == ()
+
+
+def test_artificial_manifest_metadata_collection_rejects_duplicate_manifest_ids() -> None:
+    duplicate_metadata = ArtificialSourceManifestMetadata(
+        manifest_id="artificial-manifest-001",
+        source_family="second_artificial_source_family",
+        dataset_name="second-artificial-dataset",
+        version_label="second-static-version-label",
+        record_count=1,
+    )
+
+    with pytest.raises(ValueError, match="manifest_id values must be unique."):
+        ArtificialSourceManifestMetadataCollection(
+            (valid_manifest_metadata(), duplicate_metadata),
+        )
+
+
+def test_artificial_manifest_metadata_collection_rejects_non_manifest_items() -> None:
+    with pytest.raises(
+        TypeError,
+        match="manifests must contain only ArtificialSourceManifestMetadata.",
+    ):
+        ArtificialSourceManifestMetadataCollection(
+            ("not-manifest-metadata",),  # type: ignore[arg-type]
+        )
+
+
+def test_artificial_manifest_metadata_collection_is_immutable() -> None:
+    collection = ArtificialSourceManifestMetadataCollection((valid_manifest_metadata(),))
+
+    with pytest.raises(FrozenInstanceError):
+        collection.manifests = ()  # type: ignore[misc]
+
+
 def test_module_public_symbols_include_artificial_manifest_metadata_shape() -> None:
     assert source_manifest.__all__ == (
         "ArtificialSourceManifestMetadata",
+        "ArtificialSourceManifestMetadataCollection",
         "ArtificialSourceManifestValidationSummary",
     )
     assert (
         source_manifest.ArtificialSourceManifestMetadata
         is ArtificialSourceManifestMetadata
+    )
+    assert (
+        source_manifest.ArtificialSourceManifestMetadataCollection
+        is ArtificialSourceManifestMetadataCollection
     )
     assert (
         source_manifest.ArtificialSourceManifestValidationSummary
@@ -186,10 +285,15 @@ def test_module_public_symbols_include_artificial_manifest_metadata_shape() -> N
 
 def test_root_package_exports_artificial_manifest_metadata() -> None:
     assert "ArtificialSourceManifestMetadata" in carbonfactor_parser.__all__
+    assert "ArtificialSourceManifestMetadataCollection" in carbonfactor_parser.__all__
     assert carbonfactor_parser.ArtificialSourceManifestMetadata is (
         ArtificialSourceManifestMetadata
     )
+    assert carbonfactor_parser.ArtificialSourceManifestMetadataCollection is (
+        ArtificialSourceManifestMetadataCollection
+    )
     assert RootManifestMetadata is ArtificialSourceManifestMetadata
+    assert RootManifestCollection is ArtificialSourceManifestMetadataCollection
 
 
 def test_valid_artificial_manifest_validation_summary_can_be_created() -> None:
