@@ -118,6 +118,25 @@ Run the usual local checks before the final commit:
 
 If no dedicated docs link-check script exists, use a small local reference check for the new document and its index entries, and mention that in the PR notes.
 
+## Documentation Reference Smoke Test Coverage
+
+`tests/test_documentation_map_references.py` currently checks:
+
+- Local `.md` links in `README.md`.
+- Local `.md` links in `docs/index.md`.
+- Local `.md` links inside exact `Related Documents` sections across `docs/*.md`.
+- Filesystem-local deterministic validation.
+- File existence only.
+
+The smoke test intentionally does not check:
+
+- External URL availability.
+- Anchors-only links.
+- Heading anchor targets.
+- Every Markdown link in every document.
+- Documentation style preferences.
+- Remote or network references.
+
 ## Non-Goals
 
 This checklist does not claim:
