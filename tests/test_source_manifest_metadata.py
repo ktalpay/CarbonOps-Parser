@@ -4,6 +4,7 @@ import pytest
 
 import carbonfactor_parser
 from carbonfactor_parser import source_manifest
+from carbonfactor_parser import ArtificialSourceManifestMetadata as RootManifestMetadata
 from carbonfactor_parser.source_manifest import ArtificialSourceManifestMetadata
 
 
@@ -170,6 +171,9 @@ def test_module_public_symbols_include_artificial_manifest_metadata_shape() -> N
     )
 
 
-def test_root_package_does_not_export_manifest_metadata_yet() -> None:
-    assert "ArtificialSourceManifestMetadata" not in carbonfactor_parser.__all__
-    assert not hasattr(carbonfactor_parser, "ArtificialSourceManifestMetadata")
+def test_root_package_exports_artificial_manifest_metadata() -> None:
+    assert "ArtificialSourceManifestMetadata" in carbonfactor_parser.__all__
+    assert carbonfactor_parser.ArtificialSourceManifestMetadata is (
+        ArtificialSourceManifestMetadata
+    )
+    assert RootManifestMetadata is ArtificialSourceManifestMetadata
