@@ -33,6 +33,7 @@
 - [Normalization Test Coverage Recap](normalization-test-coverage-recap.md)
 - [Normalization Deferred Implementation Roadmap](normalization-deferred-implementation-roadmap.md)
 - [Public Roadmap Checkpoint](public-roadmap-checkpoint.md)
+- [Milestone Checkpoint CO-037 To CO-049](milestone-checkpoint-co-037-to-co-049.md)
 - [Repository Navigation Guide](repository-navigation-guide.md)
 - [Review Readiness Checklist](review-readiness-checklist.md)
 - [Documentation Map Consistency Checklist](documentation-map-consistency-checklist.md)

@@ -225,6 +225,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Normalization Test Coverage Recap](docs/normalization-test-coverage-recap.md)
 - [Normalization Deferred Implementation Roadmap](docs/normalization-deferred-implementation-roadmap.md)
 - [Public Roadmap Checkpoint](docs/public-roadmap-checkpoint.md)
+- [Milestone Checkpoint CO-037 To CO-049](docs/milestone-checkpoint-co-037-to-co-049.md)
 - [Repository Navigation Guide](docs/repository-navigation-guide.md)
 - [Review Readiness Checklist](docs/review-readiness-checklist.md)
 - [Documentation Map Consistency Checklist](docs/documentation-map-consistency-checklist.md)
