@@ -1,11 +1,14 @@
 import carbonfactor_parser
 from carbonfactor_parser import (
     ArtificialSourceAcquisitionMetadata,
+    SourceAcquisitionValidationCount,
     SourceAcquisitionValidationIssue,
     SourceAcquisitionValidationResult,
+    SourceAcquisitionValidationSummary,
     create_artificial_source_acquisition_metadata,
     create_source_acquisition_validation_issue,
     create_source_acquisition_validation_result,
+    summarize_source_acquisition_validation_result,
     validate_artificial_source_acquisition_metadata,
 )
 from carbonfactor_parser import source_acquisition
@@ -80,6 +83,28 @@ def test_validation_result_shape_imports_from_root_package() -> None:
     )
 
 
+def test_validation_summary_shape_imports_from_root_package() -> None:
+    assert (
+        SourceAcquisitionValidationSummary
+        is source_acquisition.SourceAcquisitionValidationSummary
+    )
+    assert (
+        carbonfactor_parser.SourceAcquisitionValidationSummary
+        is source_acquisition.SourceAcquisitionValidationSummary
+    )
+
+
+def test_validation_count_shape_imports_from_root_package() -> None:
+    assert (
+        SourceAcquisitionValidationCount
+        is source_acquisition.SourceAcquisitionValidationCount
+    )
+    assert (
+        carbonfactor_parser.SourceAcquisitionValidationCount
+        is source_acquisition.SourceAcquisitionValidationCount
+    )
+
+
 def test_exported_validation_result_factory_creates_artificial_result_shape() -> None:
     issue = create_source_acquisition_validation_issue(
         code="ARTIFICIAL_SOURCE_REQUIRED",
@@ -101,6 +126,30 @@ def test_exported_validation_result_factory_creates_artificial_result_shape() ->
     assert result.is_valid is False
 
 
+def test_exported_summary_helper_creates_artificial_summary_shape() -> None:
+    issue = create_source_acquisition_validation_issue(
+        code="ARTIFICIAL_SOURCE_REQUIRED",
+        message="Artificial source metadata field is required.",
+        category="metadata_shape",
+        severity="error",
+        field_name="logical_source_name",
+    )
+    result = create_source_acquisition_validation_result([issue])
+
+    summary = summarize_source_acquisition_validation_result(result)
+
+    assert summary == SourceAcquisitionValidationSummary(
+        total_issue_count=1,
+        severity_counts=(
+            SourceAcquisitionValidationCount(name="error", count=1),
+        ),
+        category_counts=(
+            SourceAcquisitionValidationCount(name="metadata_shape", count=1),
+        ),
+        is_valid=False,
+    )
+
+
 def test_validation_helper_imports_from_root_package() -> None:
     assert (
         validate_artificial_source_acquisition_metadata
@@ -115,10 +164,13 @@ def test_validation_helper_imports_from_root_package() -> None:
 def test_root_all_lists_source_acquisition_public_symbols_only() -> None:
     assert carbonfactor_parser.__all__ == (
         "ArtificialSourceAcquisitionMetadata",
+        "SourceAcquisitionValidationCount",
         "SourceAcquisitionValidationIssue",
         "SourceAcquisitionValidationResult",
+        "SourceAcquisitionValidationSummary",
         "create_artificial_source_acquisition_metadata",
         "create_source_acquisition_validation_issue",
         "create_source_acquisition_validation_result",
+        "summarize_source_acquisition_validation_result",
         "validate_artificial_source_acquisition_metadata",
     )
