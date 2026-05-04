@@ -254,6 +254,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Artificial Manifest Metadata Phase Recap](docs/artificial-manifest-metadata-phase-recap.md)
 - [Artificial Manifest Next Phase Option Matrix](docs/artificial-manifest-next-phase-option-matrix.md)
 - [Artificial In-Memory Manifest Usage Example](docs/artificial-in-memory-manifest-usage-example.md)
+- [Artificial Manifest Usage Example Phase Recap](docs/artificial-manifest-usage-example-phase-recap.md)
 - [Source Adapter Contract](docs/source-adapter-contract.md)
 - [Source Adapter Execution Flow](docs/source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](docs/source-adapter-error-warning-handling.md)
