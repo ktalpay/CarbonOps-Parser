@@ -4,7 +4,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- No active task currently queued after CO-075A completion.
+- No active task currently queued after CO-075B completion.
 
 ## Next
 
@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-075B: Documented artificial source acquisition phase closure.
 - CO-075A: Added artificial source acquisition README usage snippet.
 - CO-074A: Added artificial source acquisition public API stability test.
 - CO-073A: Documented artificial source acquisition module recap.
