@@ -207,6 +207,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Local Source Acquisition Contract Boundary](docs/local-source-acquisition-contract-boundary.md)
 - [Local Source Acquisition Examples Boundary](docs/local-source-acquisition-examples-boundary.md)
 - [Local Source Manifest Boundary](docs/local-source-manifest-boundary.md)
+- [Local Source Manifest Examples Boundary](docs/local-source-manifest-examples-boundary.md)
 - [Source Adapter Contract](docs/source-adapter-contract.md)
 - [Source Adapter Execution Flow](docs/source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](docs/source-adapter-error-warning-handling.md)
