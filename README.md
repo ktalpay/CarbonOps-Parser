@@ -215,6 +215,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Real Format Parser Boundary](docs/real-format-parser-boundary.md)
 - [Normalization Boundary](docs/normalization-boundary.md)
 - [Parser To Normalization Handoff Boundary](docs/parser-to-normalization-handoff-boundary.md)
+- [Parser To Normalization Integration Recap](docs/parser-to-normalization-integration-recap.md)
 - [Normalization Execution Boundary](docs/normalization-execution-boundary.md)
 - [Normalization Result Summary Boundary](docs/normalization-result-summary-boundary.md)
 - [Normalization Summary Builder Boundary](docs/normalization-summary-builder-boundary.md)

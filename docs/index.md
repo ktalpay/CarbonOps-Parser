@@ -23,6 +23,7 @@
 - [Real Format Parser Boundary](real-format-parser-boundary.md)
 - [Normalization Boundary](normalization-boundary.md)
 - [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md)
+- [Parser To Normalization Integration Recap](parser-to-normalization-integration-recap.md)
 - [Normalization Execution Boundary](normalization-execution-boundary.md)
 - [Normalization Result Summary Boundary](normalization-result-summary-boundary.md)
 - [Normalization Summary Builder Boundary](normalization-summary-builder-boundary.md)
