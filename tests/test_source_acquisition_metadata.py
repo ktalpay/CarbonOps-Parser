@@ -4,6 +4,7 @@ import pytest
 
 from carbonfactor_parser.source_acquisition import (
     ArtificialSourceAcquisitionMetadata,
+    SourceAcquisitionValidationResult,
     create_artificial_source_acquisition_metadata,
     validate_artificial_source_acquisition_metadata,
 )
@@ -36,7 +37,9 @@ def test_valid_artificial_metadata_can_be_created() -> None:
         parser_hint="artificial-parser-hint",
         adapter_hint="artificial-adapter-hint",
     )
-    assert validate_artificial_source_acquisition_metadata(metadata) == []
+    assert validate_artificial_source_acquisition_metadata(
+        metadata,
+    ) == SourceAcquisitionValidationResult()
 
 
 def test_metadata_is_immutable() -> None:
@@ -68,9 +71,9 @@ def test_blank_required_fields_are_rejected(
 ) -> None:
     metadata = replace(valid_metadata(), **{field_name: " "})
 
-    assert validate_artificial_source_acquisition_metadata(metadata) == [
-        expected_issue,
-    ]
+    result = validate_artificial_source_acquisition_metadata(metadata)
+
+    assert [issue.message for issue in result.issues] == [expected_issue]
 
 
 @pytest.mark.parametrize(
@@ -85,7 +88,9 @@ def test_blank_required_fields_are_rejected(
 def test_invalid_checksum_shape_is_rejected(checksum: str) -> None:
     metadata = replace(valid_metadata(), checksum_sha256=checksum)
 
-    assert validate_artificial_source_acquisition_metadata(metadata) == [
+    result = validate_artificial_source_acquisition_metadata(metadata)
+
+    assert [issue.message for issue in result.issues] == [
         "checksum_sha256 must look like 64 hex characters.",
     ]
 
@@ -93,7 +98,9 @@ def test_invalid_checksum_shape_is_rejected(checksum: str) -> None:
 def test_checksum_shape_accepts_uppercase_hex_characters() -> None:
     metadata = replace(valid_metadata(), checksum_sha256="A" * 64)
 
-    assert validate_artificial_source_acquisition_metadata(metadata) == []
+    assert validate_artificial_source_acquisition_metadata(
+        metadata,
+    ) == SourceAcquisitionValidationResult()
 
 
 def test_parser_hint_and_adapter_hint_are_optional() -> None:
@@ -107,7 +114,9 @@ def test_parser_hint_and_adapter_hint_are_optional() -> None:
 
     assert metadata.parser_hint is None
     assert metadata.adapter_hint is None
-    assert validate_artificial_source_acquisition_metadata(metadata) == []
+    assert validate_artificial_source_acquisition_metadata(
+        metadata,
+    ) == SourceAcquisitionValidationResult()
 
 
 @pytest.mark.parametrize(
@@ -123,9 +132,9 @@ def test_blank_parser_hint_and_adapter_hint_are_rejected_when_provided(
 ) -> None:
     metadata = replace(valid_metadata(), **{field_name: " "})
 
-    assert validate_artificial_source_acquisition_metadata(metadata) == [
-        expected_issue,
-    ]
+    result = validate_artificial_source_acquisition_metadata(metadata)
+
+    assert [issue.message for issue in result.issues] == [expected_issue]
 
 
 def test_factory_rejects_invalid_artificial_metadata_shape() -> None:
@@ -160,7 +169,9 @@ def test_logical_source_name_is_label_only() -> None:
     )
 
     assert metadata.logical_source_name == "not/a/filesystem/path.csv"
-    assert validate_artificial_source_acquisition_metadata(metadata) == []
+    assert validate_artificial_source_acquisition_metadata(
+        metadata,
+    ) == SourceAcquisitionValidationResult()
 
 
 def test_module_public_symbols_include_artificial_source_acquisition_shapes() -> None:

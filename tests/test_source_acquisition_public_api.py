@@ -6,6 +6,7 @@ from carbonfactor_parser import (
     create_artificial_source_acquisition_metadata,
     create_source_acquisition_validation_issue,
     create_source_acquisition_validation_result,
+    validate_artificial_source_acquisition_metadata,
 )
 from carbonfactor_parser import source_acquisition
 
@@ -100,6 +101,17 @@ def test_exported_validation_result_factory_creates_artificial_result_shape() ->
     assert result.is_valid is False
 
 
+def test_validation_helper_imports_from_root_package() -> None:
+    assert (
+        validate_artificial_source_acquisition_metadata
+        is source_acquisition.validate_artificial_source_acquisition_metadata
+    )
+    assert (
+        carbonfactor_parser.validate_artificial_source_acquisition_metadata
+        is source_acquisition.validate_artificial_source_acquisition_metadata
+    )
+
+
 def test_root_all_lists_source_acquisition_public_symbols_only() -> None:
     assert carbonfactor_parser.__all__ == (
         "ArtificialSourceAcquisitionMetadata",
@@ -108,4 +120,5 @@ def test_root_all_lists_source_acquisition_public_symbols_only() -> None:
         "create_artificial_source_acquisition_metadata",
         "create_source_acquisition_validation_issue",
         "create_source_acquisition_validation_result",
+        "validate_artificial_source_acquisition_metadata",
     )
