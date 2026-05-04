@@ -80,3 +80,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-049A: Documented documentation map consistency checklist.
 - CO-050A: Documented milestone checkpoint for CO-037 to CO-049.
 - CO-051A: Added documentation map reference smoke test.
+- CO-051B: Expanded documentation reference smoke test to related-doc references.
