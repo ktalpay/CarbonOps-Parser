@@ -4,7 +4,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-058A: Document persistence boundary.
+- No active task currently queued after CO-058A completion.
 
 ## Next
 
@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-058A: Documented production readiness gap analysis.
 - CO-015A: Added local file source adapter skeleton.
 - CO-016A: Added source adapter registry integration example.
 - CO-017A: Documented source adapter execution flow.
