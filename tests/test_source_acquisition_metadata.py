@@ -179,6 +179,7 @@ def test_module_public_symbols_include_artificial_source_acquisition_shapes() ->
 
     assert source_acquisition.__all__ == (
         "ArtificialSourceAcquisitionMetadata",
+        "ArtificialSourceAcquisitionValidationPipelineResult",
         "SourceAcquisitionValidationCount",
         "SourceAcquisitionValidationIssue",
         "SourceAcquisitionValidationResult",
@@ -187,5 +188,6 @@ def test_module_public_symbols_include_artificial_source_acquisition_shapes() ->
         "create_source_acquisition_validation_issue",
         "create_source_acquisition_validation_result",
         "summarize_source_acquisition_validation_result",
+        "validate_and_summarize_artificial_source_acquisition_metadata",
         "validate_artificial_source_acquisition_metadata",
     )

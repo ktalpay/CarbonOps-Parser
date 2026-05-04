@@ -68,6 +68,14 @@ class SourceAcquisitionValidationSummary:
     is_valid: bool
 
 
+@dataclass(frozen=True)
+class ArtificialSourceAcquisitionValidationPipelineResult:
+    """Artificial-only composition of validation result and summary."""
+
+    validation_result: SourceAcquisitionValidationResult
+    summary: SourceAcquisitionValidationSummary
+
+
 def create_artificial_source_acquisition_metadata(
     *,
     source_family: str,
@@ -207,6 +215,20 @@ def summarize_source_acquisition_validation_result(
     )
 
 
+def validate_and_summarize_artificial_source_acquisition_metadata(
+    metadata: ArtificialSourceAcquisitionMetadata,
+) -> ArtificialSourceAcquisitionValidationPipelineResult:
+    """Compose artificial metadata validation and summary helpers."""
+
+    validation_result = validate_artificial_source_acquisition_metadata(metadata)
+    summary = summarize_source_acquisition_validation_result(validation_result)
+
+    return ArtificialSourceAcquisitionValidationPipelineResult(
+        validation_result=validation_result,
+        summary=summary,
+    )
+
+
 def _validate_required_metadata_field(
     value: object,
     field_name: str,
@@ -300,6 +322,7 @@ def _validate_optional_string(
 
 __all__ = (
     "ArtificialSourceAcquisitionMetadata",
+    "ArtificialSourceAcquisitionValidationPipelineResult",
     "SourceAcquisitionValidationCount",
     "SourceAcquisitionValidationIssue",
     "SourceAcquisitionValidationResult",
@@ -308,5 +331,6 @@ __all__ = (
     "create_source_acquisition_validation_issue",
     "create_source_acquisition_validation_result",
     "summarize_source_acquisition_validation_result",
+    "validate_and_summarize_artificial_source_acquisition_metadata",
     "validate_artificial_source_acquisition_metadata",
 )

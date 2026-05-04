@@ -4,7 +4,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- No active task currently queued after CO-070A completion.
+- No active task currently queued after CO-071A completion.
 
 ## Next
 
@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-071A: Added artificial source acquisition validation pipeline helper.
 - CO-070A: Added artificial source acquisition validation summary shape.
 - CO-069B: Added artificial source acquisition metadata validation helper.
 - CO-069A: Added artificial source acquisition validation result shape.
