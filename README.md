@@ -251,6 +251,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Artificial Manifest Validation Summary](docs/artificial-manifest-validation-summary.md)
 - [Artificial Manifest Metadata Collection](docs/artificial-manifest-metadata-collection.md)
 - [Artificial Manifest Collection Validation Summary](docs/artificial-manifest-collection-validation-summary.md)
+- [Artificial Manifest Metadata Phase Recap](docs/artificial-manifest-metadata-phase-recap.md)
 - [Source Adapter Contract](docs/source-adapter-contract.md)
 - [Source Adapter Execution Flow](docs/source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](docs/source-adapter-error-warning-handling.md)
