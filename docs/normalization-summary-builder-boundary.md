@@ -22,6 +22,8 @@ This task adds documentation only. It does not add builder implementation code.
 
 It counts normalized records and normalization issues. It does not perform correctness validation, unit conversion, factor interpretation, persistence, remote access, scheduling, or executor integration.
 
+`examples/example_artificial_normalization_summary_builder_usage.py` shows the builder with a directly constructed artificial `NormalizationResult`. The example performs output-shape counting through the artificial builder only and does not add executor integration, unit conversion, factor correctness, compliance or legal interpretation, persistence, remote access, scheduling, or parser behavior changes.
+
 Current summary examples remain artificial, deterministic, local, and in-memory.
 
 ## Future Builder Responsibilities

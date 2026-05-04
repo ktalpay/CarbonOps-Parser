@@ -67,3 +67,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-038C: Added artificial normalization result summary usage example.
 - CO-039A: Documented normalization summary builder boundary.
 - CO-039B: Added artificial normalization summary builder skeleton.
+- CO-039C: Added artificial normalization summary builder usage example.
