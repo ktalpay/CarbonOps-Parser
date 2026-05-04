@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-056A: Document persistence boundary.
+- CO-057A: Document persistence boundary.
 
 ## Next
 
-- CO-056B: Add persistence contract skeleton.
+- CO-057B: Add persistence contract skeleton.
 
 ## Backlog
 
-- CO-056C: Add persistence boundary usage example.
+- CO-057C: Add persistence boundary usage example.
 
 ## Completed
 
@@ -89,3 +89,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-054B: Documented normalization public API smoke test coverage.
 - CO-055A: Added parser public API export smoke test hardening.
 - CO-055B: Documented parser public API smoke test coverage.
+- CO-056A: Added source adapter public API export smoke test hardening.
