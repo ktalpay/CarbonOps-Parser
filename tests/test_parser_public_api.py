@@ -1,5 +1,14 @@
 import carbonfactor_parser.parsers as parsers
 from carbonfactor_parser.parsers import (
+    contracts,
+    defra_desnz_parser,
+    example_parser,
+    example_source_specific_parser,
+    fixture_parser,
+    input_mapping,
+    pipeline_summary,
+)
+from carbonfactor_parser.parsers import (
     ArtificialFixtureParser,
     DefraDesnzParser,
     ExampleInMemoryParser,
@@ -32,6 +41,26 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "summarize_parser_pipeline",
 )
 
+EXPECTED_PUBLIC_EXPORTS = {
+    "ArtificialFixtureParser": fixture_parser.ArtificialFixtureParser,
+    "DefraDesnzParser": defra_desnz_parser.DefraDesnzParser,
+    "ExampleInMemoryParser": example_parser.ExampleInMemoryParser,
+    "ExampleSourceSpecificParser": (
+        example_source_specific_parser.ExampleSourceSpecificParser
+    ),
+    "ParserInputMapping": input_mapping.ParserInputMapping,
+    "ParserInputMappingEntry": input_mapping.ParserInputMappingEntry,
+    "ParserIssue": contracts.ParserIssue,
+    "ParserIssueSeverity": contracts.ParserIssueSeverity,
+    "ParserPipelineSummary": pipeline_summary.ParserPipelineSummary,
+    "ParserResult": contracts.ParserResult,
+    "ParserResultSummary": contracts.ParserResultSummary,
+    "build_fixture_parser_input_mapping": (
+        input_mapping.build_fixture_parser_input_mapping
+    ),
+    "summarize_parser_pipeline": pipeline_summary.summarize_parser_pipeline,
+}
+
 
 def test_expected_parser_public_symbols_import_from_package() -> None:
     imported_symbols = {
@@ -58,6 +87,12 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
 
 def test_parser_all_lists_expected_public_symbols() -> None:
     assert parsers.__all__ == EXPECTED_PUBLIC_SYMBOLS
+
+
+def test_parser_public_exports_match_origin_modules() -> None:
+    assert {
+        name: getattr(parsers, name) for name in EXPECTED_PUBLIC_SYMBOLS
+    } == EXPECTED_PUBLIC_EXPORTS
 
 
 def test_parser_all_names_resolve_to_package_attributes() -> None:
