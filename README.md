@@ -225,6 +225,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Normalization Test Coverage Recap](docs/normalization-test-coverage-recap.md)
 - [Normalization Deferred Implementation Roadmap](docs/normalization-deferred-implementation-roadmap.md)
 - [Public Roadmap Checkpoint](docs/public-roadmap-checkpoint.md)
+- [Repository Navigation Guide](docs/repository-navigation-guide.md)
 - [Source Adapter Package Recap](docs/source-adapter-package-recap.md)
 - [Roadmap](docs/roadmap.md)
 - [Task Breakdown](docs/task-breakdown.md)
