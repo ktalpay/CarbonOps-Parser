@@ -4,7 +4,6 @@ from carbonfactor_parser.normalization.contracts import (
     NormalizationIssue,
     NormalizationIssueSeverity,
     NormalizationResult,
-    NormalizationResultSummary,
     NormalizedRecord,
 )
 from carbonfactor_parser.normalization.executor import ArtificialNormalizationExecutor
@@ -13,6 +12,7 @@ from carbonfactor_parser.normalization.handoff import (
     ParserNormalizationHandoffEntry,
     build_parser_normalization_handoff,
 )
+from carbonfactor_parser.normalization.summary import NormalizationResultSummary
 
 __all__ = (
     "NormalizationIssue",

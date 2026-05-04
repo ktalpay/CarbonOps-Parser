@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-038A: Document normalization result summary boundary.
+- CO-038C: Add normalization result summary usage example.
 
 ## Next
 
-- CO-038B: Add normalization result summary helper.
+- CO-039A: Add normalization result validation helper.
 
 ## Backlog
 
-- CO-039A: Add normalization result validation helper.
+- CO-039B: Add parser result validation helper.
 
 ## Completed
 
@@ -62,3 +62,5 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-037A: Documented normalization execution boundary.
 - CO-037B: Added artificial normalization executor skeleton.
 - CO-037C: Added artificial normalization executor usage example.
+- CO-038A: Documented normalization result summary boundary.
+- CO-038B: Added artificial normalization result summary model.
