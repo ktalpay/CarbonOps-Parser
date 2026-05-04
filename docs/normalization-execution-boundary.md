@@ -10,6 +10,8 @@ Future normalization execution should be added only in later explicit tasks. Thi
 
 `ArtificialNormalizationExecutor` now provides a small boundary skeleton that maps `ParserNormalizationHandoff` entries into artificial `NormalizedRecord` objects. It is not real normalization logic.
 
+See `examples/example_artificial_normalization_executor_usage.py` for a deterministic in-memory usage example of the artificial executor boundary.
+
 ## Future Normalization Execution Scope
 
 Future normalization execution may later:
@@ -92,6 +94,8 @@ The artificial executor skeleton intentionally defers:
 - Retry or cancel behavior.
 - Downloading or remote access.
 - Config loading.
+
+The usage example is also only a boundary example. It does not change deferred items or add real normalization behavior.
 
 ## Future Task Sequencing
 
