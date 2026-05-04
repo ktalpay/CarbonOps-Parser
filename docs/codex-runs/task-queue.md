@@ -90,3 +90,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-055A: Added parser public API export smoke test hardening.
 - CO-055B: Documented parser public API smoke test coverage.
 - CO-056A: Added source adapter public API export smoke test hardening.
+- CO-056B: Documented source adapter public API smoke test coverage.

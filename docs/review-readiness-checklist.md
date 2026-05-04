@@ -164,6 +164,32 @@ It intentionally does not check:
 - Source adapter behavior.
 - Normalization behavior.
 
+## Source Adapter Public API Smoke Test Coverage
+
+`tests/test_source_adapter_public_api.py` is an import/export smoke test for the source adapter package public surface.
+
+It currently checks:
+
+- Expected source adapter package export names.
+- Package exports against their originating module objects.
+- Import/export drift for the public source adapter package surface.
+
+It intentionally does not check:
+
+- Source adapter runtime behavior.
+- Real source data.
+- File I/O.
+- Config loading.
+- Database or persistence behavior.
+- Scheduler behavior.
+- Retry or cancel behavior.
+- Remote access.
+- Unit conversion.
+- Factor correctness.
+- Compliance or legal interpretation.
+- Parser behavior.
+- Normalization behavior.
+
 ## Public Safety Review
 
 Public safety review should confirm:
