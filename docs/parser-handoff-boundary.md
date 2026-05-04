@@ -28,6 +28,8 @@ See `examples/fixture_parser_pipeline_example.py` for a fixture-only example of 
 
 See [Normalization Boundary](normalization-boundary.md) before treating parser output as input to future normalized record work.
 
+See [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md) before adding parser-output-to-normalization-result mapping behavior.
+
 ## Inputs To A Future Parser Boundary
 
 Conservative handoff inputs may include:

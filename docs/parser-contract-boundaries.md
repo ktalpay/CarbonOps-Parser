@@ -42,6 +42,8 @@ See [Normalization Boundary](normalization-boundary.md) before adding parser-to-
 
 The normalization package now exposes source-agnostic normalization result contracts for later handoff work, without changing parser contracts.
 
+See [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md) before adding code that maps `ParserResult` into `NormalizationResult`.
+
 ## Future Parser Contract Responsibility
 
 A future parser contract may represent:

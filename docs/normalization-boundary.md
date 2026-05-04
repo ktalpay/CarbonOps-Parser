@@ -12,6 +12,8 @@ Normalization contracts and implementation should be added only in later explici
 
 See `examples/normalization_contract_example.py` for an in-memory normalization contract usage example.
 
+See [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md) before adding code that maps parser output into normalization result shapes.
+
 ## What Parser Output Represents
 
 `ParserResult` contains parsed or artificial records plus parser-level issues.
