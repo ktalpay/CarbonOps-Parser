@@ -149,6 +149,30 @@ summary = create_ingestion_run_summary(
 summary_issues = validate_ingestion_run_summary(summary)
 ```
 
+Use the artificial-only source acquisition validation pipeline with in-memory metadata:
+
+```python
+from carbonfactor_parser import (
+    create_artificial_source_acquisition_metadata,
+    validate_and_summarize_artificial_source_acquisition_metadata,
+)
+
+metadata = create_artificial_source_acquisition_metadata(
+    source_family="artificial_source_acquisition",
+    logical_source_name="artificial-in-memory-source",
+    declared_content_type="text/csv",
+    checksum_sha256="a" * 64,
+    acquired_at_label="static-artificial-acquisition-label",
+)
+
+pipeline_result = validate_and_summarize_artificial_source_acquisition_metadata(
+    metadata,
+)
+issue_count = pipeline_result.summary.total_issue_count
+```
+
+This pipeline is limited to artificial metadata shape checks and deterministic summaries. It does not acquire real sources, read files, validate real source URLs, run parsers or normalization, check factor correctness, or provide compliance/legal or carbon accounting correctness. See [docs/artificial-source-acquisition-validation-pipeline.md](docs/artificial-source-acquisition-validation-pipeline.md), [docs/artificial-source-acquisition-module-recap.md](docs/artificial-source-acquisition-module-recap.md), and [examples/example_artificial_source_acquisition_validation_pipeline.py](examples/example_artificial_source_acquisition_validation_pipeline.py).
+
 ## Source Support
 
 Each Phase 1 source family will have its own schedule, source version/hash check, parser, validation rules, archive layout, and source-specific tables.
