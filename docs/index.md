@@ -11,6 +11,7 @@
 - [Source Discovery](source-discovery.md)
 - [Source Ingestion Boundaries](source-ingestion-boundaries.md)
 - [Source Acquisition Boundary](source-acquisition-boundary.md)
+- [Source Acquisition Sequencing Checklist](source-acquisition-sequencing-checklist.md)
 - [Source Adapter Contract](source-adapter-contract.md)
 - [Source Adapter Execution Flow](source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](source-adapter-error-warning-handling.md)
