@@ -221,6 +221,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Source Acquisition Implementation Sequencing Checklist](docs/source-acquisition-implementation-sequencing-checklist.md)
 - [Source Acquisition Implementation Sequencing Examples Boundary](docs/source-acquisition-implementation-sequencing-examples-boundary.md)
 - [Artificial Source Acquisition Validation Pipeline](docs/artificial-source-acquisition-validation-pipeline.md)
+- [Artificial Source Acquisition Module Recap](docs/artificial-source-acquisition-module-recap.md)
 - [Source Adapter Contract](docs/source-adapter-contract.md)
 - [Source Adapter Execution Flow](docs/source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](docs/source-adapter-error-warning-handling.md)
