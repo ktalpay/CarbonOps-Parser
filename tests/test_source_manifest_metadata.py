@@ -3,9 +3,15 @@ from dataclasses import FrozenInstanceError
 import pytest
 
 import carbonfactor_parser
+from carbonfactor_parser import (
+    ArtificialSourceManifestValidationSummary as RootManifestValidationSummary,
+)
 from carbonfactor_parser import source_manifest
 from carbonfactor_parser import ArtificialSourceManifestMetadata as RootManifestMetadata
-from carbonfactor_parser.source_manifest import ArtificialSourceManifestMetadata
+from carbonfactor_parser.source_manifest import (
+    ArtificialSourceManifestMetadata,
+    ArtificialSourceManifestValidationSummary,
+)
 
 
 def valid_manifest_metadata() -> ArtificialSourceManifestMetadata:
@@ -164,10 +170,17 @@ def test_dataset_name_is_artificial_label_only() -> None:
 
 
 def test_module_public_symbols_include_artificial_manifest_metadata_shape() -> None:
-    assert source_manifest.__all__ == ("ArtificialSourceManifestMetadata",)
+    assert source_manifest.__all__ == (
+        "ArtificialSourceManifestMetadata",
+        "ArtificialSourceManifestValidationSummary",
+    )
     assert (
         source_manifest.ArtificialSourceManifestMetadata
         is ArtificialSourceManifestMetadata
+    )
+    assert (
+        source_manifest.ArtificialSourceManifestValidationSummary
+        is ArtificialSourceManifestValidationSummary
     )
 
 
@@ -177,3 +190,101 @@ def test_root_package_exports_artificial_manifest_metadata() -> None:
         ArtificialSourceManifestMetadata
     )
     assert RootManifestMetadata is ArtificialSourceManifestMetadata
+
+
+def test_valid_artificial_manifest_validation_summary_can_be_created() -> None:
+    summary = ArtificialSourceManifestValidationSummary(
+        manifest_id="artificial-manifest-001",
+        source_family="artificial_source_acquisition",
+        dataset_name="artificial-dataset",
+        issue_count=0,
+        is_valid=True,
+    )
+
+    assert summary.manifest_id == "artificial-manifest-001"
+    assert summary.source_family == "artificial_source_acquisition"
+    assert summary.dataset_name == "artificial-dataset"
+    assert summary.issue_count == 0
+    assert summary.is_valid is True
+
+
+def test_artificial_manifest_validation_summary_is_immutable() -> None:
+    summary = ArtificialSourceManifestValidationSummary(
+        manifest_id="artificial-manifest-001",
+        source_family="artificial_source_acquisition",
+        dataset_name="artificial-dataset",
+        issue_count=0,
+        is_valid=True,
+    )
+
+    with pytest.raises(FrozenInstanceError):
+        summary.issue_count = 1  # type: ignore[misc]
+
+
+def test_validation_summary_from_metadata_with_no_issues_is_valid() -> None:
+    summary = ArtificialSourceManifestValidationSummary.from_metadata(
+        valid_manifest_metadata(),
+        issue_count=0,
+    )
+
+    assert summary == ArtificialSourceManifestValidationSummary(
+        manifest_id="artificial-manifest-001",
+        source_family="artificial_source_acquisition",
+        dataset_name="artificial-dataset",
+        issue_count=0,
+        is_valid=True,
+    )
+
+
+def test_validation_summary_from_metadata_with_issues_is_invalid() -> None:
+    summary = ArtificialSourceManifestValidationSummary.from_metadata(
+        valid_manifest_metadata(),
+        issue_count=2,
+    )
+
+    assert summary.issue_count == 2
+    assert summary.is_valid is False
+
+
+def test_validation_summary_rejects_negative_issue_count() -> None:
+    with pytest.raises(
+        ValueError,
+        match="issue_count must be a non-negative integer.",
+    ):
+        ArtificialSourceManifestValidationSummary(
+            manifest_id="artificial-manifest-001",
+            source_family="artificial_source_acquisition",
+            dataset_name="artificial-dataset",
+            issue_count=-1,
+            is_valid=False,
+        )
+
+
+def test_validation_summary_factory_rejects_negative_issue_count() -> None:
+    with pytest.raises(
+        ValueError,
+        match="issue_count must be a non-negative integer.",
+    ):
+        ArtificialSourceManifestValidationSummary.from_metadata(
+            valid_manifest_metadata(),
+            issue_count=-1,
+        )
+
+
+def test_validation_summary_factory_rejects_non_manifest_metadata() -> None:
+    with pytest.raises(
+        TypeError,
+        match="metadata must be an ArtificialSourceManifestMetadata.",
+    ):
+        ArtificialSourceManifestValidationSummary.from_metadata(  # type: ignore[arg-type]
+            object(),
+            issue_count=0,
+        )
+
+
+def test_root_package_exports_artificial_manifest_validation_summary() -> None:
+    assert "ArtificialSourceManifestValidationSummary" in carbonfactor_parser.__all__
+    assert carbonfactor_parser.ArtificialSourceManifestValidationSummary is (
+        ArtificialSourceManifestValidationSummary
+    )
+    assert RootManifestValidationSummary is ArtificialSourceManifestValidationSummary
