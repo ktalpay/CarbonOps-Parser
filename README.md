@@ -209,6 +209,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Local Source Manifest Boundary](docs/local-source-manifest-boundary.md)
 - [Local Source Manifest Examples Boundary](docs/local-source-manifest-examples-boundary.md)
 - [Source Manifest Adapter Handoff Boundary](docs/source-manifest-adapter-handoff-boundary.md)
+- [Source Manifest Adapter Handoff Examples Boundary](docs/source-manifest-adapter-handoff-examples-boundary.md)
 - [Source Adapter Contract](docs/source-adapter-contract.md)
 - [Source Adapter Execution Flow](docs/source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](docs/source-adapter-error-warning-handling.md)

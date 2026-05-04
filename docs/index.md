@@ -17,6 +17,7 @@
 - [Local Source Manifest Boundary](local-source-manifest-boundary.md)
 - [Local Source Manifest Examples Boundary](local-source-manifest-examples-boundary.md)
 - [Source Manifest Adapter Handoff Boundary](source-manifest-adapter-handoff-boundary.md)
+- [Source Manifest Adapter Handoff Examples Boundary](source-manifest-adapter-handoff-examples-boundary.md)
 - [Source Adapter Contract](source-adapter-contract.md)
 - [Source Adapter Execution Flow](source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](source-adapter-error-warning-handling.md)
