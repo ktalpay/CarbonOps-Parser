@@ -13,6 +13,9 @@ from carbonfactor_parser.normalization.handoff import (
     build_parser_normalization_handoff,
 )
 from carbonfactor_parser.normalization.summary import NormalizationResultSummary
+from carbonfactor_parser.normalization.summary_builder import (
+    ArtificialNormalizationSummaryBuilder,
+)
 
 __all__ = (
     "NormalizationIssue",
@@ -21,6 +24,7 @@ __all__ = (
     "NormalizationResultSummary",
     "NormalizedRecord",
     "ArtificialNormalizationExecutor",
+    "ArtificialNormalizationSummaryBuilder",
     "ParserNormalizationHandoff",
     "ParserNormalizationHandoffEntry",
     "build_parser_normalization_handoff",

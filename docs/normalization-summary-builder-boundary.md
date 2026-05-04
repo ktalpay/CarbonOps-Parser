@@ -18,7 +18,9 @@ This task adds documentation only. It does not add builder implementation code.
 
 `examples/example_normalization_result_summary_usage.py` constructs `NormalizationResultSummary` directly with artificial values. It does not compute a summary from `NormalizationResult`.
 
-No normalization summary builder exists yet.
+`ArtificialNormalizationSummaryBuilder` now exists as a small skeleton that converts an already-computed `NormalizationResult` into `NormalizationResultSummary` with output-shape counts only.
+
+It counts normalized records and normalization issues. It does not perform correctness validation, unit conversion, factor interpretation, persistence, remote access, scheduling, or executor integration.
 
 Current summary examples remain artificial, deterministic, local, and in-memory.
 
@@ -71,7 +73,6 @@ A future summary builder should only inspect a `NormalizationResult` after execu
 
 The normalization summary builder boundary intentionally defers:
 
-- Summary builder implementation.
 - Executor integration.
 - Aggregation semantics beyond simple output-shape counting.
 - Unit conversion.
@@ -91,7 +92,6 @@ The normalization summary builder boundary intentionally defers:
 
 Future normalization summary builder PRs should confirm:
 
-- Builder implementation is explicitly scoped.
 - The builder consumes already-computed `NormalizationResult` objects only.
 - The builder returns `NormalizationResultSummary`.
 - Any aggregation remains limited to simple output-shape counts unless explicitly scoped.
@@ -109,7 +109,7 @@ Future normalization summary builder PRs should confirm:
 ```mermaid
 flowchart LR
     result["NormalizationResult"]
-    builder["FutureNormalizationSummaryBuilder"]
+    builder["ArtificialNormalizationSummaryBuilder"]
     summary["NormalizationResultSummary"]
     persistence["FuturePersistenceBoundary"]
 
