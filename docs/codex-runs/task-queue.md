@@ -4,7 +4,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- No active task currently queued after CO-081A completion.
+- No active task currently queued after CO-081B completion.
 
 ## Next
 
@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-081B: Added artificial in-memory manifest usage example.
 - CO-081A: Documented artificial manifest next-phase option matrix.
 - CO-080A: Documented artificial manifest metadata phase recap.
 - CO-079B: Documented artificial manifest collection validation summary boundary.
