@@ -4,7 +4,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- No active task currently queued after CO-075B completion.
+- No active task currently queued after CO-076A completion.
 
 ## Next
 
@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-076A: Added artificial manifest metadata model shape with root public API export deferred.
 - CO-075B: Documented artificial source acquisition phase closure.
 - CO-075A: Added artificial source acquisition README usage snippet.
 - CO-074A: Added artificial source acquisition public API stability test.
