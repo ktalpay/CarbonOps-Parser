@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-051A: Document persistence boundary.
+- CO-052A: Document persistence boundary.
 
 ## Next
 
-- CO-051B: Add persistence contract skeleton.
+- CO-052B: Add persistence contract skeleton.
 
 ## Backlog
 
-- CO-051C: Add persistence boundary usage example.
+- CO-052C: Add persistence boundary usage example.
 
 ## Completed
 
@@ -79,3 +79,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-048A: Documented review readiness checklist.
 - CO-049A: Documented documentation map consistency checklist.
 - CO-050A: Documented milestone checkpoint for CO-037 to CO-049.
+- CO-051A: Added documentation map reference smoke test.
