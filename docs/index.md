@@ -28,6 +28,7 @@
 - [Normalization Summary Builder Boundary](normalization-summary-builder-boundary.md)
 - [Normalization Pipeline Recap](normalization-pipeline-recap.md)
 - [Normalization Public API Recap](normalization-public-api-recap.md)
+- [Normalization Test Coverage Recap](normalization-test-coverage-recap.md)
 - [Source Adapter Package Recap](source-adapter-package-recap.md)
 - [Roadmap](roadmap.md)
 - [Task Breakdown](task-breakdown.md)
