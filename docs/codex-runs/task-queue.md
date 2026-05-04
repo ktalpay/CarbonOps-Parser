@@ -4,11 +4,11 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-036A: Document parser-to-normalization handoff boundary.
+- CO-036B: Add parser-to-normalization handoff model skeleton.
 
 ## Next
 
-- CO-036B: Add parser-to-normalization handoff model skeleton.
+- CO-036C: Add parser-to-normalization handoff usage example.
 
 ## Backlog
 
@@ -56,3 +56,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-035A: Documented normalization boundary.
 - CO-035B: Added normalization contract skeleton.
 - CO-035C: Added normalization contract usage example.
+- CO-036A: Documented parser-to-normalization handoff boundary.

@@ -14,6 +14,8 @@ See `examples/normalization_contract_example.py` for an in-memory normalization 
 
 See [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md) before adding code that maps parser output into normalization result shapes.
 
+The current parser-to-normalization handoff model records parser output metadata for future normalization input without executing normalization.
+
 ## What Parser Output Represents
 
 `ParserResult` contains parsed or artificial records plus parser-level issues.
