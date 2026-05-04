@@ -12,6 +12,8 @@ No parser-to-normalization handoff implementation exists yet.
 
 `ParserNormalizationHandoff`, `ParserNormalizationHandoffEntry`, and `build_parser_normalization_handoff()` now provide a minimal source-agnostic handoff model for already-computed parser result metadata. They do not execute normalization or convert values.
 
+See `examples/parser_normalization_handoff_example.py` for an in-memory parser-to-normalization handoff usage example.
+
 ## What ParserResult Provides
 
 `ParserResult` may provide:

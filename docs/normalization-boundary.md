@@ -16,6 +16,8 @@ See [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-b
 
 The current parser-to-normalization handoff model records parser output metadata for future normalization input without executing normalization.
 
+See `examples/parser_normalization_handoff_example.py` for a deterministic in-memory handoff example.
+
 ## What Parser Output Represents
 
 `ParserResult` contains parsed or artificial records plus parser-level issues.
