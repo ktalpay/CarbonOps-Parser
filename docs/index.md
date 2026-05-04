@@ -24,6 +24,7 @@
 - [Source Acquisition Error Taxonomy Examples Boundary](source-acquisition-error-taxonomy-examples-boundary.md)
 - [Source Acquisition Review Gate Boundary](source-acquisition-review-gate-boundary.md)
 - [Source Acquisition Review Gate Examples Boundary](source-acquisition-review-gate-examples-boundary.md)
+- [Source Acquisition Implementation Readiness Boundary](source-acquisition-implementation-readiness-boundary.md)
 - [Source Adapter Contract](source-adapter-contract.md)
 - [Source Adapter Execution Flow](source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](source-adapter-error-warning-handling.md)
