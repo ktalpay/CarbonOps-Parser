@@ -229,6 +229,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Governance Smoke Test Checkpoint](docs/governance-smoke-test-checkpoint.md)
 - [Stabilization Checkpoint](docs/stabilization-checkpoint.md)
 - [Production Readiness Gap Analysis](docs/production-readiness-gap-analysis.md)
+- [Production Readiness Sequencing Roadmap](docs/production-readiness-sequencing-roadmap.md)
 - [Repository Navigation Guide](docs/repository-navigation-guide.md)
 - [Review Readiness Checklist](docs/review-readiness-checklist.md)
 - [Documentation Map Consistency Checklist](docs/documentation-map-consistency-checklist.md)
