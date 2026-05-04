@@ -33,6 +33,22 @@ EXPECTED_SOURCE_ACQUISITION_PUBLIC_API = (
     "validate_artificial_source_acquisition_metadata",
 )
 
+EXPECTED_ROOT_PUBLIC_API = (
+    "ArtificialSourceAcquisitionMetadata",
+    "ArtificialSourceManifestMetadata",
+    "ArtificialSourceAcquisitionValidationPipelineResult",
+    "SourceAcquisitionValidationCount",
+    "SourceAcquisitionValidationIssue",
+    "SourceAcquisitionValidationResult",
+    "SourceAcquisitionValidationSummary",
+    "create_artificial_source_acquisition_metadata",
+    "create_source_acquisition_validation_issue",
+    "create_source_acquisition_validation_result",
+    "summarize_source_acquisition_validation_result",
+    "validate_and_summarize_artificial_source_acquisition_metadata",
+    "validate_artificial_source_acquisition_metadata",
+)
+
 
 def test_artificial_metadata_model_imports_from_root_package() -> None:
     assert (
@@ -200,7 +216,6 @@ def test_exported_pipeline_helper_composes_artificial_shapes() -> None:
 
 
 def test_artificial_source_acquisition_public_api_is_stable() -> None:
-    assert carbonfactor_parser.__all__ == EXPECTED_SOURCE_ACQUISITION_PUBLIC_API
     assert source_acquisition.__all__ == EXPECTED_SOURCE_ACQUISITION_PUBLIC_API
 
     for name in EXPECTED_SOURCE_ACQUISITION_PUBLIC_API:
@@ -219,4 +234,4 @@ def test_validation_helper_imports_from_root_package() -> None:
 
 
 def test_root_all_lists_source_acquisition_public_symbols_only() -> None:
-    assert carbonfactor_parser.__all__ == EXPECTED_SOURCE_ACQUISITION_PUBLIC_API
+    assert carbonfactor_parser.__all__ == EXPECTED_ROOT_PUBLIC_API
