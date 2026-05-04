@@ -21,6 +21,7 @@
 - [Source Acquisition Validation Boundary](source-acquisition-validation-boundary.md)
 - [Source Acquisition Validation Examples Boundary](source-acquisition-validation-examples-boundary.md)
 - [Source Acquisition Error Taxonomy Boundary](source-acquisition-error-taxonomy-boundary.md)
+- [Source Acquisition Error Taxonomy Examples Boundary](source-acquisition-error-taxonomy-examples-boundary.md)
 - [Source Adapter Contract](source-adapter-contract.md)
 - [Source Adapter Execution Flow](source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](source-adapter-error-warning-handling.md)
