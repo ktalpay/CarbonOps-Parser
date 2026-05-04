@@ -219,6 +219,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Source Acquisition Implementation Readiness Boundary](docs/source-acquisition-implementation-readiness-boundary.md)
 - [Source Acquisition Implementation Readiness Examples Boundary](docs/source-acquisition-implementation-readiness-examples-boundary.md)
 - [Source Acquisition Implementation Sequencing Checklist](docs/source-acquisition-implementation-sequencing-checklist.md)
+- [Source Acquisition Implementation Sequencing Examples Boundary](docs/source-acquisition-implementation-sequencing-examples-boundary.md)
 - [Source Adapter Contract](docs/source-adapter-contract.md)
 - [Source Adapter Execution Flow](docs/source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](docs/source-adapter-error-warning-handling.md)
