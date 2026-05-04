@@ -15,6 +15,7 @@ from carbonfactor_parser.source_acquisition import (
     validate_artificial_source_acquisition_metadata,
 )
 from carbonfactor_parser.source_manifest import (
+    ArtificialSourceManifestCollectionValidationSummary,
     ArtificialSourceManifestMetadata,
     ArtificialSourceManifestMetadataCollection,
     ArtificialSourceManifestValidationSummary,
@@ -24,6 +25,7 @@ __all__ = (
     "ArtificialSourceAcquisitionMetadata",
     "ArtificialSourceManifestMetadata",
     "ArtificialSourceManifestMetadataCollection",
+    "ArtificialSourceManifestCollectionValidationSummary",
     "ArtificialSourceManifestValidationSummary",
     "ArtificialSourceAcquisitionValidationPipelineResult",
     "SourceAcquisitionValidationCount",

@@ -4,12 +4,14 @@ import pytest
 
 import carbonfactor_parser
 from carbonfactor_parser import (
+    ArtificialSourceManifestCollectionValidationSummary as RootCollectionValidationSummary,
     ArtificialSourceManifestMetadata as RootManifestMetadata,
     ArtificialSourceManifestMetadataCollection as RootManifestCollection,
     ArtificialSourceManifestValidationSummary as RootManifestValidationSummary,
 )
 from carbonfactor_parser import source_manifest
 from carbonfactor_parser.source_manifest import (
+    ArtificialSourceManifestCollectionValidationSummary,
     ArtificialSourceManifestMetadata,
     ArtificialSourceManifestMetadataCollection,
     ArtificialSourceManifestValidationSummary,
@@ -36,6 +38,16 @@ def second_manifest_metadata() -> ArtificialSourceManifestMetadata:
         version_label="second-static-version-label",
         record_count=1,
         notes=("second-artificial-note",),
+    )
+
+
+def third_manifest_metadata() -> ArtificialSourceManifestMetadata:
+    return ArtificialSourceManifestMetadata(
+        manifest_id="artificial-manifest-003",
+        source_family="artificial_source_acquisition",
+        dataset_name="third-artificial-dataset",
+        version_label="third-static-version-label",
+        record_count=3,
     )
 
 
@@ -267,6 +279,7 @@ def test_module_public_symbols_include_artificial_manifest_metadata_shape() -> N
     assert source_manifest.__all__ == (
         "ArtificialSourceManifestMetadata",
         "ArtificialSourceManifestMetadataCollection",
+        "ArtificialSourceManifestCollectionValidationSummary",
         "ArtificialSourceManifestValidationSummary",
     )
     assert (
@@ -278,6 +291,10 @@ def test_module_public_symbols_include_artificial_manifest_metadata_shape() -> N
         is ArtificialSourceManifestMetadataCollection
     )
     assert (
+        source_manifest.ArtificialSourceManifestCollectionValidationSummary
+        is ArtificialSourceManifestCollectionValidationSummary
+    )
+    assert (
         source_manifest.ArtificialSourceManifestValidationSummary
         is ArtificialSourceManifestValidationSummary
     )
@@ -286,14 +303,159 @@ def test_module_public_symbols_include_artificial_manifest_metadata_shape() -> N
 def test_root_package_exports_artificial_manifest_metadata() -> None:
     assert "ArtificialSourceManifestMetadata" in carbonfactor_parser.__all__
     assert "ArtificialSourceManifestMetadataCollection" in carbonfactor_parser.__all__
+    assert (
+        "ArtificialSourceManifestCollectionValidationSummary"
+        in carbonfactor_parser.__all__
+    )
     assert carbonfactor_parser.ArtificialSourceManifestMetadata is (
         ArtificialSourceManifestMetadata
     )
     assert carbonfactor_parser.ArtificialSourceManifestMetadataCollection is (
         ArtificialSourceManifestMetadataCollection
     )
+    assert carbonfactor_parser.ArtificialSourceManifestCollectionValidationSummary is (
+        ArtificialSourceManifestCollectionValidationSummary
+    )
     assert RootManifestMetadata is ArtificialSourceManifestMetadata
     assert RootManifestCollection is ArtificialSourceManifestMetadataCollection
+    assert (
+        RootCollectionValidationSummary
+        is ArtificialSourceManifestCollectionValidationSummary
+    )
+
+
+def test_valid_artificial_manifest_collection_validation_summary_can_be_created() -> None:
+    summary = ArtificialSourceManifestCollectionValidationSummary(
+        manifest_count=2,
+        unique_source_family_count=1,
+        issue_count=0,
+        is_valid=True,
+    )
+
+    assert summary.manifest_count == 2
+    assert summary.unique_source_family_count == 1
+    assert summary.issue_count == 0
+    assert summary.is_valid is True
+
+
+def test_artificial_manifest_collection_validation_summary_is_immutable() -> None:
+    summary = ArtificialSourceManifestCollectionValidationSummary(
+        manifest_count=1,
+        unique_source_family_count=1,
+        issue_count=0,
+        is_valid=True,
+    )
+
+    with pytest.raises(FrozenInstanceError):
+        summary.issue_count = 1  # type: ignore[misc]
+
+
+def test_collection_validation_summary_from_empty_collection_is_valid() -> None:
+    summary = ArtificialSourceManifestCollectionValidationSummary.from_collection(
+        ArtificialSourceManifestMetadataCollection(),
+        issue_count=0,
+    )
+
+    assert summary == ArtificialSourceManifestCollectionValidationSummary(
+        manifest_count=0,
+        unique_source_family_count=0,
+        issue_count=0,
+        is_valid=True,
+    )
+
+
+def test_collection_validation_summary_from_one_manifest_is_valid() -> None:
+    collection = ArtificialSourceManifestMetadataCollection((valid_manifest_metadata(),))
+
+    summary = ArtificialSourceManifestCollectionValidationSummary.from_collection(
+        collection,
+        issue_count=0,
+    )
+
+    assert summary == ArtificialSourceManifestCollectionValidationSummary(
+        manifest_count=1,
+        unique_source_family_count=1,
+        issue_count=0,
+        is_valid=True,
+    )
+
+
+def test_collection_validation_summary_counts_unique_source_families() -> None:
+    collection = ArtificialSourceManifestMetadataCollection(
+        (
+            valid_manifest_metadata(),
+            second_manifest_metadata(),
+            third_manifest_metadata(),
+        ),
+    )
+
+    summary = ArtificialSourceManifestCollectionValidationSummary.from_collection(
+        collection,
+        issue_count=0,
+    )
+
+    assert summary.manifest_count == 3
+    assert summary.unique_source_family_count == 2
+    assert summary.issue_count == 0
+    assert summary.is_valid is True
+
+
+def test_collection_validation_summary_from_collection_with_issues_is_invalid() -> None:
+    collection = ArtificialSourceManifestMetadataCollection((valid_manifest_metadata(),))
+
+    summary = ArtificialSourceManifestCollectionValidationSummary.from_collection(
+        collection,
+        issue_count=2,
+    )
+
+    assert summary.manifest_count == 1
+    assert summary.unique_source_family_count == 1
+    assert summary.issue_count == 2
+    assert summary.is_valid is False
+
+
+@pytest.mark.parametrize(
+    "field_name",
+    ["manifest_count", "unique_source_family_count", "issue_count"],
+)
+def test_collection_validation_summary_rejects_negative_counts(
+    field_name: str,
+) -> None:
+    values = {
+        "manifest_count": 0,
+        "unique_source_family_count": 0,
+        "issue_count": 0,
+        "is_valid": True,
+    }
+    values[field_name] = -1
+
+    with pytest.raises(
+        ValueError,
+        match=f"{field_name} must be a non-negative integer.",
+    ):
+        ArtificialSourceManifestCollectionValidationSummary(**values)
+
+
+def test_collection_validation_summary_factory_rejects_negative_issue_count() -> None:
+    with pytest.raises(
+        ValueError,
+        match="issue_count must be a non-negative integer.",
+    ):
+        ArtificialSourceManifestCollectionValidationSummary.from_collection(
+            ArtificialSourceManifestMetadataCollection(),
+            issue_count=-1,
+        )
+
+
+def test_collection_validation_summary_factory_rejects_non_collection() -> None:
+    with pytest.raises(
+        TypeError,
+        match="collection must be an ArtificialSourceManifestMetadataCollection.",
+    ):
+        ArtificialSourceManifestCollectionValidationSummary.from_collection(
+            valid_manifest_metadata(),  # type: ignore[arg-type]
+            issue_count=0,
+        )
 
 
 def test_valid_artificial_manifest_validation_summary_can_be_created() -> None:
