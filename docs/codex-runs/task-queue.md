@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-040A: Document persistence boundary.
+- CO-041A: Document persistence boundary.
 
 ## Next
 
-- CO-040B: Add persistence contract skeleton.
+- CO-041B: Add persistence contract skeleton.
 
 ## Backlog
 
-- CO-040C: Add persistence boundary usage example.
+- CO-041C: Add persistence boundary usage example.
 
 ## Completed
 
@@ -68,3 +68,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-039A: Documented normalization summary builder boundary.
 - CO-039B: Added artificial normalization summary builder skeleton.
 - CO-039C: Added artificial normalization summary builder usage example.
+- CO-040A: Documented normalization pipeline recap.
