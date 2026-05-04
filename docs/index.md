@@ -13,6 +13,7 @@
 - [Source Acquisition Boundary](source-acquisition-boundary.md)
 - [Source Acquisition Sequencing Checklist](source-acquisition-sequencing-checklist.md)
 - [Local Source Acquisition Contract Boundary](local-source-acquisition-contract-boundary.md)
+- [Local Source Acquisition Examples Boundary](local-source-acquisition-examples-boundary.md)
 - [Source Adapter Contract](source-adapter-contract.md)
 - [Source Adapter Execution Flow](source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](source-adapter-error-warning-handling.md)
