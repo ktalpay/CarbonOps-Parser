@@ -138,6 +138,32 @@ It intentionally does not check:
 - Parser behavior.
 - Normalization correctness.
 
+## Parser Public API Smoke Test Coverage
+
+`tests/test_parser_public_api.py` is an import/export smoke test for the parser package public surface.
+
+It currently checks:
+
+- Expected parser package export names.
+- Package exports against their originating module objects.
+- Import/export drift for the public parser package surface.
+
+It intentionally does not check:
+
+- Parser runtime behavior.
+- Real source data.
+- File I/O.
+- Config loading.
+- Database or persistence behavior.
+- Scheduler behavior.
+- Retry or cancel behavior.
+- Remote access.
+- Unit conversion.
+- Factor correctness.
+- Compliance or legal interpretation.
+- Source adapter behavior.
+- Normalization behavior.
+
 ## Public Safety Review
 
 Public safety review should confirm:
