@@ -163,11 +163,15 @@ def test_logical_source_name_is_label_only() -> None:
     assert validate_artificial_source_acquisition_metadata(metadata) == []
 
 
-def test_module_public_symbols_are_limited_to_artificial_metadata_shape() -> None:
+def test_module_public_symbols_include_artificial_source_acquisition_shapes() -> None:
     from carbonfactor_parser import source_acquisition
 
     assert source_acquisition.__all__ == (
         "ArtificialSourceAcquisitionMetadata",
+        "SourceAcquisitionValidationIssue",
+        "SourceAcquisitionValidationResult",
         "create_artificial_source_acquisition_metadata",
+        "create_source_acquisition_validation_issue",
+        "create_source_acquisition_validation_result",
         "validate_artificial_source_acquisition_metadata",
     )
