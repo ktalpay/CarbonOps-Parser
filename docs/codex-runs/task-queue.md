@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-054A: Document persistence boundary.
+- CO-055A: Document persistence boundary.
 
 ## Next
 
-- CO-054B: Add persistence contract skeleton.
+- CO-055B: Add persistence contract skeleton.
 
 ## Backlog
 
-- CO-054C: Add persistence boundary usage example.
+- CO-055C: Add persistence boundary usage example.
 
 ## Completed
 
@@ -85,3 +85,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-052A: Added task queue consistency smoke test.
 - CO-052B: Documented task queue smoke test coverage.
 - CO-053A: Documented governance smoke test checkpoint.
+- CO-054A: Added normalization public API export smoke test hardening.
