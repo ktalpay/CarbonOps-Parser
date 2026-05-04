@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-036C: Add parser-to-normalization handoff usage example.
+- CO-037A: Document normalization execution boundary.
 
 ## Next
 
-- CO-037A: Add parser result validation helper.
+- CO-037B: Add artificial normalization executor skeleton.
 
 ## Backlog
 
-- CO-037B: Add normalization result validation helper.
+- CO-038A: Add normalization result validation helper.
 
 ## Completed
 
@@ -58,3 +58,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-035C: Added normalization contract usage example.
 - CO-036A: Documented parser-to-normalization handoff boundary.
 - CO-036B: Added parser-to-normalization handoff model skeleton.
+- CO-036C: Added parser-to-normalization handoff usage example.

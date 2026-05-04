@@ -14,6 +14,8 @@ No parser-to-normalization handoff implementation exists yet.
 
 See `examples/parser_normalization_handoff_example.py` for an in-memory parser-to-normalization handoff usage example.
 
+See [Normalization Execution Boundary](normalization-execution-boundary.md) before adding executor code that produces `NormalizationResult`.
+
 ## What ParserResult Provides
 
 `ParserResult` may provide:
