@@ -4,7 +4,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- No active task currently queued after CO-065A completion.
+- No active task currently queued after CO-065B completion.
 
 ## Next
 
@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-065B: Documented source acquisition review gate examples boundary.
 - CO-065A: Documented source acquisition review gate boundary.
 - CO-064B: Documented source acquisition error taxonomy examples boundary.
 - CO-064A: Documented source acquisition error taxonomy boundary.

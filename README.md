@@ -215,6 +215,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Source Acquisition Error Taxonomy Boundary](docs/source-acquisition-error-taxonomy-boundary.md)
 - [Source Acquisition Error Taxonomy Examples Boundary](docs/source-acquisition-error-taxonomy-examples-boundary.md)
 - [Source Acquisition Review Gate Boundary](docs/source-acquisition-review-gate-boundary.md)
+- [Source Acquisition Review Gate Examples Boundary](docs/source-acquisition-review-gate-examples-boundary.md)
 - [Source Adapter Contract](docs/source-adapter-contract.md)
 - [Source Adapter Execution Flow](docs/source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](docs/source-adapter-error-warning-handling.md)
