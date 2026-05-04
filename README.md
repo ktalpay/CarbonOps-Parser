@@ -228,6 +228,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Milestone Checkpoint CO-037 To CO-049](docs/milestone-checkpoint-co-037-to-co-049.md)
 - [Governance Smoke Test Checkpoint](docs/governance-smoke-test-checkpoint.md)
 - [Stabilization Checkpoint](docs/stabilization-checkpoint.md)
+- [Production Readiness Gap Analysis](docs/production-readiness-gap-analysis.md)
 - [Repository Navigation Guide](docs/repository-navigation-guide.md)
 - [Review Readiness Checklist](docs/review-readiness-checklist.md)
 - [Documentation Map Consistency Checklist](docs/documentation-map-consistency-checklist.md)
