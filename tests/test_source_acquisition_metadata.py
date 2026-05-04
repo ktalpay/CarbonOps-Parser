@@ -1,0 +1,173 @@
+from dataclasses import FrozenInstanceError, replace
+
+import pytest
+
+from carbonfactor_parser.source_acquisition import (
+    ArtificialSourceAcquisitionMetadata,
+    create_artificial_source_acquisition_metadata,
+    validate_artificial_source_acquisition_metadata,
+)
+
+
+VALID_CHECKSUM = "a" * 64
+
+
+def valid_metadata() -> ArtificialSourceAcquisitionMetadata:
+    return create_artificial_source_acquisition_metadata(
+        source_family="artificial_family",
+        logical_source_name="artificial-logical-source",
+        declared_content_type="text/csv",
+        checksum_sha256=VALID_CHECKSUM,
+        acquired_at_label="static-artificial-acquisition-label",
+        parser_hint="artificial-parser-hint",
+        adapter_hint="artificial-adapter-hint",
+    )
+
+
+def test_valid_artificial_metadata_can_be_created() -> None:
+    metadata = valid_metadata()
+
+    assert metadata == ArtificialSourceAcquisitionMetadata(
+        source_family="artificial_family",
+        logical_source_name="artificial-logical-source",
+        declared_content_type="text/csv",
+        checksum_sha256=VALID_CHECKSUM,
+        acquired_at_label="static-artificial-acquisition-label",
+        parser_hint="artificial-parser-hint",
+        adapter_hint="artificial-adapter-hint",
+    )
+    assert validate_artificial_source_acquisition_metadata(metadata) == []
+
+
+def test_metadata_is_immutable() -> None:
+    metadata = valid_metadata()
+
+    with pytest.raises(FrozenInstanceError):
+        metadata.source_family = "changed"  # type: ignore[misc]
+
+
+@pytest.mark.parametrize(
+    ("field_name", "expected_issue"),
+    [
+        ("source_family", "source_family must be a non-empty string."),
+        (
+            "logical_source_name",
+            "logical_source_name must be a non-empty string.",
+        ),
+        (
+            "declared_content_type",
+            "declared_content_type must be a non-empty string.",
+        ),
+        ("checksum_sha256", "checksum_sha256 must be a non-empty string."),
+        ("acquired_at_label", "acquired_at_label must be a non-empty string."),
+    ],
+)
+def test_blank_required_fields_are_rejected(
+    field_name: str,
+    expected_issue: str,
+) -> None:
+    metadata = replace(valid_metadata(), **{field_name: " "})
+
+    assert validate_artificial_source_acquisition_metadata(metadata) == [
+        expected_issue,
+    ]
+
+
+@pytest.mark.parametrize(
+    "checksum",
+    [
+        "a" * 63,
+        "a" * 65,
+        "g" * 64,
+        "not-a-checksum",
+    ],
+)
+def test_invalid_checksum_shape_is_rejected(checksum: str) -> None:
+    metadata = replace(valid_metadata(), checksum_sha256=checksum)
+
+    assert validate_artificial_source_acquisition_metadata(metadata) == [
+        "checksum_sha256 must look like 64 hex characters.",
+    ]
+
+
+def test_checksum_shape_accepts_uppercase_hex_characters() -> None:
+    metadata = replace(valid_metadata(), checksum_sha256="A" * 64)
+
+    assert validate_artificial_source_acquisition_metadata(metadata) == []
+
+
+def test_parser_hint_and_adapter_hint_are_optional() -> None:
+    metadata = create_artificial_source_acquisition_metadata(
+        source_family="artificial_family",
+        logical_source_name="artificial-logical-source",
+        declared_content_type="text/csv",
+        checksum_sha256=VALID_CHECKSUM,
+        acquired_at_label="static-artificial-acquisition-label",
+    )
+
+    assert metadata.parser_hint is None
+    assert metadata.adapter_hint is None
+    assert validate_artificial_source_acquisition_metadata(metadata) == []
+
+
+@pytest.mark.parametrize(
+    ("field_name", "expected_issue"),
+    [
+        ("parser_hint", "parser_hint must be None or a non-empty string."),
+        ("adapter_hint", "adapter_hint must be None or a non-empty string."),
+    ],
+)
+def test_blank_parser_hint_and_adapter_hint_are_rejected_when_provided(
+    field_name: str,
+    expected_issue: str,
+) -> None:
+    metadata = replace(valid_metadata(), **{field_name: " "})
+
+    assert validate_artificial_source_acquisition_metadata(metadata) == [
+        expected_issue,
+    ]
+
+
+def test_factory_rejects_invalid_artificial_metadata_shape() -> None:
+    with pytest.raises(
+        ValueError,
+        match="source_family must be a non-empty string.",
+    ):
+        create_artificial_source_acquisition_metadata(
+            source_family=" ",
+            logical_source_name="artificial-logical-source",
+            declared_content_type="text/csv",
+            checksum_sha256=VALID_CHECKSUM,
+            acquired_at_label="static-artificial-acquisition-label",
+        )
+
+
+def test_non_metadata_input_raises_type_error() -> None:
+    with pytest.raises(
+        TypeError,
+        match="metadata must be an ArtificialSourceAcquisitionMetadata.",
+    ):
+        validate_artificial_source_acquisition_metadata(object())  # type: ignore[arg-type]
+
+
+def test_logical_source_name_is_label_only() -> None:
+    metadata = create_artificial_source_acquisition_metadata(
+        source_family="artificial_family",
+        logical_source_name="not/a/filesystem/path.csv",
+        declared_content_type="text/csv",
+        checksum_sha256=VALID_CHECKSUM,
+        acquired_at_label="static-artificial-acquisition-label",
+    )
+
+    assert metadata.logical_source_name == "not/a/filesystem/path.csv"
+    assert validate_artificial_source_acquisition_metadata(metadata) == []
+
+
+def test_module_public_symbols_are_limited_to_artificial_metadata_shape() -> None:
+    from carbonfactor_parser import source_acquisition
+
+    assert source_acquisition.__all__ == (
+        "ArtificialSourceAcquisitionMetadata",
+        "create_artificial_source_acquisition_metadata",
+        "validate_artificial_source_acquisition_metadata",
+    )

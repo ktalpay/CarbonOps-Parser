@@ -4,7 +4,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- No active task currently queued after CO-067B completion.
+- No active task currently queued after CO-068A completion.
 
 ## Next
 
@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-068A: Added artificial source acquisition metadata model shape.
 - CO-067B: Documented source acquisition implementation sequencing examples boundary.
 - CO-067A: Documented source acquisition implementation sequencing checklist.
 - CO-066B: Documented source acquisition implementation readiness examples boundary.
