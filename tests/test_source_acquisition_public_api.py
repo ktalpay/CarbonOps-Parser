@@ -36,6 +36,7 @@ EXPECTED_SOURCE_ACQUISITION_PUBLIC_API = (
 EXPECTED_ROOT_PUBLIC_API = (
     "ArtificialSourceAcquisitionMetadata",
     "ArtificialSourceManifestMetadata",
+    "ArtificialSourceManifestValidationSummary",
     "ArtificialSourceAcquisitionValidationPipelineResult",
     "SourceAcquisitionValidationCount",
     "SourceAcquisitionValidationIssue",
