@@ -4,11 +4,11 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-037A: Document normalization execution boundary.
+- CO-037B: Add artificial normalization executor skeleton.
 
 ## Next
 
-- CO-037B: Add artificial normalization executor skeleton.
+- CO-037C: Add artificial normalization executor usage example.
 
 ## Backlog
 
@@ -59,3 +59,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-036A: Documented parser-to-normalization handoff boundary.
 - CO-036B: Added parser-to-normalization handoff model skeleton.
 - CO-036C: Added parser-to-normalization handoff usage example.
+- CO-037A: Documented normalization execution boundary.

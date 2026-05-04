@@ -8,6 +8,8 @@ Normalization contracts and parser-to-normalization handoff models exist. No nor
 
 Future normalization execution should be added only in later explicit tasks. This document defines the boundary before any executor classes or functions are introduced.
 
+`ArtificialNormalizationExecutor` now provides a small boundary skeleton that maps `ParserNormalizationHandoff` entries into artificial `NormalizedRecord` objects. It is not real normalization logic.
+
 ## Future Normalization Execution Scope
 
 Future normalization execution may later:
@@ -75,6 +77,21 @@ Future normalization execution PRs should confirm:
 - No real source data is added unless explicitly scoped.
 - The local public safety script passes.
 - Tests remain deterministic when code is added.
+
+The artificial executor skeleton intentionally defers:
+
+- Unit conversion.
+- Factor correctness validation.
+- Carbon accounting correctness decisions.
+- Compliance or legal interpretation.
+- Real source data.
+- File reading.
+- Parser behavior changes.
+- Database or persistence behavior.
+- Scheduler behavior.
+- Retry or cancel behavior.
+- Downloading or remote access.
+- Config loading.
 
 ## Future Task Sequencing
 
