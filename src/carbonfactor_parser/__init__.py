@@ -2,6 +2,7 @@
 
 from carbonfactor_parser.source_acquisition import (
     ArtificialSourceAcquisitionMetadata,
+    ArtificialSourceAcquisitionValidationPipelineResult,
     SourceAcquisitionValidationCount,
     SourceAcquisitionValidationIssue,
     SourceAcquisitionValidationResult,
@@ -10,11 +11,13 @@ from carbonfactor_parser.source_acquisition import (
     create_source_acquisition_validation_issue,
     create_source_acquisition_validation_result,
     summarize_source_acquisition_validation_result,
+    validate_and_summarize_artificial_source_acquisition_metadata,
     validate_artificial_source_acquisition_metadata,
 )
 
 __all__ = (
     "ArtificialSourceAcquisitionMetadata",
+    "ArtificialSourceAcquisitionValidationPipelineResult",
     "SourceAcquisitionValidationCount",
     "SourceAcquisitionValidationIssue",
     "SourceAcquisitionValidationResult",
@@ -23,5 +26,6 @@ __all__ = (
     "create_source_acquisition_validation_issue",
     "create_source_acquisition_validation_result",
     "summarize_source_acquisition_validation_result",
+    "validate_and_summarize_artificial_source_acquisition_metadata",
     "validate_artificial_source_acquisition_metadata",
 )
