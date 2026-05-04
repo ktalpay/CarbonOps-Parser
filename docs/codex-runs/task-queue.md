@@ -83,3 +83,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-051B: Expanded documentation reference smoke test to related-doc references.
 - CO-051C: Documented documentation reference smoke test coverage.
 - CO-052A: Added task queue consistency smoke test.
+- CO-052B: Documented task queue smoke test coverage.

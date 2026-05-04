@@ -90,6 +90,27 @@ Run the repository checks before the final commit:
 
 If a check cannot be run, the PR notes should say which check was skipped and why.
 
+## Task Queue Smoke Test Coverage
+
+`tests/test_task_queue_consistency.py` is a conservative review aid for `docs/codex-runs/task-queue.md`.
+
+It currently checks:
+
+- Task queue file presence.
+- Task identifier extraction.
+- Duplicate task identifier detection.
+- Recent completed task presence.
+- Completed-line status wording.
+
+It intentionally does not check:
+
+- Strict task queue schema.
+- Task number contiguity.
+- Complete chronological ordering.
+- Git history.
+- PR numbers.
+- Remote or GitHub state.
+
 ## Public Safety Review
 
 Public safety review should confirm:
