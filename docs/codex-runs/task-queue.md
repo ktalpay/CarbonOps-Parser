@@ -4,7 +4,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- No active task currently queued after CO-060A completion.
+- No active task currently queued after CO-060B completion.
 
 ## Next
 
@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-060B: Documented local source acquisition examples boundary.
 - CO-060A: Documented local source acquisition contract boundary.
 - CO-059B: Documented source acquisition sequencing checklist.
 - CO-059A: Documented source acquisition boundary.
