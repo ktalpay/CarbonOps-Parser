@@ -88,3 +88,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-054A: Added normalization public API export smoke test hardening.
 - CO-054B: Documented normalization public API smoke test coverage.
 - CO-055A: Added parser public API export smoke test hardening.
+- CO-055B: Documented parser public API smoke test coverage.
