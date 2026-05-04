@@ -10,6 +10,8 @@ Parser-to-normalization handoff needs a separate boundary because `ParserResult`
 
 No parser-to-normalization handoff implementation exists yet.
 
+`ParserNormalizationHandoff`, `ParserNormalizationHandoffEntry`, and `build_parser_normalization_handoff()` now provide a minimal source-agnostic handoff model for already-computed parser result metadata. They do not execute normalization or convert values.
+
 ## What ParserResult Provides
 
 `ParserResult` may provide:
