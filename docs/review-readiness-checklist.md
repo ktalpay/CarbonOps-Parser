@@ -111,6 +111,33 @@ It intentionally does not check:
 - PR numbers.
 - Remote or GitHub state.
 
+## Normalization Public API Smoke Test Coverage
+
+`tests/test_normalization_public_api.py` is an import/export smoke test for the normalization package public surface.
+
+It currently checks:
+
+- Expected normalization package export names.
+- Package exports against their originating module objects.
+- Import/export drift for the public normalization package surface.
+
+It intentionally does not check:
+
+- Runtime behavior.
+- Real source data.
+- File reading.
+- Config loading.
+- Database or persistence behavior.
+- Scheduler behavior.
+- Retry or cancel behavior.
+- Remote access.
+- Unit conversion.
+- Factor correctness.
+- Compliance or legal interpretation.
+- Source adapter behavior.
+- Parser behavior.
+- Normalization correctness.
+
 ## Public Safety Review
 
 Public safety review should confirm:
