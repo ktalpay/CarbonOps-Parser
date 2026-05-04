@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-047A: Document persistence boundary.
+- CO-048A: Document persistence boundary.
 
 ## Next
 
-- CO-047B: Add persistence contract skeleton.
+- CO-048B: Add persistence contract skeleton.
 
 ## Backlog
 
-- CO-047C: Add persistence boundary usage example.
+- CO-048C: Add persistence boundary usage example.
 
 ## Completed
 
@@ -75,3 +75,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-044A: Documented parser-to-normalization integration recap.
 - CO-045A: Documented source-to-normalization pipeline recap.
 - CO-046A: Documented public roadmap checkpoint.
+- CO-047A: Documented repository navigation guide.
