@@ -86,3 +86,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-052B: Documented task queue smoke test coverage.
 - CO-053A: Documented governance smoke test checkpoint.
 - CO-054A: Added normalization public API export smoke test hardening.
+- CO-054B: Documented normalization public API smoke test coverage.
