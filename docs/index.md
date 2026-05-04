@@ -37,6 +37,7 @@
 - [Artificial Manifest Collection Validation Summary](artificial-manifest-collection-validation-summary.md)
 - [Artificial Manifest Metadata Phase Recap](artificial-manifest-metadata-phase-recap.md)
 - [Artificial Manifest Next Phase Option Matrix](artificial-manifest-next-phase-option-matrix.md)
+- [Artificial In-Memory Manifest Usage Example](artificial-in-memory-manifest-usage-example.md)
 - [Source Adapter Contract](source-adapter-contract.md)
 - [Source Adapter Execution Flow](source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](source-adapter-error-warning-handling.md)
