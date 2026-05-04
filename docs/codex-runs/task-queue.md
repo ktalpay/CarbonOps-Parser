@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-039B: Add parser result validation helper.
+- CO-040A: Document persistence boundary.
 
 ## Next
 
-- CO-040A: Document persistence boundary.
+- CO-040B: Add persistence contract skeleton.
 
 ## Backlog
 
-- CO-040B: Add persistence contract skeleton.
+- CO-040C: Add persistence boundary usage example.
 
 ## Completed
 
@@ -66,3 +66,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-038B: Added artificial normalization result summary model.
 - CO-038C: Added artificial normalization result summary usage example.
 - CO-039A: Documented normalization summary builder boundary.
+- CO-039B: Added artificial normalization summary builder skeleton.

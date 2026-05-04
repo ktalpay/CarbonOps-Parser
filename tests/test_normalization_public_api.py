@@ -1,6 +1,7 @@
 import carbonfactor_parser.normalization as normalization
 from carbonfactor_parser.normalization import (
     ArtificialNormalizationExecutor,
+    ArtificialNormalizationSummaryBuilder,
     NormalizationIssue,
     NormalizationIssueSeverity,
     NormalizationResult,
@@ -22,6 +23,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "NormalizationResultSummary",
     "NormalizedRecord",
     "ArtificialNormalizationExecutor",
+    "ArtificialNormalizationSummaryBuilder",
     "ParserNormalizationHandoff",
     "ParserNormalizationHandoffEntry",
     "build_parser_normalization_handoff",
@@ -36,6 +38,7 @@ def test_expected_normalization_public_symbols_import_from_package() -> None:
         "NormalizationResultSummary": NormalizationResultSummary,
         "NormalizedRecord": NormalizedRecord,
         "ArtificialNormalizationExecutor": ArtificialNormalizationExecutor,
+        "ArtificialNormalizationSummaryBuilder": ArtificialNormalizationSummaryBuilder,
         "ParserNormalizationHandoff": ParserNormalizationHandoff,
         "ParserNormalizationHandoffEntry": ParserNormalizationHandoffEntry,
         "build_parser_normalization_handoff": build_parser_normalization_handoff,
@@ -62,4 +65,5 @@ def test_normalization_all_excludes_internal_module_names() -> None:
     assert "executor" not in normalization.__all__
     assert "handoff" not in normalization.__all__
     assert "summary" not in normalization.__all__
+    assert "summary_builder" not in normalization.__all__
     assert all(not name.startswith("_") for name in normalization.__all__)
