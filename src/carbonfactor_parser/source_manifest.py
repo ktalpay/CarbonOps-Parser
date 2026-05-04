@@ -53,6 +53,46 @@ class ArtificialSourceManifestMetadataCollection:
 
 
 @dataclass(frozen=True)
+class ArtificialSourceManifestCollectionValidationSummary:
+    """Artificial-only source manifest collection validation summary shape."""
+
+    manifest_count: int
+    unique_source_family_count: int
+    issue_count: int
+    is_valid: bool
+
+    def __post_init__(self) -> None:
+        _require_non_negative_integer("manifest_count", self.manifest_count)
+        _require_non_negative_integer(
+            "unique_source_family_count",
+            self.unique_source_family_count,
+        )
+        _require_non_negative_integer("issue_count", self.issue_count)
+
+    @classmethod
+    def from_collection(
+        cls,
+        collection: ArtificialSourceManifestMetadataCollection,
+        issue_count: int,
+    ) -> "ArtificialSourceManifestCollectionValidationSummary":
+        """Create a summary from an artificial collection without loading manifests."""
+
+        if not isinstance(collection, ArtificialSourceManifestMetadataCollection):
+            raise TypeError(
+                "collection must be an ArtificialSourceManifestMetadataCollection."
+            )
+
+        _require_non_negative_integer("issue_count", issue_count)
+
+        return cls(
+            manifest_count=collection.count,
+            unique_source_family_count=len(collection.source_families),
+            issue_count=issue_count,
+            is_valid=issue_count == 0,
+        )
+
+
+@dataclass(frozen=True)
 class ArtificialSourceManifestValidationSummary:
     """Artificial-only source manifest validation summary shape."""
 
@@ -163,5 +203,6 @@ def _require_unique_manifest_ids(
 __all__ = (
     "ArtificialSourceManifestMetadata",
     "ArtificialSourceManifestMetadataCollection",
+    "ArtificialSourceManifestCollectionValidationSummary",
     "ArtificialSourceManifestValidationSummary",
 )
