@@ -29,6 +29,30 @@ class ArtificialSourceManifestMetadata:
 
 
 @dataclass(frozen=True)
+class ArtificialSourceManifestMetadataCollection:
+    """Artificial-only in-memory collection of manifest metadata records."""
+
+    manifests: tuple[ArtificialSourceManifestMetadata, ...] = ()
+
+    def __post_init__(self) -> None:
+        normalized_manifests = _normalize_manifests(self.manifests)
+        _require_unique_manifest_ids(normalized_manifests)
+        object.__setattr__(self, "manifests", normalized_manifests)
+
+    @property
+    def count(self) -> int:
+        return len(self.manifests)
+
+    @property
+    def manifest_ids(self) -> tuple[str, ...]:
+        return tuple(manifest.manifest_id for manifest in self.manifests)
+
+    @property
+    def source_families(self) -> tuple[str, ...]:
+        return tuple(sorted({manifest.source_family for manifest in self.manifests}))
+
+
+@dataclass(frozen=True)
 class ArtificialSourceManifestValidationSummary:
     """Artificial-only source manifest validation summary shape."""
 
@@ -101,7 +125,43 @@ def _normalize_notes(notes: Iterable[str]) -> tuple[str, ...]:
     return normalized_notes
 
 
+def _normalize_manifests(
+    manifests: Iterable[ArtificialSourceManifestMetadata],
+) -> tuple[ArtificialSourceManifestMetadata, ...]:
+    if isinstance(manifests, ArtificialSourceManifestMetadata):
+        raise ValueError(
+            "manifests must be an iterable of ArtificialSourceManifestMetadata."
+        )
+
+    try:
+        normalized_manifests = tuple(manifests)
+    except TypeError as exc:
+        raise ValueError(
+            "manifests must be an iterable of ArtificialSourceManifestMetadata."
+        ) from exc
+
+    for manifest in normalized_manifests:
+        if not isinstance(manifest, ArtificialSourceManifestMetadata):
+            raise TypeError(
+                "manifests must contain only ArtificialSourceManifestMetadata."
+            )
+
+    return normalized_manifests
+
+
+def _require_unique_manifest_ids(
+    manifests: tuple[ArtificialSourceManifestMetadata, ...],
+) -> None:
+    seen_manifest_ids: set[str] = set()
+
+    for manifest in manifests:
+        if manifest.manifest_id in seen_manifest_ids:
+            raise ValueError("manifest_id values must be unique.")
+        seen_manifest_ids.add(manifest.manifest_id)
+
+
 __all__ = (
     "ArtificialSourceManifestMetadata",
+    "ArtificialSourceManifestMetadataCollection",
     "ArtificialSourceManifestValidationSummary",
 )

@@ -16,12 +16,14 @@ from carbonfactor_parser.source_acquisition import (
 )
 from carbonfactor_parser.source_manifest import (
     ArtificialSourceManifestMetadata,
+    ArtificialSourceManifestMetadataCollection,
     ArtificialSourceManifestValidationSummary,
 )
 
 __all__ = (
     "ArtificialSourceAcquisitionMetadata",
     "ArtificialSourceManifestMetadata",
+    "ArtificialSourceManifestMetadataCollection",
     "ArtificialSourceManifestValidationSummary",
     "ArtificialSourceAcquisitionValidationPipelineResult",
     "SourceAcquisitionValidationCount",

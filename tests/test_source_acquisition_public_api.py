@@ -2,6 +2,7 @@ import carbonfactor_parser
 from carbonfactor_parser import (
     ArtificialSourceAcquisitionMetadata,
     ArtificialSourceAcquisitionValidationPipelineResult,
+    ArtificialSourceManifestMetadataCollection,
     SourceAcquisitionValidationCount,
     SourceAcquisitionValidationIssue,
     SourceAcquisitionValidationResult,
@@ -14,6 +15,7 @@ from carbonfactor_parser import (
     validate_artificial_source_acquisition_metadata,
 )
 from carbonfactor_parser import source_acquisition
+from carbonfactor_parser import source_manifest
 
 
 VALID_CHECKSUM = "b" * 64
@@ -36,6 +38,7 @@ EXPECTED_SOURCE_ACQUISITION_PUBLIC_API = (
 EXPECTED_ROOT_PUBLIC_API = (
     "ArtificialSourceAcquisitionMetadata",
     "ArtificialSourceManifestMetadata",
+    "ArtificialSourceManifestMetadataCollection",
     "ArtificialSourceManifestValidationSummary",
     "ArtificialSourceAcquisitionValidationPipelineResult",
     "SourceAcquisitionValidationCount",
@@ -147,6 +150,16 @@ def test_validation_pipeline_result_shape_imports_from_root_package() -> None:
     assert (
         carbonfactor_parser.ArtificialSourceAcquisitionValidationPipelineResult
         is source_acquisition.ArtificialSourceAcquisitionValidationPipelineResult
+    )
+
+
+def test_manifest_metadata_collection_imports_from_root_package() -> None:
+    assert (
+        ArtificialSourceManifestMetadataCollection
+        is source_manifest.ArtificialSourceManifestMetadataCollection
+    )
+    assert carbonfactor_parser.ArtificialSourceManifestMetadataCollection is (
+        source_manifest.ArtificialSourceManifestMetadataCollection
     )
 
 
