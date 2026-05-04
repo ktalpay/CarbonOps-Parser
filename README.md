@@ -221,6 +221,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Normalization Pipeline Recap](docs/normalization-pipeline-recap.md)
 - [Normalization Public API Recap](docs/normalization-public-api-recap.md)
 - [Normalization Test Coverage Recap](docs/normalization-test-coverage-recap.md)
+- [Normalization Deferred Implementation Roadmap](docs/normalization-deferred-implementation-roadmap.md)
 - [Source Adapter Package Recap](docs/source-adapter-package-recap.md)
 - [Roadmap](docs/roadmap.md)
 - [Task Breakdown](docs/task-breakdown.md)
