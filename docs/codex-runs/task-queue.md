@@ -4,15 +4,15 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-035B: Add normalization contract skeleton.
+- CO-035C: Add normalization contract usage example.
 
 ## Next
 
-- CO-035C: Add artificial normalization example.
+- CO-036A: Add parser-to-normalization handoff example.
 
 ## Backlog
 
-- CO-036A: Add parser-to-normalization handoff example.
+- CO-036B: Add parser result validation helper.
 
 ## Completed
 
@@ -54,3 +54,4 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-034A: Added parser pipeline summary helper.
 - CO-034B: Added parser pipeline summary usage example.
 - CO-035A: Documented normalization boundary.
+- CO-035B: Added normalization contract skeleton.
