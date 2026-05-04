@@ -28,6 +28,7 @@
 - [Source Acquisition Implementation Readiness Examples Boundary](source-acquisition-implementation-readiness-examples-boundary.md)
 - [Source Acquisition Implementation Sequencing Checklist](source-acquisition-implementation-sequencing-checklist.md)
 - [Source Acquisition Implementation Sequencing Examples Boundary](source-acquisition-implementation-sequencing-examples-boundary.md)
+- [Artificial Source Acquisition Validation Pipeline](artificial-source-acquisition-validation-pipeline.md)
 - [Source Adapter Contract](source-adapter-contract.md)
 - [Source Adapter Execution Flow](source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](source-adapter-error-warning-handling.md)

@@ -4,7 +4,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- No active task currently queued after CO-071B completion.
+- No active task currently queued after CO-072A completion.
 
 ## Next
 
@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-072A: Documented artificial source acquisition validation pipeline.
 - CO-071B: Added artificial source acquisition validation pipeline example.
 - CO-071A: Added artificial source acquisition validation pipeline helper.
 - CO-070A: Added artificial source acquisition validation summary shape.
