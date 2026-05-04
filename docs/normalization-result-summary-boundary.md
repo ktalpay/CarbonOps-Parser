@@ -14,7 +14,11 @@ That layer should describe execution and output shape. It should not verify carb
 
 `NormalizationResultSummary` already exists as a lightweight count model on `NormalizationResult`.
 
+`NormalizationResultSummary` now also lives in `src/carbonfactor_parser/normalization/summary.py` as an artificial output-shape contract. It can carry deterministic record and issue counts, optional artificial source labels, and copied metadata without judging record meaning.
+
 No separate normalization result summary builder exists yet.
+
+No integration with `ArtificialNormalizationExecutor` was added for CO-038B.
 
 Current normalization examples remain artificial, deterministic, local, and in-memory.
 
@@ -59,6 +63,7 @@ The summary layer should describe the shape and issue counts of the result. It s
 
 The normalization result summary boundary intentionally defers:
 
+- Summary builder implementation.
 - Unit conversion.
 - Factor correctness.
 - Carbon accounting correctness.
@@ -77,6 +82,7 @@ The normalization result summary boundary intentionally defers:
 Future normalization result summary PRs should confirm:
 
 - No summary builder code is added unless explicitly scoped.
+- Any directly constructed summary model describes output shape only.
 - No parser behavior is changed.
 - No normalization execution behavior is changed.
 - No unit conversion is introduced.

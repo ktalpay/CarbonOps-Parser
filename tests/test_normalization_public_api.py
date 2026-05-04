@@ -10,6 +10,9 @@ from carbonfactor_parser.normalization import (
     ParserNormalizationHandoffEntry,
     build_parser_normalization_handoff,
 )
+from carbonfactor_parser.normalization.summary import (
+    NormalizationResultSummary as SummaryModuleNormalizationResultSummary,
+)
 
 
 EXPECTED_PUBLIC_SYMBOLS = (
@@ -42,6 +45,7 @@ def test_expected_normalization_public_symbols_import_from_package() -> None:
     assert imported_symbols == {
         name: getattr(normalization, name) for name in EXPECTED_PUBLIC_SYMBOLS
     }
+    assert NormalizationResultSummary is SummaryModuleNormalizationResultSummary
 
 
 def test_normalization_all_lists_expected_public_symbols() -> None:
@@ -57,4 +61,5 @@ def test_normalization_all_excludes_internal_module_names() -> None:
     assert "contracts" not in normalization.__all__
     assert "executor" not in normalization.__all__
     assert "handoff" not in normalization.__all__
+    assert "summary" not in normalization.__all__
     assert all(not name.startswith("_") for name in normalization.__all__)

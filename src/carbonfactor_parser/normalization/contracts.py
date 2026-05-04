@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
+from carbonfactor_parser.normalization.summary import NormalizationResultSummary
+
 
 class NormalizationIssueSeverity(str, Enum):
     """Normalization issue severity levels."""
@@ -32,19 +34,6 @@ class NormalizedRecord:
     fields: tuple[tuple[str, Any], ...] = ()
     source_reference: str | None = None
     is_artificial: bool = True
-
-
-@dataclass(frozen=True)
-class NormalizationResultSummary:
-    """Small summary of source-agnostic normalization result counts."""
-
-    normalized_record_count: int
-    warning_count: int
-    error_count: int
-    has_normalized_records: bool
-    has_warnings: bool
-    has_errors: bool
-    is_clean: bool
 
 
 @dataclass(frozen=True)
