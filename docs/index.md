@@ -31,6 +31,7 @@
 - [Artificial Source Acquisition Validation Pipeline](artificial-source-acquisition-validation-pipeline.md)
 - [Artificial Source Acquisition Module Recap](artificial-source-acquisition-module-recap.md)
 - [Artificial Source Acquisition Phase Closure](artificial-source-acquisition-phase-closure.md)
+- [Artificial Manifest Metadata Boundaries](artificial-manifest-metadata-boundaries.md)
 - [Source Adapter Contract](source-adapter-contract.md)
 - [Source Adapter Execution Flow](source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](source-adapter-error-warning-handling.md)
