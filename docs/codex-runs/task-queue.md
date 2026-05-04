@@ -4,18 +4,19 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- No active task currently queued after CO-058A completion.
+- No active task currently queued after CO-058B completion.
 
 ## Next
 
-- CO-058B: Add persistence contract skeleton.
+- CO-058C: Add persistence boundary usage example.
 
 ## Backlog
 
-- CO-058C: Add persistence boundary usage example.
+- No backlog task currently queued.
 
 ## Completed
 
+- CO-058B: Documented production readiness sequencing roadmap.
 - CO-058A: Documented production readiness gap analysis.
 - CO-015A: Added local file source adapter skeleton.
 - CO-016A: Added source adapter registry integration example.

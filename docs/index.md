@@ -37,6 +37,7 @@
 - [Governance Smoke Test Checkpoint](governance-smoke-test-checkpoint.md)
 - [Stabilization Checkpoint](stabilization-checkpoint.md)
 - [Production Readiness Gap Analysis](production-readiness-gap-analysis.md)
+- [Production Readiness Sequencing Roadmap](production-readiness-sequencing-roadmap.md)
 - [Repository Navigation Guide](repository-navigation-guide.md)
 - [Review Readiness Checklist](review-readiness-checklist.md)
 - [Documentation Map Consistency Checklist](documentation-map-consistency-checklist.md)
