@@ -35,6 +35,7 @@
 - [Public Roadmap Checkpoint](public-roadmap-checkpoint.md)
 - [Repository Navigation Guide](repository-navigation-guide.md)
 - [Review Readiness Checklist](review-readiness-checklist.md)
+- [Documentation Map Consistency Checklist](documentation-map-consistency-checklist.md)
 - [Source Adapter Package Recap](source-adapter-package-recap.md)
 - [Roadmap](roadmap.md)
 - [Task Breakdown](task-breakdown.md)
