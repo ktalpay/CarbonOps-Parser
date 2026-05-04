@@ -10,6 +10,8 @@ Normalization contracts and implementation should be added only in later explici
 
 `NormalizationIssue`, `NormalizationIssueSeverity`, `NormalizedRecord`, `NormalizationResultSummary`, and `NormalizationResult` now provide a minimal source-agnostic normalization contract skeleton. They do not execute normalization, convert units, or write records.
 
+See `examples/normalization_contract_example.py` for an in-memory normalization contract usage example.
+
 ## What Parser Output Represents
 
 `ParserResult` contains parsed or artificial records plus parser-level issues.
