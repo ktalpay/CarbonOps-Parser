@@ -20,6 +20,8 @@ No separate normalization result summary builder exists yet.
 
 No integration with `ArtificialNormalizationExecutor` was added for CO-038B.
 
+`examples/example_normalization_result_summary_usage.py` shows direct construction of `NormalizationResultSummary` with artificial deterministic values. It is a model usage example only; it does not add summary builder behavior, executor integration, aggregation semantics, unit conversion, or correctness logic.
+
 Current normalization examples remain artificial, deterministic, local, and in-memory.
 
 ## In Scope For Future Implementation
@@ -64,6 +66,8 @@ The summary layer should describe the shape and issue counts of the result. It s
 The normalization result summary boundary intentionally defers:
 
 - Summary builder implementation.
+- Executor integration.
+- Aggregation semantics.
 - Unit conversion.
 - Factor correctness.
 - Carbon accounting correctness.
@@ -83,6 +87,7 @@ Future normalization result summary PRs should confirm:
 
 - No summary builder code is added unless explicitly scoped.
 - Any directly constructed summary model describes output shape only.
+- Usage examples construct the model directly and do not execute normalization.
 - No parser behavior is changed.
 - No normalization execution behavior is changed.
 - No unit conversion is introduced.
