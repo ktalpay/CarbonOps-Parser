@@ -248,6 +248,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Artificial Source Acquisition Module Recap](docs/artificial-source-acquisition-module-recap.md)
 - [Artificial Source Acquisition Phase Closure](docs/artificial-source-acquisition-phase-closure.md)
 - [Artificial Manifest Metadata Boundaries](docs/artificial-manifest-metadata-boundaries.md)
+- [Artificial Manifest Validation Summary](docs/artificial-manifest-validation-summary.md)
 - [Source Adapter Contract](docs/source-adapter-contract.md)
 - [Source Adapter Execution Flow](docs/source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](docs/source-adapter-error-warning-handling.md)

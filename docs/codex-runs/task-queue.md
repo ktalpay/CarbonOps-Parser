@@ -4,7 +4,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- No active task currently queued after CO-077A completion.
+- No active task currently queued after CO-077B completion.
 
 ## Next
 
@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-077B: Documented artificial manifest validation summary boundary.
 - CO-077A: Added artificial manifest validation summary shape.
 - CO-076C: Documented artificial manifest metadata boundaries.
 - CO-076B: Added artificial manifest metadata root public API export.
