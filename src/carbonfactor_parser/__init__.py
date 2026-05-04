@@ -7,6 +7,7 @@ from carbonfactor_parser.source_acquisition import (
     create_artificial_source_acquisition_metadata,
     create_source_acquisition_validation_issue,
     create_source_acquisition_validation_result,
+    validate_artificial_source_acquisition_metadata,
 )
 
 __all__ = (
@@ -16,4 +17,5 @@ __all__ = (
     "create_artificial_source_acquisition_metadata",
     "create_source_acquisition_validation_issue",
     "create_source_acquisition_validation_result",
+    "validate_artificial_source_acquisition_metadata",
 )

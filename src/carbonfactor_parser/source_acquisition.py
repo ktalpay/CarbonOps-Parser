@@ -72,9 +72,9 @@ def create_artificial_source_acquisition_metadata(
         adapter_hint=adapter_hint,
     )
 
-    issues = validate_artificial_source_acquisition_metadata(metadata)
-    if issues:
-        raise ValueError("; ".join(issues))
+    result = validate_artificial_source_acquisition_metadata(metadata)
+    if not result.is_valid:
+        raise ValueError("; ".join(issue.message for issue in result.issues))
 
     return metadata
 
@@ -124,7 +124,7 @@ def create_source_acquisition_validation_result(
 
 def validate_artificial_source_acquisition_metadata(
     metadata: ArtificialSourceAcquisitionMetadata,
-) -> list[str]:
+) -> SourceAcquisitionValidationResult:
     """Validate artificial metadata shape without source correctness claims."""
 
     if not isinstance(metadata, ArtificialSourceAcquisitionMetadata):
@@ -132,37 +132,86 @@ def validate_artificial_source_acquisition_metadata(
             "metadata must be an ArtificialSourceAcquisitionMetadata.",
         )
 
-    issues: list[str] = []
+    issues: list[SourceAcquisitionValidationIssue] = []
 
-    _validate_required_string(metadata.source_family, "source_family", issues)
-    _validate_required_string(
+    _validate_required_metadata_field(metadata.source_family, "source_family", issues)
+    _validate_required_metadata_field(
         metadata.logical_source_name,
         "logical_source_name",
         issues,
     )
-    _validate_required_string(
+    _validate_required_metadata_field(
         metadata.declared_content_type,
         "declared_content_type",
         issues,
     )
-    _validate_required_string(
+    _validate_required_metadata_field(
         metadata.checksum_sha256,
         "checksum_sha256",
         issues,
     )
-    _validate_required_string(
+    _validate_required_metadata_field(
         metadata.acquired_at_label,
         "acquired_at_label",
         issues,
     )
-    _validate_optional_string(metadata.parser_hint, "parser_hint", issues)
-    _validate_optional_string(metadata.adapter_hint, "adapter_hint", issues)
+    _validate_optional_metadata_field(metadata.parser_hint, "parser_hint", issues)
+    _validate_optional_metadata_field(metadata.adapter_hint, "adapter_hint", issues)
 
     if isinstance(metadata.checksum_sha256, str) and metadata.checksum_sha256.strip():
         if _SHA256_HEX_PATTERN.fullmatch(metadata.checksum_sha256) is None:
-            issues.append("checksum_sha256 must look like 64 hex characters.")
+            issues.append(
+                create_source_acquisition_validation_issue(
+                    code="SOURCE_ACQUISITION_INVALID_CHECKSUM_SHA256",
+                    message="checksum_sha256 must look like 64 hex characters.",
+                    category="metadata_shape",
+                    severity="error",
+                    field_name="checksum_sha256",
+                ),
+            )
 
-    return issues
+    return create_source_acquisition_validation_result(issues)
+
+
+def _validate_required_metadata_field(
+    value: object,
+    field_name: str,
+    issues: list[SourceAcquisitionValidationIssue],
+) -> None:
+    if isinstance(value, str) and value.strip():
+        return
+
+    issues.append(
+        create_source_acquisition_validation_issue(
+            code="SOURCE_ACQUISITION_REQUIRED_FIELD",
+            message=f"{field_name} must be a non-empty string.",
+            category="metadata_shape",
+            severity="error",
+            field_name=field_name,
+        ),
+    )
+
+
+def _validate_optional_metadata_field(
+    value: object,
+    field_name: str,
+    issues: list[SourceAcquisitionValidationIssue],
+) -> None:
+    if value is None:
+        return
+
+    if isinstance(value, str) and value.strip():
+        return
+
+    issues.append(
+        create_source_acquisition_validation_issue(
+            code="SOURCE_ACQUISITION_OPTIONAL_FIELD",
+            message=f"{field_name} must be None or a non-empty string.",
+            category="metadata_shape",
+            severity="error",
+            field_name=field_name,
+        ),
+    )
 
 
 def _validate_source_acquisition_validation_issue(
