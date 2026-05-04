@@ -217,6 +217,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Parser To Normalization Handoff Boundary](docs/parser-to-normalization-handoff-boundary.md)
 - [Normalization Execution Boundary](docs/normalization-execution-boundary.md)
 - [Normalization Result Summary Boundary](docs/normalization-result-summary-boundary.md)
+- [Normalization Summary Builder Boundary](docs/normalization-summary-builder-boundary.md)
 - [Source Adapter Package Recap](docs/source-adapter-package-recap.md)
 - [Roadmap](docs/roadmap.md)
 - [Task Breakdown](docs/task-breakdown.md)
