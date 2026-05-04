@@ -1,7 +1,11 @@
 import carbonfactor_parser
 from carbonfactor_parser import (
     ArtificialSourceAcquisitionMetadata,
+    SourceAcquisitionValidationIssue,
+    SourceAcquisitionValidationResult,
     create_artificial_source_acquisition_metadata,
+    create_source_acquisition_validation_issue,
+    create_source_acquisition_validation_result,
 )
 from carbonfactor_parser import source_acquisition
 
@@ -53,8 +57,55 @@ def test_exported_factory_creates_artificial_metadata_shape() -> None:
     )
 
 
+def test_validation_issue_shape_imports_from_root_package() -> None:
+    assert (
+        SourceAcquisitionValidationIssue
+        is source_acquisition.SourceAcquisitionValidationIssue
+    )
+    assert (
+        carbonfactor_parser.SourceAcquisitionValidationIssue
+        is source_acquisition.SourceAcquisitionValidationIssue
+    )
+
+
+def test_validation_result_shape_imports_from_root_package() -> None:
+    assert (
+        SourceAcquisitionValidationResult
+        is source_acquisition.SourceAcquisitionValidationResult
+    )
+    assert (
+        carbonfactor_parser.SourceAcquisitionValidationResult
+        is source_acquisition.SourceAcquisitionValidationResult
+    )
+
+
+def test_exported_validation_result_factory_creates_artificial_result_shape() -> None:
+    issue = create_source_acquisition_validation_issue(
+        code="ARTIFICIAL_SOURCE_REQUIRED",
+        message="Artificial source metadata field is required.",
+        category="metadata_shape",
+        severity="error",
+        field_name="logical_source_name",
+    )
+    result = create_source_acquisition_validation_result([issue])
+
+    assert issue == SourceAcquisitionValidationIssue(
+        code="ARTIFICIAL_SOURCE_REQUIRED",
+        message="Artificial source metadata field is required.",
+        category="metadata_shape",
+        severity="error",
+        field_name="logical_source_name",
+    )
+    assert result == SourceAcquisitionValidationResult(issues=(issue,))
+    assert result.is_valid is False
+
+
 def test_root_all_lists_source_acquisition_public_symbols_only() -> None:
     assert carbonfactor_parser.__all__ == (
         "ArtificialSourceAcquisitionMetadata",
+        "SourceAcquisitionValidationIssue",
+        "SourceAcquisitionValidationResult",
         "create_artificial_source_acquisition_metadata",
+        "create_source_acquisition_validation_issue",
+        "create_source_acquisition_validation_result",
     )

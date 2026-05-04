@@ -28,6 +28,28 @@ class ArtificialSourceAcquisitionMetadata:
     adapter_hint: str | None = None
 
 
+@dataclass(frozen=True)
+class SourceAcquisitionValidationIssue:
+    """Artificial-only source acquisition validation issue shape."""
+
+    code: str
+    message: str
+    category: str
+    severity: str
+    field_name: str | None = None
+
+
+@dataclass(frozen=True)
+class SourceAcquisitionValidationResult:
+    """Artificial-only source acquisition validation result shape."""
+
+    issues: tuple[SourceAcquisitionValidationIssue, ...] = ()
+
+    @property
+    def is_valid(self) -> bool:
+        return not self.issues
+
+
 def create_artificial_source_acquisition_metadata(
     *,
     source_family: str,
@@ -55,6 +77,49 @@ def create_artificial_source_acquisition_metadata(
         raise ValueError("; ".join(issues))
 
     return metadata
+
+
+def create_source_acquisition_validation_issue(
+    *,
+    code: str,
+    message: str,
+    category: str,
+    severity: str,
+    field_name: str | None = None,
+) -> SourceAcquisitionValidationIssue:
+    """Create an artificial validation issue without source validation."""
+
+    issue = SourceAcquisitionValidationIssue(
+        code=code,
+        message=message,
+        category=category,
+        severity=severity,
+        field_name=field_name,
+    )
+
+    issues = _validate_source_acquisition_validation_issue(issue)
+    if issues:
+        raise ValueError("; ".join(issues))
+
+    return issue
+
+
+def create_source_acquisition_validation_result(
+    issues: (
+        tuple[SourceAcquisitionValidationIssue, ...]
+        | list[SourceAcquisitionValidationIssue]
+    ) = (),
+) -> SourceAcquisitionValidationResult:
+    """Create an artificial validation result without running validation."""
+
+    normalized_issues = tuple(issues)
+    for index, issue in enumerate(normalized_issues):
+        if not isinstance(issue, SourceAcquisitionValidationIssue):
+            raise TypeError(
+                f"issues[{index}] must be a SourceAcquisitionValidationIssue.",
+            )
+
+    return SourceAcquisitionValidationResult(issues=normalized_issues)
 
 
 def validate_artificial_source_acquisition_metadata(
@@ -100,6 +165,20 @@ def validate_artificial_source_acquisition_metadata(
     return issues
 
 
+def _validate_source_acquisition_validation_issue(
+    issue: SourceAcquisitionValidationIssue,
+) -> list[str]:
+    issues: list[str] = []
+
+    _validate_required_string(issue.code, "code", issues)
+    _validate_required_string(issue.message, "message", issues)
+    _validate_required_string(issue.category, "category", issues)
+    _validate_required_string(issue.severity, "severity", issues)
+    _validate_optional_string(issue.field_name, "field_name", issues)
+
+    return issues
+
+
 def _validate_required_string(
     value: object,
     field_name: str,
@@ -123,6 +202,10 @@ def _validate_optional_string(
 
 __all__ = (
     "ArtificialSourceAcquisitionMetadata",
+    "SourceAcquisitionValidationIssue",
+    "SourceAcquisitionValidationResult",
     "create_artificial_source_acquisition_metadata",
+    "create_source_acquisition_validation_issue",
+    "create_source_acquisition_validation_result",
     "validate_artificial_source_acquisition_metadata",
 )
