@@ -32,6 +32,7 @@
 - [Normalization Public API Recap](normalization-public-api-recap.md)
 - [Normalization Test Coverage Recap](normalization-test-coverage-recap.md)
 - [Normalization Deferred Implementation Roadmap](normalization-deferred-implementation-roadmap.md)
+- [Public Roadmap Checkpoint](public-roadmap-checkpoint.md)
 - [Source Adapter Package Recap](source-adapter-package-recap.md)
 - [Roadmap](roadmap.md)
 - [Task Breakdown](task-breakdown.md)
