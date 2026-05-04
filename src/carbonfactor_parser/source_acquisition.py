@@ -50,6 +50,24 @@ class SourceAcquisitionValidationResult:
         return not self.issues
 
 
+@dataclass(frozen=True)
+class SourceAcquisitionValidationCount:
+    """Deterministic count item for artificial validation summaries."""
+
+    name: str
+    count: int
+
+
+@dataclass(frozen=True)
+class SourceAcquisitionValidationSummary:
+    """Artificial-only source acquisition validation summary shape."""
+
+    total_issue_count: int
+    severity_counts: tuple[SourceAcquisitionValidationCount, ...]
+    category_counts: tuple[SourceAcquisitionValidationCount, ...]
+    is_valid: bool
+
+
 def create_artificial_source_acquisition_metadata(
     *,
     source_family: str,
@@ -173,6 +191,22 @@ def validate_artificial_source_acquisition_metadata(
     return create_source_acquisition_validation_result(issues)
 
 
+def summarize_source_acquisition_validation_result(
+    result: SourceAcquisitionValidationResult,
+) -> SourceAcquisitionValidationSummary:
+    """Summarize artificial validation result issues without validation work."""
+
+    if not isinstance(result, SourceAcquisitionValidationResult):
+        raise TypeError("result must be a SourceAcquisitionValidationResult.")
+
+    return SourceAcquisitionValidationSummary(
+        total_issue_count=len(result.issues),
+        severity_counts=_count_issue_attribute(result.issues, "severity"),
+        category_counts=_count_issue_attribute(result.issues, "category"),
+        is_valid=result.is_valid,
+    )
+
+
 def _validate_required_metadata_field(
     value: object,
     field_name: str,
@@ -214,6 +248,21 @@ def _validate_optional_metadata_field(
     )
 
 
+def _count_issue_attribute(
+    issues: tuple[SourceAcquisitionValidationIssue, ...],
+    attribute_name: str,
+) -> tuple[SourceAcquisitionValidationCount, ...]:
+    counts: dict[str, int] = {}
+    for issue in issues:
+        attribute_value = getattr(issue, attribute_name)
+        counts[attribute_value] = counts.get(attribute_value, 0) + 1
+
+    return tuple(
+        SourceAcquisitionValidationCount(name=name, count=counts[name])
+        for name in sorted(counts)
+    )
+
+
 def _validate_source_acquisition_validation_issue(
     issue: SourceAcquisitionValidationIssue,
 ) -> list[str]:
@@ -251,10 +300,13 @@ def _validate_optional_string(
 
 __all__ = (
     "ArtificialSourceAcquisitionMetadata",
+    "SourceAcquisitionValidationCount",
     "SourceAcquisitionValidationIssue",
     "SourceAcquisitionValidationResult",
+    "SourceAcquisitionValidationSummary",
     "create_artificial_source_acquisition_metadata",
     "create_source_acquisition_validation_issue",
     "create_source_acquisition_validation_result",
+    "summarize_source_acquisition_validation_result",
     "validate_artificial_source_acquisition_metadata",
 )
