@@ -18,6 +18,8 @@ The current parser-to-normalization handoff model records parser output metadata
 
 See `examples/parser_normalization_handoff_example.py` for a deterministic in-memory handoff example.
 
+See [Normalization Execution Boundary](normalization-execution-boundary.md) before adding normalization executor code.
+
 ## What Parser Output Represents
 
 `ParserResult` contains parsed or artificial records plus parser-level issues.
