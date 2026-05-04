@@ -212,6 +212,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Source Manifest Adapter Handoff Examples Boundary](docs/source-manifest-adapter-handoff-examples-boundary.md)
 - [Source Acquisition Validation Boundary](docs/source-acquisition-validation-boundary.md)
 - [Source Acquisition Validation Examples Boundary](docs/source-acquisition-validation-examples-boundary.md)
+- [Source Acquisition Error Taxonomy Boundary](docs/source-acquisition-error-taxonomy-boundary.md)
 - [Source Adapter Contract](docs/source-adapter-contract.md)
 - [Source Adapter Execution Flow](docs/source-adapter-execution-flow.md)
 - [Source Adapter Error And Warning Handling](docs/source-adapter-error-warning-handling.md)
