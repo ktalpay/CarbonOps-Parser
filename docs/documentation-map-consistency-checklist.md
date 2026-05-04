@@ -113,6 +113,7 @@ Run the usual local checks before the final commit:
 - `python -m pytest`
 - `python scripts/check_public_safety.py`
 - `git diff --check`
+- `python -m pytest tests/test_documentation_map_references.py` when documentation map references change.
 - Local docs or reference link check if an established command is available.
 
 If no dedicated docs link-check script exists, use a small local reference check for the new document and its index entries, and mention that in the PR notes.
