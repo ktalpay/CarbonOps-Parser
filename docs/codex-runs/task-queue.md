@@ -4,7 +4,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- No active task currently queued after CO-073A completion.
+- No active task currently queued after CO-074A completion.
 
 ## Next
 
@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-074A: Added artificial source acquisition public API stability test.
 - CO-073A: Documented artificial source acquisition module recap.
 - CO-072A: Documented artificial source acquisition validation pipeline.
 - CO-071B: Added artificial source acquisition validation pipeline example.
