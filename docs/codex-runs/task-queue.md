@@ -24,6 +24,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-081C: Documented artificial in-memory manifest usage example.
 - CO-081B: Added artificial in-memory manifest usage example.
 - CO-081A: Documented artificial manifest next-phase option matrix.
+- CO-080B: Added deterministic source acquisition CLI JSON output mode for list and run commands.
 - CO-080A: Added source acquisition CLI skeleton using no-op client.
 - CO-079B: Added acquisition status constants and deterministic counting helper.
 - CO-079A: Added artificial manifest collection validation summary shape.

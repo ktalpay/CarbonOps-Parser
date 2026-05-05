@@ -54,7 +54,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _emit_json(payload: dict[str, object]) -> None:
-    print(json.dumps(payload, indent=2))
+    print(json.dumps(payload, indent=2, sort_keys=False))
 
 
 def _serialize_descriptor(descriptor: object) -> dict[str, object]:
@@ -81,8 +81,16 @@ def _serialize_result(result: object) -> dict[str, object]:
 
 def _handle_list_command(output_format: str) -> int:
     descriptors = create_default_source_acquisition_registry()
+
     if output_format == "json":
-        _emit_json({"sources": [_serialize_descriptor(descriptor) for descriptor in descriptors]})
+        _emit_json(
+            {
+                "sources": [
+                    _serialize_descriptor(descriptor)
+                    for descriptor in descriptors
+                ]
+            }
+        )
         return 0
 
     for descriptor in descriptors:
@@ -97,6 +105,7 @@ def _handle_list_command(output_format: str) -> int:
                 )
             )
         )
+
     return 0
 
 
@@ -107,14 +116,22 @@ def _handle_run_command(manifest_path: Path | None, output_format: str) -> int:
         client=NoopSourceAcquisitionClient(),
         manifest_path=manifest_path,
     )
+
     if output_format == "json":
         _emit_json(
             {
                 "acquired_count": result.acquired_count,
                 "failed_count": result.failed_count,
                 "skipped_count": result.skipped_count,
-                "manifest_path": str(result.manifest_path) if result.manifest_path is not None else None,
-                "results": [_serialize_result(entry) for entry in result.results],
+                "manifest_path": (
+                    str(result.manifest_path)
+                    if result.manifest_path is not None
+                    else None
+                ),
+                "results": [
+                    _serialize_result(entry)
+                    for entry in result.results
+                ],
             }
         )
         return 0
@@ -122,8 +139,10 @@ def _handle_run_command(manifest_path: Path | None, output_format: str) -> int:
     print(f"acquired_count={result.acquired_count}")
     print(f"failed_count={result.failed_count}")
     print(f"skipped_count={result.skipped_count}")
+
     if result.manifest_path is not None:
         print(f"manifest_path={result.manifest_path}")
+
     return 0
 
 
@@ -137,7 +156,10 @@ def main(argv: list[str] | None = None) -> int:
         return _handle_list_command(output_format=args.output_format)
 
     if args.command == "run":
-        return _handle_run_command(manifest_path=args.manifest_path, output_format=args.output_format)
+        return _handle_run_command(
+            manifest_path=args.manifest_path,
+            output_format=args.output_format,
+        )
 
     parser.print_usage()
     return 2
