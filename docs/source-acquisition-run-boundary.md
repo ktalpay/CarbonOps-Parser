@@ -10,6 +10,9 @@ The source acquisition run helper is a small synchronous orchestration utility. 
 - deterministic manifest-entry construction from acquisition results
 - optional local JSON manifest writing when a manifest path is provided
 - deterministic summary counts for acquired, failed, and skipped or not-implemented outcomes
+- centralized source acquisition status constants and predicate helpers with preserved
+  compatibility values (`"acquired"`, `"failed"`, `"skipped"`, and `"not_implemented"`)
+- deterministic status counting helper behavior that ignores unknown statuses
 
 ## Explicit Non-Goals
 

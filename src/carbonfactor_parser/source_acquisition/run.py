@@ -17,6 +17,7 @@ from carbonfactor_parser.source_acquisition.manifest import (
     write_acquisition_manifest,
 )
 from carbonfactor_parser.source_acquisition.models import SourceAcquisitionDescriptor
+from carbonfactor_parser.source_acquisition.status import count_acquisition_statuses
 
 
 @dataclass(frozen=True)
@@ -46,12 +47,7 @@ def run_source_acquisition(
     if manifest_path is not None:
         written_manifest_path = write_acquisition_manifest(manifest_entries, manifest_path)
 
-    acquired_count = sum(result.status == "acquired" for result in results)
-    failed_count = sum(result.status == "failed" for result in results)
-    skipped_count = sum(
-        result.status in {"skipped", "not_implemented"}
-        for result in results
-    )
+    acquired_count, failed_count, skipped_count = count_acquisition_statuses(results)
 
     return SourceAcquisitionRunResult(
         results=results,

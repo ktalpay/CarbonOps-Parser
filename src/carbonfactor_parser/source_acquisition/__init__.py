@@ -33,6 +33,20 @@ from carbonfactor_parser.source_acquisition.run import (
     SourceAcquisitionRunResult,
     run_source_acquisition,
 )
+from carbonfactor_parser.source_acquisition.status import (
+    ACQUISITION_FAILED_STATUSES,
+    ACQUISITION_KNOWN_STATUSES,
+    ACQUISITION_SKIPPED_STATUSES,
+    ACQUISITION_STATUS_ACQUIRED,
+    ACQUISITION_STATUS_FAILED,
+    ACQUISITION_STATUS_NOT_IMPLEMENTED,
+    ACQUISITION_STATUS_SKIPPED,
+    ACQUISITION_SUCCESS_STATUSES,
+    count_acquisition_statuses,
+    is_acquired_status,
+    is_failed_status,
+    is_skipped_status,
+)
 from carbonfactor_parser.source_acquisition.targets import (
     SourceAcquisitionTarget,
     plan_source_acquisition_target,
@@ -386,4 +400,16 @@ __all__ = (
     "plan_source_acquisition_targets",
     "serialize_manifest_entries",
     "write_acquisition_manifest",
+    "ACQUISITION_STATUS_ACQUIRED",
+    "ACQUISITION_STATUS_FAILED",
+    "ACQUISITION_STATUS_SKIPPED",
+    "ACQUISITION_STATUS_NOT_IMPLEMENTED",
+    "ACQUISITION_SUCCESS_STATUSES",
+    "ACQUISITION_FAILED_STATUSES",
+    "ACQUISITION_SKIPPED_STATUSES",
+    "ACQUISITION_KNOWN_STATUSES",
+    "is_acquired_status",
+    "is_failed_status",
+    "is_skipped_status",
+    "count_acquisition_statuses",
 )
