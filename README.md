@@ -227,6 +227,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Source Discovery](docs/source-discovery.md)
 - [Source Ingestion Boundaries](docs/source-ingestion-boundaries.md)
 - [Source Acquisition Boundary](docs/source-acquisition-boundary.md)
+- [Source Acquisition CLI Boundary](docs/source-acquisition-cli-boundary.md)
 - [Source Acquisition Sequencing Checklist](docs/source-acquisition-sequencing-checklist.md)
 - [Local Source Acquisition Contract Boundary](docs/local-source-acquisition-contract-boundary.md)
 - [Local Source Acquisition Examples Boundary](docs/local-source-acquisition-examples-boundary.md)
