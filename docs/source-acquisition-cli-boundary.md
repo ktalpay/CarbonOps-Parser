@@ -84,6 +84,15 @@ The source acquisition CLI is available through both module invocation and packa
 - `python -m carbonfactor_parser.source_acquisition.cli run --manifest-path <PATH> --output-format json`
 - `carbonops-source-acquisition run --manifest-path <PATH> --output-format json`
   - Writes the local manifest file and returns the manifest path in the JSON payload.
+- `python -m carbonfactor_parser.source_acquisition.cli validate`
+- `carbonops-source-acquisition validate`
+  - Validates source descriptor metadata locally from `create_default_source_acquisition_registry()`.
+  - No HTTP calls, file writes, manifest writes, parser execution, or database work are performed.
+  - Text output prints deterministic summary counts and issue lines.
+- `python -m carbonfactor_parser.source_acquisition.cli validate --output-format json`
+- `carbonops-source-acquisition validate --output-format json`
+  - Emits deterministic JSON with `issue_count`, `warning_count`, `error_count`, and `issues`.
+  - Exit code is `0` when no errors exist and non-zero when one or more errors are present; warnings alone do not fail the command.
 
 ## Deferred Behavior
 
@@ -93,4 +102,4 @@ Default runs remain offline/no-op unless `--client http` is explicitly provided.
 
 When `--client noop` is selected (including the default), HTTP-only flags (`--persist-content`, `--base-directory`, and `--timeout-seconds`) are rejected with clear argument errors.
 
-Unknown source IDs and duplicate `--source-id` values fail with clear argument errors in list/run flows, including HTTP and dry-run mode.
+Unknown source IDs and duplicate `--source-id` values fail with clear argument errors in list/run/validate flows, including HTTP and dry-run mode.

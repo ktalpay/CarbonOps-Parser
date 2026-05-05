@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-083C: Added deterministic descriptor validation report helpers and CLI `validate` command with local-only warning/error reporting, source ID filtering, and offline tests.
 - CO-082B: Added source acquisition CLI status summary documentation examples for list, filtered list, noop run, dry-run, JSON output, manifest output, and explicit HTTP mode.
 - CO-081D: Added standard-library HTTP transport implementation behind the existing transport protocol with offline tests.
 - CO-080C: Added package console script entrypoint for the offline source acquisition CLI.

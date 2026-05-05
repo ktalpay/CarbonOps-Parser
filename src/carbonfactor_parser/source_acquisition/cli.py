@@ -12,6 +12,10 @@ from carbonfactor_parser.source_acquisition.http_client import HttpSourceAcquisi
 from carbonfactor_parser.source_acquisition.http_transport import (
     StandardLibraryHttpAcquisitionTransport,
 )
+from carbonfactor_parser.source_acquisition.descriptor_validation import (
+    serialize_descriptor_validation_report,
+    validate_source_descriptors,
+)
 from carbonfactor_parser.source_acquisition.registry import (
     create_default_source_acquisition_registry,
 )
@@ -90,6 +94,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output format for command results.",
     )
     run_parser.add_argument(
+        "--source-id",
+        action="append",
+        default=None,
+        help="Filter to one or more source IDs from the default registry. Repeatable.",
+    )
+    validate_parser = subparsers.add_parser(
+        "validate",
+        help="Validate default source descriptor metadata.",
+    )
+    validate_parser.add_argument(
+        "--output-format",
+        choices=("text", "json"),
+        default="text",
+        help="Output format for command results.",
+    )
+    validate_parser.add_argument(
         "--source-id",
         action="append",
         default=None,
@@ -323,6 +343,34 @@ def _handle_dry_run_command(
     return 0
 
 
+def _handle_validate_command(
+    *,
+    output_format: str,
+    source_ids: list[str] | None,
+    parser: argparse.ArgumentParser,
+) -> int:
+    descriptors = create_default_source_acquisition_registry()
+    descriptors = _filter_descriptors_by_source_id(
+        descriptors=descriptors,
+        source_ids=source_ids,
+        parser=parser,
+    )
+    report = validate_source_descriptors(descriptors)
+
+    if output_format == "json":
+        print(serialize_descriptor_validation_report(report))
+    else:
+        print(f"issue_count={report.issue_count}")
+        print(f"warning_count={report.warning_count}")
+        print(f"error_count={report.error_count}")
+        for issue in report.issues:
+            print(
+                f"{issue.severity} | {issue.source_id} | {issue.field} | {issue.message}"
+            )
+
+    return 1 if report.error_count > 0 else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run source acquisition CLI command."""
 
@@ -364,6 +412,12 @@ def main(argv: list[str] | None = None) -> int:
             manifest_path=args.manifest_path,
             output_format=args.output_format,
             client=client,
+            source_ids=args.source_id,
+            parser=parser,
+        )
+    if args.command == "validate":
+        return _handle_validate_command(
+            output_format=args.output_format,
             source_ids=args.source_id,
             parser=parser,
         )

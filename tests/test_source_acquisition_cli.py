@@ -465,3 +465,55 @@ def test_duplicate_source_id_fails_clearly(capsys: pytest.CaptureFixture[str]) -
     captured = capsys.readouterr()
     assert excinfo.value.code == 2
     assert "Duplicate --source-id values are not allowed: ghg_protocol" in captured.err
+
+
+def test_validate_text_output_and_exit_code(capsys: pytest.CaptureFixture[str]) -> None:
+    exit_code = cli.main(["validate"])
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "issue_count=2" in captured.out
+    assert "warning_count=2" in captured.out
+    assert "error_count=0" in captured.out
+
+
+def test_validate_json_output(capsys: pytest.CaptureFixture[str]) -> None:
+    exit_code = cli.main(["validate", "--output-format", "json"])
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert exit_code == 0
+    assert payload["issue_count"] == 2
+    assert payload["warning_count"] == 2
+    assert payload["error_count"] == 0
+
+
+def test_validate_supports_source_id_filter(capsys: pytest.CaptureFixture[str]) -> None:
+    exit_code = cli.main(["validate", "--source-id", "ghg_protocol"])
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "issue_count=0" in captured.out
+
+
+def test_validate_returns_non_zero_when_errors_exist(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(
+        cli,
+        "create_default_source_acquisition_registry",
+        lambda: (
+            SourceAcquisitionDescriptor("", "fam", "name", "home", "acq", "csv", "desc", True),
+        ),
+    )
+    exit_code = cli.main(["validate"])
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "error_count=1" in captured.out
+
+
+def test_validate_does_not_instantiate_http_transport(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _fail_transport(*args: object, **kwargs: object) -> object:
+        raise AssertionError("HTTP transport should not be instantiated in validate mode.")
+
+    monkeypatch.setattr(cli, "StandardLibraryHttpAcquisitionTransport", _fail_transport)
+    assert cli.main(["validate"]) == 0
