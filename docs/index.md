@@ -33,6 +33,7 @@
 - [Source Acquisition HTTP Client Boundary](source-acquisition-http-client-boundary.md)
 - [Source Acquisition Manifest Boundary](source-acquisition-manifest-boundary.md)
 - [Source Acquisition Run Boundary](source-acquisition-run-boundary.md)
+- [Source Acquisition CLI Boundary](source-acquisition-cli-boundary.md)
 - [Artificial Source Acquisition Validation Pipeline](artificial-source-acquisition-validation-pipeline.md)
 - [Artificial Source Acquisition Module Recap](artificial-source-acquisition-module-recap.md)
 - [Artificial Source Acquisition Phase Closure](artificial-source-acquisition-phase-closure.md)
