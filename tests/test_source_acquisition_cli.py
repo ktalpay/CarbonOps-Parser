@@ -18,8 +18,8 @@ def _http_descriptors() -> tuple[SourceAcquisitionDescriptor, ...]:
             source_id="alpha",
             source_family="alpha",
             display_name="Alpha",
-            homepage_url="https://example.test/alpha",
-            acquisition_url="https://example.test/alpha.csv",
+            homepage_url="alpha-home",
+            acquisition_url="alpha.csv",
             expected_format="csv",
             description="fixture",
             enabled=True,
@@ -70,7 +70,7 @@ def test_run_http_mode_uses_http_client_without_persistence(
 
     captured = capsys.readouterr()
     assert exit_code == 0
-    assert calls == ["https://example.test/alpha.csv"]
+    assert calls == ["alpha.csv"]
     assert "acquired_count=1" in captured.out
     assert "failed_count=0" in captured.out
     assert "skipped_count=0" in captured.out
@@ -123,11 +123,40 @@ def test_run_noop_with_persist_content_fails_clearly() -> None:
     assert excinfo.value.code == 2
 
 
+def test_run_noop_with_base_directory_fails_clearly(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main(["run", "--client", "noop", "--base-directory", str(tmp_path)])
+
+    assert excinfo.value.code == 2
+
+
 def test_run_noop_with_timeout_fails_clearly() -> None:
     with pytest.raises(SystemExit) as excinfo:
         cli.main(["run", "--client", "noop", "--timeout-seconds", "2.0"])
 
     assert excinfo.value.code == 2
+
+
+def test_run_http_timeout_is_forwarded_to_transport(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(cli, "create_default_source_acquisition_registry", _http_descriptors)
+
+    captured_timeout: list[float | None] = []
+
+    class FakeTransport:
+        def __init__(self, timeout_seconds: float | None = None) -> None:
+            captured_timeout.append(timeout_seconds)
+
+        def __call__(self, acquisition_url: str) -> HttpAcquisitionTransportResponse:
+            return HttpAcquisitionTransportResponse(status_code=200, content=b"n,m\n7,8\n")
+
+    monkeypatch.setattr(cli, "StandardLibraryHttpAcquisitionTransport", FakeTransport)
+
+    exit_code = cli.main(["run", "--client", "http", "--timeout-seconds", "3.5"])
+
+    assert exit_code == 0
+    assert captured_timeout == [3.5]
 
 
 def test_run_http_json_output(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:

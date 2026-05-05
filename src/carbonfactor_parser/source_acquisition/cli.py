@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 from carbonfactor_parser.source_acquisition.client import NoopSourceAcquisitionClient
 from carbonfactor_parser.source_acquisition.http_client import HttpSourceAcquisitionClient
@@ -106,7 +107,14 @@ def _serialize_result(result: object) -> dict[str, object]:
     }
 
 
-def _build_run_client(*, client: str, base_directory: Path | None, persist_content: bool, timeout_seconds: float | None, parser: argparse.ArgumentParser) -> object:
+def _build_run_client(
+    *,
+    client: str,
+    base_directory: Path | None,
+    persist_content: bool,
+    timeout_seconds: float | None,
+    parser: argparse.ArgumentParser,
+) -> Any:
     if client == "noop":
         if persist_content:
             parser.error("--persist-content requires --client http.")
@@ -116,8 +124,13 @@ def _build_run_client(*, client: str, base_directory: Path | None, persist_conte
             parser.error("--timeout-seconds requires --client http.")
         return NoopSourceAcquisitionClient()
 
+    if client != "http":
+        parser.error(f"Unsupported client mode: {client}")
+
     if persist_content and base_directory is None:
-        parser.error("--base-directory is required when using --persist-content with --client http.")
+        parser.error(
+            "--base-directory is required when using --persist-content with --client http."
+        )
 
     transport = StandardLibraryHttpAcquisitionTransport(timeout_seconds=timeout_seconds)
     return HttpSourceAcquisitionClient(
