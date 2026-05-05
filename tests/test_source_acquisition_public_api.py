@@ -30,12 +30,14 @@ EXPECTED_SOURCE_ACQUISITION_PUBLIC_API = (
     "HttpSourceAcquisitionClient",
     "SourceAcquisitionClient",
     "SourceAcquisitionDescriptor",
+    "SourceAcquisitionManifestEntry",
     "SourceAcquisitionResult",
     "SourceAcquisitionValidationCount",
     "SourceAcquisitionValidationIssue",
     "SourceAcquisitionValidationResult",
     "SourceAcquisitionValidationSummary",
     "acquire_all_sources",
+    "create_manifest_entry",
     "create_artificial_source_acquisition_metadata",
     "create_default_source_acquisition_registry",
     "create_source_acquisition_validation_issue",
@@ -47,7 +49,10 @@ EXPECTED_SOURCE_ACQUISITION_PUBLIC_API = (
     "SourceAcquisitionTarget",
     "plan_source_acquisition_target",
     "plan_source_acquisition_targets",
+    "serialize_manifest_entries",
+    "write_acquisition_manifest",
 )
+
 
 EXPECTED_ROOT_PUBLIC_API = (
     "ArtificialSourceAcquisitionMetadata",

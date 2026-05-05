@@ -18,6 +18,12 @@ from carbonfactor_parser.source_acquisition.http_client import (
     HttpAcquisitionTransportResponse,
     HttpSourceAcquisitionClient,
 )
+from carbonfactor_parser.source_acquisition.manifest import (
+    SourceAcquisitionManifestEntry,
+    create_manifest_entry,
+    serialize_manifest_entries,
+    write_acquisition_manifest,
+)
 from carbonfactor_parser.source_acquisition.models import SourceAcquisitionDescriptor
 from carbonfactor_parser.source_acquisition.registry import (
     create_default_source_acquisition_registry,
@@ -353,12 +359,14 @@ __all__ = (
     "HttpSourceAcquisitionClient",
     "SourceAcquisitionClient",
     "SourceAcquisitionDescriptor",
+    "SourceAcquisitionManifestEntry",
     "SourceAcquisitionResult",
     "SourceAcquisitionValidationCount",
     "SourceAcquisitionValidationIssue",
     "SourceAcquisitionValidationResult",
     "SourceAcquisitionValidationSummary",
     "acquire_all_sources",
+    "create_manifest_entry",
     "create_artificial_source_acquisition_metadata",
     "create_default_source_acquisition_registry",
     "create_source_acquisition_validation_issue",
@@ -370,4 +378,6 @@ __all__ = (
     "SourceAcquisitionTarget",
     "plan_source_acquisition_target",
     "plan_source_acquisition_targets",
+    "serialize_manifest_entries",
+    "write_acquisition_manifest",
 )
