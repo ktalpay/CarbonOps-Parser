@@ -23,7 +23,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-081C: Documented artificial in-memory manifest usage example.
 - CO-081B: Added artificial in-memory manifest usage example.
 - CO-081A: Documented artificial manifest next-phase option matrix.
-- CO-080A: Documented artificial manifest metadata phase recap.
+- CO-080A: Added source acquisition CLI skeleton using no-op client.
 - CO-079B: Added acquisition status constants and deterministic counting helper.
 - CO-079A: Added artificial manifest collection validation summary shape.
 - CO-078C: Documented artificial manifest metadata collection boundary.
