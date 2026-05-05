@@ -8,7 +8,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Next
 
-- CO-084A: Add acquisition file target planning model.
+- No next task currently queued.
 
 ## Backlog
 
@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-078A: Added optional HTTP acquisition file persistence using target planning and deterministic offline tests.
 - CO-077D: Added in-memory acquisition checksum helper and wired HTTP acquisition result checksum metadata.
 - CO-082A: Documented artificial manifest usage example phase recap.
 - CO-081C: Documented artificial in-memory manifest usage example.
@@ -25,7 +26,6 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-079B: Documented artificial manifest collection validation summary boundary.
 - CO-079A: Added artificial manifest collection validation summary shape.
 - CO-078B: Documented artificial manifest metadata collection boundary.
-- CO-078A: Added artificial manifest metadata collection shape.
 - CO-077B: Documented artificial manifest validation summary boundary.
 - CO-077C: Added mocked-transport HTTP acquisition client skeleton.
 - CO-077A: Added artificial manifest validation summary shape.
