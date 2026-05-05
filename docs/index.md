@@ -30,6 +30,7 @@
 - [Source Acquisition Implementation Sequencing Examples Boundary](source-acquisition-implementation-sequencing-examples-boundary.md)
 - [Source Acquisition Registry](source-acquisition-registry.md)
 - [Source Acquisition Target Planning](source-acquisition-target-planning.md)
+- [Source Acquisition HTTP Client Boundary](source-acquisition-http-client-boundary.md)
 - [Artificial Source Acquisition Validation Pipeline](artificial-source-acquisition-validation-pipeline.md)
 - [Artificial Source Acquisition Module Recap](artificial-source-acquisition-module-recap.md)
 - [Artificial Source Acquisition Phase Closure](artificial-source-acquisition-phase-closure.md)
