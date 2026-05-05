@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-078B: Added deterministic local source acquisition manifest model, serializer, and writer boundary.
 - CO-078A: Added optional HTTP acquisition file persistence using target planning and deterministic offline tests.
 - CO-077D: Added in-memory acquisition checksum helper and wired HTTP acquisition result checksum metadata.
 - CO-082A: Documented artificial manifest usage example phase recap.
@@ -25,7 +26,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-080A: Documented artificial manifest metadata phase recap.
 - CO-079B: Documented artificial manifest collection validation summary boundary.
 - CO-079A: Added artificial manifest collection validation summary shape.
-- CO-078B: Documented artificial manifest metadata collection boundary.
+- CO-078C: Documented artificial manifest metadata collection boundary.
 - CO-077B: Documented artificial manifest validation summary boundary.
 - CO-077C: Added mocked-transport HTTP acquisition client skeleton.
 - CO-077A: Added artificial manifest validation summary shape.
