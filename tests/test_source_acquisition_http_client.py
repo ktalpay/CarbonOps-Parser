@@ -2,6 +2,7 @@ from pathlib import Path
 
 from carbonfactor_parser import source_acquisition
 from carbonfactor_parser.source_acquisition.client import NoopSourceAcquisitionClient
+from carbonfactor_parser.source_acquisition.checksum import compute_sha256_hex
 from carbonfactor_parser.source_acquisition.http_client import (
     HttpAcquisitionTransportResponse,
     HttpSourceAcquisitionClient,
@@ -47,7 +48,7 @@ def test_http_client_success_response_returns_acquired_result() -> None:
     assert result.content_type == "text/csv"
     assert result.content_length == 8
     assert result.local_path is None
-    assert result.checksum_sha256 is None
+    assert result.checksum_sha256 == compute_sha256_hex(b"a,b\n1,2\n")
     assert captured_urls == [descriptor.acquisition_url]
 
 
@@ -66,6 +67,8 @@ def test_http_client_success_response_does_not_create_files_or_directories(tmp_p
     after_paths = tuple(tmp_path.iterdir())
 
     assert result.status == "acquired"
+    assert result.local_path is None
+    assert result.checksum_sha256 == compute_sha256_hex(b"")
     assert before_paths == after_paths
 
 
@@ -76,6 +79,7 @@ def test_http_client_non_2xx_response_returns_failed_result() -> None:
     result = HttpSourceAcquisitionClient(fake_transport).acquire(_build_descriptor())
 
     assert result.status == "failed"
+    assert result.checksum_sha256 is None
     assert "503" in (result.message or "")
 
 
@@ -86,6 +90,7 @@ def test_http_client_transport_exception_returns_failed_result() -> None:
     result = HttpSourceAcquisitionClient(fake_transport).acquire(_build_descriptor())
 
     assert result.status == "failed"
+    assert result.checksum_sha256 is None
     assert "offline failure" in (result.message or "")
 
 

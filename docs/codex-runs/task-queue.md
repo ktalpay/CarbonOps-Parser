@@ -4,11 +4,11 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- CO-084A: Add acquisition file target planning model.
+- No active task currently queued.
 
 ## Next
 
-- CO-058C: Add persistence boundary usage example.
+- CO-084A: Add acquisition file target planning model.
 
 ## Backlog
 
@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-077D: Added in-memory acquisition checksum helper and wired HTTP acquisition result checksum metadata.
 - CO-082A: Documented artificial manifest usage example phase recap.
 - CO-081C: Documented artificial in-memory manifest usage example.
 - CO-081B: Added artificial in-memory manifest usage example.

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 
+from carbonfactor_parser.source_acquisition.checksum import compute_sha256_hex
 from carbonfactor_parser.source_acquisition.client import (
     NoopSourceAcquisitionClient,
     SourceAcquisitionClient,
