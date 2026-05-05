@@ -4,7 +4,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- Source acquisition client contract and no-op implementation task in progress.
+- CO-084A: Add acquisition file target planning model.
 
 ## Next
 
@@ -31,6 +31,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-076B: Added artificial manifest metadata root public API export.
 - CO-083B: Added source acquisition client contract and no-op implementation.
 - CO-083A: Added source acquisition configuration model and registry skeleton.
+- CO-084B: Added acquisition file target planning model.
 - CO-076A: Added artificial manifest metadata model shape with root public API export deferred.
 - CO-075B: Documented artificial source acquisition phase closure.
 - CO-075A: Added artificial source acquisition README usage snippet.

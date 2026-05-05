@@ -16,6 +16,11 @@ from carbonfactor_parser.source_acquisition.registry import (
     create_default_source_acquisition_registry,
     validate_source_acquisition_registry,
 )
+from carbonfactor_parser.source_acquisition.targets import (
+    SourceAcquisitionTarget,
+    plan_source_acquisition_target,
+    plan_source_acquisition_targets,
+)
 
 
 _SHA256_HEX_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
@@ -352,4 +357,7 @@ __all__ = (
     "validate_and_summarize_artificial_source_acquisition_metadata",
     "validate_artificial_source_acquisition_metadata",
     "validate_source_acquisition_registry",
+    "SourceAcquisitionTarget",
+    "plan_source_acquisition_target",
+    "plan_source_acquisition_targets",
 )
