@@ -6,3 +6,6 @@ pythonpath = [
 testpaths = [
     "tests",
 ]
+
+[project.scripts]
+carbonops-source-acquisition = "carbonfactor_parser.source_acquisition.cli:main"

@@ -1,4 +1,4 @@
-# Source Acquisition CLI Boundary
+"""# Source Acquisition CLI Boundary
 
 ## Scope
 
@@ -25,3 +25,4 @@ The source acquisition CLI is currently an offline-only boundary for default sou
 ## Deferred Behavior
 
 The CLI remains offline/no-op only and does not run live HTTP acquisition. It does not use `HttpSourceAcquisitionClient`, parser execution, scheduler logic, retry/cancel flows, or database persistence in this phase. HTTP/live mode remains deferred.
+"""
