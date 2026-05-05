@@ -5,6 +5,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 
+from carbonfactor_parser.source_acquisition.client import (
+    NoopSourceAcquisitionClient,
+    SourceAcquisitionClient,
+    SourceAcquisitionResult,
+    acquire_all_sources,
+)
+from carbonfactor_parser.source_acquisition.models import SourceAcquisitionDescriptor
+from carbonfactor_parser.source_acquisition.registry import (
+    create_default_source_acquisition_registry,
+    validate_source_acquisition_registry,
+)
+
 
 _SHA256_HEX_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
 
@@ -323,14 +335,21 @@ def _validate_optional_string(
 __all__ = (
     "ArtificialSourceAcquisitionMetadata",
     "ArtificialSourceAcquisitionValidationPipelineResult",
+    "NoopSourceAcquisitionClient",
+    "SourceAcquisitionClient",
+    "SourceAcquisitionDescriptor",
+    "SourceAcquisitionResult",
     "SourceAcquisitionValidationCount",
     "SourceAcquisitionValidationIssue",
     "SourceAcquisitionValidationResult",
     "SourceAcquisitionValidationSummary",
+    "acquire_all_sources",
     "create_artificial_source_acquisition_metadata",
+    "create_default_source_acquisition_registry",
     "create_source_acquisition_validation_issue",
     "create_source_acquisition_validation_result",
     "summarize_source_acquisition_validation_result",
     "validate_and_summarize_artificial_source_acquisition_metadata",
     "validate_artificial_source_acquisition_metadata",
+    "validate_source_acquisition_registry",
 )

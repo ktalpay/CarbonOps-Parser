@@ -28,6 +28,7 @@
 - [Source Acquisition Implementation Readiness Examples Boundary](source-acquisition-implementation-readiness-examples-boundary.md)
 - [Source Acquisition Implementation Sequencing Checklist](source-acquisition-implementation-sequencing-checklist.md)
 - [Source Acquisition Implementation Sequencing Examples Boundary](source-acquisition-implementation-sequencing-examples-boundary.md)
+- [Source Acquisition Registry](source-acquisition-registry.md)
 - [Artificial Source Acquisition Validation Pipeline](artificial-source-acquisition-validation-pipeline.md)
 - [Artificial Source Acquisition Module Recap](artificial-source-acquisition-module-recap.md)
 - [Artificial Source Acquisition Phase Closure](artificial-source-acquisition-phase-closure.md)
