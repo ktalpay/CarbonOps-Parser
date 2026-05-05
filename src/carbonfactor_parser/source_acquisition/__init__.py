@@ -7,6 +7,13 @@ import re
 
 from carbonfactor_parser.source_acquisition.checksum import compute_sha256_hex
 from carbonfactor_parser.source_acquisition.file_store import write_acquired_content
+from carbonfactor_parser.source_acquisition.descriptor_validation import (
+    SourceDescriptorValidationIssue,
+    SourceDescriptorValidationReport,
+    serialize_descriptor_validation_report,
+    validate_source_descriptors,
+)
+
 from carbonfactor_parser.source_acquisition.client import (
     NoopSourceAcquisitionClient,
     SourceAcquisitionClient,
@@ -380,6 +387,8 @@ __all__ = (
     "HttpSourceAcquisitionClient",
     "SourceAcquisitionClient",
     "SourceAcquisitionDescriptor",
+    "SourceDescriptorValidationIssue",
+    "SourceDescriptorValidationReport",
     "SourceAcquisitionManifestEntry",
     "SourceAcquisitionResult",
     "SourceAcquisitionRunResult",
@@ -398,6 +407,8 @@ __all__ = (
     "validate_and_summarize_artificial_source_acquisition_metadata",
     "validate_artificial_source_acquisition_metadata",
     "validate_source_acquisition_registry",
+    "validate_source_descriptors",
+    "serialize_descriptor_validation_report",
     "SourceAcquisitionTarget",
     "plan_source_acquisition_target",
     "plan_source_acquisition_targets",

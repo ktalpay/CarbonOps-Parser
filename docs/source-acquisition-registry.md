@@ -33,6 +33,8 @@ The default no-op implementation returns `not_implemented` results and does not 
 Future HTTP downloader tasks should implement the same client contract and populate optional result metadata fields (`content_type`, `content_length`, `checksum_sha256`, and `local_path`) when real acquisition behavior is introduced.
 
 ## Descriptor Validation Boundary
+Descriptor validation helpers (`validate_source_descriptors(...)`, `SourceDescriptorValidationReport`, and `serialize_descriptor_validation_report(...)`) are part of the `carbonfactor_parser.source_acquisition` public API for local-only metadata checks.
+
 
 Descriptor validation reports are local metadata quality checks only.
 They validate required descriptor fields, duplicate source IDs, and simple warning/error semantics without live URL verification or network access.
