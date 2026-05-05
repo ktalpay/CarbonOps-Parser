@@ -31,3 +31,8 @@ An offline-safe acquisition client contract is provided for deterministic execut
 The default no-op implementation returns `not_implemented` results and does not perform network access, file writes, checksum computation, or parser/persistence work.
 
 Future HTTP downloader tasks should implement the same client contract and populate optional result metadata fields (`content_type`, `content_length`, `checksum_sha256`, and `local_path`) when real acquisition behavior is introduced.
+
+## Descriptor Validation Boundary
+
+Descriptor validation reports are local metadata quality checks only.
+They validate required descriptor fields, duplicate source IDs, and simple warning/error semantics without live URL verification or network access.
