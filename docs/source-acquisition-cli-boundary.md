@@ -12,6 +12,11 @@ The source acquisition CLI is available through both module invocation and packa
 - `carbonops-source-acquisition list`
   - Lists default source descriptors from `create_default_source_acquisition_registry()`.
   - Default output format is deterministic text lines containing `source_id`, `source_family`, `display_name`, `expected_format`, and `enabled`.
+  - Optional `--source-id <SOURCE_ID>` flag can be repeated to filter output to selected source IDs only.
+  - If `--source-id` is omitted, all default source descriptors are included.
+  - Filtered output always preserves the default registry order.
+  - Unknown source IDs fail with a clear argument error.
+  - Duplicate `--source-id` values are rejected with a clear argument error.
 - `python -m carbonfactor_parser.source_acquisition.cli list --output-format json`
 - `carbonops-source-acquisition list --output-format json`
   - Emits deterministic, timestamp-free JSON with a `sources` array in default descriptor order.
@@ -19,6 +24,11 @@ The source acquisition CLI is available through both module invocation and packa
 - `carbonops-source-acquisition run`
   - Runs `run_source_acquisition()` with `NoopSourceAcquisitionClient` by default (`--client noop`).
   - Default output format is deterministic text summary counts.
+  - Optional `--source-id <SOURCE_ID>` flag can be repeated to scope run targets to selected source IDs from the default registry.
+  - If `--source-id` is omitted, all default source descriptors are included.
+  - Filtering preserves default registry order across run outputs and manifest entries.
+  - Unknown source IDs fail with a clear argument error.
+  - Duplicate `--source-id` values are rejected with a clear argument error.
 - `python -m carbonfactor_parser.source_acquisition.cli run --client http`
 - `carbonops-source-acquisition run --client http`
   - Uses `HttpSourceAcquisitionClient` with `StandardLibraryHttpAcquisitionTransport` from the Python standard library.

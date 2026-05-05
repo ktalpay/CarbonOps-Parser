@@ -62,6 +62,56 @@ def test_default_run_uses_noop_behavior(capsys: pytest.CaptureFixture[str]) -> N
     assert "skipped_count=3" in captured.out
 
 
+def test_default_list_includes_all_sources(capsys: pytest.CaptureFixture[str]) -> None:
+    exit_code = cli.main(["list"])
+
+    captured = capsys.readouterr()
+    output_lines = [line.strip() for line in captured.out.splitlines() if line.strip()]
+    assert exit_code == 0
+    assert [line.split(" | ")[0] for line in output_lines] == [
+        "ghg_protocol",
+        "defra_desnz",
+        "ipcc_efdb",
+    ]
+
+
+def test_list_with_source_id_filters_to_single_source(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    exit_code = cli.main(["list", "--source-id", "ghg_protocol"])
+
+    captured = capsys.readouterr()
+    output_lines = [line.strip() for line in captured.out.splitlines() if line.strip()]
+    assert exit_code == 0
+    assert output_lines == [
+        "ghg_protocol | ghg_protocol | GHG Protocol | discovery | True",
+    ]
+
+
+def test_list_json_with_multiple_source_ids_preserves_registry_order(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    exit_code = cli.main(
+        [
+            "list",
+            "--output-format",
+            "json",
+            "--source-id",
+            "ipcc_efdb",
+            "--source-id",
+            "ghg_protocol",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert exit_code == 0
+    assert [entry["source_id"] for entry in payload["sources"]] == [
+        "ghg_protocol",
+        "ipcc_efdb",
+    ]
+
+
 def test_run_with_explicit_noop_matches_default(capsys: pytest.CaptureFixture[str]) -> None:
     exit_code = cli.main(["run", "--client", "noop"])
 
@@ -341,3 +391,77 @@ def test_dry_run_does_not_instantiate_http_transport(
     )
 
     assert exit_code == 0
+
+
+def test_run_noop_with_source_filter_only_counts_selected_sources(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    exit_code = cli.main(["run", "--source-id", "ghg_protocol", "--source-id", "ipcc_efdb"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "acquired_count=0" in captured.out
+    assert "failed_count=0" in captured.out
+    assert "skipped_count=2" in captured.out
+
+
+def test_dry_run_with_source_filter_only_plans_selected_sources(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(cli, "create_default_source_acquisition_registry", _dry_run_descriptors)
+    exit_code = cli.main(
+        [
+            "run",
+            "--dry-run",
+            "--base-directory",
+            str(tmp_path),
+            "--source-id",
+            "gamma-source",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    output_lines = [line.strip() for line in captured.out.splitlines() if line.strip()]
+    assert exit_code == 0
+    assert output_lines == [
+        f"source_id=gamma-source local_path={tmp_path / 'gamma-source.json'}",
+    ]
+
+
+def test_run_manifest_with_source_filter_only_writes_selected_entries(
+    tmp_path: Path,
+) -> None:
+    manifest_path = tmp_path / "manifest.json"
+    exit_code = cli.main(
+        [
+            "run",
+            "--manifest-path",
+            str(manifest_path),
+            "--source-id",
+            "ghg_protocol",
+        ]
+    )
+
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert exit_code == 0
+    assert [entry["source_id"] for entry in payload] == ["ghg_protocol"]
+
+
+def test_unknown_source_id_fails_clearly(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main(["list", "--source-id", "missing_source"])
+
+    captured = capsys.readouterr()
+    assert excinfo.value.code == 2
+    assert "Unknown --source-id value(s): missing_source" in captured.err
+
+
+def test_duplicate_source_id_fails_clearly(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main(["run", "--source-id", "ghg_protocol", "--source-id", "ghg_protocol"])
+
+    captured = capsys.readouterr()
+    assert excinfo.value.code == 2
+    assert "Duplicate --source-id values are not allowed: ghg_protocol" in captured.err

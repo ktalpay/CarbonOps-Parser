@@ -38,6 +38,12 @@ def build_parser() -> argparse.ArgumentParser:
         default="text",
         help="Output format for command results.",
     )
+    list_parser.add_argument(
+        "--source-id",
+        action="append",
+        default=None,
+        help="Filter to one or more source IDs from the default registry. Repeatable.",
+    )
 
     run_parser = subparsers.add_parser(
         "run",
@@ -82,6 +88,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("text", "json"),
         default="text",
         help="Output format for command results.",
+    )
+    run_parser.add_argument(
+        "--source-id",
+        action="append",
+        default=None,
+        help="Filter to one or more source IDs from the default registry. Repeatable.",
     )
 
     return parser
@@ -147,8 +159,52 @@ def _build_run_client(
     )
 
 
-def _handle_list_command(output_format: str) -> int:
+def _filter_descriptors_by_source_id(
+    *,
+    descriptors: tuple[object, ...],
+    source_ids: list[str] | None,
+    parser: argparse.ArgumentParser,
+) -> tuple[object, ...]:
+    if source_ids is None:
+        return descriptors
+
+    duplicate_source_ids = sorted(
+        {
+            source_id
+            for source_id in source_ids
+            if source_ids.count(source_id) > 1
+        }
+    )
+    if duplicate_source_ids:
+        parser.error(
+            f"Duplicate --source-id values are not allowed: {', '.join(duplicate_source_ids)}"
+        )
+
+    requested_source_ids = set(source_ids)
+    available_source_ids = {descriptor.source_id for descriptor in descriptors}
+    unknown_source_ids = sorted(requested_source_ids - available_source_ids)
+    if unknown_source_ids:
+        parser.error(f"Unknown --source-id value(s): {', '.join(unknown_source_ids)}")
+
+    return tuple(
+        descriptor
+        for descriptor in descriptors
+        if descriptor.source_id in requested_source_ids
+    )
+
+
+def _handle_list_command(
+    *,
+    output_format: str,
+    source_ids: list[str] | None,
+    parser: argparse.ArgumentParser,
+) -> int:
     descriptors = create_default_source_acquisition_registry()
+    descriptors = _filter_descriptors_by_source_id(
+        descriptors=descriptors,
+        source_ids=source_ids,
+        parser=parser,
+    )
 
     if output_format == "json":
         _emit_json(
@@ -177,8 +233,20 @@ def _handle_list_command(output_format: str) -> int:
     return 0
 
 
-def _handle_run_command(*, manifest_path: Path | None, output_format: str, client: object) -> int:
+def _handle_run_command(
+    *,
+    manifest_path: Path | None,
+    output_format: str,
+    client: object,
+    source_ids: list[str] | None,
+    parser: argparse.ArgumentParser,
+) -> int:
     descriptors = create_default_source_acquisition_registry()
+    descriptors = _filter_descriptors_by_source_id(
+        descriptors=descriptors,
+        source_ids=source_ids,
+        parser=parser,
+    )
     result = run_source_acquisition(
         descriptors=descriptors,
         client=client,
@@ -214,8 +282,19 @@ def _handle_run_command(*, manifest_path: Path | None, output_format: str, clien
     return 0
 
 
-def _handle_dry_run_command(*, base_directory: Path, output_format: str) -> int:
+def _handle_dry_run_command(
+    *,
+    base_directory: Path,
+    output_format: str,
+    source_ids: list[str] | None,
+    parser: argparse.ArgumentParser,
+) -> int:
     descriptors = create_default_source_acquisition_registry()
+    descriptors = _filter_descriptors_by_source_id(
+        descriptors=descriptors,
+        source_ids=source_ids,
+        parser=parser,
+    )
     targets = plan_source_acquisition_targets(
         descriptors=descriptors,
         base_directory=base_directory,
@@ -251,7 +330,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command == "list":
-        return _handle_list_command(output_format=args.output_format)
+        return _handle_list_command(
+            output_format=args.output_format,
+            source_ids=args.source_id,
+            parser=parser,
+        )
 
     if args.command == "run":
         if args.dry_run:
@@ -266,6 +349,8 @@ def main(argv: list[str] | None = None) -> int:
             return _handle_dry_run_command(
                 base_directory=args.base_directory,
                 output_format=args.output_format,
+                source_ids=args.source_id,
+                parser=parser,
             )
 
         client = _build_run_client(
@@ -279,6 +364,8 @@ def main(argv: list[str] | None = None) -> int:
             manifest_path=args.manifest_path,
             output_format=args.output_format,
             client=client,
+            source_ids=args.source_id,
+            parser=parser,
         )
 
     parser.print_usage()
