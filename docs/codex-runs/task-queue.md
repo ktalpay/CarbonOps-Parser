@@ -24,7 +24,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-077D: Added in-memory acquisition checksum helper and wired HTTP acquisition result checksum metadata.
 - CO-082A: Documented artificial manifest usage example phase recap.
 - CO-081C: Documented artificial in-memory manifest usage example.
-- CO-081B: Added artificial in-memory manifest usage example.
+- CO-081B: Added explicit CLI `--client {noop,http}` mode selection, opt-in HTTP persistence flags, and offline tests for HTTP CLI mode.
 - CO-081A: Documented artificial manifest next-phase option matrix.
 - CO-080A: Added source acquisition CLI skeleton using no-op client.
 - CO-079B: Added acquisition status constants and deterministic counting helper.
