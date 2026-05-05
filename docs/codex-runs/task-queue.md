@@ -23,7 +23,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-078A: Added optional HTTP acquisition file persistence using target planning and deterministic offline tests.
 - CO-077D: Added in-memory acquisition checksum helper and wired HTTP acquisition result checksum metadata.
 - CO-082A: Documented artificial manifest usage example phase recap.
-- CO-081C: Documented artificial in-memory manifest usage example.
+- CO-081C: Added CLI dry-run target planning mode with deterministic text/JSON outputs, argument guardrails, and offline tests.
 - CO-081B: Added explicit CLI `--client {noop,http}` mode selection with implemented run-path client construction, opt-in HTTP persistence and timeout flags, clear noop-mode argument validation, and offline tests for HTTP CLI mode.
 - CO-081A: Documented artificial manifest next-phase option matrix.
 - CO-080A: Added source acquisition CLI skeleton using no-op client.

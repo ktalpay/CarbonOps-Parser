@@ -16,6 +16,7 @@ from carbonfactor_parser.source_acquisition.registry import (
     create_default_source_acquisition_registry,
 )
 from carbonfactor_parser.source_acquisition.run import run_source_acquisition
+from carbonfactor_parser.source_acquisition.targets import plan_source_acquisition_targets
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -41,6 +42,11 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser = subparsers.add_parser(
         "run",
         help="Run source acquisition with a selected client mode.",
+    )
+    run_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Plan deterministic local target paths without acquisition or file writes.",
     )
     run_parser.add_argument(
         "--client",
@@ -208,6 +214,36 @@ def _handle_run_command(*, manifest_path: Path | None, output_format: str, clien
     return 0
 
 
+def _handle_dry_run_command(*, base_directory: Path, output_format: str) -> int:
+    descriptors = create_default_source_acquisition_registry()
+    targets = plan_source_acquisition_targets(
+        descriptors=descriptors,
+        base_directory=base_directory,
+    )
+
+    if output_format == "json":
+        _emit_json(
+            {
+                "dry_run": True,
+                "targets": [
+                    {
+                        "source_id": target.source_id,
+                        "source_family": target.source_family,
+                        "expected_format": target.expected_format,
+                        "local_path": str(target.local_path),
+                    }
+                    for target in targets
+                ],
+            }
+        )
+        return 0
+
+    for target in targets:
+        print(f"source_id={target.source_id} local_path={target.local_path}")
+
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run source acquisition CLI command."""
 
@@ -218,6 +254,20 @@ def main(argv: list[str] | None = None) -> int:
         return _handle_list_command(output_format=args.output_format)
 
     if args.command == "run":
+        if args.dry_run:
+            if args.base_directory is None:
+                parser.error("--dry-run requires --base-directory.")
+            if args.manifest_path is not None:
+                parser.error("--dry-run cannot be combined with --manifest-path.")
+            if args.persist_content:
+                parser.error("--dry-run cannot be combined with --persist-content.")
+            if args.timeout_seconds is not None:
+                parser.error("--dry-run cannot be combined with --timeout-seconds.")
+            return _handle_dry_run_command(
+                base_directory=args.base_directory,
+                output_format=args.output_format,
+            )
+
         client = _build_run_client(
             client=args.client,
             base_directory=args.base_directory,

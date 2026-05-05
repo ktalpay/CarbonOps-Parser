@@ -27,6 +27,31 @@ def _http_descriptors() -> tuple[SourceAcquisitionDescriptor, ...]:
     )
 
 
+def _dry_run_descriptors() -> tuple[SourceAcquisitionDescriptor, ...]:
+    return (
+        SourceAcquisitionDescriptor(
+            source_id="beta-source",
+            source_family="beta",
+            display_name="Beta",
+            homepage_url="beta-home",
+            acquisition_url="beta.csv",
+            expected_format="csv",
+            description="fixture",
+            enabled=True,
+        ),
+        SourceAcquisitionDescriptor(
+            source_id="gamma-source",
+            source_family="gamma",
+            display_name="Gamma",
+            homepage_url="gamma-home",
+            acquisition_url="gamma.json",
+            expected_format="json",
+            description="fixture",
+            enabled=True,
+        ),
+    )
+
+
 def test_default_run_uses_noop_behavior(capsys: pytest.CaptureFixture[str]) -> None:
     exit_code = cli.main(["run"])
 
@@ -180,3 +205,139 @@ def test_run_http_json_output(monkeypatch: pytest.MonkeyPatch, capsys: pytest.Ca
     assert payload["failed_count"] == 0
     assert payload["skipped_count"] == 0
     assert payload["results"][0]["status"] == "acquired"
+
+
+def test_dry_run_requires_base_directory() -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main(["run", "--dry-run"])
+
+    assert excinfo.value.code == 2
+
+
+def test_dry_run_text_output_includes_source_ids_and_local_paths(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(cli, "create_default_source_acquisition_registry", _dry_run_descriptors)
+
+    exit_code = cli.main(["run", "--dry-run", "--base-directory", str(tmp_path)])
+
+    captured = capsys.readouterr()
+    output_lines = [line.strip() for line in captured.out.splitlines() if line.strip()]
+    assert exit_code == 0
+    assert output_lines == [
+        f"source_id=beta-source local_path={tmp_path / 'beta-source.csv'}",
+        f"source_id=gamma-source local_path={tmp_path / 'gamma-source.json'}",
+    ]
+
+
+def test_dry_run_json_output_is_deterministic_and_ordered(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(cli, "create_default_source_acquisition_registry", _dry_run_descriptors)
+
+    first_exit = cli.main(
+        ["run", "--dry-run", "--base-directory", str(tmp_path), "--output-format", "json"]
+    )
+    first_output = capsys.readouterr().out
+
+    second_exit = cli.main(
+        ["run", "--dry-run", "--base-directory", str(tmp_path), "--output-format", "json"]
+    )
+    second_output = capsys.readouterr().out
+
+    assert first_exit == 0
+    assert second_exit == 0
+    assert first_output == second_output
+
+    payload = json.loads(first_output)
+    assert payload == {
+        "dry_run": True,
+        "targets": [
+            {
+                "source_id": "beta-source",
+                "source_family": "beta",
+                "expected_format": "csv",
+                "local_path": str(tmp_path / "beta-source.csv"),
+            },
+            {
+                "source_id": "gamma-source",
+                "source_family": "gamma",
+                "expected_format": "json",
+                "local_path": str(tmp_path / "gamma-source.json"),
+            },
+        ],
+    }
+
+
+def test_dry_run_does_not_write_files_or_directories(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(cli, "create_default_source_acquisition_registry", _dry_run_descriptors)
+
+    base_directory = tmp_path / "planned"
+    exit_code = cli.main(["run", "--dry-run", "--base-directory", str(base_directory)])
+
+    assert exit_code == 0
+    assert not base_directory.exists()
+
+
+def test_dry_run_rejects_manifest_path(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main(
+            [
+                "run",
+                "--dry-run",
+                "--base-directory",
+                str(tmp_path),
+                "--manifest-path",
+                str(tmp_path / "manifest.json"),
+            ]
+        )
+
+    assert excinfo.value.code == 2
+
+
+def test_dry_run_rejects_persist_content(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main(["run", "--dry-run", "--base-directory", str(tmp_path), "--persist-content"])
+
+    assert excinfo.value.code == 2
+
+
+def test_dry_run_rejects_timeout_seconds(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main(
+            [
+                "run",
+                "--dry-run",
+                "--base-directory",
+                str(tmp_path),
+                "--timeout-seconds",
+                "4.0",
+            ]
+        )
+
+    assert excinfo.value.code == 2
+
+
+def test_dry_run_does_not_instantiate_http_transport(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(cli, "create_default_source_acquisition_registry", _dry_run_descriptors)
+
+    def _fail_transport(*args: object, **kwargs: object) -> object:
+        raise AssertionError("HTTP transport should not be instantiated in dry-run mode.")
+
+    monkeypatch.setattr(cli, "StandardLibraryHttpAcquisitionTransport", _fail_transport)
+
+    exit_code = cli.main(
+        ["run", "--dry-run", "--base-directory", str(tmp_path), "--client", "http"]
+    )
+
+    assert exit_code == 0

@@ -39,6 +39,15 @@ The source acquisition CLI is available through both module invocation and packa
 - `python -m carbonfactor_parser.source_acquisition.cli run --output-format json`
 - `carbonops-source-acquisition run --output-format json`
   - Emits deterministic, timestamp-free JSON summary counts and per-source results in descriptor order.
+- `python -m carbonfactor_parser.source_acquisition.cli run --dry-run --base-directory <PATH>`
+- `carbonops-source-acquisition run --dry-run --base-directory <PATH>`
+  - Plans deterministic local target paths from default descriptors using `plan_source_acquisition_targets(...)`.
+  - Does not acquire content, write source files, write manifests, or use HTTP transport.
+  - Requires `--base-directory` and rejects `--manifest-path`, `--persist-content`, and `--timeout-seconds`.
+  - Text output prints planned targets in descriptor order with `source_id` and `local_path`.
+- `python -m carbonfactor_parser.source_acquisition.cli run --dry-run --base-directory <PATH> --output-format json`
+- `carbonops-source-acquisition run --dry-run --base-directory <PATH> --output-format json`
+  - Emits deterministic, timestamp-free JSON: `{"dry_run": true, "targets": [...]}` where each target contains `source_id`, `source_family`, `expected_format`, and `local_path`.
 - `python -m carbonfactor_parser.source_acquisition.cli run --manifest-path <PATH> --output-format json`
 - `carbonops-source-acquisition run --manifest-path <PATH> --output-format json`
   - Writes the local manifest file and returns the manifest path in the JSON payload.
