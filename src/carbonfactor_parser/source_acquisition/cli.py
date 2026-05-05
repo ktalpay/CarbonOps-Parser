@@ -7,6 +7,10 @@ import json
 from pathlib import Path
 
 from carbonfactor_parser.source_acquisition.client import NoopSourceAcquisitionClient
+from carbonfactor_parser.source_acquisition.http_client import HttpSourceAcquisitionClient
+from carbonfactor_parser.source_acquisition.http_transport import (
+    StandardLibraryHttpAcquisitionTransport,
+)
 from carbonfactor_parser.source_acquisition.registry import (
     create_default_source_acquisition_registry,
 )
@@ -35,13 +39,36 @@ def build_parser() -> argparse.ArgumentParser:
 
     run_parser = subparsers.add_parser(
         "run",
-        help="Run source acquisition with no-op client.",
+        help="Run source acquisition with a selected client mode.",
+    )
+    run_parser.add_argument(
+        "--client",
+        choices=("noop", "http"),
+        default="noop",
+        help="Acquisition client mode. Default remains offline noop mode.",
     )
     run_parser.add_argument(
         "--manifest-path",
         type=Path,
         default=None,
         help="Optional local JSON manifest output path.",
+    )
+    run_parser.add_argument(
+        "--base-directory",
+        type=Path,
+        default=None,
+        help="Base directory used for persisted acquired content in HTTP mode.",
+    )
+    run_parser.add_argument(
+        "--persist-content",
+        action="store_true",
+        help="Persist HTTP-acquired content to planned local target paths.",
+    )
+    run_parser.add_argument(
+        "--timeout-seconds",
+        type=float,
+        default=None,
+        help="Optional HTTP timeout in seconds for HTTP mode transport.",
     )
     run_parser.add_argument(
         "--output-format",
@@ -79,6 +106,28 @@ def _serialize_result(result: object) -> dict[str, object]:
     }
 
 
+def _build_run_client(*, client: str, base_directory: Path | None, persist_content: bool, timeout_seconds: float | None, parser: argparse.ArgumentParser) -> object:
+    if client == "noop":
+        if persist_content:
+            parser.error("--persist-content requires --client http.")
+        if base_directory is not None:
+            parser.error("--base-directory requires --client http.")
+        if timeout_seconds is not None:
+            parser.error("--timeout-seconds requires --client http.")
+        return NoopSourceAcquisitionClient()
+
+    if persist_content and base_directory is None:
+        parser.error("--base-directory is required when using --persist-content with --client http.")
+
+    transport = StandardLibraryHttpAcquisitionTransport(timeout_seconds=timeout_seconds)
+    return HttpSourceAcquisitionClient(
+        transport=transport,
+        timeout_seconds=timeout_seconds,
+        base_directory=str(base_directory) if base_directory is not None else None,
+        persist_content=persist_content,
+    )
+
+
 def _handle_list_command(output_format: str) -> int:
     descriptors = create_default_source_acquisition_registry()
 
@@ -109,11 +158,11 @@ def _handle_list_command(output_format: str) -> int:
     return 0
 
 
-def _handle_run_command(manifest_path: Path | None, output_format: str) -> int:
+def _handle_run_command(*, manifest_path: Path | None, output_format: str, client: object) -> int:
     descriptors = create_default_source_acquisition_registry()
     result = run_source_acquisition(
         descriptors=descriptors,
-        client=NoopSourceAcquisitionClient(),
+        client=client,
         manifest_path=manifest_path,
     )
 
@@ -156,9 +205,17 @@ def main(argv: list[str] | None = None) -> int:
         return _handle_list_command(output_format=args.output_format)
 
     if args.command == "run":
+        client = _build_run_client(
+            client=args.client,
+            base_directory=args.base_directory,
+            persist_content=args.persist_content,
+            timeout_seconds=args.timeout_seconds,
+            parser=parser,
+        )
         return _handle_run_command(
             manifest_path=args.manifest_path,
             output_format=args.output_format,
+            client=client,
         )
 
     parser.print_usage()

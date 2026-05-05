@@ -2,7 +2,7 @@
 
 ## Scope
 
-The source acquisition CLI is currently an offline-only boundary for default source descriptors and no-op orchestration runs.
+The source acquisition CLI defaults to offline no-op behavior and requires an explicit flag to use live HTTP acquisition.
 
 ## Commands
 
@@ -17,8 +17,16 @@ The source acquisition CLI is available through both module invocation and packa
   - Emits deterministic, timestamp-free JSON with a `sources` array in default descriptor order.
 - `python -m carbonfactor_parser.source_acquisition.cli run`
 - `carbonops-source-acquisition run`
-  - Runs `run_source_acquisition()` with `NoopSourceAcquisitionClient`.
+  - Runs `run_source_acquisition()` with `NoopSourceAcquisitionClient` by default (`--client noop`).
   - Default output format is deterministic text summary counts.
+- `python -m carbonfactor_parser.source_acquisition.cli run --client http`
+- `carbonops-source-acquisition run --client http`
+  - Uses `HttpSourceAcquisitionClient` with `StandardLibraryHttpAcquisitionTransport` from the Python standard library.
+  - Tests remain offline by mocking transport behavior; no live network calls are required in tests.
+- `python -m carbonfactor_parser.source_acquisition.cli run --client http --persist-content --base-directory <PATH>`
+- `carbonops-source-acquisition run --client http --persist-content --base-directory <PATH>`
+  - Persists acquired HTTP bytes to planned local target paths under `<PATH>`.
+  - `--persist-content` requires `--base-directory` in HTTP mode.
 - `python -m carbonfactor_parser.source_acquisition.cli run --manifest-path <PATH>`
 - `carbonops-source-acquisition run --manifest-path <PATH>`
   - Same no-op run behavior.
@@ -32,6 +40,6 @@ The source acquisition CLI is available through both module invocation and packa
 
 ## Deferred Behavior
 
-The `carbonops-source-acquisition` console script points to `carbonfactor_parser.source_acquisition.cli:main`, so it runs the same offline/no-op command boundary and behavior as module invocation.
+The `carbonops-source-acquisition` console script points to `carbonfactor_parser.source_acquisition.cli:main`, so it runs the same command boundary and behavior as module invocation.
 
-The CLI remains offline/no-op only and does not run live HTTP acquisition. It does not use `HttpSourceAcquisitionClient`, parser execution, scheduler logic, retry/cancel flows, or database persistence in this phase. HTTP/live mode remains deferred.
+Default runs remain offline/no-op unless `--client http` is explicitly provided. Parser execution, scheduler logic, retry/cancel flows, and database persistence remain deferred.

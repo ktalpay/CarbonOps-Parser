@@ -24,6 +24,6 @@ Future tasks may add acquisition audit storage and additional persistence contro
 
 - `StandardLibraryHttpAcquisitionTransport` provides a concrete `HttpAcquisitionTransport` implementation using `urllib.request.urlopen` from the Python standard library.
 - Transport-focused tests remain fully offline by mocking standard-library URL open behavior; no live network requests are required.
-- This transport increment is not wired into CLI live mode; the CLI remains offline and continues to use `NoopSourceAcquisitionClient`.
+- CLI live mode is opt-in via `--client http`; default CLI behavior remains `NoopSourceAcquisitionClient` offline mode.
 - HTTP status errors (`HTTPError`) are represented as `HttpAcquisitionTransportResponse` values with the error status code and available response metadata/body.
 - Network-level exceptions such as `URLError` are left to propagate so `HttpSourceAcquisitionClient` can map transport exceptions into failed acquisition results.
