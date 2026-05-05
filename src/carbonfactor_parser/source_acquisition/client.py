@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from carbonfactor_parser.source_acquisition.models import SourceAcquisitionDescriptor
+from carbonfactor_parser.source_acquisition.status import ACQUISITION_STATUS_NOT_IMPLEMENTED
 
 
 @dataclass(frozen=True)
@@ -37,7 +38,7 @@ class NoopSourceAcquisitionClient:
         return SourceAcquisitionResult(
             source_id=descriptor.source_id,
             source_family=descriptor.source_family,
-            status="not_implemented",
+            status=ACQUISITION_STATUS_NOT_IMPLEMENTED,
             acquisition_url=descriptor.acquisition_url,
             content_type=None,
             content_length=None,

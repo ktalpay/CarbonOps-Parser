@@ -53,6 +53,18 @@ EXPECTED_SOURCE_ACQUISITION_PUBLIC_API = (
     "plan_source_acquisition_targets",
     "serialize_manifest_entries",
     "write_acquisition_manifest",
+    "ACQUISITION_STATUS_ACQUIRED",
+    "ACQUISITION_STATUS_FAILED",
+    "ACQUISITION_STATUS_SKIPPED",
+    "ACQUISITION_STATUS_NOT_IMPLEMENTED",
+    "ACQUISITION_SUCCESS_STATUSES",
+    "ACQUISITION_FAILED_STATUSES",
+    "ACQUISITION_SKIPPED_STATUSES",
+    "ACQUISITION_KNOWN_STATUSES",
+    "is_acquired_status",
+    "is_failed_status",
+    "is_skipped_status",
+    "count_acquisition_statuses",
 )
 
 

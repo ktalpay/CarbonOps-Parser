@@ -10,6 +10,10 @@ from carbonfactor_parser.source_acquisition.client import SourceAcquisitionResul
 from carbonfactor_parser.source_acquisition.checksum import compute_sha256_hex
 from carbonfactor_parser.source_acquisition.file_store import write_acquired_content
 from carbonfactor_parser.source_acquisition.models import SourceAcquisitionDescriptor
+from carbonfactor_parser.source_acquisition.status import (
+    ACQUISITION_STATUS_ACQUIRED,
+    ACQUISITION_STATUS_FAILED,
+)
 from carbonfactor_parser.source_acquisition.targets import plan_source_acquisition_target
 
 
@@ -59,7 +63,7 @@ class HttpSourceAcquisitionClient:
             return SourceAcquisitionResult(
                 source_id=descriptor.source_id,
                 source_family=descriptor.source_family,
-                status="failed",
+                status=ACQUISITION_STATUS_FAILED,
                 acquisition_url=descriptor.acquisition_url,
                 message=f"HTTP acquisition failed due to transport error: {error}",
             )
@@ -86,7 +90,7 @@ class HttpSourceAcquisitionClient:
             return SourceAcquisitionResult(
                 source_id=descriptor.source_id,
                 source_family=descriptor.source_family,
-                status="acquired",
+                status=ACQUISITION_STATUS_ACQUIRED,
                 acquisition_url=descriptor.acquisition_url,
                 content_type=transport_response.content_type,
                 content_length=transport_response.content_length,
@@ -98,7 +102,7 @@ class HttpSourceAcquisitionClient:
         return SourceAcquisitionResult(
             source_id=descriptor.source_id,
             source_family=descriptor.source_family,
-            status="failed",
+            status=ACQUISITION_STATUS_FAILED,
             acquisition_url=descriptor.acquisition_url,
             message=(
                 "HTTP acquisition failed with status code "
