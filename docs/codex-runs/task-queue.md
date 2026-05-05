@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-083B: Added descriptor validation public API exports, public API smoke-test coverage updates, and CLI boundary documentation consistency checks for the `validate` command.
 - CO-083C: Added deterministic descriptor validation report helpers and CLI `validate` command with local-only warning/error reporting, source ID filtering, and offline tests.
 - CO-082B: Added source acquisition CLI status summary documentation examples for list, filtered list, noop run, dry-run, JSON output, manifest output, and explicit HTTP mode.
 - CO-081D: Added standard-library HTTP transport implementation behind the existing transport protocol with offline tests.
@@ -37,7 +38,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-077A: Added artificial manifest validation summary shape.
 - CO-076C: Documented artificial manifest metadata boundaries.
 - CO-076B: Added artificial manifest metadata root public API export.
-- CO-083B: Added source acquisition client contract and no-op implementation.
+- CO-083D: Added source acquisition client contract and no-op implementation.
 - CO-083A: Added source acquisition configuration model and registry skeleton.
 - CO-084B: Added acquisition file target planning model.
 - CO-076A: Added artificial manifest metadata model shape with root public API export deferred.

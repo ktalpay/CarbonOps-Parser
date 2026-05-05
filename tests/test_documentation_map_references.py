@@ -114,3 +114,13 @@ def _normalize_markdown_reference(raw_reference: str) -> str | None:
         return None
 
     return reference
+
+
+
+def test_source_acquisition_cli_boundary_mentions_validate_command() -> None:
+    cli_boundary = (
+        REPOSITORY_ROOT / "docs" / "source-acquisition-cli-boundary.md"
+    ).read_text(encoding="utf-8")
+
+    assert "python -m carbonfactor_parser.source_acquisition.cli validate" in cli_boundary
+    assert "carbonops-source-acquisition validate" in cli_boundary
