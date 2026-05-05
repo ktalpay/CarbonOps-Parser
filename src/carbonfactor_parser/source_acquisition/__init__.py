@@ -11,6 +11,11 @@ from carbonfactor_parser.source_acquisition.client import (
     SourceAcquisitionResult,
     acquire_all_sources,
 )
+from carbonfactor_parser.source_acquisition.http_client import (
+    HttpAcquisitionTransport,
+    HttpAcquisitionTransportResponse,
+    HttpSourceAcquisitionClient,
+)
 from carbonfactor_parser.source_acquisition.models import SourceAcquisitionDescriptor
 from carbonfactor_parser.source_acquisition.registry import (
     create_default_source_acquisition_registry,
@@ -341,6 +346,9 @@ __all__ = (
     "ArtificialSourceAcquisitionMetadata",
     "ArtificialSourceAcquisitionValidationPipelineResult",
     "NoopSourceAcquisitionClient",
+    "HttpAcquisitionTransport",
+    "HttpAcquisitionTransportResponse",
+    "HttpSourceAcquisitionClient",
     "SourceAcquisitionClient",
     "SourceAcquisitionDescriptor",
     "SourceAcquisitionResult",

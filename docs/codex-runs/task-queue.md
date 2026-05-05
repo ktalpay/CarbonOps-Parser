@@ -26,6 +26,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-078B: Documented artificial manifest metadata collection boundary.
 - CO-078A: Added artificial manifest metadata collection shape.
 - CO-077B: Documented artificial manifest validation summary boundary.
+- CO-077C: Added mocked-transport HTTP acquisition client skeleton.
 - CO-077A: Added artificial manifest validation summary shape.
 - CO-076C: Documented artificial manifest metadata boundaries.
 - CO-076B: Added artificial manifest metadata root public API export.
