@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from carbonfactor_parser.source_acquisition.client import SourceAcquisitionResult
+from carbonfactor_parser.source_acquisition.checksum import compute_sha256_hex
 from carbonfactor_parser.source_acquisition.models import SourceAcquisitionDescriptor
 
 
@@ -59,10 +60,10 @@ class HttpSourceAcquisitionClient:
                 acquisition_url=descriptor.acquisition_url,
                 content_type=transport_response.content_type,
                 content_length=transport_response.content_length,
-                checksum_sha256=None,
+                checksum_sha256=compute_sha256_hex(transport_response.content),
                 local_path=None,
                 message=(
-                    "HTTP content acquired in-memory only; "
+                    "HTTP content acquired in-memory with SHA-256 checksum metadata; "
                     "file persistence is deferred."
                 ),
             )
