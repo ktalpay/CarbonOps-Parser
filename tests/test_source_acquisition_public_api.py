@@ -41,6 +41,9 @@ EXPECTED_SOURCE_ACQUISITION_PUBLIC_API = (
     "validate_and_summarize_artificial_source_acquisition_metadata",
     "validate_artificial_source_acquisition_metadata",
     "validate_source_acquisition_registry",
+    "SourceAcquisitionTarget",
+    "plan_source_acquisition_target",
+    "plan_source_acquisition_targets",
 )
 
 EXPECTED_ROOT_PUBLIC_API = (
