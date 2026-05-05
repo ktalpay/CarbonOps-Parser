@@ -53,7 +53,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _print_json_payload(payload: dict[str, object]) -> None:
+def _emit_json(payload: dict[str, object]) -> None:
     print(json.dumps(payload, indent=2, sort_keys=False))
 
 
@@ -67,10 +67,23 @@ def _serialize_descriptor(descriptor: object) -> dict[str, object]:
     }
 
 
+def _serialize_result(result: object) -> dict[str, object]:
+    return {
+        "source_id": result.source_id,
+        "source_family": result.source_family,
+        "status": result.status,
+        "acquisition_url": result.acquisition_url,
+        "local_path": result.local_path,
+        "checksum_sha256": result.checksum_sha256,
+        "message": result.message,
+    }
+
+
 def _handle_list_command(output_format: str) -> int:
     descriptors = create_default_source_acquisition_registry()
+
     if output_format == "json":
-        _print_json_payload(
+        _emit_json(
             {
                 "sources": [
                     _serialize_descriptor(descriptor)
@@ -92,19 +105,8 @@ def _handle_list_command(output_format: str) -> int:
                 )
             )
         )
+
     return 0
-
-
-def _serialize_run_result(result: object) -> dict[str, object]:
-    return {
-        "source_id": result.source_id,
-        "source_family": result.source_family,
-        "status": result.status,
-        "acquisition_url": result.acquisition_url,
-        "local_path": result.local_path,
-        "checksum_sha256": result.checksum_sha256,
-        "message": result.message,
-    }
 
 
 def _handle_run_command(manifest_path: Path | None, output_format: str) -> int:
@@ -114,14 +116,22 @@ def _handle_run_command(manifest_path: Path | None, output_format: str) -> int:
         client=NoopSourceAcquisitionClient(),
         manifest_path=manifest_path,
     )
+
     if output_format == "json":
-        _print_json_payload(
+        _emit_json(
             {
                 "acquired_count": result.acquired_count,
                 "failed_count": result.failed_count,
                 "skipped_count": result.skipped_count,
-                "manifest_path": str(result.manifest_path) if result.manifest_path is not None else None,
-                "results": [_serialize_run_result(entry) for entry in result.results],
+                "manifest_path": (
+                    str(result.manifest_path)
+                    if result.manifest_path is not None
+                    else None
+                ),
+                "results": [
+                    _serialize_result(entry)
+                    for entry in result.results
+                ],
             }
         )
         return 0
@@ -129,8 +139,10 @@ def _handle_run_command(manifest_path: Path | None, output_format: str) -> int:
     print(f"acquired_count={result.acquired_count}")
     print(f"failed_count={result.failed_count}")
     print(f"skipped_count={result.skipped_count}")
+
     if result.manifest_path is not None:
         print(f"manifest_path={result.manifest_path}")
+
     return 0
 
 

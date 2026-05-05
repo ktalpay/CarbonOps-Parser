@@ -14,11 +14,13 @@ The source acquisition CLI is currently an offline-only boundary for default sou
 - `python -m carbonfactor_parser.source_acquisition.cli run`
   - Runs `run_source_acquisition()` with `NoopSourceAcquisitionClient`.
   - Default output format is deterministic text summary counts.
-- `python -m carbonfactor_parser.source_acquisition.cli run --output-format json`
-  - Emits deterministic, timestamp-free JSON summary fields and ordered per-source results.
 - `python -m carbonfactor_parser.source_acquisition.cli run --manifest-path <PATH>`
   - Same no-op run behavior.
   - Optionally writes a local JSON acquisition manifest at the provided path.
+- `python -m carbonfactor_parser.source_acquisition.cli run --output-format json`
+  - Emits deterministic, timestamp-free JSON summary counts and per-source results in descriptor order.
+- `python -m carbonfactor_parser.source_acquisition.cli run --manifest-path <PATH> --output-format json`
+  - Writes the local manifest file and returns the manifest path in the JSON payload.
 
 ## Deferred Behavior
 

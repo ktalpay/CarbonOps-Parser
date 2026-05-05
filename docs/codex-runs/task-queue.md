@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-080B: Added deterministic JSON output mode for source acquisition CLI list/run commands.
 - CO-078B: Added deterministic local source acquisition manifest model, serializer, and writer boundary.
 - CO-078A: Added optional HTTP acquisition file persistence using target planning and deterministic offline tests.
 - CO-077D: Added in-memory acquisition checksum helper and wired HTTP acquisition result checksum metadata.
