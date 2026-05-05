@@ -4,7 +4,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Active
 
-- No active task currently queued after CO-082A completion.
+- Source acquisition client contract and no-op implementation task in progress.
 
 ## Next
 
@@ -29,6 +29,8 @@ This queue is intentionally lightweight. It should help select the next small ta
 - CO-077A: Added artificial manifest validation summary shape.
 - CO-076C: Documented artificial manifest metadata boundaries.
 - CO-076B: Added artificial manifest metadata root public API export.
+- CO-083B: Added source acquisition client contract and no-op implementation.
+- CO-083A: Added source acquisition configuration model and registry skeleton.
 - CO-076A: Added artificial manifest metadata model shape with root public API export deferred.
 - CO-075B: Documented artificial source acquisition phase closure.
 - CO-075A: Added artificial source acquisition README usage snippet.

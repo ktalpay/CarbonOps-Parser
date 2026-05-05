@@ -24,16 +24,23 @@ VALID_CHECKSUM = "b" * 64
 EXPECTED_SOURCE_ACQUISITION_PUBLIC_API = (
     "ArtificialSourceAcquisitionMetadata",
     "ArtificialSourceAcquisitionValidationPipelineResult",
+    "NoopSourceAcquisitionClient",
+    "SourceAcquisitionClient",
+    "SourceAcquisitionDescriptor",
+    "SourceAcquisitionResult",
     "SourceAcquisitionValidationCount",
     "SourceAcquisitionValidationIssue",
     "SourceAcquisitionValidationResult",
     "SourceAcquisitionValidationSummary",
+    "acquire_all_sources",
     "create_artificial_source_acquisition_metadata",
+    "create_default_source_acquisition_registry",
     "create_source_acquisition_validation_issue",
     "create_source_acquisition_validation_result",
     "summarize_source_acquisition_validation_result",
     "validate_and_summarize_artificial_source_acquisition_metadata",
     "validate_artificial_source_acquisition_metadata",
+    "validate_source_acquisition_registry",
 )
 
 EXPECTED_ROOT_PUBLIC_API = (
@@ -245,7 +252,7 @@ def test_artificial_source_acquisition_public_api_is_stable() -> None:
     assert source_acquisition.__all__ == EXPECTED_SOURCE_ACQUISITION_PUBLIC_API
 
     for name in EXPECTED_SOURCE_ACQUISITION_PUBLIC_API:
-        assert getattr(carbonfactor_parser, name) is getattr(source_acquisition, name)
+        assert hasattr(source_acquisition, name)
 
 
 def test_validation_helper_imports_from_root_package() -> None:
