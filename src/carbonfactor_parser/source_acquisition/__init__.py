@@ -18,6 +18,9 @@ from carbonfactor_parser.source_acquisition.http_client import (
     HttpAcquisitionTransportResponse,
     HttpSourceAcquisitionClient,
 )
+from carbonfactor_parser.source_acquisition.http_transport import (
+    StandardLibraryHttpAcquisitionTransport,
+)
 from carbonfactor_parser.source_acquisition.manifest import (
     SourceAcquisitionManifestEntry,
     create_manifest_entry,

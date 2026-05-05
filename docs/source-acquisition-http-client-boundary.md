@@ -19,3 +19,11 @@ This increment keeps an injected-transport HTTP acquisition client and adds opti
 ## Deferred Work
 
 Future tasks may add acquisition audit storage and additional persistence controls while preserving the same injected-transport client boundary. This increment does not introduce parser execution or database persistence.
+
+## Standard-Library Transport Increment
+
+- `StandardLibraryHttpAcquisitionTransport` provides a concrete `HttpAcquisitionTransport` implementation using `urllib.request.urlopen` from the Python standard library.
+- Transport-focused tests remain fully offline by mocking standard-library URL open behavior; no live network requests are required.
+- This transport increment is not wired into CLI live mode; the CLI remains offline and continues to use `NoopSourceAcquisitionClient`.
+- HTTP status errors (`HTTPError`) are represented as `HttpAcquisitionTransportResponse` values with the error status code and available response metadata/body.
+- Network-level exceptions such as `URLError` are left to propagate so `HttpSourceAcquisitionClient` can map transport exceptions into failed acquisition results.
