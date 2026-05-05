@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import re
 
 from carbonfactor_parser.source_acquisition.checksum import compute_sha256_hex
+from carbonfactor_parser.source_acquisition.file_store import write_acquired_content
 from carbonfactor_parser.source_acquisition.client import (
     NoopSourceAcquisitionClient,
     SourceAcquisitionClient,
