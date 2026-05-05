@@ -173,6 +173,32 @@ issue_count = pipeline_result.summary.total_issue_count
 
 This pipeline is limited to artificial metadata shape checks and deterministic summaries. It does not acquire real sources, read files, validate real source URLs, run parsers or normalization, check factor correctness, or provide compliance/legal or carbon accounting correctness. See [docs/artificial-source-acquisition-validation-pipeline.md](docs/artificial-source-acquisition-validation-pipeline.md), [docs/artificial-source-acquisition-module-recap.md](docs/artificial-source-acquisition-module-recap.md), and [examples/example_artificial_source_acquisition_validation_pipeline.py](examples/example_artificial_source_acquisition_validation_pipeline.py).
 
+## Source acquisition CLI quickstart
+
+Use the `carbonops-source-acquisition` CLI for local source descriptor checks and acquisition flow previews.
+
+- Default `run` mode is `noop` and offline.
+- HTTP mode is opt-in with `--client http`.
+- `validate` checks local descriptor metadata only; it does not verify live URLs.
+- `run --dry-run` plans targets only and does not acquire content or write files/manifests.
+- Parser execution and database persistence are outside this CLI boundary at this phase.
+
+```bash
+carbonops-source-acquisition validate
+carbonops-source-acquisition list
+carbonops-source-acquisition list --source-id defra_desnz
+carbonops-source-acquisition run --dry-run --base-directory ./data/source-acquisition
+carbonops-source-acquisition run --output-format json
+carbonops-source-acquisition run --client http --source-id ghg_protocol
+carbonops-source-acquisition run --client http --source-id ghg_protocol --persist-content --base-directory ./data/source-acquisition
+```
+
+For boundary details, see:
+
+- [Source Acquisition CLI Boundary](docs/source-acquisition-cli-boundary.md)
+- [Source Acquisition Registry](docs/source-acquisition-registry.md)
+- [Source Acquisition HTTP Client Boundary](docs/source-acquisition-http-client-boundary.md)
+
 ## Source Support
 
 Each Phase 1 source family will have its own schedule, source version/hash check, parser, validation rules, archive layout, and source-specific tables.

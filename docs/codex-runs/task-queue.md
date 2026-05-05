@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-084A: Added a README source acquisition CLI quickstart section with local validation/list/run examples, explicit noop vs HTTP mode notes, and links to detailed boundary documentation.
 - CO-083B: Added descriptor validation public API exports, public API smoke-test coverage updates, and CLI boundary documentation consistency checks for the `validate` command.
 - CO-083C: Added deterministic descriptor validation report helpers and CLI `validate` command with local-only warning/error reporting, source ID filtering, and offline tests.
 - CO-082B: Added source acquisition CLI status summary documentation examples for list, filtered list, noop run, dry-run, JSON output, manifest output, and explicit HTTP mode.
