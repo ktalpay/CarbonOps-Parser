@@ -28,6 +28,10 @@ The public parser adapter protocol exposes:
 
 Registry resolution uses `can_parse(parser_input)` only. It must not call `parse()`, open artifact paths, call remote services, run normalization, or write to a database.
 
+## Execution Planning Boundary
+
+`ParserExecutionPlan` and `plan_parser_execution()` combine `ParserInputContract` validation with metadata-only registry resolution. Planning returns `ready`, `invalid_input`, or `no_adapter` status without calling `parse()`, opening files, making network calls, running normalization, or writing to a database.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -35,6 +39,7 @@ This boundary does not add:
 - Real parser execution.
 - Source-specific real adapters.
 - Registry-driven parser execution.
+- Planning-driven parser execution.
 - File content reading.
 - HTTP or network calls.
 - Normalization execution.
@@ -45,6 +50,7 @@ This boundary does not add:
 
 ## Related Documents
 
+- [Parser Execution Planning Boundary](parser-execution-planning-boundary.md)
 - [Source Acquisition Parser Handoff Contract](source-acquisition-parser-handoff-contract.md)
 - [Parser Contract Boundaries](parser-contract-boundaries.md)
 - [Parser Handoff Boundary](parser-handoff-boundary.md)
