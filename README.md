@@ -144,9 +144,27 @@ Key output fields:
 - `ddl_preview_present`: whether review-only PostgreSQL DDL preview text is attached
 - `issues`: structured local loader, parser, normalization, or persistence-input issues
 
+Optionally include PostgreSQL insert preview data in either text or JSON output:
+
+```bash
+carbonops-parser local-dry-run \
+  --local-path examples/fixtures/defra_desnz_minimal.csv \
+  --source-family defra_desnz \
+  --source-id defra-desnz-minimal-fixture \
+  --content-type text/csv \
+  --format-hint csv \
+  --output-format json \
+  --include-postgresql-preview
+```
+
+The `postgresql_persistence_preview` section is preview-only. It includes the
+target table, ordered columns, parameter rows, record count, SQL text with
+placeholders, and idempotency metadata, but it does not execute SQL or persist
+records.
+
 This quickstart is local dry-run only. It does not connect to PostgreSQL, write records, execute SQL, run migrations, perform network calls, trigger source acquisition, load config files, or require credentials. It does not make production DEFRA/DESNZ correctness claims.
 
-For boundary details, see [Local Dry-Run CLI Boundary](docs/local-dry-run-cli-boundary.md), [Local File Normalized Persistence Dry-Run Boundary](docs/local-file-normalized-persistence-dry-run-boundary.md), and [Local Dry-Run Troubleshooting](docs/local-dry-run-troubleshooting.md).
+For boundary details, see [Local Dry-Run CLI Boundary](docs/local-dry-run-cli-boundary.md), [Local File Normalized Persistence Dry-Run Boundary](docs/local-file-normalized-persistence-dry-run-boundary.md), [PostgreSQL Persistence Preview Boundary](docs/postgresql-persistence-preview-boundary.md), and [Local Dry-Run Troubleshooting](docs/local-dry-run-troubleshooting.md).
 
 ## Developer Tests
 

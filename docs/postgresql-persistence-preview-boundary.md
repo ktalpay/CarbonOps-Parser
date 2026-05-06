@@ -60,6 +60,21 @@ the repository skeleton into runtime persistence.
 Future repository work must satisfy the PostgreSQL implementation safety gate
 before using preview data in an execution path.
 
+## Local Dry-Run CLI Relationship
+
+`carbonops-parser local-dry-run` may include PostgreSQL preview data only when
+called with `--include-postgresql-preview`. The default local dry-run output
+remains unchanged without that flag.
+
+The CLI preview section is output integration only. It delegates to
+`build_postgresql_persistence_preview()` after the local dry-run has produced
+ready `PersistenceInput`. It does not call a repository, execute SQL, connect to
+PostgreSQL, write records, run migrations, load config files, load credentials,
+or perform network calls.
+
+If the local dry-run does not produce ready `PersistenceInput`, the CLI reports a
+non-ready PostgreSQL preview section and omits ready SQL preview data.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -84,4 +99,5 @@ This boundary does not add:
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
+- [Local Dry-Run CLI Boundary](local-dry-run-cli-boundary.md)
 - [Public Safety](public-safety.md)

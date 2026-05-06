@@ -72,6 +72,12 @@ The DDL preview is review text only. It is not executed, not sent to PostgreSQL,
 
 The CLI accepts an explicit local path plus source metadata and prints deterministic text or JSON summary output. It does not scan directories, load configuration files, trigger source acquisition, connect to PostgreSQL, execute SQL, or write records.
 
+With `--include-postgresql-preview`, the CLI can add a PostgreSQL persistence
+preview section produced from ready `PersistenceInput` by
+`build_postgresql_persistence_preview()`. That optional section is output-only:
+it does not call a repository, connect to PostgreSQL, execute SQL, or write
+records.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -99,4 +105,5 @@ This boundary does not add:
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
+- [PostgreSQL Persistence Preview Boundary](postgresql-persistence-preview-boundary.md)
 - [Public Safety](public-safety.md)
