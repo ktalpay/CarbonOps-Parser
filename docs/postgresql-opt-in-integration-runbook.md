@@ -58,6 +58,20 @@ The marker is registered in pytest configuration only to make future marked
 tests explicit and discoverable. Registration does not enable DB tests by
 default.
 
+## Connection Smoke Skeleton
+
+CO-103C adds a default-skipped connection smoke skeleton for future local
+validation. The skeleton is test-only and guarded by:
+
+- `postgresql_integration`
+- `CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1`
+- `CARBONOPS_POSTGRESQL_TEST_DSN`
+
+Without both external controls, the smoke test is skipped and does not attempt a
+connection. When explicitly enabled, it opens and closes a caller-provided
+PostgreSQL connection only. It does not execute SQL, write records, create
+tables, run migrations, commit, roll back, or call repository persistence.
+
 ## Suggested Local Test Environment
 
 Future local validation should use an isolated PostgreSQL database created
@@ -90,11 +104,11 @@ is:
 ```bash
 CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1 \
 CARBONOPS_POSTGRESQL_TEST_DSN='<external test DSN supplied by the runner>' \
-python -m pytest -m postgresql_integration
+python -m pytest -m postgresql_integration tests/test_postgresql_connection_smoke_boundary.py
 ```
 
 This command is a future/manual integration path. It is not part of the default
-test suite and does not exist as runtime persistence enablement in this task.
+test suite and does not exist as runtime persistence enablement.
 
 ## Verifying Default Tests Remain DB-Free
 
@@ -146,7 +160,7 @@ Troubleshooting should avoid exposing secrets:
 This runbook does not add:
 
 - Repository runtime persistence.
-- PostgreSQL connections.
+- Default PostgreSQL connections.
 - Cursor creation.
 - SQL execution.
 - Database writes.
