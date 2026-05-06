@@ -17,6 +17,10 @@ returns unsupported results. Runtime PostgreSQL behavior must be planned
 separately before it is added. This document records the decisions that must be
 made and the safe sequence for later implementation.
 
+`PostgreSQLPersistenceOptions` now provides an explicit caller-provided config
+shape for future repository work. It does not load environment variables, read
+config files, load credentials, connect, or execute SQL.
+
 ## Safety Gate
 
 No PostgreSQL repository implementation, runtime database connection, SQL execution, migration, or database write may be added until the [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md) is satisfied.
@@ -29,7 +33,9 @@ Future PostgreSQL repository work must decide:
 
 - Sync vs async: whether the repository is synchronous, asynchronous, or exposed behind separate sync and async adapters.
 - Driver choice: database driver selection remains deferred until runtime requirements, deployment targets, and test strategy are known.
-- Config ownership: connection settings must belong to an explicit configuration boundary, not to parser, normalization, or persistence input contracts.
+- Config ownership: connection settings must belong to an explicit
+  caller-provided configuration boundary, not to parser, normalization, or
+  persistence input contracts.
 - Credential loading: secret handling remains deferred and must not be implicit in repository construction.
 - Transaction boundary: whether one `PersistenceInput` maps to one transaction, chunked transactions, or caller-managed transactions.
 - Table creation and migrations: schema migration ownership must be separate from repository writes.
@@ -64,7 +70,8 @@ A conservative future sequence is:
 1. Safety gate approval: satisfy and document the PostgreSQL implementation safety gate.
 2. Repository skeleton with no DB connection: present as
    `PostgreSQLPersistenceRepository`; keep it unable to connect or write.
-3. Explicit config model: define user-controlled database target selection without implicit credential loading.
+3. Explicit config model: present as `PostgreSQLPersistenceOptions`; keep it
+   caller-provided and without implicit credential loading.
 4. Test DB integration only: keep tests explicit, isolated, and disabled from accidental local or remote database access.
 5. Idempotency enforcement: implement approved key enforcement and verification behavior.
 6. Limited insert path: add the narrowest approved insert behavior for `PersistenceInput`.
@@ -85,6 +92,10 @@ results until runtime persistence is explicitly scoped.
 
 `PersistenceResult` is the repository result boundary. It should report attempted and persisted counts, issues, and repository metadata without exposing credentials or connection internals.
 
+`PostgreSQLPersistenceOptions` is the explicit future config input shape. It
+must not become an environment loader or credential loader without a separate
+gated task.
+
 ## Review Checklist
 
 Future implementation PRs should confirm:
@@ -102,6 +113,7 @@ Future implementation PRs should confirm:
 
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
+- [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)

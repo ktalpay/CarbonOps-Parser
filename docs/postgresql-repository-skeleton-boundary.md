@@ -11,6 +11,7 @@ The class is a skeleton only. It satisfies the `PersistenceRepository` protocol 
 The skeleton exposes:
 
 - `provider_name`, with deterministic value `postgresql`.
+- optional caller-provided `PostgreSQLPersistenceOptions`.
 - `persist(persistence_input)`, which accepts `PersistenceInput`.
 - structured unsupported results with issue code `POSTGRESQL_REPOSITORY_NOT_IMPLEMENTED`.
 - metadata indicating that the class is a skeleton and does not perform runtime database work.
@@ -27,6 +28,15 @@ The result preserves:
 - repository metadata for troubleshooting and review.
 
 No persistence input record is written, transformed, or converted into executable database operations.
+
+## Options Relationship
+
+The skeleton may be constructed with `PostgreSQLPersistenceOptions`. The options
+object is retained as explicit caller-provided metadata only.
+
+Providing options does not trigger environment loading, config loading,
+credential loading, database connection, SQL generation, SQL execution,
+migrations, or writes. `persist()` still returns `unsupported`.
 
 ## Safety Relationship
 
@@ -55,6 +65,7 @@ This skeleton does not add:
 ## Related Documents
 
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
+- [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)

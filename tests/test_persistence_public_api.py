@@ -2,6 +2,7 @@ import carbonfactor_parser.persistence as persistence
 from carbonfactor_parser.persistence import (
     ddl_preview,
     input,
+    postgresql_options,
     postgresql_repository,
     repository,
     schema,
@@ -18,12 +19,17 @@ from carbonfactor_parser.persistence import (
     PersistenceResult,
     PersistenceResultStatus,
     PostgreSQLPersistenceColumn,
+    PostgreSQLPersistenceOptions,
+    PostgreSQLPersistenceOptionsValidationIssue,
+    PostgreSQLPersistenceOptionsValidationResult,
     PostgreSQLPersistenceRepository,
     PostgreSQLPersistenceSchema,
     build_persistence_input_from_normalization_result,
     create_persistence_result,
+    create_postgresql_persistence_options,
     get_normalized_record_postgresql_schema,
     render_postgresql_ddl_preview,
+    validate_postgresql_persistence_options,
 )
 
 
@@ -39,12 +45,17 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PersistenceResult",
     "PersistenceResultStatus",
     "PostgreSQLPersistenceColumn",
+    "PostgreSQLPersistenceOptions",
+    "PostgreSQLPersistenceOptionsValidationIssue",
+    "PostgreSQLPersistenceOptionsValidationResult",
     "PostgreSQLPersistenceRepository",
     "PostgreSQLPersistenceSchema",
     "build_persistence_input_from_normalization_result",
     "create_persistence_result",
+    "create_postgresql_persistence_options",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
+    "validate_postgresql_persistence_options",
 )
 
 EXPECTED_PUBLIC_EXPORTS = {
@@ -59,6 +70,15 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PersistenceResult": repository.PersistenceResult,
     "PersistenceResultStatus": repository.PersistenceResultStatus,
     "PostgreSQLPersistenceColumn": schema.PostgreSQLPersistenceColumn,
+    "PostgreSQLPersistenceOptions": (
+        postgresql_options.PostgreSQLPersistenceOptions
+    ),
+    "PostgreSQLPersistenceOptionsValidationIssue": (
+        postgresql_options.PostgreSQLPersistenceOptionsValidationIssue
+    ),
+    "PostgreSQLPersistenceOptionsValidationResult": (
+        postgresql_options.PostgreSQLPersistenceOptionsValidationResult
+    ),
     "PostgreSQLPersistenceRepository": (
         postgresql_repository.PostgreSQLPersistenceRepository
     ),
@@ -67,10 +87,16 @@ EXPECTED_PUBLIC_EXPORTS = {
         input.build_persistence_input_from_normalization_result
     ),
     "create_persistence_result": repository.create_persistence_result,
+    "create_postgresql_persistence_options": (
+        postgresql_options.create_postgresql_persistence_options
+    ),
     "get_normalized_record_postgresql_schema": (
         schema.get_normalized_record_postgresql_schema
     ),
     "render_postgresql_ddl_preview": ddl_preview.render_postgresql_ddl_preview,
+    "validate_postgresql_persistence_options": (
+        postgresql_options.validate_postgresql_persistence_options
+    ),
 }
 
 
@@ -87,16 +113,29 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PersistenceResult": PersistenceResult,
         "PersistenceResultStatus": PersistenceResultStatus,
         "PostgreSQLPersistenceColumn": PostgreSQLPersistenceColumn,
+        "PostgreSQLPersistenceOptions": PostgreSQLPersistenceOptions,
+        "PostgreSQLPersistenceOptionsValidationIssue": (
+            PostgreSQLPersistenceOptionsValidationIssue
+        ),
+        "PostgreSQLPersistenceOptionsValidationResult": (
+            PostgreSQLPersistenceOptionsValidationResult
+        ),
         "PostgreSQLPersistenceRepository": PostgreSQLPersistenceRepository,
         "PostgreSQLPersistenceSchema": PostgreSQLPersistenceSchema,
         "build_persistence_input_from_normalization_result": (
             build_persistence_input_from_normalization_result
         ),
         "create_persistence_result": create_persistence_result,
+        "create_postgresql_persistence_options": (
+            create_postgresql_persistence_options
+        ),
         "get_normalized_record_postgresql_schema": (
             get_normalized_record_postgresql_schema
         ),
         "render_postgresql_ddl_preview": render_postgresql_ddl_preview,
+        "validate_postgresql_persistence_options": (
+            validate_postgresql_persistence_options
+        ),
     }
 
     assert tuple(imported_symbols) == EXPECTED_PUBLIC_SYMBOLS
@@ -125,5 +164,6 @@ def test_persistence_all_excludes_internal_module_names() -> None:
     assert "repository" not in persistence.__all__
     assert "schema" not in persistence.__all__
     assert "ddl_preview" not in persistence.__all__
+    assert "postgresql_options" not in persistence.__all__
     assert "postgresql_repository" not in persistence.__all__
     assert all(not name.startswith("_") for name in persistence.__all__)
