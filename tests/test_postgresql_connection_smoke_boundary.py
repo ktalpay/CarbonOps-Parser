@@ -232,6 +232,35 @@ def test_runbook_documents_manual_connection_smoke_checklist() -> None:
     assert "unset CARBONOPS_POSTGRESQL_TEST_DSN" in runbook_text
 
 
+def test_runbook_documents_local_postgresql_setup_checklist() -> None:
+    runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    normalized_runbook_text = " ".join(runbook_text.split())
+
+    assert "## Local PostgreSQL Setup Checklist" in runbook_text
+    assert "brew install postgresql@<major-version>" in runbook_text
+    assert "brew services status postgresql@<major-version>" in runbook_text
+    assert "brew services start postgresql@<major-version>" in runbook_text
+    assert "brew services stop postgresql@<major-version>" in runbook_text
+    assert "<local-test-database>" in runbook_text
+    assert "<local-test-role>" in runbook_text
+    assert "<local-host>" in runbook_text
+    assert "<local-port>" in runbook_text
+    assert "<external-local-test-credential>" in runbook_text
+    assert "createdb <local-test-database>" in runbook_text
+    assert "createuser <local-test-role>" in runbook_text
+    assert "CARBONOPS_POSTGRESQL_TEST_DSN" in runbook_text
+    assert "Do not commit the DSN or credentials." in runbook_text
+    assert "Do not paste a DSN with a password or credential" in runbook_text
+    assert "default `python -m pytest` remains DB-free" in runbook_text
+    assert "local setup alone does not enable repository persistence" in runbook_text
+    assert "PostgreSQLPersistenceRepository.persist()" in normalized_runbook_text
+    assert "remains unsupported/no-execution" in normalized_runbook_text
+    assert "[Manual Connection Smoke Checklist]" in runbook_text
+    assert "dropdb --if-exists <local-test-database>" in runbook_text
+    assert "dropuser --if-exists <local-test-role>" in runbook_text
+    assert "does not add project code execution" in normalized_runbook_text
+
+
 def test_runbook_manual_checklist_uses_placeholders_without_real_secret_values() -> None:
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
 

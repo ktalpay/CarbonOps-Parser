@@ -195,6 +195,53 @@ unset CARBONOPS_RUN_POSTGRESQL_INTEGRATION
 unset CARBONOPS_POSTGRESQL_TEST_DSN
 ```
 
+## Local PostgreSQL Setup Checklist
+
+This setup checklist is manual shell guidance only. It does not add project code
+execution, repository persistence, SQL execution from project code, migrations,
+or database writes from the default test suite.
+
+- Install PostgreSQL on macOS with Homebrew using an explicit local version
+  placeholder:
+
+```bash
+brew install postgresql@<major-version>
+```
+
+- Manage the local service outside this project:
+
+```bash
+brew services status postgresql@<major-version>
+brew services start postgresql@<major-version>
+brew services stop postgresql@<major-version>
+```
+
+- Use placeholder-only local database guidance:
+  - database placeholder: `<local-test-database>`
+  - role placeholder: `<local-test-role>`
+  - host placeholder: `<local-host>`
+  - port placeholder: `<local-port>`
+  - credential placeholder: `<external-local-test-credential>`
+- Create or reset the local test database and role manually outside project
+  code, using tools such as `createdb <local-test-database>` and
+  `createuser <local-test-role>` if that matches your local PostgreSQL setup.
+- Construct `CARBONOPS_POSTGRESQL_TEST_DSN` only from placeholder values owned by
+  the local test runner. Do not commit the DSN or credentials.
+- Do not paste a DSN with a password or credential into logs, issues, PRs,
+  examples, fixtures, or test output.
+- Remember that default `python -m pytest` remains DB-free and does not require
+  local PostgreSQL.
+- Remember that local setup alone does not enable repository persistence;
+  `PostgreSQLPersistenceRepository.persist()` remains unsupported/no-execution.
+- Use the [Manual Connection Smoke Checklist](#manual-connection-smoke-checklist)
+  before running the opt-in smoke.
+- Roll back local setup manually outside project code if needed:
+
+```bash
+dropdb --if-exists <local-test-database>
+dropuser --if-exists <local-test-role>
+```
+
 ## Cleanup And Reset Guidance
 
 Future opt-in integration tests should document cleanup before they are added:
