@@ -23,6 +23,14 @@ The dry-run helper accepts:
 
 The path must be local and explicit. The helper does not discover files, download files, inspect manifests, or resolve remote artifact references.
 
+## Checked-In Fixture
+
+The repository includes a minimal local fixture for this boundary:
+
+- `examples/fixtures/defra_desnz_minimal.csv`
+
+The fixture matches the current minimal DEFRA/DESNZ parser and normalization fields: `factor_id`, `factor_name`, and `unit`. It is local dry-run input only, not real source data and not a production DEFRA/DESNZ correctness claim.
+
 ## Composed Steps
 
 The dry-run uses only existing safe local and in-memory boundaries:

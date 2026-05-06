@@ -10,9 +10,9 @@ Module invocation:
 
 ```bash
 python -m carbonfactor_parser.cli local-dry-run \
-  --local-path ./fixtures/defra_minimal.csv \
+  --local-path examples/fixtures/defra_desnz_minimal.csv \
   --source-family defra_desnz \
-  --source-id defra-desnz-fixture \
+  --source-id defra-desnz-minimal-fixture \
   --content-type text/csv \
   --format-hint csv
 ```
@@ -21,9 +21,9 @@ Console script:
 
 ```bash
 carbonops-parser local-dry-run \
-  --local-path ./fixtures/defra_minimal.csv \
+  --local-path examples/fixtures/defra_desnz_minimal.csv \
   --source-family defra_desnz \
-  --source-id defra-desnz-fixture \
+  --source-id defra-desnz-minimal-fixture \
   --content-type text/csv \
   --format-hint csv
 ```
@@ -46,14 +46,54 @@ JSON output is available with:
 
 ```bash
 carbonops-parser local-dry-run \
-  --local-path ./fixtures/defra_minimal.csv \
+  --local-path examples/fixtures/defra_desnz_minimal.csv \
   --source-family defra_desnz \
-  --source-id defra-desnz-fixture \
+  --source-id defra-desnz-minimal-fixture \
   --format-hint csv \
   --output-format json
 ```
 
 JSON output includes intermediate status fields and DDL preview text as metadata. The DDL preview is not executed.
+
+## Checked-In Fixture
+
+The repository includes a tiny local fixture at:
+
+- `examples/fixtures/defra_desnz_minimal.csv`
+
+It contains only the currently supported minimal fields:
+
+- `factor_id`
+- `factor_name`
+- `unit`
+
+Expected text summary for the fixture:
+
+```text
+status=success
+parsed_record_count=2
+normalization_record_count=2
+persistence_input_record_count=2
+ddl_preview_present=True
+issue_count=0
+```
+
+Trimmed JSON output:
+
+```json
+{
+  "status": "success",
+  "parsed_record_count": 2,
+  "normalization_record_count": 2,
+  "persistence_input_record_count": 2,
+  "ddl_preview_present": true,
+  "source_family": "defra_desnz",
+  "source_id": "defra-desnz-minimal-fixture",
+  "issues": []
+}
+```
+
+The fixture is local dry-run input only. It is not source acquisition, does not use real source data, and does not make production DEFRA/DESNZ correctness claims.
 
 ## Exit Codes
 
