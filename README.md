@@ -202,7 +202,7 @@ For boundary details, see:
 
 See [examples/example_acquisition_artifact_parser_input_mapping.py](examples/example_acquisition_artifact_parser_input_mapping.py) for a deterministic in-memory example of mapping acquisition artifact metadata into a future parser input boundary without executing a parser.
 
-The parser package exposes `ParserInputContract`, `create_parser_input_contract()`, `validate_parser_input_contract()`, the `ParserAdapter` protocol, `NoopParserAdapter`, parser adapter registry helpers, and parser execution planning helpers for future parser adapter input handoff. The contract carries acquisition metadata only; it does not contain parser output, normalization output, or database persistence fields.
+The parser package exposes `ParserInputContract`, `create_parser_input_contract()`, `validate_parser_input_contract()`, the `ParserAdapter` protocol, `NoopParserAdapter`, parser adapter registry helpers, parser execution planning helpers, and parser execution result contracts for future parser adapter input handoff. The contract carries acquisition metadata only; it does not contain normalization output or database persistence fields.
 
 ## Source Support
 
@@ -296,6 +296,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [DEFRA/DESNZ Adapter Skeleton Boundaries](docs/defra-desnz-adapter-skeleton-boundaries.md)
 - [Parser Adapter Boundary](docs/parser-adapter-boundary.md)
 - [Parser Execution Planning Boundary](docs/parser-execution-planning-boundary.md)
+- [Parser Execution Result Boundary](docs/parser-execution-result-boundary.md)
 - [Parser Handoff Boundary](docs/parser-handoff-boundary.md)
 - [Parser Contract Boundaries](docs/parser-contract-boundaries.md)
 - [Source-Specific Parser Skeleton Boundaries](docs/source-specific-parser-skeleton-boundaries.md)

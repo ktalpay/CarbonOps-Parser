@@ -24,6 +24,13 @@ from carbonfactor_parser.parsers.execution_plan import (
     ParserExecutionPlanStatus,
     plan_parser_execution,
 )
+from carbonfactor_parser.parsers.execution_result import (
+    ParserExecutionIssue,
+    ParserExecutionIssueSeverity,
+    ParserExecutionResult,
+    ParserExecutionResultStatus,
+    create_parser_execution_result,
+)
 from carbonfactor_parser.parsers.fixture_parser import ArtificialFixtureParser
 from carbonfactor_parser.parsers.input_contract import (
     ParserInputContract,
@@ -51,8 +58,12 @@ __all__ = (
     "NoopParserAdapter",
     "ParserAdapter",
     "ParserAdapterRegistry",
+    "ParserExecutionIssue",
+    "ParserExecutionIssueSeverity",
     "ParserExecutionPlan",
     "ParserExecutionPlanStatus",
+    "ParserExecutionResult",
+    "ParserExecutionResultStatus",
     "ParserInputContract",
     "ParserInputValidationIssue",
     "ParserInputValidationResult",
@@ -64,6 +75,7 @@ __all__ = (
     "ParserResult",
     "ParserResultSummary",
     "create_parser_adapter_registry",
+    "create_parser_execution_result",
     "create_parser_input_contract",
     "list_parser_adapters",
     "plan_parser_execution",
