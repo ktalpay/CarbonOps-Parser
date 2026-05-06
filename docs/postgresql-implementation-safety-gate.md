@@ -63,6 +63,16 @@ connect to PostgreSQL, execute SQL, or write records.
 Future integration test wiring must require explicit opt-in and an isolated test
 database before any connection behavior is introduced.
 
+## Connection Session Contract Relationship
+
+`PostgreSQLConnectionSession` defines a driver-neutral future caller-provided
+session protocol. It is contract-only: it does not import a database driver,
+open a connection, run SQL, load configuration, load credentials, or change
+`PostgreSQLPersistenceRepository` runtime behavior.
+
+Future repository execution adapters may consume this contract only after this
+safety gate is satisfied in a separately scoped task.
+
 ## Insert Builder Relationship
 
 `build_postgresql_insert_statement()` may produce deterministic SQL text with
@@ -183,6 +193,7 @@ This safety gate does not add:
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
+- [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)

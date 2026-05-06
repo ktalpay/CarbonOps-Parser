@@ -98,6 +98,11 @@ shape for connection-shaped metadata. A future application or CLI layer may own
 configuration loading, but that loading must stay outside the core repository
 boundary and must be explicitly opted in.
 
+The [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
+defines the driver-neutral shape for future caller-provided session objects. It
+does not create a real connection/session, import a database driver, or enable
+runtime SQL execution.
+
 Secrets must not appear in docs, fixtures, exceptions, logs, or repository
 metadata. Future config work should continue using redacted markers, such as a
 password-present flag, rather than storing secret values in public contracts.
@@ -242,6 +247,7 @@ The first task that adds runtime PostgreSQL persistence must pass this checklist
 
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
+- [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)

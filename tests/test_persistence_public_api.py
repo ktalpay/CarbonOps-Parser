@@ -3,6 +3,7 @@ from carbonfactor_parser.persistence import (
     ddl_preview,
     input,
     integration_test_boundary,
+    postgresql_connection_session_contract,
     postgresql_insert_builder,
     postgresql_options,
     postgresql_persistence_preview,
@@ -28,6 +29,8 @@ from carbonfactor_parser.persistence import (
     PostgreSQLInsertBuildResult,
     PostgreSQLInsertBuildStatus,
     PostgreSQLInsertStatement,
+    PostgreSQLConnectionSession,
+    PostgreSQLConnectionSessionContractDescription,
     PostgreSQLPersistenceColumn,
     PostgreSQLPersistenceOptions,
     PostgreSQLPersistenceOptionsValidationIssue,
@@ -38,12 +41,17 @@ from carbonfactor_parser.persistence import (
     PostgreSQLPersistencePreviewStatus,
     PostgreSQLPersistenceRepository,
     PostgreSQLPersistenceSchema,
+    PostgreSQLStatementExecutionContract,
+    PostgreSQLTransactionBoundary,
+    PostgreSQLTransactionMode,
+    PostgreSQLTransactionOwnership,
     build_persistence_input_from_normalization_result,
     build_postgresql_insert_statement,
     build_postgresql_persistence_preview,
     create_persistence_result,
     create_postgresql_integration_test_boundary,
     create_postgresql_persistence_options,
+    describe_postgresql_connection_session_contract,
     get_normalized_record_postgresql_schema,
     render_postgresql_ddl_preview,
     should_skip_postgresql_integration_tests,
@@ -69,6 +77,8 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLInsertBuildResult",
     "PostgreSQLInsertBuildStatus",
     "PostgreSQLInsertStatement",
+    "PostgreSQLConnectionSession",
+    "PostgreSQLConnectionSessionContractDescription",
     "PostgreSQLPersistenceColumn",
     "PostgreSQLPersistenceOptions",
     "PostgreSQLPersistenceOptionsValidationIssue",
@@ -79,12 +89,17 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLPersistencePreviewStatus",
     "PostgreSQLPersistenceRepository",
     "PostgreSQLPersistenceSchema",
+    "PostgreSQLStatementExecutionContract",
+    "PostgreSQLTransactionBoundary",
+    "PostgreSQLTransactionMode",
+    "PostgreSQLTransactionOwnership",
     "build_persistence_input_from_normalization_result",
     "build_postgresql_insert_statement",
     "build_postgresql_persistence_preview",
     "create_persistence_result",
     "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",
+    "describe_postgresql_connection_session_contract",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
     "should_skip_postgresql_integration_tests",
@@ -123,6 +138,13 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PostgreSQLInsertStatement": (
         postgresql_insert_builder.PostgreSQLInsertStatement
     ),
+    "PostgreSQLConnectionSession": (
+        postgresql_connection_session_contract.PostgreSQLConnectionSession
+    ),
+    "PostgreSQLConnectionSessionContractDescription": (
+        postgresql_connection_session_contract
+        .PostgreSQLConnectionSessionContractDescription
+    ),
     "PostgreSQLPersistenceColumn": schema.PostgreSQLPersistenceColumn,
     "PostgreSQLPersistenceOptions": (
         postgresql_options.PostgreSQLPersistenceOptions
@@ -149,6 +171,18 @@ EXPECTED_PUBLIC_EXPORTS = {
         postgresql_repository.PostgreSQLPersistenceRepository
     ),
     "PostgreSQLPersistenceSchema": schema.PostgreSQLPersistenceSchema,
+    "PostgreSQLStatementExecutionContract": (
+        postgresql_connection_session_contract.PostgreSQLStatementExecutionContract
+    ),
+    "PostgreSQLTransactionBoundary": (
+        postgresql_connection_session_contract.PostgreSQLTransactionBoundary
+    ),
+    "PostgreSQLTransactionMode": (
+        postgresql_connection_session_contract.PostgreSQLTransactionMode
+    ),
+    "PostgreSQLTransactionOwnership": (
+        postgresql_connection_session_contract.PostgreSQLTransactionOwnership
+    ),
     "build_persistence_input_from_normalization_result": (
         input.build_persistence_input_from_normalization_result
     ),
@@ -164,6 +198,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     ),
     "create_postgresql_persistence_options": (
         postgresql_options.create_postgresql_persistence_options
+    ),
+    "describe_postgresql_connection_session_contract": (
+        postgresql_connection_session_contract
+        .describe_postgresql_connection_session_contract
     ),
     "get_normalized_record_postgresql_schema": (
         schema.get_normalized_record_postgresql_schema
@@ -199,6 +237,10 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLInsertBuildResult": PostgreSQLInsertBuildResult,
         "PostgreSQLInsertBuildStatus": PostgreSQLInsertBuildStatus,
         "PostgreSQLInsertStatement": PostgreSQLInsertStatement,
+        "PostgreSQLConnectionSession": PostgreSQLConnectionSession,
+        "PostgreSQLConnectionSessionContractDescription": (
+            PostgreSQLConnectionSessionContractDescription
+        ),
         "PostgreSQLPersistenceColumn": PostgreSQLPersistenceColumn,
         "PostgreSQLPersistenceOptions": PostgreSQLPersistenceOptions,
         "PostgreSQLPersistenceOptionsValidationIssue": (
@@ -213,6 +255,10 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLPersistencePreviewStatus": PostgreSQLPersistencePreviewStatus,
         "PostgreSQLPersistenceRepository": PostgreSQLPersistenceRepository,
         "PostgreSQLPersistenceSchema": PostgreSQLPersistenceSchema,
+        "PostgreSQLStatementExecutionContract": PostgreSQLStatementExecutionContract,
+        "PostgreSQLTransactionBoundary": PostgreSQLTransactionBoundary,
+        "PostgreSQLTransactionMode": PostgreSQLTransactionMode,
+        "PostgreSQLTransactionOwnership": PostgreSQLTransactionOwnership,
         "build_persistence_input_from_normalization_result": (
             build_persistence_input_from_normalization_result
         ),
@@ -226,6 +272,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         ),
         "create_postgresql_persistence_options": (
             create_postgresql_persistence_options
+        ),
+        "describe_postgresql_connection_session_contract": (
+            describe_postgresql_connection_session_contract
         ),
         "get_normalized_record_postgresql_schema": (
             get_normalized_record_postgresql_schema

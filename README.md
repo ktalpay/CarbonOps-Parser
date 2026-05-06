@@ -474,6 +474,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [PostgreSQL Repository Implementation Planning Boundary](docs/postgresql-repository-implementation-planning-boundary.md)
 - [PostgreSQL Runtime Persistence Implementation Plan](docs/postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Driver Dependency Decision](docs/postgresql-driver-dependency-decision.md)
+- [PostgreSQL Connection Session Contract Boundary](docs/postgresql-connection-session-contract-boundary.md)
 - [Parser To Normalization Handoff Boundary](docs/parser-to-normalization-handoff-boundary.md)
 - [Parser To Normalization Integration Recap](docs/parser-to-normalization-integration-recap.md)
 - [Source To Normalization Pipeline Recap](docs/source-to-normalization-pipeline-recap.md)

@@ -150,6 +150,11 @@ driver direction should support:
 - Fake session or executor tests without a real database.
 - No implicit connection creation in library code.
 
+The [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
+defines that contract as a driver-neutral protocol and metadata shape. It keeps
+the future `psycopg` direction separate from pure preview modules and does not
+add a database dependency.
+
 The repository must not construct a database connection from environment
 variables, config files, or credentials on its own.
 
@@ -188,6 +193,7 @@ checklist:
 ## Related Documents
 
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
+- [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
