@@ -13,6 +13,7 @@ from carbonfactor_parser.parsers import (
     execution_result,
     execution_runner,
     file_content_input,
+    file_content_loader,
     fixture_parser,
     input_contract,
     input_mapping,
@@ -23,6 +24,7 @@ from carbonfactor_parser.parsers import (
 from carbonfactor_parser.parsers import (
     ArtificialFixtureParser,
     ArtificialParserAdapter,
+    DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES,
     DEFRA_DESNZ_MINIMAL_CONTENT_HEADER,
     DefraDesnzParserAdapter,
     DefraDesnzParser,
@@ -38,6 +40,9 @@ from carbonfactor_parser.parsers import (
     ParserExecutionResult,
     ParserExecutionResultStatus,
     ParserFileContentInput,
+    ParserFileContentLoadIssue,
+    ParserFileContentLoadResult,
+    ParserFileContentLoadStatus,
     ParserFileContentValidationIssue,
     ParserFileContentValidationResult,
     ParserInputContract,
@@ -62,6 +67,7 @@ from carbonfactor_parser.parsers import (
     build_fixture_parser_input_mapping,
     create_parser_input_contract,
     list_parser_adapters,
+    load_parser_file_content_from_local_path,
     plan_parser_execution,
     parse_defra_desnz_file_content,
     register_parser_adapter,
@@ -83,6 +89,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "DefraDesnzParser",
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
+    "DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES",
     "NoopParserAdapter",
     "ParserAdapter",
     "ParserAdapterRegistry",
@@ -93,6 +100,9 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "ParserExecutionResult",
     "ParserExecutionResultStatus",
     "ParserFileContentInput",
+    "ParserFileContentLoadIssue",
+    "ParserFileContentLoadResult",
+    "ParserFileContentLoadStatus",
     "ParserFileContentValidationIssue",
     "ParserFileContentValidationResult",
     "ParserInputContract",
@@ -116,6 +126,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "create_parsed_raw_record",
     "create_parsed_raw_record_payload",
     "list_parser_adapters",
+    "load_parser_file_content_from_local_path",
     "plan_parser_execution",
     "parse_defra_desnz_file_content",
     "register_parser_adapter",
@@ -141,6 +152,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     "ExampleSourceSpecificParser": (
         example_source_specific_parser.ExampleSourceSpecificParser
     ),
+    "DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES": (
+        file_content_loader.DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES
+    ),
     "NoopParserAdapter": noop_adapter.NoopParserAdapter,
     "ParserAdapter": adapter.ParserAdapter,
     "ParserAdapterRegistry": adapter_registry.ParserAdapterRegistry,
@@ -153,6 +167,15 @@ EXPECTED_PUBLIC_EXPORTS = {
     "ParserExecutionResult": execution_result.ParserExecutionResult,
     "ParserExecutionResultStatus": execution_result.ParserExecutionResultStatus,
     "ParserFileContentInput": file_content_input.ParserFileContentInput,
+    "ParserFileContentLoadIssue": (
+        file_content_loader.ParserFileContentLoadIssue
+    ),
+    "ParserFileContentLoadResult": (
+        file_content_loader.ParserFileContentLoadResult
+    ),
+    "ParserFileContentLoadStatus": (
+        file_content_loader.ParserFileContentLoadStatus
+    ),
     "ParserFileContentValidationIssue": (
         file_content_input.ParserFileContentValidationIssue
     ),
@@ -190,6 +213,9 @@ EXPECTED_PUBLIC_EXPORTS = {
         raw_record.create_parsed_raw_record_payload
     ),
     "list_parser_adapters": adapter_registry.list_parser_adapters,
+    "load_parser_file_content_from_local_path": (
+        file_content_loader.load_parser_file_content_from_local_path
+    ),
     "plan_parser_execution": execution_plan.plan_parser_execution,
     "parse_defra_desnz_file_content": (
         defra_desnz_content_parser.parse_defra_desnz_file_content
@@ -223,6 +249,9 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "DefraDesnzParser": DefraDesnzParser,
         "ExampleInMemoryParser": ExampleInMemoryParser,
         "ExampleSourceSpecificParser": ExampleSourceSpecificParser,
+        "DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES": (
+            DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES
+        ),
         "NoopParserAdapter": NoopParserAdapter,
         "ParserAdapter": ParserAdapter,
         "ParserAdapterRegistry": ParserAdapterRegistry,
@@ -233,6 +262,9 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "ParserExecutionResult": ParserExecutionResult,
         "ParserExecutionResultStatus": ParserExecutionResultStatus,
         "ParserFileContentInput": ParserFileContentInput,
+        "ParserFileContentLoadIssue": ParserFileContentLoadIssue,
+        "ParserFileContentLoadResult": ParserFileContentLoadResult,
+        "ParserFileContentLoadStatus": ParserFileContentLoadStatus,
         "ParserFileContentValidationIssue": ParserFileContentValidationIssue,
         "ParserFileContentValidationResult": ParserFileContentValidationResult,
         "ParserInputContract": ParserInputContract,
@@ -256,6 +288,9 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "create_parsed_raw_record": create_parsed_raw_record,
         "create_parsed_raw_record_payload": create_parsed_raw_record_payload,
         "list_parser_adapters": list_parser_adapters,
+        "load_parser_file_content_from_local_path": (
+            load_parser_file_content_from_local_path
+        ),
         "plan_parser_execution": plan_parser_execution,
         "parse_defra_desnz_file_content": parse_defra_desnz_file_content,
         "register_parser_adapter": register_parser_adapter,
@@ -304,6 +339,7 @@ def test_parser_all_excludes_internal_module_names() -> None:
     assert "execution_result" not in parsers.__all__
     assert "execution_runner" not in parsers.__all__
     assert "file_content_input" not in parsers.__all__
+    assert "file_content_loader" not in parsers.__all__
     assert "fixture_parser" not in parsers.__all__
     assert "input_contract" not in parsers.__all__
     assert "input_mapping" not in parsers.__all__

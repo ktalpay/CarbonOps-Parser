@@ -2,7 +2,7 @@
 
 This document defines the parser file content input boundary for future parsing tasks.
 
-It is a content contract boundary only. It does not read files, perform HTTP or network calls, execute parser logic, execute normalization, write to a database, schedule work, use credentials, or add real source-specific parsing.
+It is a content contract boundary only. It does not perform HTTP or network calls, execute parser logic, execute normalization, write to a database, schedule work, use credentials, or add real source-specific parsing. Local file reading is owned by the separate local loader boundary.
 
 ## Purpose
 
@@ -35,11 +35,11 @@ It is a content contract boundary only. It does not read files, perform HTTP or 
 
 Validation does not parse content, inspect file paths, make network calls, execute normalization, or write to persistence.
 
-## File Loading Separation
+## Local File Loading Relationship
 
-File loading remains deferred to a future loader task. That future task must explicitly own how artifact references are opened, streamed, decoded, size-checked, and converted into `ParserFileContentInput`.
+`load_parser_file_content_from_local_path()` explicitly owns the narrow local file read boundary for already-acquired files. It accepts a caller-supplied local path, decodes UTF-8 text, applies deterministic local safety checks, and returns `ParserFileContentLoadResult` containing `ParserFileContentInput` on success.
 
-Parser adapters should receive content contracts only after loading is complete. They must not rediscover sources, download artifacts, mutate acquisition manifests, or write parsed results to a database.
+This loader does not discover sources, download files, execute parser logic, execute normalization, write to persistence, execute SQL, or load credentials. Parser adapters should receive content contracts only after loading is complete. They must not rediscover sources, download artifacts, mutate acquisition manifests, or write parsed results to a database.
 
 ## Parser Adapter Relationship
 
@@ -61,7 +61,7 @@ This boundary does not add:
 
 - Real parser execution.
 - DEFRA/DESNZ parser implementation.
-- File reading or decoding.
+- Network source reading or remote artifact loading.
 - HTTP or network calls.
 - Normalization execution.
 - Database persistence.
@@ -71,6 +71,7 @@ This boundary does not add:
 
 ## Related Documents
 
+- [Local Parser File Content Loader Boundary](local-parser-file-content-loader-boundary.md)
 - [Parser Adapter Boundary](parser-adapter-boundary.md)
 - [Source-Specific Parser Adapter Boundary](source-specific-parser-adapter-boundary.md)
 - [Parser Execution Result Boundary](parser-execution-result-boundary.md)

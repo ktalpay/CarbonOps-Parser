@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-097A: Added explicit local UTF-8 parser file content loader boundary with structured load statuses, public exports, focused temp-file tests, and documentation without parser execution, normalization, DB writes, SQL, migrations, credentials, scheduler behavior, or network calls.
 - CO-096C: Added deterministic PostgreSQL DDL preview rendering from the logical schema descriptor, public exports, focused tests, and documentation without DB connections, SQL execution, migrations, runtime table creation, credentials, file I/O, or network behavior.
 - CO-096B: Added PostgreSQL repository implementation planning boundary documentation and persistence doc links without PostgreSQL implementation, DB connections, SQL, migrations, credentials, file I/O, or network behavior.
 - CO-096A: Added persistence repository protocol and result boundary contracts with public exports, fake in-memory repository tests, and documentation without PostgreSQL implementation, DB connections, SQL, migrations, credentials, file I/O, or network behavior.
