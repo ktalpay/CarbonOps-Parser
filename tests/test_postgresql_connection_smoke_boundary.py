@@ -349,6 +349,38 @@ def test_runbook_documents_psycopg_binary_libpq_packaging_decision() -> None:
     )
 
 
+def test_runbook_documents_fresh_clone_install_smoke_checklist() -> None:
+    runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    normalized_runbook_text = " ".join(runbook_text.split())
+
+    assert "## Fresh Clone Install Smoke" in runbook_text
+    assert "fresh clone or a clean checkout" in runbook_text
+    assert "python -m venv .venv" in runbook_text
+    assert "source .venv/bin/activate" in runbook_text
+    assert "python -m pip install -e ." in runbook_text
+    assert "carbonops-parser --help" in runbook_text
+    assert "carbonops-parser local-dry-run \\" in runbook_text
+    assert "--local-path examples/fixtures/defra_desnz_minimal.csv" in runbook_text
+    assert "--json" in runbook_text
+    assert 'python -m pip install -e ".[postgresql]"' in runbook_text
+    assert (
+        'python -c "import psycopg; print(psycopg.__version__)"'
+        in runbook_text
+    )
+    assert (
+        "The optional PostgreSQL extra install does not enable repository "
+        "persistence."
+    ) in normalized_runbook_text
+    assert "PostgreSQLPersistenceRepository.persist()" in normalized_runbook_text
+    assert "remains unsupported/no-execution" in normalized_runbook_text
+    assert "Default `python -m pytest` runs remain DB-free." in runbook_text
+    assert "connection smoke is still manual and opt-in only" in normalized_runbook_text
+    assert (
+        "No DSN, password, credential, or secret is required"
+        in normalized_runbook_text
+    )
+
+
 def test_runbook_documents_local_postgresql_setup_checklist() -> None:
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
     normalized_runbook_text = " ".join(runbook_text.split())
