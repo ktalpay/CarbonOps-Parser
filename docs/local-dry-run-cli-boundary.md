@@ -6,6 +6,12 @@ It is a command entry path only. It accepts an explicit local DEFRA/DESNZ fixtur
 
 ## Command
 
+Install the local console script from a working copy with:
+
+```bash
+python -m pip install -e .
+```
+
 Module invocation:
 
 ```bash

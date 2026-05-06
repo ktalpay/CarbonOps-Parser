@@ -85,6 +85,69 @@ The .NET implementation is planned as an independent Worker Service path that fo
 
 See [src/dotnet/README.md](src/dotnet/README.md).
 
+## Install And Local Dry-Run Quickstart
+
+From a fresh checkout or local working copy:
+
+```bash
+git clone <REPOSITORY_URL> CarbonOps-Parser
+cd CarbonOps-Parser
+python -m pip install -e .
+```
+
+Run the test suite if you want a quick local smoke check:
+
+```bash
+python -m pytest
+```
+
+Run the checked-in DEFRA/DESNZ fixture through the local dry-run CLI:
+
+```bash
+carbonops-parser local-dry-run \
+  --local-path examples/fixtures/defra_desnz_minimal.csv \
+  --source-family defra_desnz \
+  --source-id defra-desnz-minimal-fixture \
+  --content-type text/csv \
+  --format-hint csv
+```
+
+Expected summary:
+
+```text
+status=success
+parsed_record_count=2
+normalization_record_count=2
+persistence_input_record_count=2
+ddl_preview_present=True
+issue_count=0
+```
+
+Run the JSON variant:
+
+```bash
+carbonops-parser local-dry-run \
+  --local-path examples/fixtures/defra_desnz_minimal.csv \
+  --source-family defra_desnz \
+  --source-id defra-desnz-minimal-fixture \
+  --content-type text/csv \
+  --format-hint csv \
+  --output-format json
+```
+
+Key output fields:
+
+- `status`: dry-run outcome such as `success`, `failed`, `unsupported`, or `no_records`
+- `parsed_record_count`: records parsed by the minimal local DEFRA/DESNZ fixture parser
+- `normalization_record_count`: records produced by the minimal fixture normalization mapper
+- `persistence_input_record_count`: records prepared as `PersistenceInput`
+- `ddl_preview_present`: whether review-only PostgreSQL DDL preview text is attached
+- `issues`: structured local loader, parser, normalization, or persistence-input issues
+
+This quickstart is local dry-run only. It does not connect to PostgreSQL, write records, execute SQL, run migrations, perform network calls, trigger source acquisition, load config files, or require credentials. It does not make production DEFRA/DESNZ correctness claims.
+
+For boundary details, see [Local Dry-Run CLI Boundary](docs/local-dry-run-cli-boundary.md), [Local File Normalized Persistence Dry-Run Boundary](docs/local-file-normalized-persistence-dry-run-boundary.md), and [Local Dry-Run Troubleshooting](docs/local-dry-run-troubleshooting.md).
+
 ## Developer Tests
 
 Run the lightweight Python test suite from the repository root:
@@ -203,58 +266,6 @@ For boundary details, see:
 See [examples/example_acquisition_artifact_parser_input_mapping.py](examples/example_acquisition_artifact_parser_input_mapping.py) for a deterministic in-memory example of mapping acquisition artifact metadata into a future parser input boundary without executing a parser.
 
 The parser package exposes `ParserInputContract`, `create_parser_input_contract()`, `validate_parser_input_contract()`, `ParserFileContentInput`, local parser file content loading helpers, parser file content validation helpers, `parse_defra_desnz_file_content()`, raw parsed record payload contracts, the `ParserAdapter` protocol, `NoopParserAdapter`, `ArtificialParserAdapter`, `DefraDesnzParserAdapter`, parser adapter registry helpers, parser execution planning and runner helpers, and parser execution result contracts for future parser adapter input handoff. The normalization package exposes parser execution handoff helpers, normalization input helpers for successful parser results with raw payloads, and a minimal DEFRA/DESNZ fixture normalization mapper. The persistence package exposes normalized result persistence input contracts, a logical PostgreSQL schema descriptor, a review-only DDL preview helper, and repository protocol/result contracts without database runtime behavior. The pipeline package exposes a local DEFRA/DESNZ fixture dry-run helper that composes those boundaries to produce `PersistenceInput` plus DDL preview metadata without DB or network behavior. These contracts keep acquisition metadata, already-loaded content, raw parser output, parser output metadata, normalization input, normalization handoff metadata, persistence input metadata, schema metadata, and repository result metadata separate; they do not include database connection behavior or full source-specific correctness claims.
-
-## Local dry-run CLI quickstart
-
-Use the `carbonops-parser local-dry-run` command for explicit local DEFRA/DESNZ fixture dry-runs.
-
-```bash
-carbonops-parser local-dry-run \
-  --local-path examples/fixtures/defra_desnz_minimal.csv \
-  --source-family defra_desnz \
-  --source-id defra-desnz-minimal-fixture \
-  --content-type text/csv \
-  --format-hint csv
-
-carbonops-parser local-dry-run \
-  --local-path examples/fixtures/defra_desnz_minimal.csv \
-  --source-family defra_desnz \
-  --source-id defra-desnz-minimal-fixture \
-  --format-hint csv \
-  --output-format json
-```
-
-The command reads only the explicit local file path and prints deterministic dry-run summary output. It does not connect to PostgreSQL, write records, execute SQL, run migrations, perform network calls, load config files, trigger source acquisition, or use credentials.
-
-Expected text summary for the checked-in fixture:
-
-```text
-status=success
-parsed_record_count=2
-normalization_record_count=2
-persistence_input_record_count=2
-ddl_preview_present=True
-issue_count=0
-```
-
-Trimmed JSON output:
-
-```json
-{
-  "status": "success",
-  "parsed_record_count": 2,
-  "normalization_record_count": 2,
-  "persistence_input_record_count": 2,
-  "ddl_preview_present": true,
-  "source_family": "defra_desnz",
-  "source_id": "defra-desnz-minimal-fixture",
-  "issues": []
-}
-```
-
-The fixture is a minimal local CSV-like example for exercising the dry-run boundary. It is not source acquisition, does not use real source data, and does not make production DEFRA/DESNZ correctness claims.
-
-For boundary details, see [Local Dry-Run CLI Boundary](docs/local-dry-run-cli-boundary.md) and [Local File Normalized Persistence Dry-Run Boundary](docs/local-file-normalized-persistence-dry-run-boundary.md). For expected failure examples, see [Local Dry-Run Troubleshooting](docs/local-dry-run-troubleshooting.md).
 
 ## Source Support
 
