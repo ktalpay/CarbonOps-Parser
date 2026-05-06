@@ -56,7 +56,7 @@ carbonops-parser local-dry-run \
   --source-family defra_desnz \
   --source-id defra-desnz-minimal-fixture \
   --format-hint csv \
-  --output-format json
+  --json
 ```
 
 JSON output includes intermediate status fields and DDL preview text as metadata. The DDL preview is not executed.
@@ -71,7 +71,6 @@ carbonops-parser local-dry-run \
   --source-family defra_desnz \
   --source-id defra-desnz-minimal-fixture \
   --format-hint csv \
-  --output-format json \
   --include-postgresql-preview
 ```
 
@@ -95,6 +94,65 @@ ready `PersistenceInput`. It can include:
 If the dry-run has no ready `PersistenceInput`, the PostgreSQL preview section
 reports a non-ready status and omits SQL preview data. It must not imply
 persistence success.
+
+Expected preview text lines for the checked-in fixture include:
+
+```text
+postgresql_preview_included=True
+postgresql_preview_status=ready
+postgresql_preview_only=True
+postgresql_preview_sql_execution=False
+postgresql_preview_database_connection=False
+postgresql_preview_target_table=normalized_records
+postgresql_preview_record_count=2
+postgresql_preview_issue_count=0
+```
+
+JSON preview output is available with:
+
+```bash
+carbonops-parser local-dry-run \
+  --local-path examples/fixtures/defra_desnz_minimal.csv \
+  --source-family defra_desnz \
+  --source-id defra-desnz-minimal-fixture \
+  --format-hint csv \
+  --json \
+  --include-postgresql-preview
+```
+
+Trimmed JSON preview section:
+
+```json
+{
+  "postgresql_persistence_preview": {
+    "preview_only": true,
+    "sql_execution": false,
+    "database_connection": false,
+    "status": "ready",
+    "target_table": "normalized_records",
+    "record_count": 2,
+    "ordered_columns": [
+      "source_family",
+      "source_id",
+      "record_id",
+      "record_index",
+      "row_number",
+      "normalized_fields",
+      "source_reference",
+      "source_artifact_reference",
+      "source_checksum_sha256",
+      "parser_metadata",
+      "normalization_metadata",
+      "created_at",
+      "updated_at"
+    ],
+    "issues": []
+  }
+}
+```
+
+No PostgreSQL server, database configuration, or credentials are required for
+either preview command.
 
 ## Checked-In Fixture
 

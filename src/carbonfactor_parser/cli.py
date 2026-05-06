@@ -63,6 +63,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output format for command results.",
     )
     dry_run_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Shortcut for --output-format json.",
+    )
+    dry_run_parser.add_argument(
         "--include-postgresql-preview",
         action="store_true",
         help="Include preview-only PostgreSQL insert statement data.",
@@ -89,9 +94,10 @@ def main(argv: list[str] | None = None) -> int:
             content_type=args.content_type,
             format_hint=args.format_hint,
         )
+        output_format = "json" if args.json else args.output_format
         _emit_local_dry_run_result(
             result,
-            output_format=args.output_format,
+            output_format=output_format,
             include_postgresql_preview=args.include_postgresql_preview,
         )
         return 0 if result.status == LocalFilePersistenceDryRunStatus.SUCCESS else 1
