@@ -31,6 +31,8 @@ runtime behavior:
   runtime adapter work, but pure persistence modules do not import it.
 - The PostgreSQL implementation safety gate defines mandatory preconditions
   before any runtime database behavior may be added.
+- `evaluate_postgresql_runtime_execution_gate()` records explicit future runtime
+  execution intent as disabled/no-execution metadata.
 
 ## Explicit Non-Goals
 
@@ -134,6 +136,10 @@ Repository execution must not happen silently. A future runtime repository shoul
 require an explicit configured repository instance or explicit execution adapter
 and should keep the current unsupported behavior as the default no-execution
 state.
+
+The [PostgreSQL Runtime Execution Gate Boundary](postgresql-runtime-execution-gate-boundary.md)
+adds the explicit enablement gate for that future work. It is disabled by
+default, remains metadata-only, and does not enable repository execution.
 
 ## Transaction Strategy
 

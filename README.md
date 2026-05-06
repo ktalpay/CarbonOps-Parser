@@ -481,6 +481,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [PostgreSQL psycopg Session Adapter Boundary](docs/postgresql-psycopg-session-adapter-boundary.md)
 - [PostgreSQL Disabled Runtime Execution Adapter Boundary](docs/postgresql-disabled-runtime-execution-adapter-boundary.md)
 - [PostgreSQL Repository Disabled Execution Preview Boundary](docs/postgresql-repository-disabled-execution-preview-boundary.md)
+- [PostgreSQL Runtime Execution Gate Boundary](docs/postgresql-runtime-execution-gate-boundary.md)
 - [Parser To Normalization Handoff Boundary](docs/parser-to-normalization-handoff-boundary.md)
 - [Parser To Normalization Integration Recap](docs/parser-to-normalization-integration-recap.md)
 - [Source To Normalization Pipeline Recap](docs/source-to-normalization-pipeline-recap.md)

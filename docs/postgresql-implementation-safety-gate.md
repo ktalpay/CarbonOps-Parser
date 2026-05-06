@@ -24,6 +24,7 @@ Current persistence work is intentionally limited to:
 - PostgreSQL persistence preview result data without execution
 - approved `psycopg` dependency declaration without runtime imports or execution
 - repository-level disabled execution preview diagnostics without execution
+- runtime execution gate decisions disabled by default and without execution
 - PostgreSQL repository planning documentation
 
 Before any runtime PostgreSQL behavior is added, the preconditions in this gate must be reviewed and satisfied in a separate task.
@@ -116,6 +117,12 @@ return successful persistence semantics, or become a database connection, SQL
 runtime, transaction boundary, migration runner, or repository write path before
 this gate is satisfied.
 
+`evaluate_postgresql_runtime_execution_gate()` may record caller-provided
+runtime execution intent as metadata. It is disabled by default and must not
+open a connection, create a cursor, run SQL, write records, start a transaction,
+or change `PostgreSQLPersistenceRepository.persist()` before this gate is
+satisfied.
+
 ## Transaction Policy Relationship
 
 `PostgreSQLTransactionPolicy` may describe future single-batch, caller-provided
@@ -157,6 +164,7 @@ Before this gate is satisfied, future changes must not add:
 - Additional PostgreSQL drivers or ORM dependencies.
 - Runtime driver imports outside a safety-gated execution adapter.
 - Runtime database connection code.
+- Repository runtime execution without an explicit gate decision.
 - Network-backed source acquisition coupled directly to persistence.
 - Scheduler or background behavior that can trigger persistence.
 
@@ -251,6 +259,7 @@ This safety gate does not add:
 - [PostgreSQL psycopg Session Adapter Boundary](postgresql-psycopg-session-adapter-boundary.md)
 - [PostgreSQL Disabled Runtime Execution Adapter Boundary](postgresql-disabled-runtime-execution-adapter-boundary.md)
 - [PostgreSQL Repository Disabled Execution Preview Boundary](postgresql-repository-disabled-execution-preview-boundary.md)
+- [PostgreSQL Runtime Execution Gate Boundary](postgresql-runtime-execution-gate-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)

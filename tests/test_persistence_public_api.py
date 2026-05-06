@@ -13,6 +13,7 @@ from carbonfactor_parser.persistence import (
     postgresql_psycopg_session_adapter,
     postgresql_repository,
     postgresql_repository_disabled_execution_preview,
+    postgresql_runtime_execution_gate,
     postgresql_transaction_policy,
     repository,
     schema,
@@ -77,6 +78,11 @@ from carbonfactor_parser.persistence import (
     PostgreSQLRepositoryDisabledExecutionPreviewIssue,
     PostgreSQLRepositoryDisabledExecutionPreviewResult,
     PostgreSQLRepositoryDisabledExecutionPreviewStatus,
+    PostgreSQLRuntimeExecutionGate,
+    PostgreSQLRuntimeExecutionGateDecision,
+    PostgreSQLRuntimeExecutionGateDescription,
+    PostgreSQLRuntimeExecutionGateIssue,
+    PostgreSQLRuntimeExecutionGateStatus,
     PostgreSQLStatementExecutionContract,
     PostgreSQLTransactionBoundary,
     PostgreSQLTransactionFailurePolicy,
@@ -108,7 +114,9 @@ from carbonfactor_parser.persistence import (
     describe_postgresql_execution_adapter_boundary,
     describe_postgresql_idempotency_conflict_strategy_boundary,
     describe_postgresql_repository_disabled_execution_preview,
+    describe_postgresql_runtime_execution_gate,
     describe_postgresql_transaction_policy_boundary,
+    evaluate_postgresql_runtime_execution_gate,
     get_normalized_record_postgresql_schema,
     render_postgresql_ddl_preview,
     should_skip_postgresql_integration_tests,
@@ -177,6 +185,11 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLRepositoryDisabledExecutionPreviewIssue",
     "PostgreSQLRepositoryDisabledExecutionPreviewResult",
     "PostgreSQLRepositoryDisabledExecutionPreviewStatus",
+    "PostgreSQLRuntimeExecutionGate",
+    "PostgreSQLRuntimeExecutionGateDecision",
+    "PostgreSQLRuntimeExecutionGateDescription",
+    "PostgreSQLRuntimeExecutionGateIssue",
+    "PostgreSQLRuntimeExecutionGateStatus",
     "PostgreSQLStatementExecutionContract",
     "PostgreSQLTransactionBoundary",
     "PostgreSQLTransactionFailurePolicy",
@@ -208,7 +221,9 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "describe_postgresql_execution_adapter_boundary",
     "describe_postgresql_idempotency_conflict_strategy_boundary",
     "describe_postgresql_repository_disabled_execution_preview",
+    "describe_postgresql_runtime_execution_gate",
     "describe_postgresql_transaction_policy_boundary",
+    "evaluate_postgresql_runtime_execution_gate",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
     "should_skip_postgresql_integration_tests",
@@ -389,6 +404,23 @@ EXPECTED_PUBLIC_EXPORTS = {
         postgresql_repository_disabled_execution_preview
         .PostgreSQLRepositoryDisabledExecutionPreviewStatus
     ),
+    "PostgreSQLRuntimeExecutionGate": (
+        postgresql_runtime_execution_gate.PostgreSQLRuntimeExecutionGate
+    ),
+    "PostgreSQLRuntimeExecutionGateDecision": (
+        postgresql_runtime_execution_gate
+        .PostgreSQLRuntimeExecutionGateDecision
+    ),
+    "PostgreSQLRuntimeExecutionGateDescription": (
+        postgresql_runtime_execution_gate
+        .PostgreSQLRuntimeExecutionGateDescription
+    ),
+    "PostgreSQLRuntimeExecutionGateIssue": (
+        postgresql_runtime_execution_gate.PostgreSQLRuntimeExecutionGateIssue
+    ),
+    "PostgreSQLRuntimeExecutionGateStatus": (
+        postgresql_runtime_execution_gate.PostgreSQLRuntimeExecutionGateStatus
+    ),
     "PostgreSQLStatementExecutionContract": (
         postgresql_connection_session_contract.PostgreSQLStatementExecutionContract
     ),
@@ -491,9 +523,17 @@ EXPECTED_PUBLIC_EXPORTS = {
         postgresql_repository_disabled_execution_preview
         .describe_postgresql_repository_disabled_execution_preview
     ),
+    "describe_postgresql_runtime_execution_gate": (
+        postgresql_runtime_execution_gate
+        .describe_postgresql_runtime_execution_gate
+    ),
     "describe_postgresql_transaction_policy_boundary": (
         postgresql_transaction_policy
         .describe_postgresql_transaction_policy_boundary
+    ),
+    "evaluate_postgresql_runtime_execution_gate": (
+        postgresql_runtime_execution_gate
+        .evaluate_postgresql_runtime_execution_gate
     ),
     "get_normalized_record_postgresql_schema": (
         schema.get_normalized_record_postgresql_schema
@@ -615,6 +655,19 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLRepositoryDisabledExecutionPreviewStatus": (
             PostgreSQLRepositoryDisabledExecutionPreviewStatus
         ),
+        "PostgreSQLRuntimeExecutionGate": PostgreSQLRuntimeExecutionGate,
+        "PostgreSQLRuntimeExecutionGateDecision": (
+            PostgreSQLRuntimeExecutionGateDecision
+        ),
+        "PostgreSQLRuntimeExecutionGateDescription": (
+            PostgreSQLRuntimeExecutionGateDescription
+        ),
+        "PostgreSQLRuntimeExecutionGateIssue": (
+            PostgreSQLRuntimeExecutionGateIssue
+        ),
+        "PostgreSQLRuntimeExecutionGateStatus": (
+            PostgreSQLRuntimeExecutionGateStatus
+        ),
         "PostgreSQLStatementExecutionContract": PostgreSQLStatementExecutionContract,
         "PostgreSQLTransactionBoundary": PostgreSQLTransactionBoundary,
         "PostgreSQLTransactionFailurePolicy": (
@@ -682,8 +735,14 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "describe_postgresql_repository_disabled_execution_preview": (
             describe_postgresql_repository_disabled_execution_preview
         ),
+        "describe_postgresql_runtime_execution_gate": (
+            describe_postgresql_runtime_execution_gate
+        ),
         "describe_postgresql_transaction_policy_boundary": (
             describe_postgresql_transaction_policy_boundary
+        ),
+        "evaluate_postgresql_runtime_execution_gate": (
+            evaluate_postgresql_runtime_execution_gate
         ),
         "get_normalized_record_postgresql_schema": (
             get_normalized_record_postgresql_schema
@@ -734,4 +793,5 @@ def test_persistence_all_excludes_internal_module_names() -> None:
     assert "postgresql_disabled_runtime_execution_adapter" not in persistence.__all__
     assert "postgresql_repository" not in persistence.__all__
     assert "postgresql_repository_disabled_execution_preview" not in persistence.__all__
+    assert "postgresql_runtime_execution_gate" not in persistence.__all__
     assert all(not name.startswith("_") for name in persistence.__all__)

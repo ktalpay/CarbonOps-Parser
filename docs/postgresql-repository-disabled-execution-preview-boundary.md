@@ -21,6 +21,10 @@ execution semantics. `PostgreSQLPersistenceRepository.persist()` continues to
 return unsupported/no-execution results and must not call this helper as a
 runtime write path.
 
+CO-102K adds a runtime execution gate that remains disabled by default. Future
+repository execution work must use an explicit gate decision before runtime
+behavior is considered; this preview helper still returns diagnostics only.
+
 The current code boundary is:
 
 - `build_postgresql_repository_disabled_execution_preview()`: accepts
@@ -98,6 +102,7 @@ reporting decisions.
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Disabled Runtime Execution Adapter Boundary](postgresql-disabled-runtime-execution-adapter-boundary.md)
+- [PostgreSQL Runtime Execution Gate Boundary](postgresql-runtime-execution-gate-boundary.md)
 - [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
 - [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
 - [PostgreSQL Idempotency Conflict Strategy Boundary](postgresql-idempotency-conflict-strategy-boundary.md)

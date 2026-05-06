@@ -61,6 +61,15 @@ from carbonfactor_parser.persistence.postgresql_repository_disabled_execution_pr
     build_postgresql_repository_disabled_execution_preview,
     describe_postgresql_repository_disabled_execution_preview,
 )
+from carbonfactor_parser.persistence.postgresql_runtime_execution_gate import (
+    PostgreSQLRuntimeExecutionGate,
+    PostgreSQLRuntimeExecutionGateDecision,
+    PostgreSQLRuntimeExecutionGateDescription,
+    PostgreSQLRuntimeExecutionGateIssue,
+    PostgreSQLRuntimeExecutionGateStatus,
+    describe_postgresql_runtime_execution_gate,
+    evaluate_postgresql_runtime_execution_gate,
+)
 from carbonfactor_parser.persistence.postgresql_transaction_policy import (
     PostgreSQLBatchTransactionMode,
     PostgreSQLPartialSuccessPolicy,
@@ -187,6 +196,11 @@ __all__ = (
     "PostgreSQLRepositoryDisabledExecutionPreviewIssue",
     "PostgreSQLRepositoryDisabledExecutionPreviewResult",
     "PostgreSQLRepositoryDisabledExecutionPreviewStatus",
+    "PostgreSQLRuntimeExecutionGate",
+    "PostgreSQLRuntimeExecutionGateDecision",
+    "PostgreSQLRuntimeExecutionGateDescription",
+    "PostgreSQLRuntimeExecutionGateIssue",
+    "PostgreSQLRuntimeExecutionGateStatus",
     "PostgreSQLStatementExecutionContract",
     "PostgreSQLTransactionBoundary",
     "PostgreSQLTransactionFailurePolicy",
@@ -218,7 +232,9 @@ __all__ = (
     "describe_postgresql_execution_adapter_boundary",
     "describe_postgresql_idempotency_conflict_strategy_boundary",
     "describe_postgresql_repository_disabled_execution_preview",
+    "describe_postgresql_runtime_execution_gate",
     "describe_postgresql_transaction_policy_boundary",
+    "evaluate_postgresql_runtime_execution_gate",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
     "should_skip_postgresql_integration_tests",
