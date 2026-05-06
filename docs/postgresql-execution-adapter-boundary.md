@@ -104,6 +104,10 @@ only builds metadata and disabled results.
 CO-102B recommends a future synchronous `psycopg` 3 adapter direction. CO-102D
 does not add that dependency and does not import any driver.
 
+CO-102H adds a dedicated `psycopg` session adapter skeleton. It may preserve
+execution plan metadata in disabled results, but it does not create connections,
+create cursors, run SQL, write records, or make the repository executable.
+
 A future adapter may map `PostgreSQLExecutionPlan` to the approved driver after:
 
 - The driver dependency is added in a scoped task.
@@ -129,6 +133,7 @@ A future adapter may map `PostgreSQLExecutionPlan` to the approved driver after:
 - [PostgreSQL Idempotency Conflict Strategy Boundary](postgresql-idempotency-conflict-strategy-boundary.md)
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
+- [PostgreSQL psycopg Session Adapter Boundary](postgresql-psycopg-session-adapter-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Persistence Preview Boundary](postgresql-persistence-preview-boundary.md)

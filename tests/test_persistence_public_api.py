@@ -9,6 +9,7 @@ from carbonfactor_parser.persistence import (
     postgresql_insert_builder,
     postgresql_options,
     postgresql_persistence_preview,
+    postgresql_psycopg_session_adapter,
     postgresql_repository,
     postgresql_transaction_policy,
     repository,
@@ -27,6 +28,10 @@ from carbonfactor_parser.persistence import (
     PersistenceRepository,
     PersistenceResult,
     PersistenceResultStatus,
+    PsycopgPostgreSQLSessionAdapter,
+    PsycopgPostgreSQLSessionAdapterBoundaryResult,
+    PsycopgPostgreSQLSessionAdapterMetadata,
+    PsycopgPostgreSQLSessionAdapterStatus,
     PostgreSQLIntegrationTestBoundary,
     PostgreSQLInsertBuildIssue,
     PostgreSQLInsertBuildResult,
@@ -76,6 +81,7 @@ from carbonfactor_parser.persistence import (
     build_default_postgresql_transaction_policy,
     build_default_postgresql_idempotency_conflict_strategy,
     build_disabled_postgresql_execution_result,
+    build_psycopg_session_adapter_metadata,
     build_postgresql_conflict_strategy_plan,
     build_postgresql_execution_plan,
     build_postgresql_insert_statement,
@@ -91,6 +97,7 @@ from carbonfactor_parser.persistence import (
     get_normalized_record_postgresql_schema,
     render_postgresql_ddl_preview,
     should_skip_postgresql_integration_tests,
+    validate_psycopg_session_adapter_boundary,
     validate_postgresql_persistence_options,
 )
 
@@ -108,6 +115,10 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PersistenceRepository",
     "PersistenceResult",
     "PersistenceResultStatus",
+    "PsycopgPostgreSQLSessionAdapter",
+    "PsycopgPostgreSQLSessionAdapterBoundaryResult",
+    "PsycopgPostgreSQLSessionAdapterMetadata",
+    "PsycopgPostgreSQLSessionAdapterStatus",
     "PostgreSQLIntegrationTestBoundary",
     "PostgreSQLInsertBuildIssue",
     "PostgreSQLInsertBuildResult",
@@ -157,6 +168,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "build_default_postgresql_transaction_policy",
     "build_default_postgresql_idempotency_conflict_strategy",
     "build_disabled_postgresql_execution_result",
+    "build_psycopg_session_adapter_metadata",
     "build_postgresql_conflict_strategy_plan",
     "build_postgresql_execution_plan",
     "build_postgresql_insert_statement",
@@ -172,6 +184,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
     "should_skip_postgresql_integration_tests",
+    "validate_psycopg_session_adapter_boundary",
     "validate_postgresql_persistence_options",
 )
 
@@ -192,6 +205,21 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PersistenceRepository": repository.PersistenceRepository,
     "PersistenceResult": repository.PersistenceResult,
     "PersistenceResultStatus": repository.PersistenceResultStatus,
+    "PsycopgPostgreSQLSessionAdapter": (
+        postgresql_psycopg_session_adapter.PsycopgPostgreSQLSessionAdapter
+    ),
+    "PsycopgPostgreSQLSessionAdapterBoundaryResult": (
+        postgresql_psycopg_session_adapter
+        .PsycopgPostgreSQLSessionAdapterBoundaryResult
+    ),
+    "PsycopgPostgreSQLSessionAdapterMetadata": (
+        postgresql_psycopg_session_adapter
+        .PsycopgPostgreSQLSessionAdapterMetadata
+    ),
+    "PsycopgPostgreSQLSessionAdapterStatus": (
+        postgresql_psycopg_session_adapter
+        .PsycopgPostgreSQLSessionAdapterStatus
+    ),
     "PostgreSQLIntegrationTestBoundary": (
         integration_test_boundary.PostgreSQLIntegrationTestBoundary
     ),
@@ -344,6 +372,10 @@ EXPECTED_PUBLIC_EXPORTS = {
         postgresql_execution_adapter_boundary
         .build_disabled_postgresql_execution_result
     ),
+    "build_psycopg_session_adapter_metadata": (
+        postgresql_psycopg_session_adapter
+        .build_psycopg_session_adapter_metadata
+    ),
     "build_postgresql_conflict_strategy_plan": (
         postgresql_idempotency_conflict_strategy
         .build_postgresql_conflict_strategy_plan
@@ -390,6 +422,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     "should_skip_postgresql_integration_tests": (
         integration_test_boundary.should_skip_postgresql_integration_tests
     ),
+    "validate_psycopg_session_adapter_boundary": (
+        postgresql_psycopg_session_adapter
+        .validate_psycopg_session_adapter_boundary
+    ),
     "validate_postgresql_persistence_options": (
         postgresql_options.validate_postgresql_persistence_options
     ),
@@ -412,6 +448,16 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PersistenceRepository": PersistenceRepository,
         "PersistenceResult": PersistenceResult,
         "PersistenceResultStatus": PersistenceResultStatus,
+        "PsycopgPostgreSQLSessionAdapter": PsycopgPostgreSQLSessionAdapter,
+        "PsycopgPostgreSQLSessionAdapterBoundaryResult": (
+            PsycopgPostgreSQLSessionAdapterBoundaryResult
+        ),
+        "PsycopgPostgreSQLSessionAdapterMetadata": (
+            PsycopgPostgreSQLSessionAdapterMetadata
+        ),
+        "PsycopgPostgreSQLSessionAdapterStatus": (
+            PsycopgPostgreSQLSessionAdapterStatus
+        ),
         "PostgreSQLIntegrationTestBoundary": PostgreSQLIntegrationTestBoundary,
         "PostgreSQLInsertBuildIssue": PostgreSQLInsertBuildIssue,
         "PostgreSQLInsertBuildResult": PostgreSQLInsertBuildResult,
@@ -489,6 +535,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "build_disabled_postgresql_execution_result": (
             build_disabled_postgresql_execution_result
         ),
+        "build_psycopg_session_adapter_metadata": (
+            build_psycopg_session_adapter_metadata
+        ),
         "build_postgresql_conflict_strategy_plan": (
             build_postgresql_conflict_strategy_plan
         ),
@@ -523,6 +572,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "render_postgresql_ddl_preview": render_postgresql_ddl_preview,
         "should_skip_postgresql_integration_tests": (
             should_skip_postgresql_integration_tests
+        ),
+        "validate_psycopg_session_adapter_boundary": (
+            validate_psycopg_session_adapter_boundary
         ),
         "validate_postgresql_persistence_options": (
             validate_postgresql_persistence_options
@@ -559,5 +611,6 @@ def test_persistence_all_excludes_internal_module_names() -> None:
     assert "ddl_preview" not in persistence.__all__
     assert "postgresql_options" not in persistence.__all__
     assert "postgresql_persistence_preview" not in persistence.__all__
+    assert "postgresql_psycopg_session_adapter" not in persistence.__all__
     assert "postgresql_repository" not in persistence.__all__
     assert all(not name.startswith("_") for name in persistence.__all__)

@@ -55,6 +55,11 @@ the dependency declaration. This contract still does not import or require that
 driver at runtime. A future adapter can map the protocol to the approved driver
 after execution is explicitly scoped.
 
+CO-102H adds a dedicated `psycopg` session adapter skeleton. That skeleton keeps
+`psycopg` references isolated to the runtime adapter boundary and focused tests,
+does not create connections or run SQL, and does not change this driver-neutral
+contract.
+
 ## Statement Handoff Shape
 
 `PostgreSQLStatementExecutionContract` carries:
@@ -129,6 +134,7 @@ satisfied. That future task should:
 
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
+- [PostgreSQL psycopg Session Adapter Boundary](postgresql-psycopg-session-adapter-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
 - [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)

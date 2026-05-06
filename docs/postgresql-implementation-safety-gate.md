@@ -81,6 +81,12 @@ work. Dependency presence alone does not satisfy this gate and must not enable
 runtime repository behavior, database connections, SQL execution, table
 creation, migrations, configuration loading, or credential loading.
 
+CO-102H adds a dedicated `psycopg` session adapter skeleton. Skeleton presence
+also does not satisfy this gate: the adapter remains disabled, does not create
+connections or cursors, does not run SQL, does not write records, and must not be
+wired into `PostgreSQLPersistenceRepository` as a runtime path before separate
+gate approval.
+
 ## Insert Builder Relationship
 
 `build_postgresql_insert_statement()` may produce deterministic SQL text with
@@ -228,6 +234,7 @@ This safety gate does not add:
 - [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
 - [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
 - [PostgreSQL Idempotency Conflict Strategy Boundary](postgresql-idempotency-conflict-strategy-boundary.md)
+- [PostgreSQL psycopg Session Adapter Boundary](postgresql-psycopg-session-adapter-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)

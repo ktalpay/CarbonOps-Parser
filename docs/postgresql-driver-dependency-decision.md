@@ -19,6 +19,11 @@ work. It does not add SQLAlchemy, `asyncpg`, runtime driver imports, database
 connections, SQL execution, database writes, config loading, or credential
 loading.
 
+CO-102H adds a dedicated `psycopg` session adapter skeleton so the future runtime
+adapter boundary has one explicit home. The skeleton may reference `psycopg` only
+inside that adapter boundary and focused tests; it does not create connections,
+create cursors, run SQL, write records, or change repository behavior.
+
 ## Evaluation Options
 
 ### psycopg 3
@@ -192,6 +197,7 @@ CO-102G and any future dependency-boundary refinement should pass this checklist
 
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
+- [PostgreSQL psycopg Session Adapter Boundary](postgresql-psycopg-session-adapter-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)

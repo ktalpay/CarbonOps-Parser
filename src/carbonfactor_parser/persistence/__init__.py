@@ -78,6 +78,14 @@ from carbonfactor_parser.persistence.postgresql_persistence_preview import (
     PostgreSQLPersistencePreviewStatus,
     build_postgresql_persistence_preview,
 )
+from carbonfactor_parser.persistence.postgresql_psycopg_session_adapter import (
+    PsycopgPostgreSQLSessionAdapter,
+    PsycopgPostgreSQLSessionAdapterBoundaryResult,
+    PsycopgPostgreSQLSessionAdapterMetadata,
+    PsycopgPostgreSQLSessionAdapterStatus,
+    build_psycopg_session_adapter_metadata,
+    validate_psycopg_session_adapter_boundary,
+)
 from carbonfactor_parser.persistence.repository import (
     PersistenceIssue,
     PersistenceIssueSeverity,
@@ -115,6 +123,10 @@ __all__ = (
     "PersistenceRepository",
     "PersistenceResult",
     "PersistenceResultStatus",
+    "PsycopgPostgreSQLSessionAdapter",
+    "PsycopgPostgreSQLSessionAdapterBoundaryResult",
+    "PsycopgPostgreSQLSessionAdapterMetadata",
+    "PsycopgPostgreSQLSessionAdapterStatus",
     "PostgreSQLIntegrationTestBoundary",
     "PostgreSQLInsertBuildIssue",
     "PostgreSQLInsertBuildResult",
@@ -164,6 +176,7 @@ __all__ = (
     "build_default_postgresql_transaction_policy",
     "build_default_postgresql_idempotency_conflict_strategy",
     "build_disabled_postgresql_execution_result",
+    "build_psycopg_session_adapter_metadata",
     "build_postgresql_conflict_strategy_plan",
     "build_postgresql_execution_plan",
     "build_postgresql_insert_statement",
@@ -179,5 +192,6 @@ __all__ = (
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
     "should_skip_postgresql_integration_tests",
+    "validate_psycopg_session_adapter_boundary",
     "validate_postgresql_persistence_options",
 )
