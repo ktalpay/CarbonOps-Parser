@@ -268,10 +268,8 @@ def test_runbook_documents_manual_connection_smoke_execution_record() -> None:
     assert "`psycopg>=3,<4`" in runbook_text
     assert "libpq or binary wrapper" in runbook_text
     assert "`psycopg[binary]>=3,<4`" in runbook_text
-    assert (
-        "Package metadata and dependency strategy are not changed by this "
-        "record task."
-    ) in runbook_text
+    assert "metadata in CO-103K" in runbook_text
+    assert "libpq/binary packaging decision remains deferred" in runbook_text
     assert "DSN redacted." in runbook_text
     assert "Password redacted." in runbook_text
     assert "No secrets in logs" in runbook_text
@@ -318,15 +316,14 @@ def test_runbook_successful_smoke_record_captures_deferred_packaging_issues() ->
     )[0]
 
     assert "Deferred local setup issues:" in current_record
-    assert "`pip install -e .` failed" in current_record
+    assert "editable-install metadata blocker" in current_record
+    assert "`project.name`" in current_record
     assert "`project.version`" in current_record
+    assert "metadata in CO-103K" in current_record
     assert "`psycopg>=3,<4` local import path failed" in current_record
     assert "libpq or binary wrapper" in current_record
     assert "`psycopg[binary]>=3,<4`" in current_record
-    assert (
-        "Package metadata and dependency strategy are not changed by this "
-        "record task."
-    ) in current_record
+    assert "libpq/binary packaging decision remains deferred" in current_record
 
 
 def test_runbook_documents_local_postgresql_setup_checklist() -> None:

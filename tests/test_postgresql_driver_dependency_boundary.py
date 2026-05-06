@@ -42,6 +42,13 @@ def test_psycopg_dependency_is_declared_in_pyproject() -> None:
     assert '"psycopg>=3,<4"' in text
 
 
+def test_project_version_is_declared_for_editable_install_metadata() -> None:
+    text = _pyproject_text()
+
+    assert 'name = "carbonops-parser"' in text
+    assert 'version = "0.1.0"' in text
+
+
 def test_no_competing_postgresql_driver_dependencies_are_declared() -> None:
     text = _pyproject_text().lower()
 
