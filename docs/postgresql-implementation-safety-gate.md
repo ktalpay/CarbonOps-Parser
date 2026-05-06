@@ -6,8 +6,8 @@ execution, migration, or database write is added.
 
 It is safety-gate documentation only. It does not add runtime PostgreSQL
 repository behavior, connect to a database, write records, execute SQL, run
-migrations, load configuration, load credentials, add database dependencies,
-perform HTTP or network calls, trigger source acquisition, or schedule work.
+migrations, load configuration, load credentials, perform HTTP or network calls,
+trigger source acquisition, or schedule work.
 
 ## Purpose
 
@@ -22,6 +22,7 @@ Current persistence work is intentionally limited to:
 - default-disabled PostgreSQL integration test boundary metadata
 - deterministic PostgreSQL insert statement builder data without execution
 - PostgreSQL persistence preview result data without execution
+- approved `psycopg` dependency declaration without runtime imports or execution
 - PostgreSQL repository planning documentation
 
 Before any runtime PostgreSQL behavior is added, the preconditions in this gate must be reviewed and satisfied in a separate task.
@@ -72,6 +73,13 @@ open a connection, run SQL, load configuration, load credentials, or change
 
 Future repository execution adapters may consume this contract only after this
 safety gate is satisfied in a separately scoped task.
+
+## Driver Dependency Relationship
+
+CO-102G declares the approved `psycopg` dependency for future runtime adapter
+work. Dependency presence alone does not satisfy this gate and must not enable
+runtime repository behavior, database connections, SQL execution, table
+creation, migrations, configuration loading, or credential loading.
 
 ## Insert Builder Relationship
 
@@ -126,7 +134,8 @@ Before this gate is satisfied, future changes must not add:
 - SQL execution from schema descriptor helpers.
 - SQL execution from insert statement builder helpers.
 - SQL execution from persistence preview helpers.
-- PostgreSQL driver or ORM dependencies.
+- Additional PostgreSQL drivers or ORM dependencies.
+- Runtime driver imports outside a safety-gated execution adapter.
 - Runtime database connection code.
 - Network-backed source acquisition coupled directly to persistence.
 - Scheduler or background behavior that can trigger persistence.
@@ -197,7 +206,8 @@ This safety gate does not add:
 - Database writes.
 - SQL execution.
 - Migrations.
-- Database dependencies.
+- Additional database dependencies beyond the approved `psycopg` boundary.
+- Runtime database driver imports.
 - Configuration loading implementation.
 - Credential or secret handling.
 - File reading.
