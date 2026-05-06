@@ -10,6 +10,7 @@ from carbonfactor_parser.persistence import (
     PersistenceIssueSeverity,
     PersistenceRepository,
     PersistenceResultStatus,
+    PostgreSQLPersistenceOptions,
     PostgreSQLPersistenceRepository,
 )
 
@@ -118,6 +119,7 @@ def test_persist_returns_skeleton_metadata_without_runtime_claims() -> None:
     assert result.repository_metadata == {
         "provider_name": "postgresql",
         "skeleton": True,
+        "options_provided": False,
         "database_connection": False,
         "runtime_write": False,
         "migration_runtime": False,
@@ -156,6 +158,30 @@ def test_persist_has_no_db_file_or_network_side_effects(
 
     assert result.status == PersistenceResultStatus.UNSUPPORTED
     assert not missing_artifact.exists()
+
+
+def test_repository_skeleton_accepts_options_without_connecting(monkeypatch) -> None:
+    def fail_side_effect(*args, **kwargs):
+        raise AssertionError("repository skeleton must not touch external state")
+
+    monkeypatch.setattr(builtins, "open", fail_side_effect)
+    monkeypatch.setattr(urllib.request, "urlopen", fail_side_effect)
+    monkeypatch.setattr(sqlite3, "connect", fail_side_effect)
+
+    repository = PostgreSQLPersistenceRepository(
+        options=PostgreSQLPersistenceOptions(
+            host="localhost",
+            port=5432,
+            database="carbonops_test",
+            username="carbonops",
+            password_set=True,
+        ),
+    )
+
+    result = repository.persist(_persistence_input())
+
+    assert result.status == PersistenceResultStatus.UNSUPPORTED
+    assert result.repository_metadata["options_provided"] is True
 
 
 def test_repository_skeleton_has_no_db_dependency_or_runtime_sql_behavior() -> None:

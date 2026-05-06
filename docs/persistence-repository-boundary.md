@@ -22,6 +22,11 @@ skeleton. It satisfies the protocol but returns an unsupported result instead of
 connecting to PostgreSQL or writing records. Tests may also use fake in-memory
 repositories to prove protocol behavior.
 
+`PostgreSQLPersistenceOptions` provides an explicit caller-provided options
+shape for future PostgreSQL repository work. Options validation remains separate
+from repository persistence and does not load environment variables, config
+files, or credentials.
+
 ## Result Boundary
 
 `PersistenceResult` reports:
@@ -96,6 +101,7 @@ This boundary does not add:
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
+- [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)

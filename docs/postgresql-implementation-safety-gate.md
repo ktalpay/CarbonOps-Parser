@@ -18,6 +18,7 @@ Current persistence work is intentionally limited to:
 - review-only PostgreSQL DDL preview text
 - `PersistenceRepository` protocol and `PersistenceResult` contracts
 - `PostgreSQLPersistenceRepository` skeleton returning unsupported results only
+- explicit caller-provided `PostgreSQLPersistenceOptions` with validation only
 - PostgreSQL repository planning documentation
 
 Before any runtime PostgreSQL behavior is added, the preconditions in this gate must be reviewed and satisfied in a separate task.
@@ -37,6 +38,17 @@ Runtime database writes must not be added until all of the following are explici
 - Failure and rollback behavior: partial failures, retry boundaries, rollback behavior, and persisted count reporting must be approved.
 - Credential loading approach: secret source, redaction, local development behavior, and CI/test behavior must be approved.
 - Operational logging and audit boundary: audit metadata, log redaction, correlation IDs, and repository metadata must be approved.
+
+## Config Contract Relationship
+
+`PostgreSQLPersistenceOptions` records caller-provided connection-shaped values
+for future repository work. It does not load environment variables, read config
+files, load credentials, connect to PostgreSQL, or execute SQL.
+
+The options contract deliberately uses `password_set` instead of storing a
+password value. Future runtime credential loading remains blocked until this
+safety gate approves the credential source, redaction behavior, and test
+isolation rules.
 
 ## Forbidden Before Gate Approval
 
@@ -120,6 +132,7 @@ This safety gate does not add:
 ## Related Documents
 
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
+- [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)

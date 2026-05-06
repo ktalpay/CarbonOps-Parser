@@ -6,6 +6,9 @@ from dataclasses import dataclass
 from typing import Mapping
 
 from carbonfactor_parser.persistence.input import PersistenceInput
+from carbonfactor_parser.persistence.postgresql_options import (
+    PostgreSQLPersistenceOptions,
+)
 from carbonfactor_parser.persistence.repository import (
     PersistenceIssue,
     PersistenceIssueSeverity,
@@ -19,6 +22,7 @@ from carbonfactor_parser.persistence.repository import (
 class PostgreSQLPersistenceRepository:
     """Skeleton repository that satisfies the persistence protocol."""
 
+    options: PostgreSQLPersistenceOptions | None = None
     repository_metadata: Mapping[str, object] | None = None
 
     @property
@@ -47,6 +51,7 @@ class PostgreSQLPersistenceRepository:
             repository_metadata={
                 "provider_name": self.provider_name,
                 "skeleton": True,
+                "options_provided": self.options is not None,
                 "database_connection": False,
                 "runtime_write": False,
                 "migration_runtime": False,
