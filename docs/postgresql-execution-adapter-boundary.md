@@ -76,6 +76,12 @@ boundary metadata from that contract.
 No session object is created in this task. No session method is called. Future
 runtime adapters must still receive caller-provided session objects explicitly.
 
+## Transaction Policy Relationship
+
+`PostgreSQLTransactionPolicy` records the Phase 1 transaction policy for future
+batch persistence. Execution plans may be wrapped in transaction policy metadata,
+but this does not start, finish, or roll back a real transaction.
+
 ## Repository Relationship
 
 `PostgreSQLPersistenceRepository` remains a skeleton that returns unsupported
@@ -112,6 +118,7 @@ A future adapter may map `PostgreSQLExecutionPlan` to the approved driver after:
 
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
 - [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
+- [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)

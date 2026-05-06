@@ -9,6 +9,7 @@ from carbonfactor_parser.persistence import (
     postgresql_options,
     postgresql_persistence_preview,
     postgresql_repository,
+    postgresql_transaction_policy,
     repository,
     schema,
 )
@@ -39,6 +40,8 @@ from carbonfactor_parser.persistence import (
     PostgreSQLExecutionPlanResult,
     PostgreSQLExecutionResult,
     PostgreSQLExecutionStatus,
+    PostgreSQLBatchTransactionMode,
+    PostgreSQLPartialSuccessPolicy,
     PostgreSQLPersistenceColumn,
     PostgreSQLPersistenceOptions,
     PostgreSQLPersistenceOptionsValidationIssue,
@@ -51,18 +54,28 @@ from carbonfactor_parser.persistence import (
     PostgreSQLPersistenceSchema,
     PostgreSQLStatementExecutionContract,
     PostgreSQLTransactionBoundary,
+    PostgreSQLTransactionFailurePolicy,
     PostgreSQLTransactionMode,
+    PostgreSQLTransactionPlan,
+    PostgreSQLTransactionPlanResult,
     PostgreSQLTransactionOwnership,
+    PostgreSQLTransactionPolicy,
+    PostgreSQLTransactionPolicyDescription,
+    PostgreSQLTransactionPolicyIssue,
+    PostgreSQLTransactionPolicyStatus,
     build_persistence_input_from_normalization_result,
+    build_default_postgresql_transaction_policy,
     build_disabled_postgresql_execution_result,
     build_postgresql_execution_plan,
     build_postgresql_insert_statement,
     build_postgresql_persistence_preview,
+    build_postgresql_transaction_plan,
     create_persistence_result,
     create_postgresql_integration_test_boundary,
     create_postgresql_persistence_options,
     describe_postgresql_connection_session_contract,
     describe_postgresql_execution_adapter_boundary,
+    describe_postgresql_transaction_policy_boundary,
     get_normalized_record_postgresql_schema,
     render_postgresql_ddl_preview,
     should_skip_postgresql_integration_tests,
@@ -97,6 +110,8 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLExecutionPlanResult",
     "PostgreSQLExecutionResult",
     "PostgreSQLExecutionStatus",
+    "PostgreSQLBatchTransactionMode",
+    "PostgreSQLPartialSuccessPolicy",
     "PostgreSQLPersistenceColumn",
     "PostgreSQLPersistenceOptions",
     "PostgreSQLPersistenceOptionsValidationIssue",
@@ -109,18 +124,28 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLPersistenceSchema",
     "PostgreSQLStatementExecutionContract",
     "PostgreSQLTransactionBoundary",
+    "PostgreSQLTransactionFailurePolicy",
     "PostgreSQLTransactionMode",
+    "PostgreSQLTransactionPlan",
+    "PostgreSQLTransactionPlanResult",
     "PostgreSQLTransactionOwnership",
+    "PostgreSQLTransactionPolicy",
+    "PostgreSQLTransactionPolicyDescription",
+    "PostgreSQLTransactionPolicyIssue",
+    "PostgreSQLTransactionPolicyStatus",
     "build_persistence_input_from_normalization_result",
+    "build_default_postgresql_transaction_policy",
     "build_disabled_postgresql_execution_result",
     "build_postgresql_execution_plan",
     "build_postgresql_insert_statement",
     "build_postgresql_persistence_preview",
+    "build_postgresql_transaction_plan",
     "create_persistence_result",
     "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",
     "describe_postgresql_connection_session_contract",
     "describe_postgresql_execution_adapter_boundary",
+    "describe_postgresql_transaction_policy_boundary",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
     "should_skip_postgresql_integration_tests",
@@ -188,6 +213,12 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PostgreSQLExecutionStatus": (
         postgresql_execution_adapter_boundary.PostgreSQLExecutionStatus
     ),
+    "PostgreSQLBatchTransactionMode": (
+        postgresql_transaction_policy.PostgreSQLBatchTransactionMode
+    ),
+    "PostgreSQLPartialSuccessPolicy": (
+        postgresql_transaction_policy.PostgreSQLPartialSuccessPolicy
+    ),
     "PostgreSQLPersistenceColumn": schema.PostgreSQLPersistenceColumn,
     "PostgreSQLPersistenceOptions": (
         postgresql_options.PostgreSQLPersistenceOptions
@@ -220,14 +251,38 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PostgreSQLTransactionBoundary": (
         postgresql_connection_session_contract.PostgreSQLTransactionBoundary
     ),
+    "PostgreSQLTransactionFailurePolicy": (
+        postgresql_transaction_policy.PostgreSQLTransactionFailurePolicy
+    ),
     "PostgreSQLTransactionMode": (
         postgresql_connection_session_contract.PostgreSQLTransactionMode
+    ),
+    "PostgreSQLTransactionPlan": (
+        postgresql_transaction_policy.PostgreSQLTransactionPlan
+    ),
+    "PostgreSQLTransactionPlanResult": (
+        postgresql_transaction_policy.PostgreSQLTransactionPlanResult
     ),
     "PostgreSQLTransactionOwnership": (
         postgresql_connection_session_contract.PostgreSQLTransactionOwnership
     ),
+    "PostgreSQLTransactionPolicy": (
+        postgresql_transaction_policy.PostgreSQLTransactionPolicy
+    ),
+    "PostgreSQLTransactionPolicyDescription": (
+        postgresql_transaction_policy.PostgreSQLTransactionPolicyDescription
+    ),
+    "PostgreSQLTransactionPolicyIssue": (
+        postgresql_transaction_policy.PostgreSQLTransactionPolicyIssue
+    ),
+    "PostgreSQLTransactionPolicyStatus": (
+        postgresql_transaction_policy.PostgreSQLTransactionPolicyStatus
+    ),
     "build_persistence_input_from_normalization_result": (
         input.build_persistence_input_from_normalization_result
+    ),
+    "build_default_postgresql_transaction_policy": (
+        postgresql_transaction_policy.build_default_postgresql_transaction_policy
     ),
     "build_disabled_postgresql_execution_result": (
         postgresql_execution_adapter_boundary
@@ -241,6 +296,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     ),
     "build_postgresql_persistence_preview": (
         postgresql_persistence_preview.build_postgresql_persistence_preview
+    ),
+    "build_postgresql_transaction_plan": (
+        postgresql_transaction_policy.build_postgresql_transaction_plan
     ),
     "create_persistence_result": repository.create_persistence_result,
     "create_postgresql_integration_test_boundary": (
@@ -256,6 +314,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     "describe_postgresql_execution_adapter_boundary": (
         postgresql_execution_adapter_boundary
         .describe_postgresql_execution_adapter_boundary
+    ),
+    "describe_postgresql_transaction_policy_boundary": (
+        postgresql_transaction_policy
+        .describe_postgresql_transaction_policy_boundary
     ),
     "get_normalized_record_postgresql_schema": (
         schema.get_normalized_record_postgresql_schema
@@ -304,6 +366,8 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLExecutionPlanResult": PostgreSQLExecutionPlanResult,
         "PostgreSQLExecutionResult": PostgreSQLExecutionResult,
         "PostgreSQLExecutionStatus": PostgreSQLExecutionStatus,
+        "PostgreSQLBatchTransactionMode": PostgreSQLBatchTransactionMode,
+        "PostgreSQLPartialSuccessPolicy": PostgreSQLPartialSuccessPolicy,
         "PostgreSQLPersistenceColumn": PostgreSQLPersistenceColumn,
         "PostgreSQLPersistenceOptions": PostgreSQLPersistenceOptions,
         "PostgreSQLPersistenceOptionsValidationIssue": (
@@ -320,10 +384,24 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLPersistenceSchema": PostgreSQLPersistenceSchema,
         "PostgreSQLStatementExecutionContract": PostgreSQLStatementExecutionContract,
         "PostgreSQLTransactionBoundary": PostgreSQLTransactionBoundary,
+        "PostgreSQLTransactionFailurePolicy": (
+            PostgreSQLTransactionFailurePolicy
+        ),
         "PostgreSQLTransactionMode": PostgreSQLTransactionMode,
+        "PostgreSQLTransactionPlan": PostgreSQLTransactionPlan,
+        "PostgreSQLTransactionPlanResult": PostgreSQLTransactionPlanResult,
         "PostgreSQLTransactionOwnership": PostgreSQLTransactionOwnership,
+        "PostgreSQLTransactionPolicy": PostgreSQLTransactionPolicy,
+        "PostgreSQLTransactionPolicyDescription": (
+            PostgreSQLTransactionPolicyDescription
+        ),
+        "PostgreSQLTransactionPolicyIssue": PostgreSQLTransactionPolicyIssue,
+        "PostgreSQLTransactionPolicyStatus": PostgreSQLTransactionPolicyStatus,
         "build_persistence_input_from_normalization_result": (
             build_persistence_input_from_normalization_result
+        ),
+        "build_default_postgresql_transaction_policy": (
+            build_default_postgresql_transaction_policy
         ),
         "build_disabled_postgresql_execution_result": (
             build_disabled_postgresql_execution_result
@@ -333,6 +411,7 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "build_postgresql_persistence_preview": (
             build_postgresql_persistence_preview
         ),
+        "build_postgresql_transaction_plan": build_postgresql_transaction_plan,
         "create_persistence_result": create_persistence_result,
         "create_postgresql_integration_test_boundary": (
             create_postgresql_integration_test_boundary
@@ -345,6 +424,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         ),
         "describe_postgresql_execution_adapter_boundary": (
             describe_postgresql_execution_adapter_boundary
+        ),
+        "describe_postgresql_transaction_policy_boundary": (
+            describe_postgresql_transaction_policy_boundary
         ),
         "get_normalized_record_postgresql_schema": (
             get_normalized_record_postgresql_schema

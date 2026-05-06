@@ -89,6 +89,8 @@ behavior remains deferred to a later safety-gated implementation task.
 - `PostgreSQLExecutionPlan` may wrap insert-builder output and session boundary
   metadata for a future runtime adapter, but it does not call a session or run
   SQL.
+- `PostgreSQLTransactionPolicy` may describe future single-batch transaction
+  policy, but it does not start, finish, or roll back a real transaction.
 - `build_postgresql_persistence_preview()` remains preview-only and must stay
   driver-free.
 - `PostgreSQLPersistenceRepository` remains a skeleton that returns unsupported
@@ -128,6 +130,7 @@ satisfied. That future task should:
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
+- [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)

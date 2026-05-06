@@ -136,6 +136,10 @@ The first runtime implementation should use one transaction per
 `PersistenceInput` batch. All rows in that batch should succeed or the batch
 should roll back.
 
+The [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
+records this Phase 1 transaction policy as metadata only. It does not start,
+finish, or roll back a real transaction.
+
 Recommended initial policy:
 
 - Begin a transaction for one ready `PersistenceInput`.
@@ -254,6 +258,7 @@ The first task that adds runtime PostgreSQL persistence must pass this checklist
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
 - [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
+- [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
