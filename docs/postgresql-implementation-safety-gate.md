@@ -81,6 +81,13 @@ It is not an execution path and must not be wired to a database connection,
 cursor, migration runner, credential loader, or repository write behavior before
 this gate is satisfied.
 
+## Execution Adapter Boundary Relationship
+
+`PostgreSQLExecutionPlan` may describe how insert-builder output would be handed
+to a future caller-provided session. It is no-execution metadata only and must
+not become a database connection, SQL runtime, transaction boundary, migration
+runner, or repository write path before this gate is satisfied.
+
 ## Persistence Preview Relationship
 
 `build_postgresql_persistence_preview()` may expose insert-builder output through
@@ -194,6 +201,7 @@ This safety gate does not add:
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
+- [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
