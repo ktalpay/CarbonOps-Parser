@@ -54,6 +54,12 @@ On success, the dry-run includes `ddl_preview` and `ddl_preview_metadata`.
 
 The DDL preview is review text only. It is not executed, not sent to PostgreSQL, not stored as a migration, and not used to create tables.
 
+## CLI Relationship
+
+`carbonops-parser local-dry-run` and `python -m carbonfactor_parser.cli local-dry-run` provide a command entry path for this helper.
+
+The CLI accepts an explicit local path plus source metadata and prints deterministic text or JSON summary output. It does not scan directories, load configuration files, trigger source acquisition, connect to PostgreSQL, execute SQL, or write records.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -73,6 +79,7 @@ This boundary does not add:
 ## Related Documents
 
 - [Local Parser File Content Loader Boundary](local-parser-file-content-loader-boundary.md)
+- [Local Dry-Run CLI Boundary](local-dry-run-cli-boundary.md)
 - [Parser File Content Input Boundary](parser-file-content-input-boundary.md)
 - [Parser Execution Normalization Handoff Boundary](parser-execution-normalization-handoff-boundary.md)
 - [Normalization Input Boundary](normalization-input-boundary.md)

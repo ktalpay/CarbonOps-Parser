@@ -8,4 +8,5 @@ testpaths = [
 ]
 
 [project.scripts]
+carbonops-parser = "carbonfactor_parser.cli:main"
 carbonops-source-acquisition = "carbonfactor_parser.source_acquisition.cli:main"

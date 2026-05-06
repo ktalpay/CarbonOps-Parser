@@ -204,6 +204,30 @@ See [examples/example_acquisition_artifact_parser_input_mapping.py](examples/exa
 
 The parser package exposes `ParserInputContract`, `create_parser_input_contract()`, `validate_parser_input_contract()`, `ParserFileContentInput`, local parser file content loading helpers, parser file content validation helpers, `parse_defra_desnz_file_content()`, raw parsed record payload contracts, the `ParserAdapter` protocol, `NoopParserAdapter`, `ArtificialParserAdapter`, `DefraDesnzParserAdapter`, parser adapter registry helpers, parser execution planning and runner helpers, and parser execution result contracts for future parser adapter input handoff. The normalization package exposes parser execution handoff helpers, normalization input helpers for successful parser results with raw payloads, and a minimal DEFRA/DESNZ fixture normalization mapper. The persistence package exposes normalized result persistence input contracts, a logical PostgreSQL schema descriptor, a review-only DDL preview helper, and repository protocol/result contracts without database runtime behavior. The pipeline package exposes a local DEFRA/DESNZ fixture dry-run helper that composes those boundaries to produce `PersistenceInput` plus DDL preview metadata without DB or network behavior. These contracts keep acquisition metadata, already-loaded content, raw parser output, parser output metadata, normalization input, normalization handoff metadata, persistence input metadata, schema metadata, and repository result metadata separate; they do not include database connection behavior or full source-specific correctness claims.
 
+## Local dry-run CLI quickstart
+
+Use the `carbonops-parser local-dry-run` command for explicit local DEFRA/DESNZ fixture dry-runs.
+
+```bash
+carbonops-parser local-dry-run \
+  --local-path ./fixtures/defra_minimal.csv \
+  --source-family defra_desnz \
+  --source-id defra-desnz-fixture \
+  --content-type text/csv \
+  --format-hint csv
+
+carbonops-parser local-dry-run \
+  --local-path ./fixtures/defra_minimal.csv \
+  --source-family defra_desnz \
+  --source-id defra-desnz-fixture \
+  --format-hint csv \
+  --output-format json
+```
+
+The command reads only the explicit local file path and prints deterministic dry-run summary output. It does not connect to PostgreSQL, write records, execute SQL, run migrations, perform network calls, load config files, trigger source acquisition, or use credentials.
+
+For boundary details, see [Local Dry-Run CLI Boundary](docs/local-dry-run-cli-boundary.md) and [Local File Normalized Persistence Dry-Run Boundary](docs/local-file-normalized-persistence-dry-run-boundary.md).
+
 ## Source Support
 
 Each Phase 1 source family will have its own schedule, source version/hash check, parser, validation rules, archive layout, and source-specific tables.
@@ -312,6 +336,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Normalization Input Boundary](docs/normalization-input-boundary.md)
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](docs/defra-desnz-minimal-normalization-mapping-boundary.md)
 - [Local File Normalized Persistence Dry-Run Boundary](docs/local-file-normalized-persistence-dry-run-boundary.md)
+- [Local Dry-Run CLI Boundary](docs/local-dry-run-cli-boundary.md)
 - [Normalized Result Persistence Boundary](docs/normalized-result-persistence-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](docs/postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](docs/postgresql-ddl-preview-boundary.md)
