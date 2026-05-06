@@ -1,12 +1,15 @@
 import carbonfactor_parser.persistence as persistence
-from carbonfactor_parser.persistence import input
+from carbonfactor_parser.persistence import input, schema
 from carbonfactor_parser.persistence import (
     PersistenceInput,
     PersistenceInputBuildResult,
     PersistenceInputBuildStatus,
     PersistenceInputIssue,
     PersistenceInputRecord,
+    PostgreSQLPersistenceColumn,
+    PostgreSQLPersistenceSchema,
     build_persistence_input_from_normalization_result,
+    get_normalized_record_postgresql_schema,
 )
 
 
@@ -16,7 +19,10 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PersistenceInputBuildStatus",
     "PersistenceInputIssue",
     "PersistenceInputRecord",
+    "PostgreSQLPersistenceColumn",
+    "PostgreSQLPersistenceSchema",
     "build_persistence_input_from_normalization_result",
+    "get_normalized_record_postgresql_schema",
 )
 
 EXPECTED_PUBLIC_EXPORTS = {
@@ -25,8 +31,13 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PersistenceInputBuildStatus": input.PersistenceInputBuildStatus,
     "PersistenceInputIssue": input.PersistenceInputIssue,
     "PersistenceInputRecord": input.PersistenceInputRecord,
+    "PostgreSQLPersistenceColumn": schema.PostgreSQLPersistenceColumn,
+    "PostgreSQLPersistenceSchema": schema.PostgreSQLPersistenceSchema,
     "build_persistence_input_from_normalization_result": (
         input.build_persistence_input_from_normalization_result
+    ),
+    "get_normalized_record_postgresql_schema": (
+        schema.get_normalized_record_postgresql_schema
     ),
 }
 
@@ -38,8 +49,13 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PersistenceInputBuildStatus": PersistenceInputBuildStatus,
         "PersistenceInputIssue": PersistenceInputIssue,
         "PersistenceInputRecord": PersistenceInputRecord,
+        "PostgreSQLPersistenceColumn": PostgreSQLPersistenceColumn,
+        "PostgreSQLPersistenceSchema": PostgreSQLPersistenceSchema,
         "build_persistence_input_from_normalization_result": (
             build_persistence_input_from_normalization_result
+        ),
+        "get_normalized_record_postgresql_schema": (
+            get_normalized_record_postgresql_schema
         ),
     }
 
@@ -66,4 +82,5 @@ def test_persistence_all_names_resolve_to_package_attributes() -> None:
 
 def test_persistence_all_excludes_internal_module_names() -> None:
     assert "input" not in persistence.__all__
+    assert "schema" not in persistence.__all__
     assert all(not name.startswith("_") for name in persistence.__all__)

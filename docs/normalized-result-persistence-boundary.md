@@ -53,6 +53,12 @@ PostgreSQL integration is a later task. Future runtime work must define schema o
 
 This boundary does not include connection settings, SQL statements, table names, migration names, secrets, or database client dependencies.
 
+## PostgreSQL Schema Boundary
+
+`get_normalized_record_postgresql_schema()` exposes a logical PostgreSQL schema descriptor for future normalized record persistence. It provides the descriptive table name `normalized_records`, logical column descriptors, and future idempotency key fields.
+
+The descriptor does not generate executable SQL, create migrations, connect to PostgreSQL, or write records. Runtime PostgreSQL integration remains deferred to a separate task.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -71,6 +77,7 @@ This boundary does not add:
 ## Related Documents
 
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
+- [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [Normalization Input Boundary](normalization-input-boundary.md)
 - [Normalization Boundary](normalization-boundary.md)
 - [Database Model](database-model.md)

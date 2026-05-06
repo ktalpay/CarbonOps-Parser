@@ -1,0 +1,91 @@
+# PostgreSQL Persistence Schema Boundary
+
+This document defines the logical PostgreSQL schema boundary for future persistence of normalized records.
+
+It is a schema boundary only. It does not connect to PostgreSQL, execute SQL, generate executable SQL, create tables, run migrations, write records, read files, perform HTTP or network calls, schedule work, or use credentials.
+
+## Purpose
+
+`get_normalized_record_postgresql_schema()` exposes deterministic schema metadata for normalized persistence input. The descriptor is intentionally limited to a logical table name, logical column descriptors, and idempotency key field names.
+
+The descriptor is not a migration, ORM model, SQL generator, database client, or runtime persistence implementation.
+
+## Logical Table
+
+The current logical table name is:
+
+- `normalized_records`
+
+This table name is descriptive. It does not imply that a table exists or should be created by this package at runtime.
+
+## Logical Columns
+
+Future normalized record persistence is expected to include:
+
+- `source_family`: source family from `PersistenceInput`
+- `source_id`: source id from `PersistenceInput`
+- `record_id`: normalized record identity
+- `record_index`: parser or normalization record index when available
+- `row_number`: source row number when available
+- `normalized_fields`: structured normalized field payload
+- `source_reference`: source reference metadata when available
+- `source_artifact_reference`: future source artifact reference metadata
+- `source_checksum_sha256`: future source checksum metadata
+- `parser_metadata`: parser metadata when explicitly supplied
+- `normalization_metadata`: normalization metadata when explicitly supplied
+- `created_at`: future operational creation timestamp
+- `updated_at`: future operational update timestamp
+
+The descriptor uses logical type labels such as `text`, `jsonb`, and `timestamptz`. These labels are documentation-oriented metadata, not executable DDL.
+
+## Idempotency Strategy
+
+Future idempotency should be based on a stable combination of:
+
+- source identity: `source_family`, `source_id`
+- record identity: `record_id`
+- source artifact context: `source_artifact_reference`
+- source checksum context: `source_checksum_sha256`
+
+Conflict handling remains deferred. Future work must decide whether conflicts are ignored, updated, versioned, rejected, or stored as separate import attempts.
+
+## Deferred Runtime Work
+
+Future PostgreSQL work must be separately scoped and should cover:
+
+- schema migrations
+- table ownership and naming policy
+- indexes and uniqueness constraints
+- transaction boundaries
+- conflict handling
+- import run identity
+- idempotency keys
+- operational timestamps
+- error handling and retry policy
+- database configuration and credential management
+
+None of those runtime behaviors are implemented by this boundary.
+
+## Non-Goals
+
+This boundary does not add:
+
+- PostgreSQL connections.
+- Database writes.
+- SQL execution.
+- Executable SQL generation.
+- Migrations.
+- Table creation.
+- PostgreSQL package dependencies.
+- Credentials or secrets.
+- File reading.
+- HTTP or network behavior.
+- Scheduler, retry, cancel, or background job behavior.
+
+## Related Documents
+
+- [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
+- [Database Model](database-model.md)
+- [Database Startup](database-startup.md)
+- [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
+- [Public Safety](public-safety.md)
