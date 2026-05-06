@@ -23,6 +23,8 @@ The runner first creates a `ParserExecutionPlan`.
 
 The runner does not inspect artifact contents. A local path or artifact reference remains metadata passed through the input contract.
 
+Future real source-specific adapters must remain compatible with this runner path. A real adapter may only be called by the runner after input validation and metadata-only adapter resolution produce a `ready` plan.
+
 ## Adapter Exceptions
 
 Adapter `parse()` exceptions are converted into a `failed` `ParserExecutionResult` with a `PARSER_EXECUTION_ADAPTER_EXCEPTION` issue. The issue records the exception type and the ready plan status as context.
@@ -57,5 +59,6 @@ This boundary does not add:
 
 - [Parser Execution Planning Boundary](parser-execution-planning-boundary.md)
 - [Parser Execution Result Boundary](parser-execution-result-boundary.md)
+- [Source-Specific Parser Adapter Boundary](source-specific-parser-adapter-boundary.md)
 - [Parser Adapter Boundary](parser-adapter-boundary.md)
 - [Source Acquisition Parser Handoff Contract](source-acquisition-parser-handoff-contract.md)
