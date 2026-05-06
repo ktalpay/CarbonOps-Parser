@@ -50,6 +50,8 @@ This boundary does not provide any of those runtime behaviors.
 
 Before a concrete PostgreSQL repository is added, future work must follow the PostgreSQL repository implementation planning boundary. That plan keeps driver selection, sync vs async behavior, configuration ownership, credentials, transactions, migrations, idempotency, conflict handling, partial failures, retry behavior, and audit metadata outside this protocol-only task.
 
+The PostgreSQL implementation safety gate must also be satisfied before any concrete repository can connect to PostgreSQL, execute SQL, run migrations, or write records.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -69,6 +71,7 @@ This boundary does not add:
 
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
+- [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
 - [Public Safety](public-safety.md)

@@ -59,6 +59,12 @@ Future work remains separately scoped for:
 
 None of that runtime behavior is added by the preview helper.
 
+## Safety Gate Relationship
+
+The PostgreSQL implementation safety gate must be satisfied before DDL preview text informs any runtime migration, table creation, SQL execution, repository implementation, or database write.
+
+Preview helpers must remain review-only and must not execute their output.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -78,6 +84,7 @@ This boundary does not add:
 
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [Local File Normalized Persistence Dry-Run Boundary](local-file-normalized-persistence-dry-run-boundary.md)
+- [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)

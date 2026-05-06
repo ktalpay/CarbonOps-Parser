@@ -1,0 +1,115 @@
+# PostgreSQL Implementation Safety Gate
+
+This document defines the safety gate that must be satisfied before any PostgreSQL `PersistenceRepository` implementation, runtime database connection, SQL execution, migration, or database write is added.
+
+It is safety-gate documentation only. It does not add a PostgreSQL repository implementation, connect to a database, write records, execute SQL, run migrations, load configuration, load credentials, add database dependencies, perform HTTP or network calls, trigger source acquisition, or schedule work.
+
+## Purpose
+
+Current persistence work is intentionally limited to:
+
+- `PersistenceInput`
+- PostgreSQL logical schema descriptors
+- review-only PostgreSQL DDL preview text
+- `PersistenceRepository` protocol and `PersistenceResult` contracts
+- PostgreSQL repository planning documentation
+
+Before any runtime PostgreSQL behavior is added, the preconditions in this gate must be reviewed and satisfied in a separate task.
+
+## Mandatory Preconditions
+
+Runtime database writes must not be added until all of the following are explicitly approved and documented:
+
+- Explicit user configuration: database target selection must come from a deliberate user-controlled configuration boundary.
+- No default DB target: the package must not assume a localhost, development, staging, production, or cloud database by default.
+- Test database first: initial integration must target an explicit isolated test database only.
+- Clear environment naming: test, local, staging, and production labels must be unambiguous and visible in configuration and logs.
+- Migration and table ownership: table creation, schema migration ownership, and rollback ownership must be clarified before writes.
+- Idempotency strategy: source identity, record identity, artifact reference, checksum, and conflict keys must be approved.
+- Conflict handling: ignore, update, reject, version, or partial-failure behavior must be approved.
+- Transaction behavior: transaction scope, batching, caller-managed transactions, and rollback boundaries must be approved.
+- Failure and rollback behavior: partial failures, retry boundaries, rollback behavior, and persisted count reporting must be approved.
+- Credential loading approach: secret source, redaction, local development behavior, and CI/test behavior must be approved.
+- Operational logging and audit boundary: audit metadata, log redaction, correlation IDs, and repository metadata must be approved.
+
+## Forbidden Before Gate Approval
+
+Before this gate is satisfied, future changes must not add:
+
+- Implicit local database writes.
+- A production database target.
+- Database credentials, secrets, or connection strings in the repository.
+- Automatic migrations or table creation.
+- SQL execution from DDL preview helpers.
+- SQL execution from schema descriptor helpers.
+- PostgreSQL driver or ORM dependencies.
+- Runtime database connection code.
+- Network-backed source acquisition coupled directly to persistence.
+- Scheduler or background behavior that can trigger persistence.
+
+## Implementation Sequence After Gate Approval
+
+After this safety gate is satisfied, implementation should remain incremental:
+
+1. Repository skeleton with no database connection: add a concrete class shape that still cannot connect or write.
+2. Explicit config model: introduce user-controlled database configuration without loading credentials implicitly.
+3. Test DB integration only: add isolated integration tests against an explicit test database.
+4. Idempotency enforcement: implement approved idempotency keys and verification behavior.
+5. Limited insert path: add the narrowest insert behavior for `PersistenceInput` records.
+6. Conflict handling: implement approved conflict behavior and structured `PersistenceResult` reporting.
+7. Operational hardening: add logging, audit metadata, rollback diagnostics, retry boundaries, and failure observability.
+
+Each step must remain separately reviewed and tested.
+
+## Review Checklist
+
+Any task that proposes PostgreSQL runtime behavior should answer:
+
+- What database target is selected, and how does the user choose it?
+- How is accidental local or production write behavior prevented?
+- Which database is used in tests, and how is it isolated?
+- Where are credentials loaded from, and how are they redacted?
+- Who owns migrations and table creation?
+- What transaction boundaries are used?
+- What idempotency keys are enforced?
+- What happens on conflicts?
+- What happens on partial failure?
+- What metadata is logged, returned, or stored?
+- How does the change prove DDL preview text is not executed implicitly?
+
+## Relationship To Existing Boundaries
+
+`render_postgresql_ddl_preview()` remains review text only. It must not become a runtime SQL execution path.
+
+`PostgreSQLPersistenceSchema` remains logical metadata. It must not connect to PostgreSQL or create tables.
+
+`PersistenceRepository` remains a protocol until a future task explicitly adds a gated implementation.
+
+Local dry-run helpers may produce `PersistenceInput` and DDL preview metadata, but they must not call repository implementations or write to a database.
+
+## Non-Goals
+
+This safety gate does not add:
+
+- PostgreSQL repository implementation.
+- Database connections.
+- Database writes.
+- SQL execution.
+- Migrations.
+- Database dependencies.
+- Configuration loading implementation.
+- Credential or secret handling.
+- File reading.
+- HTTP or network behavior.
+- Source acquisition integration.
+- Scheduler, retry, cancel, or background job behavior.
+
+## Related Documents
+
+- [Persistence Repository Boundary](persistence-repository-boundary.md)
+- [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
+- [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
+- [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
+- [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
+- [Local File Normalized Persistence Dry-Run Boundary](local-file-normalized-persistence-dry-run-boundary.md)
+- [Public Safety](public-safety.md)

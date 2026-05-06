@@ -10,6 +10,12 @@ It is planning documentation only. It does not add a PostgreSQL repository, conn
 
 A PostgreSQL repository implementation must be planned separately before runtime code is added. This document records the decisions that must be made and the safe sequence for later implementation.
 
+## Safety Gate
+
+No PostgreSQL repository implementation, runtime database connection, SQL execution, migration, or database write may be added until the [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md) is satisfied.
+
+That gate requires explicit user configuration, no default DB target, test database integration first, clear environment naming, migration ownership, idempotency, conflict handling, transaction behavior, failure and rollback behavior, credential loading, and operational logging or audit boundaries to be approved before writes exist.
+
 ## Required Design Decisions
 
 Future PostgreSQL repository work must decide:
@@ -48,11 +54,14 @@ This planning boundary does not add:
 
 A conservative future sequence is:
 
-1. DDL preview boundary: use the existing review-only schema text helper without database access.
-2. Repository implementation behind explicit config: add a concrete repository only after configuration and credential ownership are scoped.
-3. Integration tests with a test database only: keep tests explicit, isolated, and disabled from accidental local or remote database access.
-4. Idempotency and conflict handling: implement key enforcement and conflict result reporting after schema ownership is settled.
-5. Operational hardening: add retry policy, transaction tuning, observability, audit metadata, and failure diagnostics behind explicit scope.
+1. Safety gate approval: satisfy and document the PostgreSQL implementation safety gate.
+2. Repository skeleton with no DB connection: add a concrete class shape that still cannot connect or write.
+3. Explicit config model: define user-controlled database target selection without implicit credential loading.
+4. Test DB integration only: keep tests explicit, isolated, and disabled from accidental local or remote database access.
+5. Idempotency enforcement: implement approved key enforcement and verification behavior.
+6. Limited insert path: add the narrowest approved insert behavior for `PersistenceInput`.
+7. Conflict handling: implement approved conflict behavior and structured result reporting.
+8. Operational hardening: add retry policy, transaction tuning, observability, audit metadata, and failure diagnostics behind explicit scope.
 
 Each step should remain small, reviewable, and separately validated.
 
@@ -70,6 +79,7 @@ Each step should remain small, reviewable, and separately validated.
 
 Future implementation PRs should confirm:
 
+- The PostgreSQL implementation safety gate has been satisfied.
 - Database access is explicit and test-isolated.
 - No credentials are committed, logged, or embedded in examples.
 - SQL execution, if added, is part of an explicitly scoped runtime task.
@@ -81,6 +91,7 @@ Future implementation PRs should confirm:
 ## Related Documents
 
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
+- [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
