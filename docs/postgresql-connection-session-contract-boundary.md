@@ -3,17 +3,16 @@
 This document defines the caller-provided PostgreSQL connection/session contract
 boundary for future runtime persistence work.
 
-It is contract documentation only. It does not add a PostgreSQL dependency,
-import a database driver, open a database connection, run SQL, write records,
-create tables, run migrations, load environment variables, load configuration
-files, load credentials, perform HTTP or network calls, schedule work, or claim
-production persistence readiness.
+It is contract documentation only. It does not import a database driver, open a
+database connection, run SQL, write records, create tables, run migrations, load
+environment variables, load configuration files, load credentials, perform HTTP
+or network calls, schedule work, or claim production persistence readiness.
 
 ## Purpose
 
 Future PostgreSQL runtime persistence needs a narrow way for repository code to
 receive a caller-provided session-like object. CO-102C defines that shape without
-creating a real connection/session and without adding a driver dependency.
+creating a real connection/session and without importing a driver.
 
 The current code boundary is:
 
@@ -49,11 +48,12 @@ The contract is deliberately driver-neutral:
 - No SQLAlchemy import.
 - No `asyncpg` import.
 - No concrete driver class dependency.
-- No database dependency is added in CO-102C.
+- No database dependency is imported or used by this contract.
 
-CO-102B recommends a future synchronous `psycopg` 3 direction, but this contract
-does not require that driver. A future adapter can map the protocol to the
-approved driver after dependency and execution tasks are explicitly scoped.
+CO-102B recommends a future synchronous `psycopg` 3 direction, and CO-102G adds
+the dependency declaration. This contract still does not import or require that
+driver at runtime. A future adapter can map the protocol to the approved driver
+after execution is explicitly scoped.
 
 ## Statement Handoff Shape
 
@@ -100,7 +100,8 @@ behavior remains deferred to a later safety-gated implementation task.
 
 CO-102C does not add:
 
-- PostgreSQL driver dependencies.
+- PostgreSQL driver imports.
+- Concrete psycopg adapter behavior.
 - Runtime database connections.
 - SQL execution.
 - Database writes.
@@ -117,7 +118,7 @@ CO-102C does not add:
 A future runtime repository task may use this contract after the safety gate is
 satisfied. That future task should:
 
-- Add the approved driver dependency in its own scoped change.
+- Use the approved driver dependency only inside runtime adapter modules.
 - Keep pure preview modules driver-free.
 - Accept caller-provided session objects.
 - Consume insert-builder output instead of building SQL again.

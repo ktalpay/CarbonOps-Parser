@@ -3,10 +3,10 @@
 This document records the PostgreSQL driver dependency decision for future
 runtime persistence work.
 
-It is decision documentation only. It does not add a database dependency, import
-a database driver, connect to PostgreSQL, execute SQL, write records, create
-tables, run migrations, load environment variables, load configuration files,
-load credentials, perform HTTP or network calls, schedule work, or claim
+CO-102B was decision documentation only. It did not add a database dependency,
+import a database driver, connect to PostgreSQL, execute SQL, write records,
+create tables, run migrations, load environment variables, load configuration
+files, load credentials, perform HTTP or network calls, schedule work, or claim
 production persistence readiness.
 
 ## Decision Summary
@@ -14,9 +14,10 @@ production persistence readiness.
 Recommended Phase 1 direction: use a narrow synchronous `psycopg` 3 runtime
 adapter when PostgreSQL execution is later approved.
 
-No dependency is added in CO-102B. `psycopg`, SQLAlchemy, and `asyncpg` remain
-absent from project dependency files and runtime imports until a later scoped
-dependency-boundary task.
+CO-102G adds the approved `psycopg` 3 dependency declaration for future runtime
+work. It does not add SQLAlchemy, `asyncpg`, runtime driver imports, database
+connections, SQL execution, database writes, config loading, or credential
+loading.
 
 ## Evaluation Options
 
@@ -66,8 +67,9 @@ The Phase 1 driver direction is evaluated against:
 
 ## Recommendation
 
-Use `psycopg` 3 as the preferred Phase 1 PostgreSQL driver direction, introduced
-later in a dedicated dependency-boundary task.
+Use `psycopg` 3 as the preferred Phase 1 PostgreSQL driver direction. CO-102G
+introduces the dependency declaration only; runtime adapter implementation
+remains deferred.
 
 The initial runtime design should be synchronous, direct-driver based, and
 without an ORM. The future execution adapter should consume
@@ -94,22 +96,19 @@ CO-102B does not add:
 - Runtime repository behavior.
 - Production persistence readiness.
 
-## Future Dependency Boundary
+## Dependency Boundary Status
 
-The future dependency should be introduced in a small dedicated task, such as
-CO-102C or a follow-up dependency-boundary task if sequencing changes.
+CO-102G introduces the dependency in a small dedicated dependency-boundary task.
+That task:
 
-That task should:
-
-- Add the dependency explicitly.
-- Explain why the dependency is needed at that point.
+- Adds the dependency explicitly.
+- Explains why the dependency is needed before runtime execution work.
 - Keep pure domain, preview, schema, and SQL-builder modules driver-free.
 - Add focused tests for import boundaries.
-- Keep `PostgreSQLPersistenceRepository` no-execution unless runtime execution
-  is explicitly in scope.
+- Keeps `PostgreSQLPersistenceRepository` no-execution.
 - Avoid changing PostgreSQL persistence preview behavior.
 - Avoid importing the driver in pure preview modules.
-- Update public safety checks if needed.
+- Leaves public safety checks in place.
 - Keep credential/config loading out of the dependency task.
 
 ## Import Boundary Strategy
@@ -174,10 +173,9 @@ variables, config files, or credentials on its own.
 - Test environment fragility: use default-disabled, explicit opt-in integration
   tests against an isolated test database only.
 
-## Acceptance Criteria For Future Dependency-Add Task
+## Acceptance Criteria For Dependency Boundary Task
 
-A future task that adds the PostgreSQL driver dependency should pass this
-checklist:
+CO-102G and any future dependency-boundary refinement should pass this checklist:
 
 - The dependency is added explicitly and only in the scoped task.
 - No runtime SQL execution is added unless that task explicitly includes it.

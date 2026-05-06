@@ -2,11 +2,10 @@
 
 This document plans a future PostgreSQL runtime persistence implementation.
 
-It is planning documentation only. It does not add a PostgreSQL dependency,
-connect to PostgreSQL, execute SQL, write records, create tables, run
-migrations, load environment variables, load configuration files, load
-credentials, perform HTTP or network calls, schedule work, or claim production
-readiness.
+It is planning documentation only. It does not connect to PostgreSQL, execute
+SQL, write records, create tables, run migrations, load environment variables,
+load configuration files, load credentials, perform HTTP or network calls,
+schedule work, or claim production readiness.
 
 ## Current State
 
@@ -28,6 +27,8 @@ runtime behavior:
   logical schema descriptor.
 - `PostgreSQLPersistenceRepository` satisfies the repository protocol while
   returning unsupported results only.
+- `pyproject.toml` declares the approved `psycopg` 3 dependency for future
+  runtime adapter work, but pure persistence modules do not import it.
 - The PostgreSQL implementation safety gate defines mandatory preconditions
   before any runtime database behavior may be added.
 
@@ -36,7 +37,8 @@ runtime behavior:
 CO-102A does not add:
 
 - Runtime database writes.
-- PostgreSQL driver, ORM, or database dependencies.
+- Runtime PostgreSQL driver imports or execution adapters.
+- SQLAlchemy, `asyncpg`, or additional database dependencies.
 - SQL execution.
 - Migrations or table creation.
 - Runtime repository behavior.
@@ -59,9 +61,10 @@ Future runtime persistence should be split into small, reviewable tasks:
 - CO-102D: add repository execution adapter behind the explicit safety gate.
 - CO-102E: define transaction boundary, rollback behavior, and result reporting.
 - CO-102F: approve idempotency and conflict strategy.
-- CO-102G: add opt-in PostgreSQL integration tests using the existing integration
+- CO-102G: add the approved `psycopg` dependency boundary without execution.
+- CO-102H: add opt-in PostgreSQL integration tests using the existing integration
   test boundary helper.
-- CO-102H: add local PostgreSQL validation runbook and operator documentation.
+- CO-102I: add local PostgreSQL validation runbook and operator documentation.
 
 Each task should have its own branch, focused tests, safety review, and explicit
 confirmation that the safety gate still blocks unintended writes.
@@ -80,13 +83,15 @@ Candidate directions:
   async boundary decisions before the project has a runtime repository path.
 
 Recommendation for Phase 1: plan toward a narrow synchronous `psycopg` adapter
-behind an explicit dependency boundary, while adding no dependency in this task.
-This keeps the first runtime implementation close to the existing parameterized
-insert builder and local CLI/service usage.
+behind an explicit dependency boundary. CO-102G adds the dependency declaration
+only; the runtime adapter remains deferred. This keeps the first runtime
+implementation close to the existing parameterized insert builder and local
+CLI/service usage.
 
 The [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 records the focused Phase 1 driver decision. It recommends a future synchronous
-`psycopg` 3 adapter while keeping CO-102B dependency-free and no-execution.
+`psycopg` 3 adapter and records that CO-102G adds the dependency without
+execution behavior.
 
 ## Connection And Config Strategy
 
@@ -228,7 +233,7 @@ explicitly constructs a runtime-capable repository with approved configuration.
 The first task that adds runtime PostgreSQL persistence must pass this checklist:
 
 - The PostgreSQL implementation safety gate is explicitly satisfied.
-- A database dependency is added only in a scoped dependency-boundary task.
+- The `psycopg` dependency remains isolated from pure preview/domain modules.
 - Runtime writes require explicit caller-provided configuration.
 - No default local, staging, production, or cloud database target exists.
 - SQL generation delegates to `build_postgresql_insert_statement()`.
