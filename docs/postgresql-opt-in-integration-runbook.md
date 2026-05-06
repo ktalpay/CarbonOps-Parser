@@ -77,6 +77,56 @@ connections, execute SQL, write records, enable repository persistence, change
 the default test suite, or claim production persistence readiness. DSNs and
 credentials remain external test-runner inputs and must stay redacted.
 
+## Fresh Clone Install Smoke
+
+Use this checklist to validate the public install path from a clean clone or a
+clean checkout. It is local install verification only; it does not require
+PostgreSQL, DSNs, credentials, or secrets.
+
+Prerequisites:
+
+- Start from a fresh clone or a clean checkout with `git status --short`.
+- Create and activate a local virtual environment, for example:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+Base install and CLI smoke:
+
+```bash
+python -m pip install -e .
+carbonops-parser --help
+carbonops-parser local-dry-run \
+  --local-path examples/fixtures/defra_desnz_minimal.csv \
+  --source-family defra_desnz \
+  --source-id defra-desnz-minimal-fixture \
+  --content-type text/csv \
+  --format-hint csv
+carbonops-parser local-dry-run \
+  --local-path examples/fixtures/defra_desnz_minimal.csv \
+  --source-family defra_desnz \
+  --source-id defra-desnz-minimal-fixture \
+  --content-type text/csv \
+  --format-hint csv \
+  --json
+```
+
+Optional PostgreSQL packaging smoke:
+
+```bash
+python -m pip install -e ".[postgresql]"
+python -c "import psycopg; print(psycopg.__version__)"
+```
+
+The optional PostgreSQL extra install does not enable repository persistence.
+`PostgreSQLPersistenceRepository.persist()` remains unsupported/no-execution.
+Default `python -m pytest` runs remain DB-free. The PostgreSQL connection smoke
+is still manual and opt-in only through the `postgresql_integration` marker and
+the canonical external controls. No DSN, password, credential, or secret is
+required for this fresh-clone install smoke.
+
 ## Connection Smoke Skeleton
 
 CO-103C adds a default-skipped connection smoke skeleton for future local
