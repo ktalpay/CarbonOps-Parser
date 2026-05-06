@@ -31,6 +31,10 @@ files, or credentials.
 future PostgreSQL integration tests. It does not add database dependencies,
 connections, SQL execution, or writes.
 
+`build_postgresql_insert_statement()` provides deterministic parameterized
+insert statement data for future repository work. It does not execute SQL or
+write records.
+
 ## Result Boundary
 
 `PersistenceResult` reports:
@@ -104,6 +108,7 @@ This boundary does not add:
 
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
+- [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Integration Test Boundary](postgresql-integration-test-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)

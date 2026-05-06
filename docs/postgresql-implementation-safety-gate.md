@@ -20,6 +20,7 @@ Current persistence work is intentionally limited to:
 - `PostgreSQLPersistenceRepository` skeleton returning unsupported results only
 - explicit caller-provided `PostgreSQLPersistenceOptions` with validation only
 - default-disabled PostgreSQL integration test boundary metadata
+- deterministic PostgreSQL insert statement builder data without execution
 - PostgreSQL repository planning documentation
 
 Before any runtime PostgreSQL behavior is added, the preconditions in this gate must be reviewed and satisfied in a separate task.
@@ -61,6 +62,14 @@ connect to PostgreSQL, execute SQL, or write records.
 Future integration test wiring must require explicit opt-in and an isolated test
 database before any connection behavior is introduced.
 
+## Insert Builder Relationship
+
+`build_postgresql_insert_statement()` may produce deterministic SQL text with
+placeholders and ordered parameter values for review and future repository use.
+It is not an execution path and must not be wired to a database connection,
+cursor, migration runner, credential loader, or repository write behavior before
+this gate is satisfied.
+
 ## Forbidden Before Gate Approval
 
 Before this gate is satisfied, future changes must not add:
@@ -71,6 +80,7 @@ Before this gate is satisfied, future changes must not add:
 - Automatic migrations or table creation.
 - SQL execution from DDL preview helpers.
 - SQL execution from schema descriptor helpers.
+- SQL execution from insert statement builder helpers.
 - PostgreSQL driver or ORM dependencies.
 - Runtime database connection code.
 - Network-backed source acquisition coupled directly to persistence.
@@ -149,6 +159,7 @@ This safety gate does not add:
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
+- [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [Local File Normalized Persistence Dry-Run Boundary](local-file-normalized-persistence-dry-run-boundary.md)
 - [Public Safety](public-safety.md)
