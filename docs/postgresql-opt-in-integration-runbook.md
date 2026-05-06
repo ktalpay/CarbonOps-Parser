@@ -195,6 +195,59 @@ unset CARBONOPS_RUN_POSTGRESQL_INTEGRATION
 unset CARBONOPS_POSTGRESQL_TEST_DSN
 ```
 
+## Manual Connection Smoke Execution Record
+
+Use this template to record a local opt-in connection smoke run. If no manual
+smoke was performed, keep `status` set to `not_run` and do not record a passed
+result.
+
+Allowed status values:
+
+- `not_run`
+- `passed`
+- `failed_sanitized`
+
+Execution record template:
+
+- status: `not_run`
+- date/time: `<local-run-date-time>`
+- local environment: `<local-environment-label>`
+- PostgreSQL version: `<postgresql-version>`
+- test database: `<local-test-database>`
+- marker: `postgresql_integration`
+- opt-in control: `CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1`
+- test DSN control: `CARBONOPS_POSTGRESQL_TEST_DSN`
+- opt-in command:
+
+```bash
+CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1 \
+CARBONOPS_POSTGRESQL_TEST_DSN='<external test DSN supplied by the runner>' \
+python -m pytest -m postgresql_integration tests/test_postgresql_connection_smoke_boundary.py
+```
+
+Expected result shape:
+
+- The connection smoke either passes or fails with sanitized output.
+- The smoke performs no SQL execution.
+- The smoke performs no DB writes.
+- Repository persistence remains disabled/no-execution.
+- No migration, table creation, or project-managed database setup occurs.
+
+Redaction checklist:
+
+- DSN redacted.
+- Password redacted.
+- Host, user, and database names redacted when needed.
+- No secrets in logs, issues, PRs, examples, fixtures, or test output.
+
+Post-run cleanup checklist:
+
+- Unset `CARBONOPS_RUN_POSTGRESQL_INTEGRATION`.
+- Unset `CARBONOPS_POSTGRESQL_TEST_DSN`.
+- Confirm default `python -m pytest` still remains DB-free.
+- Confirm no migration, table creation, DB write, or repository persistence
+  happened.
+
 ## Local PostgreSQL Setup Checklist
 
 This setup checklist is manual shell guidance only. It does not add project code

@@ -232,6 +232,39 @@ def test_runbook_documents_manual_connection_smoke_checklist() -> None:
     assert "unset CARBONOPS_POSTGRESQL_TEST_DSN" in runbook_text
 
 
+def test_runbook_documents_manual_connection_smoke_execution_record() -> None:
+    runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    normalized_runbook_text = " ".join(runbook_text.split())
+
+    assert "## Manual Connection Smoke Execution Record" in runbook_text
+    assert "`not_run`" in runbook_text
+    assert "`passed`" in runbook_text
+    assert "`failed_sanitized`" in runbook_text
+    assert "status: `not_run`" in runbook_text
+    assert "<local-run-date-time>" in runbook_text
+    assert "<local-environment-label>" in runbook_text
+    assert "<postgresql-version>" in runbook_text
+    assert "<local-test-database>" in runbook_text
+    assert POSTGRESQL_INTEGRATION_TEST_MARKER in runbook_text
+    assert POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR in runbook_text
+    assert POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR in runbook_text
+    assert (
+        "python -m pytest -m postgresql_integration "
+        "tests/test_postgresql_connection_smoke_boundary.py"
+    ) in normalized_runbook_text
+    assert "The smoke performs no SQL execution." in runbook_text
+    assert "The smoke performs no DB writes." in runbook_text
+    assert "Repository persistence remains disabled/no-execution." in runbook_text
+    assert "DSN redacted." in runbook_text
+    assert "Password redacted." in runbook_text
+    assert "No secrets in logs" in runbook_text
+    assert "Post-run cleanup checklist" in runbook_text
+    assert "Unset `CARBONOPS_RUN_POSTGRESQL_INTEGRATION`." in runbook_text
+    assert "Unset `CARBONOPS_POSTGRESQL_TEST_DSN`." in runbook_text
+    assert "Confirm default `python -m pytest` still remains DB-free." in runbook_text
+    assert "keep `status` set to `not_run`" in normalized_runbook_text
+
+
 def test_runbook_documents_local_postgresql_setup_checklist() -> None:
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
     normalized_runbook_text = " ".join(runbook_text.split())
