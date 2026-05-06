@@ -24,6 +24,8 @@ The public parser adapter protocol exposes:
 
 `parse()` is a future parser execution boundary. This task defines only the protocol method; it does not implement real parsing.
 
+Future parser logic should receive already-loaded content through a separate file content input boundary such as `ParserFileContentInput`. Parser adapters must not make acquisition metadata, file loading, parsing, normalization, and persistence the same responsibility.
+
 ## Registry Boundary
 
 `ParserAdapterRegistry` provides a deterministic registry boundary for future parser adapters. It accepts `ParserAdapter`-compatible objects, preserves registration order for listing and resolution, and rejects duplicate `source_family` registrations so adapter identity stays explicit.
@@ -80,6 +82,7 @@ This boundary does not add:
 ## Related Documents
 
 - [Source-Specific Parser Adapter Boundary](source-specific-parser-adapter-boundary.md)
+- [Parser File Content Input Boundary](parser-file-content-input-boundary.md)
 - [Parser Execution Planning Boundary](parser-execution-planning-boundary.md)
 - [Parser Execution Result Boundary](parser-execution-result-boundary.md)
 - [Source Acquisition Parser Handoff Contract](source-acquisition-parser-handoff-contract.md)

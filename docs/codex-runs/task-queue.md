@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-092A: Added parser file content input boundary contract, validation helpers, public exports, focused tests, and documentation for separating already-loaded content from acquisition metadata.
 - CO-091B: Added DEFRA/DESNZ parser adapter skeleton with metadata-only matching, unsupported not-implemented parse result, public export, docs, and no real parsing behavior.
 - CO-091A: Added source-specific parser adapter boundary documentation and checklist for future real adapters without implementing parser execution.
 - CO-090B: Added ArtificialParserAdapter for deterministic in-memory ParserExecutionResult success paths without real source parsing or side effects.
