@@ -242,6 +242,38 @@ dropdb --if-exists <local-test-database>
 dropuser --if-exists <local-test-role>
 ```
 
+## System-Level PostgreSQL Install Smoke
+
+These checks are external manual shell checks. They are not executed by project
+code, are not part of default `python -m pytest`, do not enable repository
+persistence, and do not change the explicitly gated project connection smoke.
+
+Manual system-level shell checks may include:
+
+```bash
+brew services status postgresql@<major-version>
+psql --version
+psql -lqt | grep '<local-test-database>'
+psql -c "\\du" | grep '<local-test-role>'
+psql '<external test DSN supplied by the runner>' -c '<manual read-only check>'
+```
+
+Keep these commands separate from project test commands. Project test commands
+remain limited to default DB-free validation and the explicitly opted-in smoke:
+
+```bash
+python -m pytest
+CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1 \
+CARBONOPS_POSTGRESQL_TEST_DSN='<external test DSN supplied by the runner>' \
+python -m pytest -m postgresql_integration tests/test_postgresql_connection_smoke_boundary.py
+```
+
+Project library behavior remains unchanged: library code does not create
+PostgreSQL connections, execute SQL, create tables, run migrations, write
+records, load credentials, or enable repository persistence. DSNs and
+credentials must stay local to the manual test runner and must be redacted from
+logs, issues, PRs, examples, fixtures, and test output.
+
 ## Cleanup And Reset Guidance
 
 Future opt-in integration tests should document cleanup before they are added:

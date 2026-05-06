@@ -261,6 +261,33 @@ def test_runbook_documents_local_postgresql_setup_checklist() -> None:
     assert "does not add project code execution" in normalized_runbook_text
 
 
+def test_runbook_documents_system_level_postgresql_install_smoke() -> None:
+    runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    normalized_runbook_text = " ".join(runbook_text.split())
+
+    assert "## System-Level PostgreSQL Install Smoke" in runbook_text
+    assert "external manual shell checks" in runbook_text
+    assert "not executed by project code" in normalized_runbook_text
+    assert "not part of default `python -m pytest`" in normalized_runbook_text
+    assert "do not enable repository persistence" in normalized_runbook_text
+    assert "brew services status postgresql@<major-version>" in runbook_text
+    assert "psql --version" in runbook_text
+    assert "psql -lqt | grep '<local-test-database>'" in runbook_text
+    assert "psql -c \"\\\\du\" | grep '<local-test-role>'" in runbook_text
+    assert "psql '<external test DSN supplied by the runner>'" in runbook_text
+    assert "Keep these commands separate from project test commands." in runbook_text
+    assert "python -m pytest" in runbook_text
+    assert POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR in runbook_text
+    assert POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR in runbook_text
+    assert (
+        "Project library behavior remains unchanged: library code does not "
+        "create PostgreSQL connections, execute SQL, create tables, run "
+        "migrations, write records, load credentials, or enable repository "
+        "persistence."
+    ) in normalized_runbook_text
+    assert "must be redacted from logs, issues, PRs" in normalized_runbook_text
+
+
 def test_runbook_manual_checklist_uses_placeholders_without_real_secret_values() -> None:
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
 
