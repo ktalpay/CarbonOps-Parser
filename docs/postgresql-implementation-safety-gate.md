@@ -115,6 +115,12 @@ After this safety gate is satisfied, implementation should remain incremental:
 
 Each step must remain separately reviewed and tested.
 
+The [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
+breaks these steps into proposed follow-up tasks and records dependency,
+transaction, conflict, schema lifecycle, integration test, and observability
+decisions for future runtime work. It is planning-only and does not satisfy this
+gate by itself.
+
 ## Review Checklist
 
 Any task that proposes PostgreSQL runtime behavior should answer:
@@ -171,6 +177,7 @@ This safety gate does not add:
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
+- [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)

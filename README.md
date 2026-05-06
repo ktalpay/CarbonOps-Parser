@@ -472,6 +472,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [PostgreSQL Config Contract Boundary](docs/postgresql-config-contract-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](docs/postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](docs/postgresql-repository-implementation-planning-boundary.md)
+- [PostgreSQL Runtime Persistence Implementation Plan](docs/postgresql-runtime-persistence-implementation-plan.md)
 - [Parser To Normalization Handoff Boundary](docs/parser-to-normalization-handoff-boundary.md)
 - [Parser To Normalization Integration Recap](docs/parser-to-normalization-integration-recap.md)
 - [Source To Normalization Pipeline Recap](docs/source-to-normalization-pipeline-recap.md)

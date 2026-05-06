@@ -33,6 +33,11 @@ The PostgreSQL persistence preview layer can wrap insert-builder output in a
 preview-specific result. It remains separate from repository execution and does
 not call `PostgreSQLPersistenceRepository.persist()`.
 
+The [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
+defines a narrower future sequence for moving from this planning boundary toward
+runtime repository work. It remains no-execution planning and does not add a
+driver dependency, connection behavior, SQL execution, migrations, or writes.
+
 ## Safety Gate
 
 No PostgreSQL repository implementation, runtime database connection, SQL execution, migration, or database write may be added until the [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md) is satisfied.
@@ -130,6 +135,7 @@ Future implementation PRs should confirm:
 - [PostgreSQL Integration Test Boundary](postgresql-integration-test-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
+- [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
