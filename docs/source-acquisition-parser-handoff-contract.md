@@ -51,6 +51,10 @@ A future parser adapter should treat acquisition output as an explicit input con
 
 Parser adapters should not infer hidden retry behavior, hidden source lookups, implicit credential access, scheduler state, or persistence behavior from acquisition metadata.
 
+## Example Mapping
+
+See `examples/example_acquisition_artifact_parser_input_mapping.py` for an in-memory, deterministic example that maps source acquisition artifact metadata into an example-local future parser input representation. The example preserves source identity, artifact reference, checksum metadata, content type/format hint, acquisition status, and run/manifest metadata without reading files, making network calls, executing a parser, executing normalization, or writing to a database.
+
 ## Normalization Handoff Expectations
 
 Normalization remains downstream of parser output. Acquisition metadata may travel with parser output as source context, but it is not normalization input by itself.

@@ -198,6 +198,9 @@ For boundary details, see:
 - [Source Acquisition CLI Boundary](docs/source-acquisition-cli-boundary.md)
 - [Source Acquisition Registry](docs/source-acquisition-registry.md)
 - [Source Acquisition HTTP Client Boundary](docs/source-acquisition-http-client-boundary.md)
+- [Source Acquisition Parser Handoff Contract](docs/source-acquisition-parser-handoff-contract.md)
+
+See [examples/example_acquisition_artifact_parser_input_mapping.py](examples/example_acquisition_artifact_parser_input_mapping.py) for a deterministic in-memory example of mapping acquisition artifact metadata into a future parser input boundary without executing a parser.
 
 ## Source Support
 
