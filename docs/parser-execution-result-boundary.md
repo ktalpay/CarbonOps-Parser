@@ -37,6 +37,10 @@ Future real source-specific adapters must use this result boundary for parser ou
 
 If an adapter raises while parsing, the runner converts the exception into a `failed` result with a `PARSER_EXECUTION_ADAPTER_EXCEPTION` issue. This preserves a structured boundary result without adding retry, persistence, or normalization behavior.
 
+## Minimal Content Parser Results
+
+Minimal already-loaded content helpers, such as `parse_defra_desnz_file_content()`, also return `ParserExecutionResult`. They may report `success` with a parsed record count, `no_records` for empty in-memory content, or `failed` for invalid fixture shape. They must not include normalized records or persistence output.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -57,5 +61,6 @@ This boundary does not add:
 - [Source-Specific Parser Adapter Boundary](source-specific-parser-adapter-boundary.md)
 - [Parser Execution Planning Boundary](parser-execution-planning-boundary.md)
 - [Parser Execution Runner Boundary](parser-execution-runner-boundary.md)
+- [Parser File Content Input Boundary](parser-file-content-input-boundary.md)
 - [Parser Contract Boundaries](parser-contract-boundaries.md)
 - [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md)

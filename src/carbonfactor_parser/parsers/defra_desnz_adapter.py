@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from carbonfactor_parser.parsers.defra_desnz_content_parser import (
+    parse_defra_desnz_file_content,
+)
 from carbonfactor_parser.parsers.execution_result import (
     ParserExecutionIssue,
     ParserExecutionIssueSeverity,
@@ -9,6 +12,7 @@ from carbonfactor_parser.parsers.execution_result import (
     ParserExecutionResultStatus,
     create_parser_execution_result,
 )
+from carbonfactor_parser.parsers.file_content_input import ParserFileContentInput
 from carbonfactor_parser.parsers.input_contract import ParserInputContract
 
 
@@ -54,3 +58,11 @@ class DefraDesnzParserAdapter:
                 "real_parsing_implemented": False,
             },
         )
+
+    def parse_content(
+        self,
+        content_input: ParserFileContentInput,
+    ) -> ParserExecutionResult:
+        """Parse already-loaded minimal DEFRA/DESNZ fixture content."""
+
+        return parse_defra_desnz_file_content(content_input)

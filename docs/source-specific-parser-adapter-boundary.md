@@ -93,6 +93,8 @@ Future source-specific adapters should remain compatible with this planner and r
 
 Its `can_parse()` behavior is metadata-only. Its `parse()` method returns an `unsupported` `ParserExecutionResult` with a `DEFRA_DESNZ_PARSER_NOT_IMPLEMENTED` issue. It does not read artifact paths, parse real DEFRA/DESNZ content, execute normalization, write to a database, perform network calls, or claim real DEFRA/DESNZ support.
 
+`parse_defra_desnz_file_content()` provides a minimal already-loaded content path for tiny deterministic CSV-like fixture content. `DefraDesnzParserAdapter.parse_content()` may call that helper with `ParserFileContentInput`, while `DefraDesnzParserAdapter.parse()` remains unsupported until a future loader and execution integration task is explicitly scoped.
+
 ## Minimal Implementation Checklist
 
 Before a real source-specific parser adapter is added, reviewers should confirm:

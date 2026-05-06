@@ -52,6 +52,8 @@ This adapter must not be used to represent DEFRA/DESNZ, GHG Protocol, IPCC, or a
 
 `DefraDesnzParserAdapter.parse()` returns an `unsupported` `ParserExecutionResult` with a not-implemented issue. It does not read files or parse real DEFRA/DESNZ content.
 
+`DefraDesnzParserAdapter.parse_content()` accepts already-loaded `ParserFileContentInput` and delegates to the minimal in-memory DEFRA/DESNZ content parser helper. This path is fixture-shaped only and does not change the unsupported `parse(ParserInputContract)` boundary.
+
 ## Execution Planning Boundary
 
 `ParserExecutionPlan` and `plan_parser_execution()` combine `ParserInputContract` validation with metadata-only registry resolution. Planning returns `ready`, `invalid_input`, or `no_adapter` status without calling `parse()`, opening files, making network calls, running normalization, or writing to a database.

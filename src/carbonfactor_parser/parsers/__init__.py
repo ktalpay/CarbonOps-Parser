@@ -15,6 +15,10 @@ from carbonfactor_parser.parsers.contracts import (
     ParserResult,
     ParserResultSummary,
 )
+from carbonfactor_parser.parsers.defra_desnz_content_parser import (
+    DEFRA_DESNZ_MINIMAL_CONTENT_HEADER,
+    parse_defra_desnz_file_content,
+)
 from carbonfactor_parser.parsers.defra_desnz_adapter import DefraDesnzParserAdapter
 from carbonfactor_parser.parsers.defra_desnz_parser import DefraDesnzParser
 from carbonfactor_parser.parsers.example_parser import ExampleInMemoryParser
@@ -63,6 +67,7 @@ from carbonfactor_parser.parsers.pipeline_summary import (
 __all__ = (
     "ArtificialFixtureParser",
     "ArtificialParserAdapter",
+    "DEFRA_DESNZ_MINIMAL_CONTENT_HEADER",
     "DefraDesnzParserAdapter",
     "DefraDesnzParser",
     "ExampleInMemoryParser",
@@ -95,6 +100,7 @@ __all__ = (
     "create_parser_input_contract",
     "list_parser_adapters",
     "plan_parser_execution",
+    "parse_defra_desnz_file_content",
     "register_parser_adapter",
     "resolve_parser_adapters",
     "run_parser_execution",
