@@ -6,7 +6,7 @@ It is a handoff contract only. It does not execute normalization, transform reco
 
 ## Purpose
 
-`ParserExecutionResult` describes parser execution outcome metadata. It currently carries parser/source identity, parsed record count, parser issues, and optional parser metadata. It does not carry production parsed record payloads.
+`ParserExecutionResult` describes parser execution outcome metadata. It currently carries parser/source identity, parsed record count, parser issues, optional parser metadata, and optional raw parsed record payload.
 
 `build_parser_execution_normalization_handoff()` converts only successful parser execution results into a ready normalization handoff. Non-success parser statuses produce a structured not-ready result.
 
@@ -24,9 +24,10 @@ Ready handoffs preserve:
 - parser status
 - parsed record count
 - parser metadata
-- `parsed_records_payload_status` set to `deferred`
+- `parsed_records_payload_status` set to `available` when a raw parser payload is present, otherwise `deferred`
+- raw parser payload when it was already present on the successful parser execution result
 
-The deferred payload marker is intentional. It records that future parsed record payload mapping must be explicitly scoped before normalization can consume real parser records.
+Raw parser payload preservation is intentionally passive. The handoff does not convert raw parser records into normalized records, and a deferred payload marker still records cases where parser execution produced only metadata.
 
 ## Non-Ready Results
 
@@ -38,7 +39,7 @@ This boundary does not add:
 
 - Normalization execution.
 - Record normalization or transformation.
-- Parsed record payload mapping.
+- Raw record payload transformation.
 - File reading.
 - HTTP or network calls.
 - Database persistence.
@@ -49,6 +50,7 @@ This boundary does not add:
 ## Related Documents
 
 - [Parser Execution Result Boundary](parser-execution-result-boundary.md)
+- [Parsed Raw Record Payload Boundary](parsed-raw-record-payload-boundary.md)
 - [Parser File Content Input Boundary](parser-file-content-input-boundary.md)
 - [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md)
 - [Normalization Boundary](normalization-boundary.md)

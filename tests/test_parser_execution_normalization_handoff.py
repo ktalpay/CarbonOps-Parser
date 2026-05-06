@@ -11,6 +11,8 @@ from carbonfactor_parser.normalization import (
 )
 from carbonfactor_parser.parsers import (
     ParserExecutionResultStatus,
+    create_parsed_raw_record,
+    create_parsed_raw_record_payload,
     create_parser_execution_result,
     create_parser_input_contract,
 )
@@ -20,6 +22,7 @@ def _parser_result(
     *,
     status: ParserExecutionResultStatus = ParserExecutionResultStatus.SUCCESS,
     parsed_record_count: int = 2,
+    include_raw_payload: bool = False,
 ):
     parser_input = create_parser_input_contract(
         source_family="defra_desnz",
@@ -33,6 +36,22 @@ def _parser_result(
         parser_input=parser_input,
         parsed_record_count=parsed_record_count,
         parser_metadata={"parser_kind": "minimal_defra_desnz_content_fixture"},
+        raw_record_payload=(
+            create_parsed_raw_record_payload(
+                source_family="defra_desnz",
+                source_id="defra_desnz",
+                records=(
+                    create_parsed_raw_record(
+                        source_family="defra_desnz",
+                        source_id="defra_desnz",
+                        record_index=1,
+                        raw_fields={"factor_id": "F1"},
+                    ),
+                ),
+            )
+            if include_raw_payload
+            else None
+        ),
     )
 
 
@@ -99,6 +118,19 @@ def test_parsed_record_count_is_preserved() -> None:
     assert result.handoff is not None
     assert result.handoff.parsed_record_count == 5
     assert result.handoff.parsed_records_payload_status == "deferred"
+
+
+def test_raw_record_payload_is_preserved_when_available() -> None:
+    result = build_parser_execution_normalization_handoff(
+        _parser_result(parsed_record_count=1, include_raw_payload=True),
+    )
+
+    assert result.handoff is not None
+    assert result.handoff.parsed_records_payload_status == "available"
+    assert result.handoff.raw_record_payload is not None
+    assert result.handoff.raw_record_payload.records[0].raw_fields == {
+        "factor_id": "F1",
+    }
 
 
 def test_handoff_has_no_normalized_output_or_persistence_fields() -> None:

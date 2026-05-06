@@ -11,6 +11,7 @@ from carbonfactor_parser.parsers.execution_result import (
     ParserExecutionResult,
     ParserExecutionResultStatus,
 )
+from carbonfactor_parser.parsers.raw_record import ParsedRawRecordPayload
 
 
 @dataclass(frozen=True)
@@ -60,6 +61,7 @@ class ParserExecutionNormalizationHandoff:
     parser_status: ParserExecutionResultStatus
     parser_metadata: Mapping[str, object] | None = None
     parsed_records_payload_status: str = "deferred"
+    raw_record_payload: ParsedRawRecordPayload | None = None
 
 
 @dataclass(frozen=True)
@@ -128,6 +130,12 @@ def build_parser_execution_normalization_handoff(
                 if parser_result.parser_metadata is not None
                 else None
             ),
+            parsed_records_payload_status=(
+                "available"
+                if parser_result.raw_record_payload is not None
+                else "deferred"
+            ),
+            raw_record_payload=parser_result.raw_record_payload,
         ),
     )
 

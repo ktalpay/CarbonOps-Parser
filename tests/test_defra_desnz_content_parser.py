@@ -55,6 +55,15 @@ def test_valid_in_memory_defra_desnz_content_returns_success() -> None:
         "is_real_source_parser": False,
         "normalization_executed": False,
     }
+    assert result.raw_record_payload is not None
+    assert len(result.raw_record_payload.records) == 2
+    assert result.raw_record_payload.records[0].raw_fields == {
+        "factor_id": "F1",
+        "factor_name": "Electricity",
+        "unit": "kWh",
+    }
+    assert result.raw_record_payload.records[0].record_index == 1
+    assert result.raw_record_payload.records[0].row_number == 2
 
 
 def test_parsed_record_count_is_deterministic() -> None:
@@ -72,6 +81,7 @@ def test_parsed_record_count_is_deterministic() -> None:
 
     assert first_result.parsed_record_count == 3
     assert second_result.parsed_record_count == 3
+    assert first_result.raw_record_payload == second_result.raw_record_payload
 
 
 def test_bytes_content_is_parsed_in_memory() -> None:
@@ -81,6 +91,12 @@ def test_bytes_content_is_parsed_in_memory() -> None:
 
     assert result.status == ParserExecutionResultStatus.SUCCESS
     assert result.parsed_record_count == 1
+    assert result.raw_record_payload is not None
+    assert result.raw_record_payload.records[0].raw_fields == {
+        "factor_id": "F1",
+        "factor_name": "Electricity",
+        "unit": "kWh",
+    }
 
 
 def test_empty_content_returns_no_records_issue() -> None:
@@ -166,6 +182,10 @@ def test_helper_preserves_metadata_without_reading_artifact_reference(tmp_path) 
     assert result.status == ParserExecutionResultStatus.SUCCESS
     assert result.parser_input.artifact_reference == str(missing_artifact)
     assert result.parser_input.checksum_sha256 == "a" * 64
+    assert result.raw_record_payload is not None
+    assert result.raw_record_payload.source_context == {
+        "artifact_reference": str(missing_artifact),
+    }
     assert not missing_artifact.exists()
 
 

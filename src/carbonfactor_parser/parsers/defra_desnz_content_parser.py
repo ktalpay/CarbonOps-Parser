@@ -17,6 +17,10 @@ from carbonfactor_parser.parsers.file_content_input import (
     validate_parser_file_content_input,
 )
 from carbonfactor_parser.parsers.input_contract import create_parser_input_contract
+from carbonfactor_parser.parsers.raw_record import (
+    create_parsed_raw_record,
+    create_parsed_raw_record_payload,
+)
 
 
 DEFRA_DESNZ_MINIMAL_CONTENT_HEADER = (
@@ -121,8 +125,9 @@ def _parse_minimal_csv(
             parser_metadata=_parser_metadata(),
         )
 
+    raw_records = []
     parsed_record_count = 0
-    for row in reader:
+    for row_number, row in enumerate(reader, start=2):
         if None in row:
             return create_parser_execution_result(
                 status=ParserExecutionResultStatus.FAILED,
@@ -139,6 +144,19 @@ def _parse_minimal_csv(
             )
         if any((value or "").strip() for value in row.values()):
             parsed_record_count += 1
+            raw_records.append(
+                create_parsed_raw_record(
+                    source_family=parser_input.source_family,
+                    source_id=parser_input.source_id,
+                    record_index=parsed_record_count,
+                    row_number=row_number,
+                    raw_fields=dict(row),
+                    parser_metadata=_parser_metadata(),
+                    source_context={
+                        "artifact_reference": parser_input.artifact_reference,
+                    },
+                ),
+            )
 
     if parsed_record_count == 0:
         return create_parser_execution_result(
@@ -160,6 +178,15 @@ def _parse_minimal_csv(
         parser_input=parser_input,
         parsed_record_count=parsed_record_count,
         parser_metadata=_parser_metadata(),
+        raw_record_payload=create_parsed_raw_record_payload(
+            source_family=parser_input.source_family,
+            source_id=parser_input.source_id,
+            records=tuple(raw_records),
+            parser_metadata=_parser_metadata(),
+            source_context={
+                "artifact_reference": parser_input.artifact_reference,
+            },
+        ),
     )
 
 

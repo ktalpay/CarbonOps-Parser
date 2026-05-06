@@ -7,6 +7,7 @@ from enum import Enum
 from typing import Mapping
 
 from carbonfactor_parser.parsers.input_contract import ParserInputContract
+from carbonfactor_parser.parsers.raw_record import ParsedRawRecordPayload
 
 
 class ParserExecutionResultStatus(str, Enum):
@@ -47,6 +48,7 @@ class ParserExecutionResult:
     parsed_record_count: int = 0
     issues: tuple[ParserExecutionIssue, ...] = ()
     parser_metadata: Mapping[str, object] | None = None
+    raw_record_payload: ParsedRawRecordPayload | None = None
 
 
 def create_parser_execution_result(
@@ -56,6 +58,7 @@ def create_parser_execution_result(
     parsed_record_count: int = 0,
     issues: tuple[ParserExecutionIssue, ...] | list[ParserExecutionIssue] = (),
     parser_metadata: Mapping[str, object] | None = None,
+    raw_record_payload: ParsedRawRecordPayload | None = None,
 ) -> ParserExecutionResult:
     """Create a parser execution result without executing a parser."""
 
@@ -67,4 +70,5 @@ def create_parser_execution_result(
         parsed_record_count=parsed_record_count,
         issues=tuple(issues),
         parser_metadata=dict(parser_metadata) if parser_metadata is not None else None,
+        raw_record_payload=raw_record_payload,
     )

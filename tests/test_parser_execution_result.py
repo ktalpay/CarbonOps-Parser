@@ -8,6 +8,8 @@ from carbonfactor_parser.parsers import (
     ParserExecutionIssueSeverity,
     ParserExecutionResult,
     ParserExecutionResultStatus,
+    create_parsed_raw_record,
+    create_parsed_raw_record_payload,
     create_parser_execution_result,
     create_parser_input_contract,
 )
@@ -38,6 +40,33 @@ def test_success_result_can_be_created_with_parsed_record_count() -> None:
     assert result.parsed_record_count == 3
     assert result.issues == ()
     assert result.parser_metadata == {"parser_name": "future-parser"}
+
+
+def test_success_result_can_include_raw_record_payload() -> None:
+    record = create_parsed_raw_record(
+        source_family="defra_desnz",
+        source_id="defra_desnz",
+        record_index=1,
+        raw_fields={"factor_id": "F1", "unit": "kWh"},
+    )
+    payload = create_parsed_raw_record_payload(
+        source_family="defra_desnz",
+        source_id="defra_desnz",
+        records=(record,),
+    )
+
+    result = create_parser_execution_result(
+        status=ParserExecutionResultStatus.SUCCESS,
+        parser_input=_parser_input(),
+        parsed_record_count=1,
+        raw_record_payload=payload,
+    )
+
+    assert result.raw_record_payload == payload
+    assert result.raw_record_payload.records[0].raw_fields == {
+        "factor_id": "F1",
+        "unit": "kWh",
+    }
 
 
 def test_failed_result_can_include_issues() -> None:
