@@ -72,6 +72,10 @@ ready `PersistenceInput`. It does not call a repository, execute SQL, connect to
 PostgreSQL, write records, run migrations, load config files, load credentials,
 or perform network calls.
 
+The JSON demo command uses `--json --include-postgresql-preview`. No PostgreSQL
+server, database configuration, or credentials are required because the command
+only renders already-built preview data.
+
 If the local dry-run does not produce ready `PersistenceInput`, the CLI reports a
 non-ready PostgreSQL preview section and omits ready SQL preview data.
 

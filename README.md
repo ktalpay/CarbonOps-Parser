@@ -132,7 +132,7 @@ carbonops-parser local-dry-run \
   --source-id defra-desnz-minimal-fixture \
   --content-type text/csv \
   --format-hint csv \
-  --output-format json
+  --json
 ```
 
 Key output fields:
@@ -144,7 +144,7 @@ Key output fields:
 - `ddl_preview_present`: whether review-only PostgreSQL DDL preview text is attached
 - `issues`: structured local loader, parser, normalization, or persistence-input issues
 
-Optionally include PostgreSQL insert preview data in either text or JSON output:
+Optionally include PostgreSQL insert preview data in text output:
 
 ```bash
 carbonops-parser local-dry-run \
@@ -153,14 +153,80 @@ carbonops-parser local-dry-run \
   --source-id defra-desnz-minimal-fixture \
   --content-type text/csv \
   --format-hint csv \
-  --output-format json \
   --include-postgresql-preview
+```
+
+Trimmed expected preview lines:
+
+```text
+postgresql_preview_included=True
+postgresql_preview_status=ready
+postgresql_preview_only=True
+postgresql_preview_sql_execution=False
+postgresql_preview_database_connection=False
+postgresql_preview_target_table=normalized_records
+postgresql_preview_record_count=2
+postgresql_preview_sql=INSERT INTO normalized_records (source_family, source_id, record_id, record_index, row_number, normalized_fields, source_reference, source_artifact_reference, source_checksum_sha256, parser_metadata, normalization_metadata, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+postgresql_preview_issue_count=0
+```
+
+Run the JSON PostgreSQL preview variant:
+
+```bash
+carbonops-parser local-dry-run \
+  --local-path examples/fixtures/defra_desnz_minimal.csv \
+  --source-family defra_desnz \
+  --source-id defra-desnz-minimal-fixture \
+  --content-type text/csv \
+  --format-hint csv \
+  --json \
+  --include-postgresql-preview
+```
+
+Trimmed expected JSON preview section:
+
+```json
+{
+  "postgresql_persistence_preview": {
+    "included": true,
+    "preview_only": true,
+    "sql_execution": false,
+    "database_connection": false,
+    "status": "ready",
+    "target_table": "normalized_records",
+    "record_count": 2,
+    "ordered_columns": [
+      "source_family",
+      "source_id",
+      "record_id",
+      "record_index",
+      "row_number",
+      "normalized_fields",
+      "source_reference",
+      "source_artifact_reference",
+      "source_checksum_sha256",
+      "parser_metadata",
+      "normalization_metadata",
+      "created_at",
+      "updated_at"
+    ],
+    "idempotency_key_fields": [
+      "source_family",
+      "source_id",
+      "record_id",
+      "source_artifact_reference",
+      "source_checksum_sha256"
+    ],
+    "issues": []
+  }
+}
 ```
 
 The `postgresql_persistence_preview` section is preview-only. It includes the
 target table, ordered columns, parameter rows, record count, SQL text with
 placeholders, and idempotency metadata, but it does not execute SQL or persist
-records.
+records. No PostgreSQL server, database configuration, or credentials are
+required.
 
 This quickstart is local dry-run only. It does not connect to PostgreSQL, write records, execute SQL, run migrations, perform network calls, trigger source acquisition, load config files, or require credentials. It does not make production DEFRA/DESNZ correctness claims.
 
