@@ -25,6 +25,16 @@ The result carries parser/source identity, the originating `ParserInputContract`
 
 `ParserAdapter.parse()` is typed to return `ParserExecutionResult`. This aligns future parser adapter implementations with the execution result boundary while still leaving real parsing deferred.
 
+## Runner Results
+
+`run_parser_execution()` returns `ParserExecutionResult` for each planning outcome:
+
+- `invalid_input` plans become `failed` results with validation issues converted into parser execution issues.
+- `no_adapter` plans become `unsupported` results with a `PARSER_EXECUTION_NO_ADAPTER` issue.
+- `ready` plans call the selected adapter's `parse()` boundary and return that adapter's `ParserExecutionResult`.
+
+If an adapter raises while parsing, the runner converts the exception into a `failed` result with a `PARSER_EXECUTION_ADAPTER_EXCEPTION` issue. This preserves a structured boundary result without adding retry, persistence, or normalization behavior.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -43,5 +53,6 @@ This boundary does not add:
 
 - [Parser Adapter Boundary](parser-adapter-boundary.md)
 - [Parser Execution Planning Boundary](parser-execution-planning-boundary.md)
+- [Parser Execution Runner Boundary](parser-execution-runner-boundary.md)
 - [Parser Contract Boundaries](parser-contract-boundaries.md)
 - [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md)
