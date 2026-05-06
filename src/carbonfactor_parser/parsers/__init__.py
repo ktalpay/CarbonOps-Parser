@@ -14,7 +14,10 @@ from carbonfactor_parser.parsers.example_source_specific_parser import (
 from carbonfactor_parser.parsers.fixture_parser import ArtificialFixtureParser
 from carbonfactor_parser.parsers.input_contract import (
     ParserInputContract,
+    ParserInputValidationIssue,
+    ParserInputValidationResult,
     create_parser_input_contract,
+    validate_parser_input_contract,
 )
 from carbonfactor_parser.parsers.input_mapping import (
     ParserInputMapping,
@@ -32,6 +35,8 @@ __all__ = (
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
     "ParserInputContract",
+    "ParserInputValidationIssue",
+    "ParserInputValidationResult",
     "ParserInputMapping",
     "ParserInputMappingEntry",
     "ParserIssue",
@@ -40,6 +45,7 @@ __all__ = (
     "ParserResult",
     "ParserResultSummary",
     "create_parser_input_contract",
+    "validate_parser_input_contract",
     "build_fixture_parser_input_mapping",
     "summarize_parser_pipeline",
 )

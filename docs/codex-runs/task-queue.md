@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-086B: Added parser input contract validation helpers with structured issues, public exports, focused validation tests, and handoff contract documentation updates.
 - CO-086A: Added a public parser input contract for acquisition metadata handoff, updated the acquisition artifact mapping example to use it, and covered exports and boundary behavior with focused tests.
 - CO-085B: Added an in-memory acquisition artifact to parser input mapping example with focused tests and handoff contract documentation updates.
 - CO-085A: Documented the source acquisition to parser handoff contract, including boundary definitions, allowed metadata, deferred parser/normalization/persistence behavior, and documentation map links.
