@@ -1,19 +1,26 @@
 # Persistence Repository Boundary
 
-This document defines the persistence repository protocol and result boundary.
+This document defines the persistence repository protocol, result boundary, and
+current PostgreSQL skeleton behavior.
 
-It is a protocol boundary only. It does not add a PostgreSQL repository implementation, connect to a database, execute SQL, generate SQL, create tables, run migrations, read files, perform HTTP or network calls, schedule work, or use credentials.
+It is a protocol and skeleton boundary only. It does not connect to a database,
+execute SQL, generate executable SQL, create tables, run migrations, read files,
+perform HTTP or network calls, schedule work, or use credentials.
 
 ## Purpose
 
-`PersistenceRepository` describes future repository implementations that accept `PersistenceInput` and return `PersistenceResult`.
+`PersistenceRepository` describes repository implementations that accept
+`PersistenceInput` and return `PersistenceResult`.
 
 The protocol currently requires:
 
 - `provider_name`
 - `persist(persistence_input)`
 
-No concrete repository is provided by the package. Tests may use fake in-memory repositories to prove the protocol shape.
+The package now includes `PostgreSQLPersistenceRepository` as a concrete
+skeleton. It satisfies the protocol but returns an unsupported result instead of
+connecting to PostgreSQL or writing records. Tests may also use fake in-memory
+repositories to prove protocol behavior.
 
 ## Result Boundary
 
@@ -46,6 +53,23 @@ Future PostgreSQL work remains separately scoped. It must define connection mana
 
 This boundary does not provide any of those runtime behaviors.
 
+## PostgreSQL Skeleton
+
+`PostgreSQLPersistenceRepository` exposes deterministic `provider_name`
+metadata and accepts `PersistenceInput` through `persist()`.
+
+`persist()` returns:
+
+- status `unsupported`.
+- attempted record count from the input records.
+- persisted record count `0`.
+- issue code `POSTGRESQL_REPOSITORY_NOT_IMPLEMENTED`.
+- skeleton metadata indicating no database connection, runtime write, or
+  migration runtime is present.
+
+It must remain inert until a later gated task adds explicit runtime database
+behavior.
+
 ## PostgreSQL Planning Boundary
 
 Before a concrete PostgreSQL repository is added, future work must follow the PostgreSQL repository implementation planning boundary. That plan keeps driver selection, sync vs async behavior, configuration ownership, credentials, transactions, migrations, idempotency, conflict handling, partial failures, retry behavior, and audit metadata outside this protocol-only task.
@@ -56,7 +80,7 @@ The PostgreSQL implementation safety gate must also be satisfied before any conc
 
 This boundary does not add:
 
-- PostgreSQL repository implementation.
+- Runtime PostgreSQL repository implementation.
 - Database connections.
 - Database writes.
 - SQL generation or execution.
@@ -72,6 +96,7 @@ This boundary does not add:
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
+- [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
 - [Public Safety](public-safety.md)

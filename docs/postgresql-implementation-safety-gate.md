@@ -1,8 +1,13 @@
 # PostgreSQL Implementation Safety Gate
 
-This document defines the safety gate that must be satisfied before any PostgreSQL `PersistenceRepository` implementation, runtime database connection, SQL execution, migration, or database write is added.
+This document defines the safety gate that must be satisfied before any runtime
+PostgreSQL `PersistenceRepository` implementation, database connection, SQL
+execution, migration, or database write is added.
 
-It is safety-gate documentation only. It does not add a PostgreSQL repository implementation, connect to a database, write records, execute SQL, run migrations, load configuration, load credentials, add database dependencies, perform HTTP or network calls, trigger source acquisition, or schedule work.
+It is safety-gate documentation only. It does not add runtime PostgreSQL
+repository behavior, connect to a database, write records, execute SQL, run
+migrations, load configuration, load credentials, add database dependencies,
+perform HTTP or network calls, trigger source acquisition, or schedule work.
 
 ## Purpose
 
@@ -12,6 +17,7 @@ Current persistence work is intentionally limited to:
 - PostgreSQL logical schema descriptors
 - review-only PostgreSQL DDL preview text
 - `PersistenceRepository` protocol and `PersistenceResult` contracts
+- `PostgreSQLPersistenceRepository` skeleton returning unsupported results only
 - PostgreSQL repository planning documentation
 
 Before any runtime PostgreSQL behavior is added, the preconditions in this gate must be reviewed and satisfied in a separate task.
@@ -51,7 +57,8 @@ Before this gate is satisfied, future changes must not add:
 
 After this safety gate is satisfied, implementation should remain incremental:
 
-1. Repository skeleton with no database connection: add a concrete class shape that still cannot connect or write.
+1. Repository skeleton with no database connection: keep the current concrete
+   class shape unable to connect or write.
 2. Explicit config model: introduce user-controlled database configuration without loading credentials implicitly.
 3. Test DB integration only: add isolated integration tests against an explicit test database.
 4. Idempotency enforcement: implement approved idempotency keys and verification behavior.
@@ -83,7 +90,13 @@ Any task that proposes PostgreSQL runtime behavior should answer:
 
 `PostgreSQLPersistenceSchema` remains logical metadata. It must not connect to PostgreSQL or create tables.
 
-`PersistenceRepository` remains a protocol until a future task explicitly adds a gated implementation.
+`PostgreSQLPersistenceRepository` is a skeleton that satisfies the repository
+protocol while returning `unsupported`. It remains outside runtime database
+behavior because it does not connect, write, execute SQL, run migrations, load
+configuration, or load credentials.
+
+A future implementation that changes this skeleton into a runtime repository
+must satisfy this gate first.
 
 Local dry-run helpers may produce `PersistenceInput` and DDL preview metadata, but they must not call repository implementations or write to a database.
 
@@ -91,7 +104,7 @@ Local dry-run helpers may produce `PersistenceInput` and DDL preview metadata, b
 
 This safety gate does not add:
 
-- PostgreSQL repository implementation.
+- Runtime PostgreSQL repository implementation.
 - Database connections.
 - Database writes.
 - SQL execution.
@@ -107,6 +120,7 @@ This safety gate does not add:
 ## Related Documents
 
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
+- [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)

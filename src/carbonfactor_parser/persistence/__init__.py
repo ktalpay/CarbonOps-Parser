@@ -17,6 +17,9 @@ from carbonfactor_parser.persistence.repository import (
     PersistenceResultStatus,
     create_persistence_result,
 )
+from carbonfactor_parser.persistence.postgresql_repository import (
+    PostgreSQLPersistenceRepository,
+)
 from carbonfactor_parser.persistence.schema import (
     PostgreSQLPersistenceColumn,
     PostgreSQLPersistenceSchema,
@@ -35,6 +38,7 @@ __all__ = (
     "PersistenceResult",
     "PersistenceResultStatus",
     "PostgreSQLPersistenceColumn",
+    "PostgreSQLPersistenceRepository",
     "PostgreSQLPersistenceSchema",
     "build_persistence_input_from_normalization_result",
     "create_persistence_result",
