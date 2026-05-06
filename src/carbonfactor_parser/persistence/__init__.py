@@ -44,6 +44,15 @@ from carbonfactor_parser.persistence.postgresql_execution_adapter_boundary impor
     build_postgresql_execution_plan,
     describe_postgresql_execution_adapter_boundary,
 )
+from carbonfactor_parser.persistence.postgresql_disabled_runtime_execution_adapter import (
+    PostgreSQLDisabledRuntimeExecutionAdapter,
+    PostgreSQLDisabledRuntimeExecutionDescription,
+    PostgreSQLDisabledRuntimeExecutionMetadata,
+    PostgreSQLDisabledRuntimeExecutionResult,
+    PostgreSQLDisabledRuntimeExecutionStatus,
+    build_postgresql_disabled_runtime_execution_result,
+    describe_postgresql_disabled_runtime_execution,
+)
 from carbonfactor_parser.persistence.postgresql_transaction_policy import (
     PostgreSQLBatchTransactionMode,
     PostgreSQLPartialSuccessPolicy,
@@ -139,6 +148,11 @@ __all__ = (
     "PostgreSQLConflictStrategyStatus",
     "PostgreSQLConnectionSession",
     "PostgreSQLConnectionSessionContractDescription",
+    "PostgreSQLDisabledRuntimeExecutionAdapter",
+    "PostgreSQLDisabledRuntimeExecutionDescription",
+    "PostgreSQLDisabledRuntimeExecutionMetadata",
+    "PostgreSQLDisabledRuntimeExecutionResult",
+    "PostgreSQLDisabledRuntimeExecutionStatus",
     "PostgreSQLExecutionAdapterProtocol",
     "PostgreSQLExecutionBoundaryDescription",
     "PostgreSQLExecutionIssue",
@@ -177,6 +191,7 @@ __all__ = (
     "build_default_postgresql_idempotency_conflict_strategy",
     "build_disabled_postgresql_execution_result",
     "build_psycopg_session_adapter_metadata",
+    "build_postgresql_disabled_runtime_execution_result",
     "build_postgresql_conflict_strategy_plan",
     "build_postgresql_execution_plan",
     "build_postgresql_insert_statement",
@@ -186,6 +201,7 @@ __all__ = (
     "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",
     "describe_postgresql_connection_session_contract",
+    "describe_postgresql_disabled_runtime_execution",
     "describe_postgresql_execution_adapter_boundary",
     "describe_postgresql_idempotency_conflict_strategy_boundary",
     "describe_postgresql_transaction_policy_boundary",

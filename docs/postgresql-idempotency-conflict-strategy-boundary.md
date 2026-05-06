@@ -70,6 +70,10 @@ but it does not decide duplicate-handling runtime behavior by itself.
 results. It must not use this strategy as a runtime write path until a future
 task explicitly satisfies the PostgreSQL implementation safety gate.
 
+`PostgreSQLDisabledRuntimeExecutionAdapter` may include conflict strategy
+metadata in a disabled result. That composition does not mutate insert SQL,
+generate conflict SQL, skip existing records, upsert records, or run SQL.
+
 ## No-Execution Boundary
 
 CO-102F does not add:
@@ -115,6 +119,7 @@ Those options remain deferred. CO-102F does not implement them.
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
 - [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
 - [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
+- [PostgreSQL Disabled Runtime Execution Adapter Boundary](postgresql-disabled-runtime-execution-adapter-boundary.md)
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)

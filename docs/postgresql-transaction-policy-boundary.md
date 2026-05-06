@@ -62,6 +62,10 @@ does not generate conflict SQL or decide runtime duplicate outcomes.
 results. It must not use this policy as a runtime write path until a future task
 explicitly satisfies the PostgreSQL implementation safety gate.
 
+`PostgreSQLDisabledRuntimeExecutionAdapter` may include transaction policy and
+transaction plan metadata in a disabled result. That composition is still
+metadata only and does not start, finish, or roll back a real transaction.
+
 ## No-Execution Boundary
 
 CO-102E does not add:
@@ -109,6 +113,7 @@ A future runtime adapter may use this policy only after:
 - [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
 - [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
 - [PostgreSQL Idempotency Conflict Strategy Boundary](postgresql-idempotency-conflict-strategy-boundary.md)
+- [PostgreSQL Disabled Runtime Execution Adapter Boundary](postgresql-disabled-runtime-execution-adapter-boundary.md)
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)

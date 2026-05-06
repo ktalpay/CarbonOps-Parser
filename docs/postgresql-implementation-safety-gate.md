@@ -102,6 +102,12 @@ to a future caller-provided session. It is no-execution metadata only and must
 not become a database connection, SQL runtime, transaction boundary, migration
 runner, or repository write path before this gate is satisfied.
 
+`PostgreSQLDisabledRuntimeExecutionAdapter` may compose execution-plan,
+transaction-policy, conflict-strategy, and optional session-adapter metadata
+into a disabled result. That result is not repository execution and must not
+become a database connection, cursor, SQL runtime, transaction boundary,
+migration runner, or repository write path before this gate is satisfied.
+
 ## Transaction Policy Relationship
 
 `PostgreSQLTransactionPolicy` may describe future single-batch, caller-provided
@@ -235,6 +241,7 @@ This safety gate does not add:
 - [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
 - [PostgreSQL Idempotency Conflict Strategy Boundary](postgresql-idempotency-conflict-strategy-boundary.md)
 - [PostgreSQL psycopg Session Adapter Boundary](postgresql-psycopg-session-adapter-boundary.md)
+- [PostgreSQL Disabled Runtime Execution Adapter Boundary](postgresql-disabled-runtime-execution-adapter-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)

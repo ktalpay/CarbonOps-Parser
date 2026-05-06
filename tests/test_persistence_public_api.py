@@ -4,6 +4,7 @@ from carbonfactor_parser.persistence import (
     input,
     integration_test_boundary,
     postgresql_connection_session_contract,
+    postgresql_disabled_runtime_execution_adapter,
     postgresql_execution_adapter_boundary,
     postgresql_idempotency_conflict_strategy,
     postgresql_insert_builder,
@@ -44,6 +45,11 @@ from carbonfactor_parser.persistence import (
     PostgreSQLConflictStrategyStatus,
     PostgreSQLConnectionSession,
     PostgreSQLConnectionSessionContractDescription,
+    PostgreSQLDisabledRuntimeExecutionAdapter,
+    PostgreSQLDisabledRuntimeExecutionDescription,
+    PostgreSQLDisabledRuntimeExecutionMetadata,
+    PostgreSQLDisabledRuntimeExecutionResult,
+    PostgreSQLDisabledRuntimeExecutionStatus,
     PostgreSQLExecutionAdapterProtocol,
     PostgreSQLExecutionBoundaryDescription,
     PostgreSQLExecutionIssue,
@@ -82,6 +88,7 @@ from carbonfactor_parser.persistence import (
     build_default_postgresql_idempotency_conflict_strategy,
     build_disabled_postgresql_execution_result,
     build_psycopg_session_adapter_metadata,
+    build_postgresql_disabled_runtime_execution_result,
     build_postgresql_conflict_strategy_plan,
     build_postgresql_execution_plan,
     build_postgresql_insert_statement,
@@ -91,6 +98,7 @@ from carbonfactor_parser.persistence import (
     create_postgresql_integration_test_boundary,
     create_postgresql_persistence_options,
     describe_postgresql_connection_session_contract,
+    describe_postgresql_disabled_runtime_execution,
     describe_postgresql_execution_adapter_boundary,
     describe_postgresql_idempotency_conflict_strategy_boundary,
     describe_postgresql_transaction_policy_boundary,
@@ -131,6 +139,11 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLConflictStrategyStatus",
     "PostgreSQLConnectionSession",
     "PostgreSQLConnectionSessionContractDescription",
+    "PostgreSQLDisabledRuntimeExecutionAdapter",
+    "PostgreSQLDisabledRuntimeExecutionDescription",
+    "PostgreSQLDisabledRuntimeExecutionMetadata",
+    "PostgreSQLDisabledRuntimeExecutionResult",
+    "PostgreSQLDisabledRuntimeExecutionStatus",
     "PostgreSQLExecutionAdapterProtocol",
     "PostgreSQLExecutionBoundaryDescription",
     "PostgreSQLExecutionIssue",
@@ -169,6 +182,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "build_default_postgresql_idempotency_conflict_strategy",
     "build_disabled_postgresql_execution_result",
     "build_psycopg_session_adapter_metadata",
+    "build_postgresql_disabled_runtime_execution_result",
     "build_postgresql_conflict_strategy_plan",
     "build_postgresql_execution_plan",
     "build_postgresql_insert_statement",
@@ -178,6 +192,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",
     "describe_postgresql_connection_session_contract",
+    "describe_postgresql_disabled_runtime_execution",
     "describe_postgresql_execution_adapter_boundary",
     "describe_postgresql_idempotency_conflict_strategy_boundary",
     "describe_postgresql_transaction_policy_boundary",
@@ -258,6 +273,26 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PostgreSQLConnectionSessionContractDescription": (
         postgresql_connection_session_contract
         .PostgreSQLConnectionSessionContractDescription
+    ),
+    "PostgreSQLDisabledRuntimeExecutionAdapter": (
+        postgresql_disabled_runtime_execution_adapter
+        .PostgreSQLDisabledRuntimeExecutionAdapter
+    ),
+    "PostgreSQLDisabledRuntimeExecutionDescription": (
+        postgresql_disabled_runtime_execution_adapter
+        .PostgreSQLDisabledRuntimeExecutionDescription
+    ),
+    "PostgreSQLDisabledRuntimeExecutionMetadata": (
+        postgresql_disabled_runtime_execution_adapter
+        .PostgreSQLDisabledRuntimeExecutionMetadata
+    ),
+    "PostgreSQLDisabledRuntimeExecutionResult": (
+        postgresql_disabled_runtime_execution_adapter
+        .PostgreSQLDisabledRuntimeExecutionResult
+    ),
+    "PostgreSQLDisabledRuntimeExecutionStatus": (
+        postgresql_disabled_runtime_execution_adapter
+        .PostgreSQLDisabledRuntimeExecutionStatus
     ),
     "PostgreSQLExecutionAdapterProtocol": (
         postgresql_execution_adapter_boundary.PostgreSQLExecutionAdapterProtocol
@@ -376,6 +411,10 @@ EXPECTED_PUBLIC_EXPORTS = {
         postgresql_psycopg_session_adapter
         .build_psycopg_session_adapter_metadata
     ),
+    "build_postgresql_disabled_runtime_execution_result": (
+        postgresql_disabled_runtime_execution_adapter
+        .build_postgresql_disabled_runtime_execution_result
+    ),
     "build_postgresql_conflict_strategy_plan": (
         postgresql_idempotency_conflict_strategy
         .build_postgresql_conflict_strategy_plan
@@ -402,6 +441,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     "describe_postgresql_connection_session_contract": (
         postgresql_connection_session_contract
         .describe_postgresql_connection_session_contract
+    ),
+    "describe_postgresql_disabled_runtime_execution": (
+        postgresql_disabled_runtime_execution_adapter
+        .describe_postgresql_disabled_runtime_execution
     ),
     "describe_postgresql_execution_adapter_boundary": (
         postgresql_execution_adapter_boundary
@@ -474,6 +517,21 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLConnectionSessionContractDescription": (
             PostgreSQLConnectionSessionContractDescription
         ),
+        "PostgreSQLDisabledRuntimeExecutionAdapter": (
+            PostgreSQLDisabledRuntimeExecutionAdapter
+        ),
+        "PostgreSQLDisabledRuntimeExecutionDescription": (
+            PostgreSQLDisabledRuntimeExecutionDescription
+        ),
+        "PostgreSQLDisabledRuntimeExecutionMetadata": (
+            PostgreSQLDisabledRuntimeExecutionMetadata
+        ),
+        "PostgreSQLDisabledRuntimeExecutionResult": (
+            PostgreSQLDisabledRuntimeExecutionResult
+        ),
+        "PostgreSQLDisabledRuntimeExecutionStatus": (
+            PostgreSQLDisabledRuntimeExecutionStatus
+        ),
         "PostgreSQLExecutionAdapterProtocol": PostgreSQLExecutionAdapterProtocol,
         "PostgreSQLExecutionBoundaryDescription": (
             PostgreSQLExecutionBoundaryDescription
@@ -538,6 +596,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "build_psycopg_session_adapter_metadata": (
             build_psycopg_session_adapter_metadata
         ),
+        "build_postgresql_disabled_runtime_execution_result": (
+            build_postgresql_disabled_runtime_execution_result
+        ),
         "build_postgresql_conflict_strategy_plan": (
             build_postgresql_conflict_strategy_plan
         ),
@@ -556,6 +617,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         ),
         "describe_postgresql_connection_session_contract": (
             describe_postgresql_connection_session_contract
+        ),
+        "describe_postgresql_disabled_runtime_execution": (
+            describe_postgresql_disabled_runtime_execution
         ),
         "describe_postgresql_execution_adapter_boundary": (
             describe_postgresql_execution_adapter_boundary
@@ -612,5 +676,6 @@ def test_persistence_all_excludes_internal_module_names() -> None:
     assert "postgresql_options" not in persistence.__all__
     assert "postgresql_persistence_preview" not in persistence.__all__
     assert "postgresql_psycopg_session_adapter" not in persistence.__all__
+    assert "postgresql_disabled_runtime_execution_adapter" not in persistence.__all__
     assert "postgresql_repository" not in persistence.__all__
     assert all(not name.startswith("_") for name in persistence.__all__)
