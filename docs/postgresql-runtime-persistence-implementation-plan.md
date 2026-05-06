@@ -159,6 +159,10 @@ The logical schema descriptor and insert builder already expose idempotency key
 metadata. Future runtime persistence should use that metadata as input to the
 approved conflict policy.
 
+The [PostgreSQL Idempotency Conflict Strategy Boundary](postgresql-idempotency-conflict-strategy-boundary.md)
+records the Phase 1 fail-on-conflict strategy as metadata only. It does not
+change insert SQL, generate conflict SQL, run SQL, or write records.
+
 Options:
 
 - Plain insert: simplest and safest for surfacing duplicate-key failures early.
@@ -259,6 +263,7 @@ The first task that adds runtime PostgreSQL persistence must pass this checklist
 - [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
 - [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
 - [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
+- [PostgreSQL Idempotency Conflict Strategy Boundary](postgresql-idempotency-conflict-strategy-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)

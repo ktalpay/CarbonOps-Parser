@@ -5,6 +5,7 @@ from carbonfactor_parser.persistence import (
     integration_test_boundary,
     postgresql_connection_session_contract,
     postgresql_execution_adapter_boundary,
+    postgresql_idempotency_conflict_strategy,
     postgresql_insert_builder,
     postgresql_options,
     postgresql_persistence_preview,
@@ -31,6 +32,11 @@ from carbonfactor_parser.persistence import (
     PostgreSQLInsertBuildResult,
     PostgreSQLInsertBuildStatus,
     PostgreSQLInsertStatement,
+    PostgreSQLConflictAction,
+    PostgreSQLConflictStrategyIssue,
+    PostgreSQLConflictStrategyPlan,
+    PostgreSQLConflictStrategyPlanResult,
+    PostgreSQLConflictStrategyStatus,
     PostgreSQLConnectionSession,
     PostgreSQLConnectionSessionContractDescription,
     PostgreSQLExecutionAdapterProtocol,
@@ -41,6 +47,9 @@ from carbonfactor_parser.persistence import (
     PostgreSQLExecutionResult,
     PostgreSQLExecutionStatus,
     PostgreSQLBatchTransactionMode,
+    PostgreSQLIdempotencyConflictStrategy,
+    PostgreSQLIdempotencyConflictStrategyDescription,
+    PostgreSQLIdempotencyRequirement,
     PostgreSQLPartialSuccessPolicy,
     PostgreSQLPersistenceColumn,
     PostgreSQLPersistenceOptions,
@@ -65,7 +74,9 @@ from carbonfactor_parser.persistence import (
     PostgreSQLTransactionPolicyStatus,
     build_persistence_input_from_normalization_result,
     build_default_postgresql_transaction_policy,
+    build_default_postgresql_idempotency_conflict_strategy,
     build_disabled_postgresql_execution_result,
+    build_postgresql_conflict_strategy_plan,
     build_postgresql_execution_plan,
     build_postgresql_insert_statement,
     build_postgresql_persistence_preview,
@@ -75,6 +86,7 @@ from carbonfactor_parser.persistence import (
     create_postgresql_persistence_options,
     describe_postgresql_connection_session_contract,
     describe_postgresql_execution_adapter_boundary,
+    describe_postgresql_idempotency_conflict_strategy_boundary,
     describe_postgresql_transaction_policy_boundary,
     get_normalized_record_postgresql_schema,
     render_postgresql_ddl_preview,
@@ -101,6 +113,11 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLInsertBuildResult",
     "PostgreSQLInsertBuildStatus",
     "PostgreSQLInsertStatement",
+    "PostgreSQLConflictAction",
+    "PostgreSQLConflictStrategyIssue",
+    "PostgreSQLConflictStrategyPlan",
+    "PostgreSQLConflictStrategyPlanResult",
+    "PostgreSQLConflictStrategyStatus",
     "PostgreSQLConnectionSession",
     "PostgreSQLConnectionSessionContractDescription",
     "PostgreSQLExecutionAdapterProtocol",
@@ -111,6 +128,9 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLExecutionResult",
     "PostgreSQLExecutionStatus",
     "PostgreSQLBatchTransactionMode",
+    "PostgreSQLIdempotencyConflictStrategy",
+    "PostgreSQLIdempotencyConflictStrategyDescription",
+    "PostgreSQLIdempotencyRequirement",
     "PostgreSQLPartialSuccessPolicy",
     "PostgreSQLPersistenceColumn",
     "PostgreSQLPersistenceOptions",
@@ -135,7 +155,9 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLTransactionPolicyStatus",
     "build_persistence_input_from_normalization_result",
     "build_default_postgresql_transaction_policy",
+    "build_default_postgresql_idempotency_conflict_strategy",
     "build_disabled_postgresql_execution_result",
+    "build_postgresql_conflict_strategy_plan",
     "build_postgresql_execution_plan",
     "build_postgresql_insert_statement",
     "build_postgresql_persistence_preview",
@@ -145,6 +167,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "create_postgresql_persistence_options",
     "describe_postgresql_connection_session_contract",
     "describe_postgresql_execution_adapter_boundary",
+    "describe_postgresql_idempotency_conflict_strategy_boundary",
     "describe_postgresql_transaction_policy_boundary",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
@@ -184,6 +207,23 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PostgreSQLInsertStatement": (
         postgresql_insert_builder.PostgreSQLInsertStatement
     ),
+    "PostgreSQLConflictAction": (
+        postgresql_idempotency_conflict_strategy.PostgreSQLConflictAction
+    ),
+    "PostgreSQLConflictStrategyIssue": (
+        postgresql_idempotency_conflict_strategy.PostgreSQLConflictStrategyIssue
+    ),
+    "PostgreSQLConflictStrategyPlan": (
+        postgresql_idempotency_conflict_strategy.PostgreSQLConflictStrategyPlan
+    ),
+    "PostgreSQLConflictStrategyPlanResult": (
+        postgresql_idempotency_conflict_strategy
+        .PostgreSQLConflictStrategyPlanResult
+    ),
+    "PostgreSQLConflictStrategyStatus": (
+        postgresql_idempotency_conflict_strategy
+        .PostgreSQLConflictStrategyStatus
+    ),
     "PostgreSQLConnectionSession": (
         postgresql_connection_session_contract.PostgreSQLConnectionSession
     ),
@@ -215,6 +255,18 @@ EXPECTED_PUBLIC_EXPORTS = {
     ),
     "PostgreSQLBatchTransactionMode": (
         postgresql_transaction_policy.PostgreSQLBatchTransactionMode
+    ),
+    "PostgreSQLIdempotencyConflictStrategy": (
+        postgresql_idempotency_conflict_strategy
+        .PostgreSQLIdempotencyConflictStrategy
+    ),
+    "PostgreSQLIdempotencyConflictStrategyDescription": (
+        postgresql_idempotency_conflict_strategy
+        .PostgreSQLIdempotencyConflictStrategyDescription
+    ),
+    "PostgreSQLIdempotencyRequirement": (
+        postgresql_idempotency_conflict_strategy
+        .PostgreSQLIdempotencyRequirement
     ),
     "PostgreSQLPartialSuccessPolicy": (
         postgresql_transaction_policy.PostgreSQLPartialSuccessPolicy
@@ -284,9 +336,17 @@ EXPECTED_PUBLIC_EXPORTS = {
     "build_default_postgresql_transaction_policy": (
         postgresql_transaction_policy.build_default_postgresql_transaction_policy
     ),
+    "build_default_postgresql_idempotency_conflict_strategy": (
+        postgresql_idempotency_conflict_strategy
+        .build_default_postgresql_idempotency_conflict_strategy
+    ),
     "build_disabled_postgresql_execution_result": (
         postgresql_execution_adapter_boundary
         .build_disabled_postgresql_execution_result
+    ),
+    "build_postgresql_conflict_strategy_plan": (
+        postgresql_idempotency_conflict_strategy
+        .build_postgresql_conflict_strategy_plan
     ),
     "build_postgresql_execution_plan": (
         postgresql_execution_adapter_boundary.build_postgresql_execution_plan
@@ -314,6 +374,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     "describe_postgresql_execution_adapter_boundary": (
         postgresql_execution_adapter_boundary
         .describe_postgresql_execution_adapter_boundary
+    ),
+    "describe_postgresql_idempotency_conflict_strategy_boundary": (
+        postgresql_idempotency_conflict_strategy
+        .describe_postgresql_idempotency_conflict_strategy_boundary
     ),
     "describe_postgresql_transaction_policy_boundary": (
         postgresql_transaction_policy
@@ -353,6 +417,13 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLInsertBuildResult": PostgreSQLInsertBuildResult,
         "PostgreSQLInsertBuildStatus": PostgreSQLInsertBuildStatus,
         "PostgreSQLInsertStatement": PostgreSQLInsertStatement,
+        "PostgreSQLConflictAction": PostgreSQLConflictAction,
+        "PostgreSQLConflictStrategyIssue": PostgreSQLConflictStrategyIssue,
+        "PostgreSQLConflictStrategyPlan": PostgreSQLConflictStrategyPlan,
+        "PostgreSQLConflictStrategyPlanResult": (
+            PostgreSQLConflictStrategyPlanResult
+        ),
+        "PostgreSQLConflictStrategyStatus": PostgreSQLConflictStrategyStatus,
         "PostgreSQLConnectionSession": PostgreSQLConnectionSession,
         "PostgreSQLConnectionSessionContractDescription": (
             PostgreSQLConnectionSessionContractDescription
@@ -367,6 +438,15 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLExecutionResult": PostgreSQLExecutionResult,
         "PostgreSQLExecutionStatus": PostgreSQLExecutionStatus,
         "PostgreSQLBatchTransactionMode": PostgreSQLBatchTransactionMode,
+        "PostgreSQLIdempotencyConflictStrategy": (
+            PostgreSQLIdempotencyConflictStrategy
+        ),
+        "PostgreSQLIdempotencyConflictStrategyDescription": (
+            PostgreSQLIdempotencyConflictStrategyDescription
+        ),
+        "PostgreSQLIdempotencyRequirement": (
+            PostgreSQLIdempotencyRequirement
+        ),
         "PostgreSQLPartialSuccessPolicy": PostgreSQLPartialSuccessPolicy,
         "PostgreSQLPersistenceColumn": PostgreSQLPersistenceColumn,
         "PostgreSQLPersistenceOptions": PostgreSQLPersistenceOptions,
@@ -403,8 +483,14 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "build_default_postgresql_transaction_policy": (
             build_default_postgresql_transaction_policy
         ),
+        "build_default_postgresql_idempotency_conflict_strategy": (
+            build_default_postgresql_idempotency_conflict_strategy
+        ),
         "build_disabled_postgresql_execution_result": (
             build_disabled_postgresql_execution_result
+        ),
+        "build_postgresql_conflict_strategy_plan": (
+            build_postgresql_conflict_strategy_plan
         ),
         "build_postgresql_execution_plan": build_postgresql_execution_plan,
         "build_postgresql_insert_statement": build_postgresql_insert_statement,
@@ -424,6 +510,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         ),
         "describe_postgresql_execution_adapter_boundary": (
             describe_postgresql_execution_adapter_boundary
+        ),
+        "describe_postgresql_idempotency_conflict_strategy_boundary": (
+            describe_postgresql_idempotency_conflict_strategy_boundary
         ),
         "describe_postgresql_transaction_policy_boundary": (
             describe_postgresql_transaction_policy_boundary

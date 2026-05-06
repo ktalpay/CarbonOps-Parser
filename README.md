@@ -477,6 +477,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [PostgreSQL Connection Session Contract Boundary](docs/postgresql-connection-session-contract-boundary.md)
 - [PostgreSQL Execution Adapter Boundary](docs/postgresql-execution-adapter-boundary.md)
 - [PostgreSQL Transaction Policy Boundary](docs/postgresql-transaction-policy-boundary.md)
+- [PostgreSQL Idempotency Conflict Strategy Boundary](docs/postgresql-idempotency-conflict-strategy-boundary.md)
 - [Parser To Normalization Handoff Boundary](docs/parser-to-normalization-handoff-boundary.md)
 - [Parser To Normalization Integration Recap](docs/parser-to-normalization-integration-recap.md)
 - [Source To Normalization Pipeline Recap](docs/source-to-normalization-pipeline-recap.md)

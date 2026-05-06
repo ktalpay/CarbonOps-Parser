@@ -54,6 +54,10 @@ does not create a session or call a session method.
 transaction plan consumes that metadata and preserves record and statement
 counts. It does not run SQL.
 
+`PostgreSQLIdempotencyConflictStrategy` defines future duplicate-handling
+metadata. The transaction policy remains separate from conflict strategy and
+does not generate conflict SQL or decide runtime duplicate outcomes.
+
 `PostgreSQLPersistenceRepository` remains a skeleton that returns unsupported
 results. It must not use this policy as a runtime write path until a future task
 explicitly satisfies the PostgreSQL implementation safety gate.
@@ -104,6 +108,7 @@ A future runtime adapter may use this policy only after:
 
 - [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
 - [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
+- [PostgreSQL Idempotency Conflict Strategy Boundary](postgresql-idempotency-conflict-strategy-boundary.md)
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
