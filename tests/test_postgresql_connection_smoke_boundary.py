@@ -209,6 +209,44 @@ def test_runbook_documents_connection_smoke_controls_and_default_behavior() -> N
     )
 
 
+def test_runbook_documents_manual_connection_smoke_checklist() -> None:
+    runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    normalized_runbook_text = " ".join(runbook_text.split())
+
+    assert "## Manual Connection Smoke Checklist" in runbook_text
+    assert "git status --short" in runbook_text
+    assert "python -m pytest" in runbook_text
+    assert "<local-test-database>" in runbook_text
+    assert "<local-test-role>" in runbook_text
+    assert POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR in runbook_text
+    assert POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR in runbook_text
+    assert (
+        "python -m pytest -m postgresql_integration "
+        "tests/test_postgresql_connection_smoke_boundary.py"
+    ) in normalized_runbook_text
+    assert "The smoke performs no SQL execution." in runbook_text
+    assert "The smoke performs no DB writes." in runbook_text
+    assert "The smoke performs no migrations or table creation." in runbook_text
+    assert "Repository persistence remains disabled/no-execution." in runbook_text
+    assert "unset CARBONOPS_RUN_POSTGRESQL_INTEGRATION" in runbook_text
+    assert "unset CARBONOPS_POSTGRESQL_TEST_DSN" in runbook_text
+
+
+def test_runbook_manual_checklist_uses_placeholders_without_real_secret_values() -> None:
+    runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+
+    forbidden_fragments = (
+        "postgresql" + "://",
+        "pass" + "word=",
+        "pass" + "word:",
+        "secret" + "=",
+        "token" + "=",
+    )
+
+    for fragment in forbidden_fragments:
+        assert fragment not in runbook_text
+
+
 def test_connection_smoke_test_source_has_no_write_sql_or_schema_terms() -> None:
     module_source = THIS_TEST_PATH.read_text(encoding="utf-8")
 
