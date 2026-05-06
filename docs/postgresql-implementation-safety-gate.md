@@ -78,6 +78,11 @@ a preview-specific result model. It must remain separate from
 `PersistenceResult` repository execution semantics and must not call
 `PostgreSQLPersistenceRepository.persist()`.
 
+`carbonops-parser local-dry-run --include-postgresql-preview` may display that
+preview result for the checked-in local fixture path. This is output-only
+preview behavior and must not become a database connection, SQL execution, or
+repository write path before this gate is satisfied.
+
 ## Forbidden Before Gate Approval
 
 Before this gate is satisfied, future changes must not add:

@@ -61,6 +61,41 @@ carbonops-parser local-dry-run \
 
 JSON output includes intermediate status fields and DDL preview text as metadata. The DDL preview is not executed.
 
+## PostgreSQL Preview Option
+
+The command can include PostgreSQL insert preview data with:
+
+```bash
+carbonops-parser local-dry-run \
+  --local-path examples/fixtures/defra_desnz_minimal.csv \
+  --source-family defra_desnz \
+  --source-id defra-desnz-minimal-fixture \
+  --format-hint csv \
+  --output-format json \
+  --include-postgresql-preview
+```
+
+Without `--include-postgresql-preview`, local dry-run output remains the
+existing summary shape. With the flag, text output includes a deterministic
+PostgreSQL preview section and JSON output includes
+`postgresql_persistence_preview`.
+
+The preview section is built by `build_postgresql_persistence_preview()` from
+ready `PersistenceInput`. It can include:
+
+- preview status
+- target table
+- ordered columns
+- ordered parameter rows
+- record count
+- SQL text with placeholders
+- idempotency key fields
+- conflict target fields
+
+If the dry-run has no ready `PersistenceInput`, the PostgreSQL preview section
+reports a non-ready status and omits SQL preview data. It must not imply
+persistence success.
+
 ## Checked-In Fixture
 
 The repository includes a tiny local fixture at:
@@ -126,6 +161,7 @@ The command composes only existing local/in-memory boundaries:
 - minimal DEFRA/DESNZ fixture normalization mapper
 - persistence input builder
 - PostgreSQL DDL preview renderer
+- optional PostgreSQL persistence preview builder
 
 It does not call a repository, execute SQL, write records, run migrations, or make HTTP calls.
 
@@ -137,4 +173,5 @@ It does not call a repository, execute SQL, write records, run migrations, or ma
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
+- [PostgreSQL Persistence Preview Boundary](postgresql-persistence-preview-boundary.md)
 - [Public Safety](public-safety.md)
