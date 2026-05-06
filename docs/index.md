@@ -58,6 +58,7 @@
 - [Parser Execution Runner Boundary](parser-execution-runner-boundary.md)
 - [Source-Specific Parser Adapter Boundary](source-specific-parser-adapter-boundary.md)
 - [Parser File Content Input Boundary](parser-file-content-input-boundary.md)
+- [Local Parser File Content Loader Boundary](local-parser-file-content-loader-boundary.md)
 - [Parser Execution Normalization Handoff Boundary](parser-execution-normalization-handoff-boundary.md)
 - [Parsed Raw Record Payload Boundary](parsed-raw-record-payload-boundary.md)
 - [Parser Handoff Boundary](parser-handoff-boundary.md)

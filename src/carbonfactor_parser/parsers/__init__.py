@@ -45,6 +45,13 @@ from carbonfactor_parser.parsers.file_content_input import (
     create_parser_file_content_input,
     validate_parser_file_content_input,
 )
+from carbonfactor_parser.parsers.file_content_loader import (
+    DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES,
+    ParserFileContentLoadIssue,
+    ParserFileContentLoadResult,
+    ParserFileContentLoadStatus,
+    load_parser_file_content_from_local_path,
+)
 from carbonfactor_parser.parsers.fixture_parser import ArtificialFixtureParser
 from carbonfactor_parser.parsers.input_contract import (
     ParserInputContract,
@@ -82,6 +89,7 @@ __all__ = (
     "DefraDesnzParser",
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
+    "DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES",
     "NoopParserAdapter",
     "ParserAdapter",
     "ParserAdapterRegistry",
@@ -92,6 +100,9 @@ __all__ = (
     "ParserExecutionResult",
     "ParserExecutionResultStatus",
     "ParserFileContentInput",
+    "ParserFileContentLoadIssue",
+    "ParserFileContentLoadResult",
+    "ParserFileContentLoadStatus",
     "ParserFileContentValidationIssue",
     "ParserFileContentValidationResult",
     "ParserInputContract",
@@ -115,6 +126,7 @@ __all__ = (
     "create_parsed_raw_record",
     "create_parsed_raw_record_payload",
     "list_parser_adapters",
+    "load_parser_file_content_from_local_path",
     "plan_parser_execution",
     "parse_defra_desnz_file_content",
     "register_parser_adapter",
