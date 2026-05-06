@@ -33,11 +33,18 @@ This keeps no-op or future adapter failures represented as parser execution boun
 
 `NoopParserAdapter` may be registered and planned as ready for no-op metadata. If it is run through `run_parser_execution()`, its refusal to parse is represented as a failed parser execution result. It still does not produce real parser output.
 
+## Artificial Success Path
+
+`ArtificialParserAdapter` may be registered to exercise the ready runner path with in-memory metadata only. For matching artificial parser input, `run_parser_execution()` returns the adapter's deterministic `success` `ParserExecutionResult`.
+
+That success result is artificial. Its record count comes from adapter configuration, and its metadata marks that it is not a real source parser result.
+
 ## Non-Goals
 
 This boundary does not add:
 
 - Real source-specific parser execution.
+- Real source parser output.
 - File content reading.
 - HTTP or network calls.
 - Normalization execution.

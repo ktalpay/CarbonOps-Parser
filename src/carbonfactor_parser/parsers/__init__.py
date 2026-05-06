@@ -8,6 +8,7 @@ from carbonfactor_parser.parsers.adapter_registry import (
     register_parser_adapter,
     resolve_parser_adapters,
 )
+from carbonfactor_parser.parsers.artificial_adapter import ArtificialParserAdapter
 from carbonfactor_parser.parsers.contracts import (
     ParserIssue,
     ParserIssueSeverity,
@@ -53,6 +54,7 @@ from carbonfactor_parser.parsers.pipeline_summary import (
 
 __all__ = (
     "ArtificialFixtureParser",
+    "ArtificialParserAdapter",
     "DefraDesnzParser",
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
