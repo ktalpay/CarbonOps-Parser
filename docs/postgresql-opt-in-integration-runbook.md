@@ -127,6 +127,53 @@ is still manual and opt-in only through the `postgresql_integration` marker and
 the canonical external controls. No DSN, password, credential, or secret is
 required for this fresh-clone install smoke.
 
+## Fresh Clone Install Smoke Execution Record
+
+Use this record to capture a sanitized fresh-clone install smoke attempt. Do not
+record absolute private paths, DSNs, passwords, tokens, or machine-specific
+sensitive values.
+
+Allowed status values:
+
+- `not_run`
+- `passed`
+- `failed_sanitized`
+- `blocked_environment`
+
+Current execution record:
+
+- status: `passed`
+- date: `2026-05-06`
+- environment: temporary clean local clone with an isolated virtual
+  environment.
+- package metadata: `pyproject.toml` unchanged in this task.
+- commands covered:
+  - `python -m pip install -e .`
+  - `carbonops-parser --help`
+  - `carbonops-parser local-dry-run`
+  - `carbonops-parser local-dry-run --json`
+  - `python -m pip install -e ".[postgresql]"`
+  - `python -c "import psycopg; print(psycopg.__version__)"`
+- result summary:
+  - editable install passed.
+  - CLI help passed.
+  - local dry-run passed with `status=success`.
+  - JSON local dry-run passed with `status` set to `success`.
+  - PostgreSQL extra install passed.
+  - `psycopg` import passed and reported version `3.3.4`.
+- DB behavior:
+  - no PostgreSQL connection was performed.
+  - no SQL execution was performed.
+  - no DB write was performed.
+  - no repository persistence was performed.
+  - no migration or table creation was performed.
+- secret handling:
+  - no DSN was required.
+  - no password was required.
+  - no credential or secret value was recorded.
+- post-run cleanup: temporary clone and virtual environment were removed after
+  the smoke.
+
 ## Connection Smoke Skeleton
 
 CO-103C adds a default-skipped connection smoke skeleton for future local
