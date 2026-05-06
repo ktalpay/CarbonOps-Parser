@@ -48,8 +48,8 @@ A future real runtime execution task is blocked until all of these are true:
   inspected without connecting or running SQL.
 - Public safety checks pass without weakening rules.
 - Integration test opt-in plan exists, the opt-in integration runbook is
-  reviewed, marker enforcement tests pass, and normal test runs do not touch
-  PostgreSQL.
+  reviewed, marker enforcement tests pass, the connection smoke skeleton remains
+  default-skipped, and normal test runs do not touch PostgreSQL.
 - No credentials, config files, or environment variables are loaded by library
   code.
 - No secrets appear in docs, tests, logs, fixtures, examples, exceptions, or
@@ -80,13 +80,15 @@ Suggested follow-up sequence after this checklist:
 
 1. CO-103A: opt-in PostgreSQL integration test environment and runbook, with no
    default execution.
-2. CO-103B: runtime session adapter execution smoke behind an explicit test
+2. CO-103B: PostgreSQL integration marker enforcement with no DB connection.
+3. CO-103C: opt-in connection smoke skeleton, default-skipped and no SQL.
+4. CO-103D: runtime session adapter execution smoke behind an explicit test
    fixture, opt-in only.
-3. CO-103C: repository execution adapter implementation behind the runtime
+5. CO-103E: repository execution adapter implementation behind the runtime
    execution gate, opt-in only.
-4. CO-103D: transaction rollback integration tests.
-5. CO-103E: conflict and idempotency runtime behavior tests.
-6. CO-103F: CLI/config ownership for local PostgreSQL validation if needed.
+6. CO-103F: transaction rollback integration tests.
+7. CO-103G: conflict and idempotency runtime behavior tests.
+8. CO-103H: CLI/config ownership for local PostgreSQL validation if needed.
 
 Each task should remain separately scoped, reviewed, and validated. None should
 silently convert default repository behavior into runtime persistence.

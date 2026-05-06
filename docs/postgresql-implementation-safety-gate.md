@@ -75,6 +75,11 @@ The `postgresql_integration` marker may be registered for discoverability, but
 marker registration alone must not enable DB tests in default `python -m pytest`
 runs.
 
+The opt-in connection smoke skeleton is test-only and default-skipped. It may
+open and close an explicitly supplied PostgreSQL test connection only when the
+canonical opt-in controls are present. It must not execute SQL, write records,
+create tables, run migrations, or call repository persistence.
+
 ## Connection Session Contract Relationship
 
 `PostgreSQLConnectionSession` defines a driver-neutral future caller-provided
