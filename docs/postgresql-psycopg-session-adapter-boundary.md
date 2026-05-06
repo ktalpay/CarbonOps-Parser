@@ -87,6 +87,10 @@ CO-102H adds only the dedicated adapter skeleton. It does not convert
 `PostgreSQLPersistenceRepository` into an executing repository and does not wire
 the local dry-run preview path to runtime persistence.
 
+CO-102I may accept psycopg session adapter skeleton metadata as optional disabled
+runtime metadata. That disabled runtime adapter does not import psycopg, create
+connections or cursors, run SQL, or turn the repository into a write path.
+
 ## Future Use
 
 A future runtime adapter task may add concrete `psycopg` behavior only after the
@@ -107,6 +111,7 @@ PostgreSQL implementation safety gate is satisfied. That future task should:
 - [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
 - [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
 - [PostgreSQL Idempotency Conflict Strategy Boundary](postgresql-idempotency-conflict-strategy-boundary.md)
+- [PostgreSQL Disabled Runtime Execution Adapter Boundary](postgresql-disabled-runtime-execution-adapter-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)

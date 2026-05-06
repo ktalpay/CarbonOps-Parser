@@ -99,6 +99,12 @@ gate.
 The current boundary is safe for docs, previews, and future planning because it
 only builds metadata and disabled results.
 
+CO-102I adds a disabled runtime execution adapter that composes execution-plan,
+transaction-policy, conflict-strategy, and optional session-adapter metadata into
+a structured disabled result. It preserves SQL text as preview metadata only and
+does not create connections, create cursors, run SQL, write records, or change
+repository behavior.
+
 ## Future Driver Relationship
 
 CO-102B recommends a future synchronous `psycopg` 3 adapter direction. CO-102D
@@ -131,6 +137,7 @@ A future adapter may map `PostgreSQLExecutionPlan` to the approved driver after:
 - [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
 - [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
 - [PostgreSQL Idempotency Conflict Strategy Boundary](postgresql-idempotency-conflict-strategy-boundary.md)
+- [PostgreSQL Disabled Runtime Execution Adapter Boundary](postgresql-disabled-runtime-execution-adapter-boundary.md)
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL psycopg Session Adapter Boundary](postgresql-psycopg-session-adapter-boundary.md)
