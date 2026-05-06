@@ -29,6 +29,8 @@ The plan records the input contract, validation result, selected adapter source 
 
 `NoopParserAdapter` can be used in planning tests to produce a `ready` plan for deterministic no-op metadata. It still does not make planning equivalent to parser execution, and its `parse()` method does not produce parser output.
 
+`ParserExecutionResult` is the separate future result boundary for parser execution outcomes. Planning does not create execution results because it does not call `parse()`.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -46,6 +48,7 @@ This boundary does not add:
 ## Related Documents
 
 - [Parser Adapter Boundary](parser-adapter-boundary.md)
+- [Parser Execution Result Boundary](parser-execution-result-boundary.md)
 - [Source Acquisition Parser Handoff Contract](source-acquisition-parser-handoff-contract.md)
 - [Parser Contract Boundaries](parser-contract-boundaries.md)
 - [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md)

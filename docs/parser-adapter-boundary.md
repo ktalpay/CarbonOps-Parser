@@ -38,6 +38,10 @@ Registry resolution uses `can_parse(parser_input)` only. It must not call `parse
 
 `ParserExecutionPlan` and `plan_parser_execution()` combine `ParserInputContract` validation with metadata-only registry resolution. Planning returns `ready`, `invalid_input`, or `no_adapter` status without calling `parse()`, opening files, making network calls, running normalization, or writing to a database.
 
+## Execution Result Boundary
+
+`ParserExecutionResult` defines future parser execution outcomes such as `success`, `failed`, `unsupported`, and `no_records`. It is parser-output metadata only and does not include normalized records or persistence fields. The existing `ParserAdapter.parse()` return type remains aligned to the older source-agnostic `ParserResult` contract until a future adapter contract migration task explicitly changes it.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -45,6 +49,7 @@ This boundary does not add:
 - Real parser execution.
 - Source-specific real adapters.
 - No-op parser output.
+- Normalized parser output.
 - Registry-driven parser execution.
 - Planning-driven parser execution.
 - File content reading.
@@ -58,6 +63,7 @@ This boundary does not add:
 ## Related Documents
 
 - [Parser Execution Planning Boundary](parser-execution-planning-boundary.md)
+- [Parser Execution Result Boundary](parser-execution-result-boundary.md)
 - [Source Acquisition Parser Handoff Contract](source-acquisition-parser-handoff-contract.md)
 - [Parser Contract Boundaries](parser-contract-boundaries.md)
 - [Parser Handoff Boundary](parser-handoff-boundary.md)
