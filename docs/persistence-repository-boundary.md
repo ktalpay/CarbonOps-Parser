@@ -1,0 +1,69 @@
+# Persistence Repository Boundary
+
+This document defines the persistence repository protocol and result boundary.
+
+It is a protocol boundary only. It does not add a PostgreSQL repository implementation, connect to a database, execute SQL, generate SQL, create tables, run migrations, read files, perform HTTP or network calls, schedule work, or use credentials.
+
+## Purpose
+
+`PersistenceRepository` describes future repository implementations that accept `PersistenceInput` and return `PersistenceResult`.
+
+The protocol currently requires:
+
+- `provider_name`
+- `persist(persistence_input)`
+
+No concrete repository is provided by the package. Tests may use fake in-memory repositories to prove the protocol shape.
+
+## Result Boundary
+
+`PersistenceResult` reports:
+
+- `status`
+- `attempted_record_count`
+- `persisted_record_count`
+- structured issues
+- optional repository metadata
+
+`PersistenceResultStatus` values are:
+
+- `success`
+- `failed`
+- `no_records`
+- `unsupported`
+
+`PersistenceIssue` represents repository-level warnings or errors with code, message, severity, optional field name, and optional context.
+
+## Relationship To Persistence Input
+
+Repository implementations must accept `PersistenceInput`, not raw parser payloads or normalization input. This keeps parsing, normalization, persistence preparation, and repository behavior separate.
+
+No-records inputs should return a structured no-records or failed result. Failed or not-ready persistence input build results should not be passed to a repository.
+
+## Deferred Runtime Work
+
+Future PostgreSQL work remains separately scoped. It must define connection management, transactions, SQL or ORM strategy, migrations, idempotency enforcement, conflict handling, credentials, and operational error handling.
+
+This boundary does not provide any of those runtime behaviors.
+
+## Non-Goals
+
+This boundary does not add:
+
+- PostgreSQL repository implementation.
+- Database connections.
+- Database writes.
+- SQL generation or execution.
+- Table creation.
+- Migrations.
+- Configuration or credential loading.
+- File reading.
+- HTTP or network behavior.
+- Scheduler, retry, cancel, or background job behavior.
+
+## Related Documents
+
+- [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
+- [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
+- [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
+- [Public Safety](public-safety.md)

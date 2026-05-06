@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-096A: Added persistence repository protocol and result boundary contracts with public exports, fake in-memory repository tests, and documentation without PostgreSQL implementation, DB connections, SQL, migrations, credentials, file I/O, or network behavior.
 - CO-095B: Added logical PostgreSQL persistence schema boundary descriptor, public exports, focused tests, and documentation without DB connections, SQL execution, migrations, runtime writes, credentials, or PostgreSQL dependencies.
 - CO-095A: Added normalized result persistence input boundary contracts, build statuses, public exports, focused tests, and documentation without database connections, SQL, migrations, file I/O, network calls, or persistence writes.
 - CO-094B: Added minimal DEFRA/DESNZ fixture normalization mapper from NormalizationInput to NormalizationResult status wrapper with focused in-memory tests and docs, without file I/O, network calls, persistence, unit conversion, or category inference.
