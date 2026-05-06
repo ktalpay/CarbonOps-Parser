@@ -1,14 +1,21 @@
 # PostgreSQL Repository Implementation Planning Boundary
 
-This document defines the planning boundary for a future PostgreSQL `PersistenceRepository` implementation.
+This document defines the planning boundary for a future runtime PostgreSQL
+`PersistenceRepository` implementation.
 
-It is planning documentation only. It does not add a PostgreSQL repository, connect to a database, execute SQL, generate executable SQL, create tables, run migrations, write records, read files, perform HTTP or network calls, schedule work, or use credentials.
+It is planning documentation only. It does not add runtime PostgreSQL repository
+behavior, connect to a database, execute SQL, generate executable SQL, create
+tables, run migrations, write records, read files, perform HTTP or network
+calls, schedule work, or use credentials.
 
 ## Purpose
 
 `PersistenceRepository` now defines the repository protocol for future persistence implementations. `get_normalized_record_postgresql_schema()` defines logical schema metadata for normalized records, and `render_postgresql_ddl_preview()` can render review-only DDL text from that descriptor.
 
-A PostgreSQL repository implementation must be planned separately before runtime code is added. This document records the decisions that must be made and the safe sequence for later implementation.
+The current `PostgreSQLPersistenceRepository` is a no-connection skeleton that
+returns unsupported results. Runtime PostgreSQL behavior must be planned
+separately before it is added. This document records the decisions that must be
+made and the safe sequence for later implementation.
 
 ## Safety Gate
 
@@ -55,7 +62,8 @@ This planning boundary does not add:
 A conservative future sequence is:
 
 1. Safety gate approval: satisfy and document the PostgreSQL implementation safety gate.
-2. Repository skeleton with no DB connection: add a concrete class shape that still cannot connect or write.
+2. Repository skeleton with no DB connection: present as
+   `PostgreSQLPersistenceRepository`; keep it unable to connect or write.
 3. Explicit config model: define user-controlled database target selection without implicit credential loading.
 4. Test DB integration only: keep tests explicit, isolated, and disabled from accidental local or remote database access.
 5. Idempotency enforcement: implement approved key enforcement and verification behavior.
@@ -69,7 +77,9 @@ Each step should remain small, reviewable, and separately validated.
 
 `PersistenceInput` is the input shape. It is not a database command.
 
-`PersistenceRepository` is the protocol. It does not require a PostgreSQL implementation to exist.
+`PersistenceRepository` is the protocol. `PostgreSQLPersistenceRepository` is
+the current skeleton implementation of that protocol and returns unsupported
+results until runtime persistence is explicitly scoped.
 
 `PostgreSQLPersistenceSchema` is logical metadata. The DDL preview helper renders that metadata as review text only and does not imply table creation.
 
@@ -92,6 +102,7 @@ Future implementation PRs should confirm:
 
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
+- [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)

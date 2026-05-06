@@ -1,5 +1,11 @@
 import carbonfactor_parser.persistence as persistence
-from carbonfactor_parser.persistence import ddl_preview, input, repository, schema
+from carbonfactor_parser.persistence import (
+    ddl_preview,
+    input,
+    postgresql_repository,
+    repository,
+    schema,
+)
 from carbonfactor_parser.persistence import (
     PersistenceInput,
     PersistenceInputBuildResult,
@@ -12,6 +18,7 @@ from carbonfactor_parser.persistence import (
     PersistenceResult,
     PersistenceResultStatus,
     PostgreSQLPersistenceColumn,
+    PostgreSQLPersistenceRepository,
     PostgreSQLPersistenceSchema,
     build_persistence_input_from_normalization_result,
     create_persistence_result,
@@ -32,6 +39,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PersistenceResult",
     "PersistenceResultStatus",
     "PostgreSQLPersistenceColumn",
+    "PostgreSQLPersistenceRepository",
     "PostgreSQLPersistenceSchema",
     "build_persistence_input_from_normalization_result",
     "create_persistence_result",
@@ -51,6 +59,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PersistenceResult": repository.PersistenceResult,
     "PersistenceResultStatus": repository.PersistenceResultStatus,
     "PostgreSQLPersistenceColumn": schema.PostgreSQLPersistenceColumn,
+    "PostgreSQLPersistenceRepository": (
+        postgresql_repository.PostgreSQLPersistenceRepository
+    ),
     "PostgreSQLPersistenceSchema": schema.PostgreSQLPersistenceSchema,
     "build_persistence_input_from_normalization_result": (
         input.build_persistence_input_from_normalization_result
@@ -76,6 +87,7 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PersistenceResult": PersistenceResult,
         "PersistenceResultStatus": PersistenceResultStatus,
         "PostgreSQLPersistenceColumn": PostgreSQLPersistenceColumn,
+        "PostgreSQLPersistenceRepository": PostgreSQLPersistenceRepository,
         "PostgreSQLPersistenceSchema": PostgreSQLPersistenceSchema,
         "build_persistence_input_from_normalization_result": (
             build_persistence_input_from_normalization_result
@@ -113,4 +125,5 @@ def test_persistence_all_excludes_internal_module_names() -> None:
     assert "repository" not in persistence.__all__
     assert "schema" not in persistence.__all__
     assert "ddl_preview" not in persistence.__all__
+    assert "postgresql_repository" not in persistence.__all__
     assert all(not name.startswith("_") for name in persistence.__all__)
