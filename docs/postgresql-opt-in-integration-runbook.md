@@ -211,14 +211,18 @@ Allowed status values:
 
 Current execution record:
 
-- status: `blocked_missing_local_postgresql`
-- date/time: `<local-run-date-time>`
-- local environment: `<local-environment-label>`
-- PostgreSQL version: `<postgresql-version>`
-- test database: `<local-test-database>`
-- attempt evidence: local `psql` command availability check did not find a
-  PostgreSQL client in this environment.
-- opt-in smoke result: not run.
+- status: `passed`
+- date/time: `<manual-run-timestamp-redacted>`
+- local environment: Docker-based local PostgreSQL container.
+- PostgreSQL image: `postgres:16`.
+- PostgreSQL version: PostgreSQL 16.11.
+- container name: `carbonops-postgres-test`.
+- test database: `<redacted-test-database>`
+- readiness evidence: PostgreSQL container logs reported that the database
+  system was ready to accept connections.
+- system-level smoke evidence: manual `psql --version` smoke succeeded inside
+  the container.
+- opt-in smoke result: 1 passed, 15 deselected.
 - marker: `postgresql_integration`
 - opt-in control: `CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1`
 - test DSN control: `CARBONOPS_POSTGRESQL_TEST_DSN`
@@ -233,11 +237,22 @@ python -m pytest -m postgresql_integration tests/test_postgresql_connection_smok
 Expected result shape:
 
 - The connection smoke either passes or fails with sanitized output.
-- This record does not claim a passed smoke result.
-- The smoke performs no SQL execution.
-- The smoke performs no DB writes.
-- Repository persistence remains disabled/no-execution.
+- This record claims a passed smoke result only for the sanitized Docker-based
+  manual run evidence above.
+- The project opt-in smoke performed no SQL execution.
+- The project opt-in smoke performed no DB writes.
+- Repository persistence remained disabled/no-execution.
+- The default test suite remains DB-free.
 - No migration, table creation, or project-managed database setup occurs.
+
+Deferred local setup issues:
+
+- `pip install -e .` failed because `pyproject.toml` is missing
+  `project.version`.
+- The declared `psycopg>=3,<4` local import path failed because the local
+  environment lacked the required libpq or binary wrapper.
+- The manual smoke was unblocked locally with `psycopg[binary]>=3,<4`.
+- Package metadata and dependency strategy are not changed by this record task.
 
 Redaction checklist:
 

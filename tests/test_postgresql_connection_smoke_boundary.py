@@ -242,13 +242,16 @@ def test_runbook_documents_manual_connection_smoke_execution_record() -> None:
     assert "`blocked_missing_dsn`" in runbook_text
     assert "`passed`" in runbook_text
     assert "`failed_sanitized`" in runbook_text
-    assert "status: `blocked_missing_local_postgresql`" in runbook_text
-    assert "<local-run-date-time>" in runbook_text
-    assert "<local-environment-label>" in runbook_text
-    assert "<postgresql-version>" in runbook_text
-    assert "<local-test-database>" in runbook_text
-    assert "attempt evidence:" in runbook_text
-    assert "opt-in smoke result: not run." in runbook_text
+    assert "status: `passed`" in runbook_text
+    assert "<manual-run-timestamp-redacted>" in runbook_text
+    assert "Docker-based local PostgreSQL container." in runbook_text
+    assert "`postgres:16`" in runbook_text
+    assert "PostgreSQL 16.11" in runbook_text
+    assert "`carbonops-postgres-test`" in runbook_text
+    assert "<redacted-test-database>" in runbook_text
+    assert "database system was ready to accept connections" in normalized_runbook_text
+    assert "manual `psql --version` smoke succeeded" in runbook_text
+    assert "opt-in smoke result: 1 passed, 15 deselected." in runbook_text
     assert POSTGRESQL_INTEGRATION_TEST_MARKER in runbook_text
     assert POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR in runbook_text
     assert POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR in runbook_text
@@ -256,10 +259,19 @@ def test_runbook_documents_manual_connection_smoke_execution_record() -> None:
         "python -m pytest -m postgresql_integration "
         "tests/test_postgresql_connection_smoke_boundary.py"
     ) in normalized_runbook_text
-    assert "This record does not claim a passed smoke result." in runbook_text
-    assert "The smoke performs no SQL execution." in runbook_text
-    assert "The smoke performs no DB writes." in runbook_text
-    assert "Repository persistence remains disabled/no-execution." in runbook_text
+    assert "sanitized Docker-based manual run evidence" in normalized_runbook_text
+    assert "The project opt-in smoke performed no SQL execution." in runbook_text
+    assert "The project opt-in smoke performed no DB writes." in runbook_text
+    assert "Repository persistence remained disabled/no-execution." in runbook_text
+    assert "The default test suite remains DB-free." in runbook_text
+    assert "`project.version`" in runbook_text
+    assert "`psycopg>=3,<4`" in runbook_text
+    assert "libpq or binary wrapper" in runbook_text
+    assert "`psycopg[binary]>=3,<4`" in runbook_text
+    assert (
+        "Package metadata and dependency strategy are not changed by this "
+        "record task."
+    ) in runbook_text
     assert "DSN redacted." in runbook_text
     assert "Password redacted." in runbook_text
     assert "No secrets in logs" in runbook_text
@@ -288,11 +300,33 @@ def test_runbook_manual_connection_smoke_execution_record_has_one_current_status
         "`failed_sanitized`",
     }
 
-    assert status_lines == ["- status: `blocked_missing_local_postgresql`"]
+    assert status_lines == ["- status: `passed`"]
     current_status = status_lines[0].removeprefix("- status: ").strip()
     assert current_status in allowed_statuses
-    assert current_status != "`passed`"
-    assert "opt-in smoke result: not run." in current_record
+    assert current_status == "`passed`"
+    assert "opt-in smoke result: 1 passed, 15 deselected." in current_record
+    assert "postgresql" + "://" not in current_record
+    assert "pass" + "word=" not in current_record
+
+
+def test_runbook_successful_smoke_record_captures_deferred_packaging_issues() -> None:
+    runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    current_record = runbook_text.split("Current execution record:", maxsplit=1)[1]
+    current_record = current_record.split(
+        "## Local PostgreSQL Setup Checklist",
+        maxsplit=1,
+    )[0]
+
+    assert "Deferred local setup issues:" in current_record
+    assert "`pip install -e .` failed" in current_record
+    assert "`project.version`" in current_record
+    assert "`psycopg>=3,<4` local import path failed" in current_record
+    assert "libpq or binary wrapper" in current_record
+    assert "`psycopg[binary]>=3,<4`" in current_record
+    assert (
+        "Package metadata and dependency strategy are not changed by this "
+        "record task."
+    ) in current_record
 
 
 def test_runbook_documents_local_postgresql_setup_checklist() -> None:
