@@ -56,6 +56,10 @@ Each step preserves its structured result on `LocalFilePersistenceDryRunResult` 
 
 Missing local files and malformed fixture content return structured non-success results. Non-success parser or normalization results do not produce ready persistence input.
 
+## Troubleshooting Relationship
+
+Failure examples and expected high-level CLI output are documented in [Local Dry-Run Troubleshooting](local-dry-run-troubleshooting.md). Those outcomes are local loader, fixture parser, normalization mapper, or no-record boundary states; they do not write to a database, execute SQL, call source acquisition, or perform network calls.
+
 ## DDL Preview Metadata
 
 On success, the dry-run includes `ddl_preview` and `ddl_preview_metadata`.
@@ -88,6 +92,7 @@ This boundary does not add:
 
 - [Local Parser File Content Loader Boundary](local-parser-file-content-loader-boundary.md)
 - [Local Dry-Run CLI Boundary](local-dry-run-cli-boundary.md)
+- [Local Dry-Run Troubleshooting](local-dry-run-troubleshooting.md)
 - [Parser File Content Input Boundary](parser-file-content-input-boundary.md)
 - [Parser Execution Normalization Handoff Boundary](parser-execution-normalization-handoff-boundary.md)
 - [Normalization Input Boundary](normalization-input-boundary.md)

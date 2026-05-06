@@ -103,6 +103,10 @@ The command returns:
 - non-zero for `failed`, `unsupported`, and `no_records`
 - `2` for argument errors from the CLI parser
 
+## Troubleshooting Relationship
+
+Expected non-success outcomes are documented in [Local Dry-Run Troubleshooting](local-dry-run-troubleshooting.md). That guide covers missing paths, nonexistent files, directories, invalid UTF-8 or binary-like content, invalid parser headers, missing required normalization fields, no-record outcomes, and unsupported loader outcomes.
+
 ## Safety Boundaries
 
 The command is explicit-path only. It does not auto-discover files, scan directories, load configuration files, or call source acquisition.
@@ -122,6 +126,7 @@ It does not call a repository, execute SQL, write records, run migrations, or ma
 ## Related Documents
 
 - [Local File Normalized Persistence Dry-Run Boundary](local-file-normalized-persistence-dry-run-boundary.md)
+- [Local Dry-Run Troubleshooting](local-dry-run-troubleshooting.md)
 - [Local Parser File Content Loader Boundary](local-parser-file-content-loader-boundary.md)
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)

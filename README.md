@@ -254,7 +254,7 @@ Trimmed JSON output:
 
 The fixture is a minimal local CSV-like example for exercising the dry-run boundary. It is not source acquisition, does not use real source data, and does not make production DEFRA/DESNZ correctness claims.
 
-For boundary details, see [Local Dry-Run CLI Boundary](docs/local-dry-run-cli-boundary.md) and [Local File Normalized Persistence Dry-Run Boundary](docs/local-file-normalized-persistence-dry-run-boundary.md).
+For boundary details, see [Local Dry-Run CLI Boundary](docs/local-dry-run-cli-boundary.md) and [Local File Normalized Persistence Dry-Run Boundary](docs/local-file-normalized-persistence-dry-run-boundary.md). For expected failure examples, see [Local Dry-Run Troubleshooting](docs/local-dry-run-troubleshooting.md).
 
 ## Source Support
 
@@ -365,6 +365,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](docs/defra-desnz-minimal-normalization-mapping-boundary.md)
 - [Local File Normalized Persistence Dry-Run Boundary](docs/local-file-normalized-persistence-dry-run-boundary.md)
 - [Local Dry-Run CLI Boundary](docs/local-dry-run-cli-boundary.md)
+- [Local Dry-Run Troubleshooting](docs/local-dry-run-troubleshooting.md)
 - [Normalized Result Persistence Boundary](docs/normalized-result-persistence-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](docs/postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](docs/postgresql-ddl-preview-boundary.md)

@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-099A: Added local dry-run troubleshooting documentation with expected missing-file, directory, encoding, parser-header, normalization-field, no-record, and unsupported outcomes plus README/doc links without runtime behavior changes, DB connections, DB writes, SQL execution, migrations, network calls, source acquisition integration, config loading, credentials, scheduler behavior, or production ingestion claims.
 - CO-098B: Added a minimal local DEFRA/DESNZ fixture, README and boundary quickstart output examples, and a deterministic CLI smoke test without DB connections, DB writes, SQL execution, migrations, network calls, source acquisition integration, config loading, credentials, scheduler behavior, or production ingestion claims.
 - CO-098A: Added `carbonops-parser local-dry-run` CLI entry path for explicit local DEFRA/DESNZ fixture dry-run summaries with text/JSON output, focused tests, and documentation without DB connections, DB writes, SQL execution, migrations, network calls, source acquisition integration, config loading, credentials, scheduler behavior, or production ingestion claims.
 - CO-097B: Added local DEFRA/DESNZ fixture file to normalized persistence dry-run pipeline with structured intermediate results, `PersistenceInput`, DDL preview metadata, public exports, focused tests, and documentation without DB connections, DB writes, SQL execution, migrations, credentials, scheduler behavior, production ingestion claims, or network calls.
