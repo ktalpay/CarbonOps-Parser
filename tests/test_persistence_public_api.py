@@ -4,6 +4,7 @@ from carbonfactor_parser.persistence import (
     input,
     integration_test_boundary,
     postgresql_connection_session_contract,
+    postgresql_execution_adapter_boundary,
     postgresql_insert_builder,
     postgresql_options,
     postgresql_persistence_preview,
@@ -31,6 +32,13 @@ from carbonfactor_parser.persistence import (
     PostgreSQLInsertStatement,
     PostgreSQLConnectionSession,
     PostgreSQLConnectionSessionContractDescription,
+    PostgreSQLExecutionAdapterProtocol,
+    PostgreSQLExecutionBoundaryDescription,
+    PostgreSQLExecutionIssue,
+    PostgreSQLExecutionPlan,
+    PostgreSQLExecutionPlanResult,
+    PostgreSQLExecutionResult,
+    PostgreSQLExecutionStatus,
     PostgreSQLPersistenceColumn,
     PostgreSQLPersistenceOptions,
     PostgreSQLPersistenceOptionsValidationIssue,
@@ -46,12 +54,15 @@ from carbonfactor_parser.persistence import (
     PostgreSQLTransactionMode,
     PostgreSQLTransactionOwnership,
     build_persistence_input_from_normalization_result,
+    build_disabled_postgresql_execution_result,
+    build_postgresql_execution_plan,
     build_postgresql_insert_statement,
     build_postgresql_persistence_preview,
     create_persistence_result,
     create_postgresql_integration_test_boundary,
     create_postgresql_persistence_options,
     describe_postgresql_connection_session_contract,
+    describe_postgresql_execution_adapter_boundary,
     get_normalized_record_postgresql_schema,
     render_postgresql_ddl_preview,
     should_skip_postgresql_integration_tests,
@@ -79,6 +90,13 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLInsertStatement",
     "PostgreSQLConnectionSession",
     "PostgreSQLConnectionSessionContractDescription",
+    "PostgreSQLExecutionAdapterProtocol",
+    "PostgreSQLExecutionBoundaryDescription",
+    "PostgreSQLExecutionIssue",
+    "PostgreSQLExecutionPlan",
+    "PostgreSQLExecutionPlanResult",
+    "PostgreSQLExecutionResult",
+    "PostgreSQLExecutionStatus",
     "PostgreSQLPersistenceColumn",
     "PostgreSQLPersistenceOptions",
     "PostgreSQLPersistenceOptionsValidationIssue",
@@ -94,12 +112,15 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLTransactionMode",
     "PostgreSQLTransactionOwnership",
     "build_persistence_input_from_normalization_result",
+    "build_disabled_postgresql_execution_result",
+    "build_postgresql_execution_plan",
     "build_postgresql_insert_statement",
     "build_postgresql_persistence_preview",
     "create_persistence_result",
     "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",
     "describe_postgresql_connection_session_contract",
+    "describe_postgresql_execution_adapter_boundary",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
     "should_skip_postgresql_integration_tests",
@@ -145,6 +166,28 @@ EXPECTED_PUBLIC_EXPORTS = {
         postgresql_connection_session_contract
         .PostgreSQLConnectionSessionContractDescription
     ),
+    "PostgreSQLExecutionAdapterProtocol": (
+        postgresql_execution_adapter_boundary.PostgreSQLExecutionAdapterProtocol
+    ),
+    "PostgreSQLExecutionBoundaryDescription": (
+        postgresql_execution_adapter_boundary
+        .PostgreSQLExecutionBoundaryDescription
+    ),
+    "PostgreSQLExecutionIssue": (
+        postgresql_execution_adapter_boundary.PostgreSQLExecutionIssue
+    ),
+    "PostgreSQLExecutionPlan": (
+        postgresql_execution_adapter_boundary.PostgreSQLExecutionPlan
+    ),
+    "PostgreSQLExecutionPlanResult": (
+        postgresql_execution_adapter_boundary.PostgreSQLExecutionPlanResult
+    ),
+    "PostgreSQLExecutionResult": (
+        postgresql_execution_adapter_boundary.PostgreSQLExecutionResult
+    ),
+    "PostgreSQLExecutionStatus": (
+        postgresql_execution_adapter_boundary.PostgreSQLExecutionStatus
+    ),
     "PostgreSQLPersistenceColumn": schema.PostgreSQLPersistenceColumn,
     "PostgreSQLPersistenceOptions": (
         postgresql_options.PostgreSQLPersistenceOptions
@@ -186,6 +229,13 @@ EXPECTED_PUBLIC_EXPORTS = {
     "build_persistence_input_from_normalization_result": (
         input.build_persistence_input_from_normalization_result
     ),
+    "build_disabled_postgresql_execution_result": (
+        postgresql_execution_adapter_boundary
+        .build_disabled_postgresql_execution_result
+    ),
+    "build_postgresql_execution_plan": (
+        postgresql_execution_adapter_boundary.build_postgresql_execution_plan
+    ),
     "build_postgresql_insert_statement": (
         postgresql_insert_builder.build_postgresql_insert_statement
     ),
@@ -202,6 +252,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     "describe_postgresql_connection_session_contract": (
         postgresql_connection_session_contract
         .describe_postgresql_connection_session_contract
+    ),
+    "describe_postgresql_execution_adapter_boundary": (
+        postgresql_execution_adapter_boundary
+        .describe_postgresql_execution_adapter_boundary
     ),
     "get_normalized_record_postgresql_schema": (
         schema.get_normalized_record_postgresql_schema
@@ -241,6 +295,15 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLConnectionSessionContractDescription": (
             PostgreSQLConnectionSessionContractDescription
         ),
+        "PostgreSQLExecutionAdapterProtocol": PostgreSQLExecutionAdapterProtocol,
+        "PostgreSQLExecutionBoundaryDescription": (
+            PostgreSQLExecutionBoundaryDescription
+        ),
+        "PostgreSQLExecutionIssue": PostgreSQLExecutionIssue,
+        "PostgreSQLExecutionPlan": PostgreSQLExecutionPlan,
+        "PostgreSQLExecutionPlanResult": PostgreSQLExecutionPlanResult,
+        "PostgreSQLExecutionResult": PostgreSQLExecutionResult,
+        "PostgreSQLExecutionStatus": PostgreSQLExecutionStatus,
         "PostgreSQLPersistenceColumn": PostgreSQLPersistenceColumn,
         "PostgreSQLPersistenceOptions": PostgreSQLPersistenceOptions,
         "PostgreSQLPersistenceOptionsValidationIssue": (
@@ -262,6 +325,10 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "build_persistence_input_from_normalization_result": (
             build_persistence_input_from_normalization_result
         ),
+        "build_disabled_postgresql_execution_result": (
+            build_disabled_postgresql_execution_result
+        ),
+        "build_postgresql_execution_plan": build_postgresql_execution_plan,
         "build_postgresql_insert_statement": build_postgresql_insert_statement,
         "build_postgresql_persistence_preview": (
             build_postgresql_persistence_preview
@@ -275,6 +342,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         ),
         "describe_postgresql_connection_session_contract": (
             describe_postgresql_connection_session_contract
+        ),
+        "describe_postgresql_execution_adapter_boundary": (
+            describe_postgresql_execution_adapter_boundary
         ),
         "get_normalized_record_postgresql_schema": (
             get_normalized_record_postgresql_schema

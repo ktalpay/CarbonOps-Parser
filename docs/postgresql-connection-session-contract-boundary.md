@@ -86,6 +86,9 @@ behavior remains deferred to a later safety-gated implementation task.
   contract and does not create sessions.
 - `build_postgresql_insert_statement()` remains deterministic SQL statement data
   construction only.
+- `PostgreSQLExecutionPlan` may wrap insert-builder output and session boundary
+  metadata for a future runtime adapter, but it does not call a session or run
+  SQL.
 - `build_postgresql_persistence_preview()` remains preview-only and must stay
   driver-free.
 - `PostgreSQLPersistenceRepository` remains a skeleton that returns unsupported
@@ -124,6 +127,7 @@ satisfied. That future task should:
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
+- [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)

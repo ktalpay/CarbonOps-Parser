@@ -113,6 +113,11 @@ The runtime repository should consume output from
 `build_postgresql_insert_statement()`. It should not duplicate SQL generation or
 construct a second insert statement shape.
 
+The [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
+defines the no-execution handoff shape between insert-builder output and a
+future caller-provided session. It builds plan metadata only; it does not create
+a connection, run SQL, or change repository behavior.
+
 The execution layer should be replaceable and testable:
 
 - A small executor/session adapter can own the actual database call.
@@ -248,6 +253,7 @@ The first task that adds runtime PostgreSQL persistence must pass this checklist
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
+- [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
