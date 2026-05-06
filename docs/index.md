@@ -71,6 +71,7 @@
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
 - [Local File Normalized Persistence Dry-Run Boundary](local-file-normalized-persistence-dry-run-boundary.md)
 - [Local Dry-Run CLI Boundary](local-dry-run-cli-boundary.md)
+- [Local Dry-Run Troubleshooting](local-dry-run-troubleshooting.md)
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
