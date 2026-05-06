@@ -35,6 +35,10 @@ connections, SQL execution, or writes.
 insert statement data for future repository work. It does not execute SQL or
 write records.
 
+`build_postgresql_persistence_preview()` wraps the insert builder in a
+preview-only result. It does not call `PersistenceRepository.persist()` and does
+not imply repository execution success.
+
 ## Result Boundary
 
 `PersistenceResult` reports:
@@ -109,6 +113,7 @@ This boundary does not add:
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
+- [PostgreSQL Persistence Preview Boundary](postgresql-persistence-preview-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Integration Test Boundary](postgresql-integration-test-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)

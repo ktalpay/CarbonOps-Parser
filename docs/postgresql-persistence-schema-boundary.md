@@ -59,6 +59,10 @@ fields. It returns SQL text with placeholders and ordered in-memory parameter
 values only. It does not connect to PostgreSQL, execute SQL, write records,
 create tables, run migrations, load credentials, or add a database dependency.
 
+`build_postgresql_persistence_preview()` can expose that insert-builder output
+through a preview-specific result model. It remains non-executing and separate
+from repository persistence results.
+
 ## Idempotency Strategy
 
 Future idempotency should be based on a stable combination of:
@@ -114,6 +118,7 @@ This boundary does not add:
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
+- [PostgreSQL Persistence Preview Boundary](postgresql-persistence-preview-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [Database Model](database-model.md)

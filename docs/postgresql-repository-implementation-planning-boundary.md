@@ -29,6 +29,10 @@ The PostgreSQL insert builder can produce deterministic parameterized statement
 data from `PersistenceInput`. It does not execute SQL or replace the future
 repository implementation decisions below.
 
+The PostgreSQL persistence preview layer can wrap insert-builder output in a
+preview-specific result. It remains separate from repository execution and does
+not call `PostgreSQLPersistenceRepository.persist()`.
+
 ## Safety Gate
 
 No PostgreSQL repository implementation, runtime database connection, SQL execution, migration, or database write may be added until the [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md) is satisfied.
@@ -129,6 +133,7 @@ Future implementation PRs should confirm:
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
+- [PostgreSQL Persistence Preview Boundary](postgresql-persistence-preview-boundary.md)
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [Database Model](database-model.md)
 - [Database Startup](database-startup.md)

@@ -61,6 +61,13 @@ fields.
 DDL preview and insert statement building are separate preview boundaries. Both
 produce deterministic text or data; neither executes SQL.
 
+## Persistence Preview Relationship
+
+`build_postgresql_persistence_preview()` delegates SQL statement construction to
+this builder and returns preview-specific persistence data. The preview layer
+must not duplicate SQL construction logic and must not execute the returned SQL
+text.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -80,6 +87,7 @@ This boundary does not add:
 ## Related Documents
 
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
+- [PostgreSQL Persistence Preview Boundary](postgresql-persistence-preview-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
