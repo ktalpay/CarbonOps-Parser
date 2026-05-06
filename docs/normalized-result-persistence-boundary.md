@@ -59,6 +59,12 @@ This boundary does not include connection settings, SQL statements, table names,
 
 The descriptor does not generate executable SQL, create migrations, connect to PostgreSQL, or write records. Runtime PostgreSQL integration remains deferred to a separate task.
 
+## Repository Protocol Boundary
+
+`PersistenceRepository` defines the future repository protocol for accepting `PersistenceInput` and returning `PersistenceResult`.
+
+The package exposes repository result contracts and statuses only. It does not include a concrete PostgreSQL repository implementation, and it does not perform runtime persistence.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -78,6 +84,7 @@ This boundary does not add:
 
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
+- [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [Normalization Input Boundary](normalization-input-boundary.md)
 - [Normalization Boundary](normalization-boundary.md)
 - [Database Model](database-model.md)

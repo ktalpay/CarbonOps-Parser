@@ -10,6 +10,8 @@ It is a schema boundary only. It does not connect to PostgreSQL, execute SQL, ge
 
 The descriptor is not a migration, ORM model, SQL generator, database client, or runtime persistence implementation.
 
+Repository implementations are also deferred. `PersistenceRepository` describes the future repository protocol, but no PostgreSQL repository implementation is added by the schema boundary.
+
 ## Logical Table
 
 The current logical table name is:
@@ -85,6 +87,7 @@ This boundary does not add:
 ## Related Documents
 
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
+- [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [Database Model](database-model.md)
 - [Database Startup](database-startup.md)
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)

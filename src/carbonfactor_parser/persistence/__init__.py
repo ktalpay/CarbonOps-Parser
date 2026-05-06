@@ -8,6 +8,14 @@ from carbonfactor_parser.persistence.input import (
     PersistenceInputRecord,
     build_persistence_input_from_normalization_result,
 )
+from carbonfactor_parser.persistence.repository import (
+    PersistenceIssue,
+    PersistenceIssueSeverity,
+    PersistenceRepository,
+    PersistenceResult,
+    PersistenceResultStatus,
+    create_persistence_result,
+)
 from carbonfactor_parser.persistence.schema import (
     PostgreSQLPersistenceColumn,
     PostgreSQLPersistenceSchema,
@@ -20,8 +28,14 @@ __all__ = (
     "PersistenceInputBuildStatus",
     "PersistenceInputIssue",
     "PersistenceInputRecord",
+    "PersistenceIssue",
+    "PersistenceIssueSeverity",
+    "PersistenceRepository",
+    "PersistenceResult",
+    "PersistenceResultStatus",
     "PostgreSQLPersistenceColumn",
     "PostgreSQLPersistenceSchema",
     "build_persistence_input_from_normalization_result",
+    "create_persistence_result",
     "get_normalized_record_postgresql_schema",
 )

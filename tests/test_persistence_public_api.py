@@ -1,14 +1,20 @@
 import carbonfactor_parser.persistence as persistence
-from carbonfactor_parser.persistence import input, schema
+from carbonfactor_parser.persistence import input, repository, schema
 from carbonfactor_parser.persistence import (
     PersistenceInput,
     PersistenceInputBuildResult,
     PersistenceInputBuildStatus,
     PersistenceInputIssue,
     PersistenceInputRecord,
+    PersistenceIssue,
+    PersistenceIssueSeverity,
+    PersistenceRepository,
+    PersistenceResult,
+    PersistenceResultStatus,
     PostgreSQLPersistenceColumn,
     PostgreSQLPersistenceSchema,
     build_persistence_input_from_normalization_result,
+    create_persistence_result,
     get_normalized_record_postgresql_schema,
 )
 
@@ -19,9 +25,15 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PersistenceInputBuildStatus",
     "PersistenceInputIssue",
     "PersistenceInputRecord",
+    "PersistenceIssue",
+    "PersistenceIssueSeverity",
+    "PersistenceRepository",
+    "PersistenceResult",
+    "PersistenceResultStatus",
     "PostgreSQLPersistenceColumn",
     "PostgreSQLPersistenceSchema",
     "build_persistence_input_from_normalization_result",
+    "create_persistence_result",
     "get_normalized_record_postgresql_schema",
 )
 
@@ -31,11 +43,17 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PersistenceInputBuildStatus": input.PersistenceInputBuildStatus,
     "PersistenceInputIssue": input.PersistenceInputIssue,
     "PersistenceInputRecord": input.PersistenceInputRecord,
+    "PersistenceIssue": repository.PersistenceIssue,
+    "PersistenceIssueSeverity": repository.PersistenceIssueSeverity,
+    "PersistenceRepository": repository.PersistenceRepository,
+    "PersistenceResult": repository.PersistenceResult,
+    "PersistenceResultStatus": repository.PersistenceResultStatus,
     "PostgreSQLPersistenceColumn": schema.PostgreSQLPersistenceColumn,
     "PostgreSQLPersistenceSchema": schema.PostgreSQLPersistenceSchema,
     "build_persistence_input_from_normalization_result": (
         input.build_persistence_input_from_normalization_result
     ),
+    "create_persistence_result": repository.create_persistence_result,
     "get_normalized_record_postgresql_schema": (
         schema.get_normalized_record_postgresql_schema
     ),
@@ -49,11 +67,17 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PersistenceInputBuildStatus": PersistenceInputBuildStatus,
         "PersistenceInputIssue": PersistenceInputIssue,
         "PersistenceInputRecord": PersistenceInputRecord,
+        "PersistenceIssue": PersistenceIssue,
+        "PersistenceIssueSeverity": PersistenceIssueSeverity,
+        "PersistenceRepository": PersistenceRepository,
+        "PersistenceResult": PersistenceResult,
+        "PersistenceResultStatus": PersistenceResultStatus,
         "PostgreSQLPersistenceColumn": PostgreSQLPersistenceColumn,
         "PostgreSQLPersistenceSchema": PostgreSQLPersistenceSchema,
         "build_persistence_input_from_normalization_result": (
             build_persistence_input_from_normalization_result
         ),
+        "create_persistence_result": create_persistence_result,
         "get_normalized_record_postgresql_schema": (
             get_normalized_record_postgresql_schema
         ),
@@ -82,5 +106,6 @@ def test_persistence_all_names_resolve_to_package_attributes() -> None:
 
 def test_persistence_all_excludes_internal_module_names() -> None:
     assert "input" not in persistence.__all__
+    assert "repository" not in persistence.__all__
     assert "schema" not in persistence.__all__
     assert all(not name.startswith("_") for name in persistence.__all__)
