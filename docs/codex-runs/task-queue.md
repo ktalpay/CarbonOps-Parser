@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-094A: Added normalization input boundary contracts and helpers for parser raw payloads and ready parser execution handoffs without normalization, transformation, file I/O, network calls, or persistence.
 - CO-093B: Added parsed raw record payload boundary contracts, optional ParserExecutionResult payload carriage, minimal DEFRA/DESNZ in-memory raw payload attachment, public exports, tests, and docs without normalization or persistence behavior.
 - CO-093A: Added parser execution result to normalization handoff boundary with ready/not-ready status, deferred parsed payload marker, public exports, tests, and docs.
 - CO-092B: Added minimal already-loaded DEFRA/DESNZ content parser path returning ParserExecutionResult without file I/O, normalization, persistence, or real source support claims.

@@ -202,7 +202,7 @@ For boundary details, see:
 
 See [examples/example_acquisition_artifact_parser_input_mapping.py](examples/example_acquisition_artifact_parser_input_mapping.py) for a deterministic in-memory example of mapping acquisition artifact metadata into a future parser input boundary without executing a parser.
 
-The parser package exposes `ParserInputContract`, `create_parser_input_contract()`, `validate_parser_input_contract()`, `ParserFileContentInput`, parser file content validation helpers, `parse_defra_desnz_file_content()`, raw parsed record payload contracts, the `ParserAdapter` protocol, `NoopParserAdapter`, `ArtificialParserAdapter`, `DefraDesnzParserAdapter`, parser adapter registry helpers, parser execution planning and runner helpers, and parser execution result contracts for future parser adapter input handoff. The normalization package exposes parser execution handoff helpers for successful parser results. These contracts keep acquisition metadata, already-loaded content, raw parser output, parser output metadata, and normalization handoff metadata separate; they do not contain normalization output or database persistence fields.
+The parser package exposes `ParserInputContract`, `create_parser_input_contract()`, `validate_parser_input_contract()`, `ParserFileContentInput`, parser file content validation helpers, `parse_defra_desnz_file_content()`, raw parsed record payload contracts, the `ParserAdapter` protocol, `NoopParserAdapter`, `ArtificialParserAdapter`, `DefraDesnzParserAdapter`, parser adapter registry helpers, parser execution planning and runner helpers, and parser execution result contracts for future parser adapter input handoff. The normalization package exposes parser execution handoff helpers and normalization input helpers for successful parser results with raw payloads. These contracts keep acquisition metadata, already-loaded content, raw parser output, parser output metadata, normalization input, and normalization handoff metadata separate; they do not contain normalization output or database persistence fields.
 
 ## Source Support
 
@@ -308,6 +308,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [DEFRA/DESNZ Parser Skeleton Boundaries](docs/defra-desnz-parser-skeleton-boundaries.md)
 - [Real Format Parser Boundary](docs/real-format-parser-boundary.md)
 - [Normalization Boundary](docs/normalization-boundary.md)
+- [Normalization Input Boundary](docs/normalization-input-boundary.md)
 - [Parser To Normalization Handoff Boundary](docs/parser-to-normalization-handoff-boundary.md)
 - [Parser To Normalization Integration Recap](docs/parser-to-normalization-integration-recap.md)
 - [Source To Normalization Pipeline Recap](docs/source-to-normalization-pipeline-recap.md)
