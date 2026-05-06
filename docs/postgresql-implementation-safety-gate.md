@@ -88,6 +88,13 @@ to a future caller-provided session. It is no-execution metadata only and must
 not become a database connection, SQL runtime, transaction boundary, migration
 runner, or repository write path before this gate is satisfied.
 
+## Transaction Policy Relationship
+
+`PostgreSQLTransactionPolicy` may describe future single-batch, caller-provided
+session, no-partial-success policy. It is policy metadata only and must not
+become real transaction start, completion, rollback, SQL runtime, or repository
+write behavior before this gate is satisfied.
+
 ## Persistence Preview Relationship
 
 `build_postgresql_persistence_preview()` may expose insert-builder output through
@@ -202,6 +209,7 @@ This safety gate does not add:
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
 - [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
+- [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)

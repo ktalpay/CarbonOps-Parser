@@ -87,6 +87,7 @@
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
 - [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
+- [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
 - [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md)
 - [Parser To Normalization Integration Recap](parser-to-normalization-integration-recap.md)
 - [Source To Normalization Pipeline Recap](source-to-normalization-pipeline-recap.md)
