@@ -37,6 +37,12 @@ When `PostgreSQLPersistenceSchema.idempotency_key_fields` is populated, the prev
 
 Conflict handling remains deferred. Future implementation work must still decide how conflicts are reported, ignored, updated, versioned, rejected, or retried.
 
+## Local Dry-Run Relationship
+
+`run_local_file_normalized_persistence_dry_run()` includes DDL preview text and metadata on successful local fixture dry-runs.
+
+The dry-run treats the DDL as preview metadata only. It does not execute the text, connect to PostgreSQL, create tables, write records, or create migration artifacts.
+
 ## Deferred Runtime Work
 
 Future work remains separately scoped for:
@@ -71,6 +77,7 @@ This boundary does not add:
 ## Related Documents
 
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
+- [Local File Normalized Persistence Dry-Run Boundary](local-file-normalized-persistence-dry-run-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)

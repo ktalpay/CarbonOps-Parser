@@ -65,8 +65,13 @@ The loader performs only explicit local file reads. It does not:
 - load credentials or configuration
 - schedule background work
 
+## Dry-Run Pipeline Relationship
+
+`run_local_file_normalized_persistence_dry_run()` may call this loader as its first step for local DEFRA/DESNZ fixture files. That pipeline remains a dry-run composition: it stops at `PersistenceInput` plus DDL preview metadata and does not connect to PostgreSQL, execute SQL, write to a database, or perform network calls.
+
 ## Related Documents
 
+- [Local File Normalized Persistence Dry-Run Boundary](local-file-normalized-persistence-dry-run-boundary.md)
 - [Parser File Content Input Boundary](parser-file-content-input-boundary.md)
 - [Source Acquisition Parser Handoff Contract](source-acquisition-parser-handoff-contract.md)
 - [Parser Adapter Boundary](parser-adapter-boundary.md)

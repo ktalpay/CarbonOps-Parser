@@ -67,6 +67,12 @@ The package exposes repository result contracts and statuses only. It does not i
 
 The PostgreSQL repository implementation planning boundary documents the decisions required before a concrete repository can be added.
 
+## Local Dry-Run Relationship
+
+`run_local_file_normalized_persistence_dry_run()` may build `PersistenceInput` from the minimal local DEFRA/DESNZ fixture pipeline.
+
+That dry-run helper remains local and review-oriented. It returns `PersistenceInput` and DDL preview metadata only; it does not call a repository, connect to PostgreSQL, execute SQL, write records, run migrations, or perform network calls.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -85,6 +91,7 @@ This boundary does not add:
 ## Related Documents
 
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
+- [Local File Normalized Persistence Dry-Run Boundary](local-file-normalized-persistence-dry-run-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
