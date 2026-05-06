@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-088B: Added NoopParserAdapter for metadata-only registry and planning coverage without parser output or side effects.
 - CO-088A: Added parser execution planning helpers that combine input validation and metadata-only adapter registry resolution without calling parser execution.
 - CO-087B: Added parser adapter registry helpers with deterministic listing, metadata-only resolution, duplicate source family rejection, public exports, and focused registry tests.
 - CO-087A: Added the public parser adapter protocol boundary with metadata-only fake adapter tests and parser adapter boundary documentation.

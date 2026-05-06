@@ -10,6 +10,7 @@ from carbonfactor_parser.parsers import (
     fixture_parser,
     input_contract,
     input_mapping,
+    noop_adapter,
     pipeline_summary,
 )
 from carbonfactor_parser.parsers import (
@@ -17,6 +18,7 @@ from carbonfactor_parser.parsers import (
     DefraDesnzParser,
     ExampleInMemoryParser,
     ExampleSourceSpecificParser,
+    NoopParserAdapter,
     ParserAdapter,
     ParserAdapterRegistry,
     ParserExecutionPlan,
@@ -48,6 +50,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "DefraDesnzParser",
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
+    "NoopParserAdapter",
     "ParserAdapter",
     "ParserAdapterRegistry",
     "ParserExecutionPlan",
@@ -80,6 +83,7 @@ EXPECTED_PUBLIC_EXPORTS = {
     "ExampleSourceSpecificParser": (
         example_source_specific_parser.ExampleSourceSpecificParser
     ),
+    "NoopParserAdapter": noop_adapter.NoopParserAdapter,
     "ParserAdapter": adapter.ParserAdapter,
     "ParserAdapterRegistry": adapter_registry.ParserAdapterRegistry,
     "ParserExecutionPlan": execution_plan.ParserExecutionPlan,
@@ -116,6 +120,7 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "DefraDesnzParser": DefraDesnzParser,
         "ExampleInMemoryParser": ExampleInMemoryParser,
         "ExampleSourceSpecificParser": ExampleSourceSpecificParser,
+        "NoopParserAdapter": NoopParserAdapter,
         "ParserAdapter": ParserAdapter,
         "ParserAdapterRegistry": ParserAdapterRegistry,
         "ParserExecutionPlan": ParserExecutionPlan,
@@ -173,5 +178,6 @@ def test_parser_all_excludes_internal_module_names() -> None:
     assert "fixture_parser" not in parsers.__all__
     assert "input_contract" not in parsers.__all__
     assert "input_mapping" not in parsers.__all__
+    assert "noop_adapter" not in parsers.__all__
     assert "pipeline_summary" not in parsers.__all__
     assert all(not name.startswith("_") for name in parsers.__all__)

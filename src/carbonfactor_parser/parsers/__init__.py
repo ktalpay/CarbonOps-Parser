@@ -37,6 +37,7 @@ from carbonfactor_parser.parsers.input_mapping import (
     ParserInputMappingEntry,
     build_fixture_parser_input_mapping,
 )
+from carbonfactor_parser.parsers.noop_adapter import NoopParserAdapter
 from carbonfactor_parser.parsers.pipeline_summary import (
     ParserPipelineSummary,
     summarize_parser_pipeline,
@@ -47,6 +48,7 @@ __all__ = (
     "DefraDesnzParser",
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
+    "NoopParserAdapter",
     "ParserAdapter",
     "ParserAdapterRegistry",
     "ParserExecutionPlan",
