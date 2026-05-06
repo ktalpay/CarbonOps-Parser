@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
 
@@ -14,6 +15,10 @@ from carbonfactor_parser.persistence import (
     POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR,
 )
 
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+RUNBOOK_PATH = REPOSITORY_ROOT / "docs" / "postgresql-opt-in-integration-runbook.md"
+THIS_TEST_PATH = Path(__file__).resolve()
 
 SMOKE_STATUS_DISABLED = "disabled"
 SMOKE_STATUS_MISSING_DSN = "missing_dsn"
@@ -159,6 +164,64 @@ def test_connection_smoke_state_does_not_expose_dsn_value() -> None:
     rendered = repr(state)
     assert private_input not in rendered
     assert state.skip_reason is None
+
+
+def test_connection_smoke_state_uses_canonical_marker_and_controls() -> None:
+    state = decide_postgresql_connection_smoke_state(
+        opt_in_value=None,
+        dsn_value=None,
+    )
+
+    assert state.marker_name == POSTGRESQL_INTEGRATION_TEST_MARKER
+    assert state.opt_in_control_name == POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR
+    assert state.test_dsn_input_name == POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR
+
+
+def test_default_environment_keeps_connection_smoke_skipped(monkeypatch) -> None:
+    monkeypatch.delenv(POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR, raising=False)
+    monkeypatch.delenv(POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR, raising=False)
+
+    state = decide_postgresql_connection_smoke_state(
+        opt_in_value=os.getenv(POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR),
+        dsn_value=os.getenv(POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR),
+    )
+
+    assert state.status == SMOKE_STATUS_DISABLED
+    assert state.skip_reason is not None
+    assert "disabled by default" in state.skip_reason
+    assert "no_connection_attempted" in state.sanitized_notes
+
+
+def test_runbook_documents_connection_smoke_controls_and_default_behavior() -> None:
+    runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    normalized_runbook_text = " ".join(runbook_text.split())
+
+    assert POSTGRESQL_INTEGRATION_TEST_MARKER in runbook_text
+    assert POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR in runbook_text
+    assert POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR in runbook_text
+    assert "default test suite remains DB-free" in runbook_text
+    assert "connection smoke skipped" in runbook_text
+    assert "does not execute SQL" in runbook_text
+    assert "does not write records" in runbook_text
+    assert (
+        "must not log DSNs, credentials, or secret values"
+        in normalized_runbook_text
+    )
+
+
+def test_connection_smoke_test_source_has_no_write_sql_or_schema_terms() -> None:
+    module_source = THIS_TEST_PATH.read_text(encoding="utf-8")
+
+    forbidden_terms = (
+        "IN" + "SERT",
+        "UP" + "DATE",
+        "DE" + "LETE",
+        "CREATE " + "TABLE",
+        "DROP " + "TABLE",
+    )
+
+    for term in forbidden_terms:
+        assert term not in module_source
 
 
 def test_repository_persist_remains_unsupported_no_execution() -> None:

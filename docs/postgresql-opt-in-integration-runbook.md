@@ -127,6 +127,33 @@ Reviewers should also confirm that default code paths do not contain
 `psycopg.connect`, `connect(`, `cursor(`, `execute(`, `commit(`, `rollback(`, or
 `begin(` calls.
 
+## Connection Smoke Verification
+
+Reviewers can verify the default-skipped connection smoke skeleton with:
+
+```bash
+python -m pytest tests/test_postgresql_connection_smoke_boundary.py tests/test_postgresql_integration_test_boundary.py
+```
+
+The expected default behavior is that the connection smoke skipped path is
+reported and the default test suite remains DB-free. The smoke must not attempt
+a PostgreSQL connection unless both `CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1` and
+`CARBONOPS_POSTGRESQL_TEST_DSN` are provided externally by the test runner.
+
+The explicit opt-in command shape remains:
+
+```bash
+CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1 \
+CARBONOPS_POSTGRESQL_TEST_DSN='<external test DSN supplied by the runner>' \
+python -m pytest -m postgresql_integration tests/test_postgresql_connection_smoke_boundary.py
+```
+
+The connection smoke does not execute SQL and does not write records. It should
+only open and close the external test connection when explicitly enabled. Test
+failures and troubleshooting output must not log DSNs, credentials, or secret
+values. Because the smoke is connection-only, there should be no database write
+cleanup for this task.
+
 ## Cleanup And Reset Guidance
 
 Future opt-in integration tests should document cleanup before they are added:
