@@ -9,6 +9,13 @@ from carbonfactor_parser.persistence.input import (
     PersistenceInputRecord,
     build_persistence_input_from_normalization_result,
 )
+from carbonfactor_parser.persistence.integration_test_boundary import (
+    POSTGRESQL_INTEGRATION_TEST_MARKER,
+    POSTGRESQL_INTEGRATION_TEST_SKIP_REASON,
+    PostgreSQLIntegrationTestBoundary,
+    create_postgresql_integration_test_boundary,
+    should_skip_postgresql_integration_tests,
+)
 from carbonfactor_parser.persistence.repository import (
     PersistenceIssue,
     PersistenceIssueSeverity,
@@ -39,11 +46,14 @@ __all__ = (
     "PersistenceInputBuildStatus",
     "PersistenceInputIssue",
     "PersistenceInputRecord",
+    "POSTGRESQL_INTEGRATION_TEST_MARKER",
+    "POSTGRESQL_INTEGRATION_TEST_SKIP_REASON",
     "PersistenceIssue",
     "PersistenceIssueSeverity",
     "PersistenceRepository",
     "PersistenceResult",
     "PersistenceResultStatus",
+    "PostgreSQLIntegrationTestBoundary",
     "PostgreSQLPersistenceColumn",
     "PostgreSQLPersistenceOptions",
     "PostgreSQLPersistenceOptionsValidationIssue",
@@ -52,8 +62,10 @@ __all__ = (
     "PostgreSQLPersistenceSchema",
     "build_persistence_input_from_normalization_result",
     "create_persistence_result",
+    "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
+    "should_skip_postgresql_integration_tests",
     "validate_postgresql_persistence_options",
 )

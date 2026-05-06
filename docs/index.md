@@ -77,6 +77,7 @@
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
+- [PostgreSQL Integration Test Boundary](postgresql-integration-test-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)

@@ -19,6 +19,7 @@ Current persistence work is intentionally limited to:
 - `PersistenceRepository` protocol and `PersistenceResult` contracts
 - `PostgreSQLPersistenceRepository` skeleton returning unsupported results only
 - explicit caller-provided `PostgreSQLPersistenceOptions` with validation only
+- default-disabled PostgreSQL integration test boundary metadata
 - PostgreSQL repository planning documentation
 
 Before any runtime PostgreSQL behavior is added, the preconditions in this gate must be reviewed and satisfied in a separate task.
@@ -49,6 +50,16 @@ The options contract deliberately uses `password_set` instead of storing a
 password value. Future runtime credential loading remains blocked until this
 safety gate approves the credential source, redaction behavior, and test
 isolation rules.
+
+## Integration Test Relationship
+
+PostgreSQL integration tests must be skipped by default. The current integration
+test boundary exposes only a marker name, skip reason, and explicit opt-in
+metadata. It does not read environment variables, load config, load credentials,
+connect to PostgreSQL, execute SQL, or write records.
+
+Future integration test wiring must require explicit opt-in and an isolated test
+database before any connection behavior is introduced.
 
 ## Forbidden Before Gate Approval
 
@@ -132,6 +143,7 @@ This safety gate does not add:
 ## Related Documents
 
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
+- [PostgreSQL Integration Test Boundary](postgresql-integration-test-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
