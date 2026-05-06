@@ -47,8 +47,8 @@ A future real runtime execution task is blocked until all of these are true:
 - Disabled runtime execution result available: future execution metadata can be
   inspected without connecting or running SQL.
 - Public safety checks pass without weakening rules.
-- Integration test opt-in plan exists and normal test runs do not touch
-  PostgreSQL.
+- Integration test opt-in plan exists, the opt-in integration runbook is
+  reviewed, and normal test runs do not touch PostgreSQL.
 - No credentials, config files, or environment variables are loaded by library
   code.
 - No secrets appear in docs, tests, logs, fixtures, examples, exceptions, or
@@ -140,3 +140,4 @@ The first task that adds real PostgreSQL execution must satisfy all of these:
 - [PostgreSQL Disabled Runtime Execution Adapter Boundary](postgresql-disabled-runtime-execution-adapter-boundary.md)
 - [PostgreSQL Repository Disabled Execution Preview Boundary](postgresql-repository-disabled-execution-preview-boundary.md)
 - [PostgreSQL Integration Test Boundary](postgresql-integration-test-boundary.md)
+- [PostgreSQL Opt-In Integration Runbook](postgresql-opt-in-integration-runbook.md)
