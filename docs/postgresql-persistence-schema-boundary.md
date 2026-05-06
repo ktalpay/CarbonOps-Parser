@@ -80,6 +80,8 @@ None of those runtime behaviors are implemented by this boundary.
 
 The PostgreSQL repository implementation planning boundary defines the decisions required before this logical schema can be used by runtime repository code. Schema descriptors and DDL previews stay descriptive until a later task explicitly adds migrations, repository implementation, integration tests, and operational behavior.
 
+The PostgreSQL implementation safety gate must be satisfied before this schema metadata is used by any runtime database write, migration, or repository implementation.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -100,6 +102,7 @@ This boundary does not add:
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
+- [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [Database Model](database-model.md)
 - [Database Startup](database-startup.md)

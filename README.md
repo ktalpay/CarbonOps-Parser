@@ -381,6 +381,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [PostgreSQL Persistence Schema Boundary](docs/postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](docs/postgresql-ddl-preview-boundary.md)
 - [Persistence Repository Boundary](docs/persistence-repository-boundary.md)
+- [PostgreSQL Implementation Safety Gate](docs/postgresql-implementation-safety-gate.md)
 - [PostgreSQL Repository Implementation Planning Boundary](docs/postgresql-repository-implementation-planning-boundary.md)
 - [Parser To Normalization Handoff Boundary](docs/parser-to-normalization-handoff-boundary.md)
 - [Parser To Normalization Integration Recap](docs/parser-to-normalization-integration-recap.md)
