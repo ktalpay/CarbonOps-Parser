@@ -84,6 +84,10 @@ behind an explicit dependency boundary, while adding no dependency in this task.
 This keeps the first runtime implementation close to the existing parameterized
 insert builder and local CLI/service usage.
 
+The [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
+records the focused Phase 1 driver decision. It recommends a future synchronous
+`psycopg` 3 adapter while keeping CO-102B dependency-free and no-execution.
+
 ## Connection And Config Strategy
 
 Runtime persistence should use caller-provided values only. Library code should
@@ -237,6 +241,7 @@ The first task that adds runtime PostgreSQL persistence must pass this checklist
 ## Related Documents
 
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
+- [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)

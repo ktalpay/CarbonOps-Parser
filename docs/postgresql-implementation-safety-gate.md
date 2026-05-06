@@ -121,6 +121,10 @@ transaction, conflict, schema lifecycle, integration test, and observability
 decisions for future runtime work. It is planning-only and does not satisfy this
 gate by itself.
 
+The [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
+selects a preferred future driver direction without adding the dependency,
+importing a driver, connecting to PostgreSQL, or enabling runtime writes.
+
 ## Review Checklist
 
 Any task that proposes PostgreSQL runtime behavior should answer:
@@ -178,6 +182,7 @@ This safety gate does not add:
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
+- [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
