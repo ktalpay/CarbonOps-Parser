@@ -198,22 +198,27 @@ unset CARBONOPS_POSTGRESQL_TEST_DSN
 ## Manual Connection Smoke Execution Record
 
 Use this template to record a local opt-in connection smoke run. If no manual
-smoke was performed, keep `status` set to `not_run` and do not record a passed
-result.
+smoke was performed, keep `status` set to `not_run` or a truthful blocked
+status, and do not record a passed result.
 
 Allowed status values:
 
 - `not_run`
+- `blocked_missing_local_postgresql`
+- `blocked_missing_dsn`
 - `passed`
 - `failed_sanitized`
 
-Execution record template:
+Current execution record:
 
-- status: `not_run`
+- status: `blocked_missing_local_postgresql`
 - date/time: `<local-run-date-time>`
 - local environment: `<local-environment-label>`
 - PostgreSQL version: `<postgresql-version>`
 - test database: `<local-test-database>`
+- attempt evidence: local `psql` command availability check did not find a
+  PostgreSQL client in this environment.
+- opt-in smoke result: not run.
 - marker: `postgresql_integration`
 - opt-in control: `CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1`
 - test DSN control: `CARBONOPS_POSTGRESQL_TEST_DSN`
@@ -228,6 +233,7 @@ python -m pytest -m postgresql_integration tests/test_postgresql_connection_smok
 Expected result shape:
 
 - The connection smoke either passes or fails with sanitized output.
+- This record does not claim a passed smoke result.
 - The smoke performs no SQL execution.
 - The smoke performs no DB writes.
 - Repository persistence remains disabled/no-execution.
