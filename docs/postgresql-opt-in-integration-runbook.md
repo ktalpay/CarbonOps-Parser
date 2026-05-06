@@ -154,6 +154,47 @@ failures and troubleshooting output must not log DSNs, credentials, or secret
 values. Because the smoke is connection-only, there should be no database write
 cleanup for this task.
 
+## Manual Connection Smoke Checklist
+
+Use this checklist only for a local, explicitly opted-in connection smoke run:
+
+- Confirm the working tree is clean with `git status --short`.
+- Confirm the default suite remains DB-free with `python -m pytest`.
+- Confirm local PostgreSQL is prepared outside the library.
+- Use an isolated test database placeholder such as `<local-test-database>`.
+- Use an isolated test role placeholder such as `<local-test-role>`.
+- Set the canonical opt-in control:
+  `CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1`.
+- Set the canonical test DSN input externally:
+  `CARBONOPS_POSTGRESQL_TEST_DSN='<external test DSN supplied by the runner>'`.
+- Run the opt-in smoke command:
+
+```bash
+CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1 \
+CARBONOPS_POSTGRESQL_TEST_DSN='<external test DSN supplied by the runner>' \
+python -m pytest -m postgresql_integration tests/test_postgresql_connection_smoke_boundary.py
+```
+
+Expected result shape:
+
+- With both controls present, the smoke may open and close the external test
+  connection.
+- Without those controls, the smoke remains skipped by default.
+- The smoke performs no SQL execution.
+- The smoke performs no DB writes.
+- The smoke performs no migrations or table creation.
+- Repository persistence remains disabled/no-execution.
+- Logs and failures must not expose DSNs, credentials, or secret values.
+
+After the manual run, reset any local test database state outside this project
+if your local setup requires it. The connection-only smoke should not leave DB
+writes to clean up. Then unset the opt-in controls:
+
+```bash
+unset CARBONOPS_RUN_POSTGRESQL_INTEGRATION
+unset CARBONOPS_POSTGRESQL_TEST_DSN
+```
+
 ## Cleanup And Reset Guidance
 
 Future opt-in integration tests should document cleanup before they are added:
