@@ -209,7 +209,11 @@ rollback behavior, and operational controls are approved.
 ## Integration Test Strategy
 
 Future integration tests should use the existing PostgreSQL integration test
-boundary helper and remain disabled by default.
+boundary helper and remain disabled by default. The
+[PostgreSQL Opt-In Integration Runbook](postgresql-opt-in-integration-runbook.md)
+documents the external test-runner controls, local test database guidance,
+secret-handling rules, cleanup expectations, and default-suite DB-free checks
+for that future work.
 
 Rules for the first runtime write task:
 
@@ -275,6 +279,7 @@ The first task that adds runtime PostgreSQL persistence must pass this checklist
 ## Related Documents
 
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
+- [PostgreSQL Opt-In Integration Runbook](postgresql-opt-in-integration-runbook.md)
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
 - [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)

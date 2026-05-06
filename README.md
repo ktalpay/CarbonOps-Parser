@@ -469,6 +469,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Persistence Repository Boundary](docs/persistence-repository-boundary.md)
 - [PostgreSQL Implementation Safety Gate](docs/postgresql-implementation-safety-gate.md)
 - [PostgreSQL Integration Test Boundary](docs/postgresql-integration-test-boundary.md)
+- [PostgreSQL Opt-In Integration Runbook](docs/postgresql-opt-in-integration-runbook.md)
 - [PostgreSQL Config Contract Boundary](docs/postgresql-config-contract-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](docs/postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](docs/postgresql-repository-implementation-planning-boundary.md)

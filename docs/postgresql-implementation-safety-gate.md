@@ -66,6 +66,11 @@ connect to PostgreSQL, execute SQL, or write records.
 Future integration test wiring must require explicit opt-in and an isolated test
 database before any connection behavior is introduced.
 
+The PostgreSQL opt-in integration runbook documents the external test-runner
+controls for that future work. The runbook does not add runtime repository
+behavior, default DB execution, library environment loading, SQL execution, or
+credential loading.
+
 ## Connection Session Contract Relationship
 
 `PostgreSQLConnectionSession` defines a driver-neutral future caller-provided
@@ -252,6 +257,7 @@ This safety gate does not add:
 
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [PostgreSQL Integration Test Boundary](postgresql-integration-test-boundary.md)
+- [PostgreSQL Opt-In Integration Runbook](postgresql-opt-in-integration-runbook.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
