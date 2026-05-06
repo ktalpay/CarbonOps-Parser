@@ -23,6 +23,7 @@ Current persistence work is intentionally limited to:
 - deterministic PostgreSQL insert statement builder data without execution
 - PostgreSQL persistence preview result data without execution
 - approved `psycopg` dependency declaration without runtime imports or execution
+- repository-level disabled execution preview diagnostics without execution
 - PostgreSQL repository planning documentation
 
 Before any runtime PostgreSQL behavior is added, the preconditions in this gate must be reviewed and satisfied in a separate task.
@@ -107,6 +108,13 @@ transaction-policy, conflict-strategy, and optional session-adapter metadata
 into a disabled result. That result is not repository execution and must not
 become a database connection, cursor, SQL runtime, transaction boundary,
 migration runner, or repository write path before this gate is satisfied.
+
+`build_postgresql_repository_disabled_execution_preview()` may compose
+`PersistenceInput` into the disabled runtime result for repository-level
+diagnostics. It must not change `PostgreSQLPersistenceRepository.persist()`,
+return successful persistence semantics, or become a database connection, SQL
+runtime, transaction boundary, migration runner, or repository write path before
+this gate is satisfied.
 
 ## Transaction Policy Relationship
 
@@ -242,6 +250,7 @@ This safety gate does not add:
 - [PostgreSQL Idempotency Conflict Strategy Boundary](postgresql-idempotency-conflict-strategy-boundary.md)
 - [PostgreSQL psycopg Session Adapter Boundary](postgresql-psycopg-session-adapter-boundary.md)
 - [PostgreSQL Disabled Runtime Execution Adapter Boundary](postgresql-disabled-runtime-execution-adapter-boundary.md)
+- [PostgreSQL Repository Disabled Execution Preview Boundary](postgresql-repository-disabled-execution-preview-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)

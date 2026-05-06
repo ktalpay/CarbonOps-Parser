@@ -33,6 +33,11 @@ The PostgreSQL persistence preview layer can wrap insert-builder output in a
 preview-specific result. It remains separate from repository execution and does
 not call `PostgreSQLPersistenceRepository.persist()`.
 
+The PostgreSQL repository disabled execution preview helper can compose
+`PersistenceInput` into disabled runtime execution metadata for diagnostics. It
+also remains separate from repository execution and does not change
+`PostgreSQLPersistenceRepository.persist()` unsupported/no-execution behavior.
+
 The [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 defines a narrower future sequence for moving from this planning boundary toward
 runtime repository work. It remains no-execution planning and does not add a
@@ -140,6 +145,7 @@ Future implementation PRs should confirm:
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
 - [PostgreSQL Persistence Preview Boundary](postgresql-persistence-preview-boundary.md)
+- [PostgreSQL Repository Disabled Execution Preview Boundary](postgresql-repository-disabled-execution-preview-boundary.md)
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [Database Model](database-model.md)
 - [Database Startup](database-startup.md)

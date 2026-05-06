@@ -12,6 +12,7 @@ from carbonfactor_parser.persistence import (
     postgresql_persistence_preview,
     postgresql_psycopg_session_adapter,
     postgresql_repository,
+    postgresql_repository_disabled_execution_preview,
     postgresql_transaction_policy,
     repository,
     schema,
@@ -72,6 +73,10 @@ from carbonfactor_parser.persistence import (
     PostgreSQLPersistencePreviewStatus,
     PostgreSQLPersistenceRepository,
     PostgreSQLPersistenceSchema,
+    PostgreSQLRepositoryDisabledExecutionPreviewDescription,
+    PostgreSQLRepositoryDisabledExecutionPreviewIssue,
+    PostgreSQLRepositoryDisabledExecutionPreviewResult,
+    PostgreSQLRepositoryDisabledExecutionPreviewStatus,
     PostgreSQLStatementExecutionContract,
     PostgreSQLTransactionBoundary,
     PostgreSQLTransactionFailurePolicy,
@@ -93,6 +98,7 @@ from carbonfactor_parser.persistence import (
     build_postgresql_execution_plan,
     build_postgresql_insert_statement,
     build_postgresql_persistence_preview,
+    build_postgresql_repository_disabled_execution_preview,
     build_postgresql_transaction_plan,
     create_persistence_result,
     create_postgresql_integration_test_boundary,
@@ -101,6 +107,7 @@ from carbonfactor_parser.persistence import (
     describe_postgresql_disabled_runtime_execution,
     describe_postgresql_execution_adapter_boundary,
     describe_postgresql_idempotency_conflict_strategy_boundary,
+    describe_postgresql_repository_disabled_execution_preview,
     describe_postgresql_transaction_policy_boundary,
     get_normalized_record_postgresql_schema,
     render_postgresql_ddl_preview,
@@ -166,6 +173,10 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLPersistencePreviewStatus",
     "PostgreSQLPersistenceRepository",
     "PostgreSQLPersistenceSchema",
+    "PostgreSQLRepositoryDisabledExecutionPreviewDescription",
+    "PostgreSQLRepositoryDisabledExecutionPreviewIssue",
+    "PostgreSQLRepositoryDisabledExecutionPreviewResult",
+    "PostgreSQLRepositoryDisabledExecutionPreviewStatus",
     "PostgreSQLStatementExecutionContract",
     "PostgreSQLTransactionBoundary",
     "PostgreSQLTransactionFailurePolicy",
@@ -187,6 +198,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "build_postgresql_execution_plan",
     "build_postgresql_insert_statement",
     "build_postgresql_persistence_preview",
+    "build_postgresql_repository_disabled_execution_preview",
     "build_postgresql_transaction_plan",
     "create_persistence_result",
     "create_postgresql_integration_test_boundary",
@@ -195,6 +207,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "describe_postgresql_disabled_runtime_execution",
     "describe_postgresql_execution_adapter_boundary",
     "describe_postgresql_idempotency_conflict_strategy_boundary",
+    "describe_postgresql_repository_disabled_execution_preview",
     "describe_postgresql_transaction_policy_boundary",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
@@ -360,6 +373,22 @@ EXPECTED_PUBLIC_EXPORTS = {
         postgresql_repository.PostgreSQLPersistenceRepository
     ),
     "PostgreSQLPersistenceSchema": schema.PostgreSQLPersistenceSchema,
+    "PostgreSQLRepositoryDisabledExecutionPreviewDescription": (
+        postgresql_repository_disabled_execution_preview
+        .PostgreSQLRepositoryDisabledExecutionPreviewDescription
+    ),
+    "PostgreSQLRepositoryDisabledExecutionPreviewIssue": (
+        postgresql_repository_disabled_execution_preview
+        .PostgreSQLRepositoryDisabledExecutionPreviewIssue
+    ),
+    "PostgreSQLRepositoryDisabledExecutionPreviewResult": (
+        postgresql_repository_disabled_execution_preview
+        .PostgreSQLRepositoryDisabledExecutionPreviewResult
+    ),
+    "PostgreSQLRepositoryDisabledExecutionPreviewStatus": (
+        postgresql_repository_disabled_execution_preview
+        .PostgreSQLRepositoryDisabledExecutionPreviewStatus
+    ),
     "PostgreSQLStatementExecutionContract": (
         postgresql_connection_session_contract.PostgreSQLStatementExecutionContract
     ),
@@ -428,6 +457,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     "build_postgresql_persistence_preview": (
         postgresql_persistence_preview.build_postgresql_persistence_preview
     ),
+    "build_postgresql_repository_disabled_execution_preview": (
+        postgresql_repository_disabled_execution_preview
+        .build_postgresql_repository_disabled_execution_preview
+    ),
     "build_postgresql_transaction_plan": (
         postgresql_transaction_policy.build_postgresql_transaction_plan
     ),
@@ -453,6 +486,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     "describe_postgresql_idempotency_conflict_strategy_boundary": (
         postgresql_idempotency_conflict_strategy
         .describe_postgresql_idempotency_conflict_strategy_boundary
+    ),
+    "describe_postgresql_repository_disabled_execution_preview": (
+        postgresql_repository_disabled_execution_preview
+        .describe_postgresql_repository_disabled_execution_preview
     ),
     "describe_postgresql_transaction_policy_boundary": (
         postgresql_transaction_policy
@@ -566,6 +603,18 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLPersistencePreviewStatus": PostgreSQLPersistencePreviewStatus,
         "PostgreSQLPersistenceRepository": PostgreSQLPersistenceRepository,
         "PostgreSQLPersistenceSchema": PostgreSQLPersistenceSchema,
+        "PostgreSQLRepositoryDisabledExecutionPreviewDescription": (
+            PostgreSQLRepositoryDisabledExecutionPreviewDescription
+        ),
+        "PostgreSQLRepositoryDisabledExecutionPreviewIssue": (
+            PostgreSQLRepositoryDisabledExecutionPreviewIssue
+        ),
+        "PostgreSQLRepositoryDisabledExecutionPreviewResult": (
+            PostgreSQLRepositoryDisabledExecutionPreviewResult
+        ),
+        "PostgreSQLRepositoryDisabledExecutionPreviewStatus": (
+            PostgreSQLRepositoryDisabledExecutionPreviewStatus
+        ),
         "PostgreSQLStatementExecutionContract": PostgreSQLStatementExecutionContract,
         "PostgreSQLTransactionBoundary": PostgreSQLTransactionBoundary,
         "PostgreSQLTransactionFailurePolicy": (
@@ -607,6 +656,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "build_postgresql_persistence_preview": (
             build_postgresql_persistence_preview
         ),
+        "build_postgresql_repository_disabled_execution_preview": (
+            build_postgresql_repository_disabled_execution_preview
+        ),
         "build_postgresql_transaction_plan": build_postgresql_transaction_plan,
         "create_persistence_result": create_persistence_result,
         "create_postgresql_integration_test_boundary": (
@@ -626,6 +678,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         ),
         "describe_postgresql_idempotency_conflict_strategy_boundary": (
             describe_postgresql_idempotency_conflict_strategy_boundary
+        ),
+        "describe_postgresql_repository_disabled_execution_preview": (
+            describe_postgresql_repository_disabled_execution_preview
         ),
         "describe_postgresql_transaction_policy_boundary": (
             describe_postgresql_transaction_policy_boundary
@@ -678,4 +733,5 @@ def test_persistence_all_excludes_internal_module_names() -> None:
     assert "postgresql_psycopg_session_adapter" not in persistence.__all__
     assert "postgresql_disabled_runtime_execution_adapter" not in persistence.__all__
     assert "postgresql_repository" not in persistence.__all__
+    assert "postgresql_repository_disabled_execution_preview" not in persistence.__all__
     assert all(not name.startswith("_") for name in persistence.__all__)
