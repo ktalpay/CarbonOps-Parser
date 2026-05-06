@@ -82,6 +82,13 @@ runtime adapters must still receive caller-provided session objects explicitly.
 batch persistence. Execution plans may be wrapped in transaction policy metadata,
 but this does not start, finish, or roll back a real transaction.
 
+## Idempotency And Conflict Strategy Relationship
+
+`PostgreSQLIdempotencyConflictStrategy` records the Phase 1 duplicate-handling
+strategy for future batch persistence. Execution plans may carry idempotency and
+conflict target metadata, but this does not change insert SQL or add conflict
+SQL behavior.
+
 ## Repository Relationship
 
 `PostgreSQLPersistenceRepository` remains a skeleton that returns unsupported
@@ -119,6 +126,7 @@ A future adapter may map `PostgreSQLExecutionPlan` to the approved driver after:
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
 - [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
 - [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
+- [PostgreSQL Idempotency Conflict Strategy Boundary](postgresql-idempotency-conflict-strategy-boundary.md)
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)

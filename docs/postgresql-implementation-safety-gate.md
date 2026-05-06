@@ -95,6 +95,13 @@ session, no-partial-success policy. It is policy metadata only and must not
 become real transaction start, completion, rollback, SQL runtime, or repository
 write behavior before this gate is satisfied.
 
+## Idempotency And Conflict Strategy Relationship
+
+`PostgreSQLIdempotencyConflictStrategy` may describe future fail-on-conflict
+duplicate-handling policy. It is strategy metadata only and must not become
+conflict SQL generation, silent skip behavior, upsert behavior, SQL runtime, or
+repository write behavior before this gate is satisfied.
+
 ## Persistence Preview Relationship
 
 `build_postgresql_persistence_preview()` may expose insert-builder output through
@@ -210,6 +217,7 @@ This safety gate does not add:
 - [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
 - [PostgreSQL Execution Adapter Boundary](postgresql-execution-adapter-boundary.md)
 - [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
+- [PostgreSQL Idempotency Conflict Strategy Boundary](postgresql-idempotency-conflict-strategy-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
