@@ -238,13 +238,17 @@ def test_runbook_documents_manual_connection_smoke_execution_record() -> None:
 
     assert "## Manual Connection Smoke Execution Record" in runbook_text
     assert "`not_run`" in runbook_text
+    assert "`blocked_missing_local_postgresql`" in runbook_text
+    assert "`blocked_missing_dsn`" in runbook_text
     assert "`passed`" in runbook_text
     assert "`failed_sanitized`" in runbook_text
-    assert "status: `not_run`" in runbook_text
+    assert "status: `blocked_missing_local_postgresql`" in runbook_text
     assert "<local-run-date-time>" in runbook_text
     assert "<local-environment-label>" in runbook_text
     assert "<postgresql-version>" in runbook_text
     assert "<local-test-database>" in runbook_text
+    assert "attempt evidence:" in runbook_text
+    assert "opt-in smoke result: not run." in runbook_text
     assert POSTGRESQL_INTEGRATION_TEST_MARKER in runbook_text
     assert POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR in runbook_text
     assert POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR in runbook_text
@@ -252,6 +256,7 @@ def test_runbook_documents_manual_connection_smoke_execution_record() -> None:
         "python -m pytest -m postgresql_integration "
         "tests/test_postgresql_connection_smoke_boundary.py"
     ) in normalized_runbook_text
+    assert "This record does not claim a passed smoke result." in runbook_text
     assert "The smoke performs no SQL execution." in runbook_text
     assert "The smoke performs no DB writes." in runbook_text
     assert "Repository persistence remains disabled/no-execution." in runbook_text
@@ -262,7 +267,32 @@ def test_runbook_documents_manual_connection_smoke_execution_record() -> None:
     assert "Unset `CARBONOPS_RUN_POSTGRESQL_INTEGRATION`." in runbook_text
     assert "Unset `CARBONOPS_POSTGRESQL_TEST_DSN`." in runbook_text
     assert "Confirm default `python -m pytest` still remains DB-free." in runbook_text
-    assert "keep `status` set to `not_run`" in normalized_runbook_text
+    assert "do not record a passed result" in normalized_runbook_text
+
+
+def test_runbook_manual_connection_smoke_execution_record_has_one_current_status() -> None:
+    runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    current_record = runbook_text.split("Current execution record:", maxsplit=1)[1]
+    current_record = current_record.split("```bash", maxsplit=1)[0]
+
+    status_lines = [
+        line.strip()
+        for line in current_record.splitlines()
+        if line.strip().startswith("- status:")
+    ]
+    allowed_statuses = {
+        "`not_run`",
+        "`blocked_missing_local_postgresql`",
+        "`blocked_missing_dsn`",
+        "`passed`",
+        "`failed_sanitized`",
+    }
+
+    assert status_lines == ["- status: `blocked_missing_local_postgresql`"]
+    current_status = status_lines[0].removeprefix("- status: ").strip()
+    assert current_status in allowed_statuses
+    assert current_status != "`passed`"
+    assert "opt-in smoke result: not run." in current_record
 
 
 def test_runbook_documents_local_postgresql_setup_checklist() -> None:
