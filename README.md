@@ -313,6 +313,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Normalized Result Persistence Boundary](docs/normalized-result-persistence-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](docs/postgresql-persistence-schema-boundary.md)
 - [Persistence Repository Boundary](docs/persistence-repository-boundary.md)
+- [PostgreSQL Repository Implementation Planning Boundary](docs/postgresql-repository-implementation-planning-boundary.md)
 - [Parser To Normalization Handoff Boundary](docs/parser-to-normalization-handoff-boundary.md)
 - [Parser To Normalization Integration Recap](docs/parser-to-normalization-integration-recap.md)
 - [Source To Normalization Pipeline Recap](docs/source-to-normalization-pipeline-recap.md)

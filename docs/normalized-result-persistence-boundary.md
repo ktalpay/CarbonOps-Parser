@@ -65,6 +65,8 @@ The descriptor does not generate executable SQL, create migrations, connect to P
 
 The package exposes repository result contracts and statuses only. It does not include a concrete PostgreSQL repository implementation, and it does not perform runtime persistence.
 
+The PostgreSQL repository implementation planning boundary documents the decisions required before a concrete repository can be added.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -85,6 +87,7 @@ This boundary does not add:
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
+- [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [Normalization Input Boundary](normalization-input-boundary.md)
 - [Normalization Boundary](normalization-boundary.md)
 - [Database Model](database-model.md)

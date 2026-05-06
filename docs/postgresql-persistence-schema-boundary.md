@@ -68,6 +68,10 @@ Future PostgreSQL work must be separately scoped and should cover:
 
 None of those runtime behaviors are implemented by this boundary.
 
+## Repository Planning Relationship
+
+The PostgreSQL repository implementation planning boundary defines the decisions required before this logical schema can be used by runtime repository code. Schema descriptors stay descriptive until a later task explicitly adds DDL preview, migrations, repository implementation, integration tests, and operational behavior.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -88,6 +92,7 @@ This boundary does not add:
 
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
+- [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [Database Model](database-model.md)
 - [Database Startup](database-startup.md)
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
