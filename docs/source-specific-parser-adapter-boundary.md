@@ -69,6 +69,8 @@ File content reading is deferred from this boundary.
 
 Future file-content input work must explicitly own when and how artifacts are opened, streamed, decoded, size-checked, and handed to source-specific parser logic. Until that task is scoped, parser adapter compatibility checks and boundary documentation must treat artifact references and local paths as metadata only.
 
+`ParserFileContentInput` defines the already-loaded content shape for future parser work. It keeps parseable text or bytes separate from `ParserInputContract` acquisition metadata, and it still does not perform file loading by itself.
+
 ## Source Acquisition Separation
 
 Source acquisition owns descriptor discovery, target planning, explicit HTTP acquisition, local artifact references, file metadata, manifests, checksums, and acquisition status.
@@ -125,6 +127,7 @@ This boundary does not add:
 ## Related Documents
 
 - [Parser Adapter Boundary](parser-adapter-boundary.md)
+- [Parser File Content Input Boundary](parser-file-content-input-boundary.md)
 - [Parser Execution Planning Boundary](parser-execution-planning-boundary.md)
 - [Parser Execution Runner Boundary](parser-execution-runner-boundary.md)
 - [Parser Execution Result Boundary](parser-execution-result-boundary.md)

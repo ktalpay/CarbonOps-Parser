@@ -34,6 +34,13 @@ from carbonfactor_parser.parsers.execution_result import (
     create_parser_execution_result,
 )
 from carbonfactor_parser.parsers.execution_runner import run_parser_execution
+from carbonfactor_parser.parsers.file_content_input import (
+    ParserFileContentInput,
+    ParserFileContentValidationIssue,
+    ParserFileContentValidationResult,
+    create_parser_file_content_input,
+    validate_parser_file_content_input,
+)
 from carbonfactor_parser.parsers.fixture_parser import ArtificialFixtureParser
 from carbonfactor_parser.parsers.input_contract import (
     ParserInputContract,
@@ -69,6 +76,9 @@ __all__ = (
     "ParserExecutionPlanStatus",
     "ParserExecutionResult",
     "ParserExecutionResultStatus",
+    "ParserFileContentInput",
+    "ParserFileContentValidationIssue",
+    "ParserFileContentValidationResult",
     "ParserInputContract",
     "ParserInputValidationIssue",
     "ParserInputValidationResult",
@@ -81,12 +91,14 @@ __all__ = (
     "ParserResultSummary",
     "create_parser_adapter_registry",
     "create_parser_execution_result",
+    "create_parser_file_content_input",
     "create_parser_input_contract",
     "list_parser_adapters",
     "plan_parser_execution",
     "register_parser_adapter",
     "resolve_parser_adapters",
     "run_parser_execution",
+    "validate_parser_file_content_input",
     "validate_parser_input_contract",
     "build_fixture_parser_input_mapping",
     "summarize_parser_pipeline",
