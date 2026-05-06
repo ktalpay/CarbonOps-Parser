@@ -8,6 +8,7 @@ from carbonfactor_parser.parsers import (
     example_source_specific_parser,
     execution_plan,
     execution_result,
+    execution_runner,
     fixture_parser,
     input_contract,
     input_mapping,
@@ -46,6 +47,7 @@ from carbonfactor_parser.parsers import (
     plan_parser_execution,
     register_parser_adapter,
     resolve_parser_adapters,
+    run_parser_execution,
     summarize_parser_pipeline,
     validate_parser_input_contract,
 )
@@ -82,6 +84,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "plan_parser_execution",
     "register_parser_adapter",
     "resolve_parser_adapters",
+    "run_parser_execution",
     "validate_parser_input_contract",
     "build_fixture_parser_input_mapping",
     "summarize_parser_pipeline",
@@ -126,6 +129,7 @@ EXPECTED_PUBLIC_EXPORTS = {
     "plan_parser_execution": execution_plan.plan_parser_execution,
     "register_parser_adapter": adapter_registry.register_parser_adapter,
     "resolve_parser_adapters": adapter_registry.resolve_parser_adapters,
+    "run_parser_execution": execution_runner.run_parser_execution,
     "validate_parser_input_contract": input_contract.validate_parser_input_contract,
     "build_fixture_parser_input_mapping": (
         input_mapping.build_fixture_parser_input_mapping
@@ -166,6 +170,7 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "plan_parser_execution": plan_parser_execution,
         "register_parser_adapter": register_parser_adapter,
         "resolve_parser_adapters": resolve_parser_adapters,
+        "run_parser_execution": run_parser_execution,
         "validate_parser_input_contract": validate_parser_input_contract,
         "build_fixture_parser_input_mapping": build_fixture_parser_input_mapping,
         "summarize_parser_pipeline": summarize_parser_pipeline,
@@ -201,6 +206,7 @@ def test_parser_all_excludes_internal_module_names() -> None:
     assert "example_source_specific_parser" not in parsers.__all__
     assert "execution_plan" not in parsers.__all__
     assert "execution_result" not in parsers.__all__
+    assert "execution_runner" not in parsers.__all__
     assert "fixture_parser" not in parsers.__all__
     assert "input_contract" not in parsers.__all__
     assert "input_mapping" not in parsers.__all__
