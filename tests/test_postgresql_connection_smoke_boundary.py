@@ -269,7 +269,8 @@ def test_runbook_documents_manual_connection_smoke_execution_record() -> None:
     assert "libpq or binary wrapper" in runbook_text
     assert "`psycopg[binary]>=3,<4`" in runbook_text
     assert "metadata in CO-103K" in runbook_text
-    assert "libpq/binary packaging decision remains deferred" in runbook_text
+    assert "CO-103L resolves the libpq/binary packaging decision" in runbook_text
+    assert "`postgresql` extra" in runbook_text
     assert "DSN redacted." in runbook_text
     assert "Password redacted." in runbook_text
     assert "No secrets in logs" in runbook_text
@@ -323,7 +324,29 @@ def test_runbook_successful_smoke_record_captures_deferred_packaging_issues() ->
     assert "`psycopg>=3,<4` local import path failed" in current_record
     assert "libpq or binary wrapper" in current_record
     assert "`psycopg[binary]>=3,<4`" in current_record
-    assert "libpq/binary packaging decision remains deferred" in current_record
+    assert "CO-103L resolves the libpq/binary packaging decision" in current_record
+    assert "`postgresql` extra" in current_record
+
+
+def test_runbook_documents_psycopg_binary_libpq_packaging_decision() -> None:
+    runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    normalized_runbook_text = " ".join(runbook_text.split())
+
+    assert "## psycopg Binary/Libpq Packaging Decision" in runbook_text
+    assert "core project dependency as `psycopg>=3,<4`" in normalized_runbook_text
+    assert 'python -m pip install -e ".[postgresql]"' in runbook_text
+    assert "`postgresql` extra installs `psycopg[binary]>=3,<4`" in runbook_text
+    assert "clear binary-wrapper path" in normalized_runbook_text
+    assert (
+        "This is a packaging/installability decision only. It does not create "
+        "PostgreSQL connections, execute SQL, write records, enable repository "
+        "persistence, change the default test suite, or claim production "
+        "persistence readiness."
+    ) in normalized_runbook_text
+    assert (
+        "DSNs and credentials remain external test-runner inputs"
+        in normalized_runbook_text
+    )
 
 
 def test_runbook_documents_local_postgresql_setup_checklist() -> None:

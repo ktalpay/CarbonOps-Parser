@@ -58,6 +58,25 @@ The marker is registered in pytest configuration only to make future marked
 tests explicit and discoverable. Registration does not enable DB tests by
 default.
 
+## psycopg Binary/Libpq Packaging Decision
+
+CO-103L keeps the core project dependency as `psycopg>=3,<4` and adds an
+explicit PostgreSQL opt-in extra for local smoke users:
+
+```bash
+python -m pip install -e ".[postgresql]"
+```
+
+The `postgresql` extra installs `psycopg[binary]>=3,<4`. This keeps the base
+editable install small while giving local Docker PostgreSQL smoke runs a clear
+binary-wrapper path when the host does not provide libpq. Local users who manage
+libpq separately may continue to use the base editable install.
+
+This is a packaging/installability decision only. It does not create PostgreSQL
+connections, execute SQL, write records, enable repository persistence, change
+the default test suite, or claim production persistence readiness. DSNs and
+credentials remain external test-runner inputs and must stay redacted.
+
 ## Connection Smoke Skeleton
 
 CO-103C adds a default-skipped connection smoke skeleton for future local
@@ -253,7 +272,9 @@ Deferred local setup issues:
 - The declared `psycopg>=3,<4` local import path failed because the local
   environment lacked the required libpq or binary wrapper.
 - The manual smoke was unblocked locally with `psycopg[binary]>=3,<4`.
-- The libpq/binary packaging decision remains deferred.
+- CO-103L resolves the libpq/binary packaging decision by keeping
+  `psycopg>=3,<4` in the core dependency list and adding the explicit
+  `postgresql` extra with `psycopg[binary]>=3,<4` for local opt-in smoke users.
 
 Redaction checklist:
 

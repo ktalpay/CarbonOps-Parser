@@ -42,6 +42,15 @@ def test_psycopg_dependency_is_declared_in_pyproject() -> None:
     assert '"psycopg>=3,<4"' in text
 
 
+def test_postgresql_optional_extra_declares_psycopg_binary_install_path() -> None:
+    text = _pyproject_text()
+    postgresql_extra = text.split("[project.optional-dependencies]", maxsplit=1)[1]
+    postgresql_extra = postgresql_extra.split("[tool.pytest.ini_options]", maxsplit=1)[0]
+
+    assert "postgresql = [" in postgresql_extra
+    assert '"psycopg[binary]>=3,<4"' in postgresql_extra
+
+
 def test_project_version_is_declared_for_editable_install_metadata() -> None:
     text = _pyproject_text()
 

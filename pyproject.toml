@@ -5,6 +5,11 @@ dependencies = [
     "psycopg>=3,<4",
 ]
 
+[project.optional-dependencies]
+postgresql = [
+    "psycopg[binary]>=3,<4",
+]
+
 [tool.pytest.ini_options]
 pythonpath = [
     "src",
