@@ -33,6 +33,12 @@ Raw parser payload preservation is intentionally passive. The handoff does not c
 
 Failed, unsupported, and no-records parser execution results do not create ready normalization handoffs. They return a structured issue explaining that the parser execution result must be successful before normalization handoff is ready.
 
+## Normalization Input Relationship
+
+`build_normalization_input_from_parser_execution_handoff()` can copy raw parser payloads from ready handoffs into `NormalizationInput`. This is still input preparation only: it preserves source identity, raw record indexes, raw fields, parser metadata, and source context without executing normalization.
+
+Not-ready handoffs and ready handoffs without raw payloads do not produce ready normalization input.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -51,6 +57,7 @@ This boundary does not add:
 
 - [Parser Execution Result Boundary](parser-execution-result-boundary.md)
 - [Parsed Raw Record Payload Boundary](parsed-raw-record-payload-boundary.md)
+- [Normalization Input Boundary](normalization-input-boundary.md)
 - [Parser File Content Input Boundary](parser-file-content-input-boundary.md)
 - [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md)
 - [Normalization Boundary](normalization-boundary.md)

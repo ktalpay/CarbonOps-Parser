@@ -40,6 +40,14 @@ The minimal DEFRA/DESNZ content helper attaches a raw payload for the small dete
 
 Failed, unsupported, and no-records parser execution results still do not create ready normalization handoffs.
 
+## Normalization Input Relationship
+
+`build_normalization_input_from_raw_payload()` can copy a `ParsedRawRecordPayload` into `NormalizationInput`. The copy preserves source identity, record indexes, row numbers, raw field keys and values, parser metadata, and source context.
+
+`build_normalization_input_from_parser_execution_handoff()` can build normalization input from a ready parser execution handoff only when a raw payload is already present. It returns not-ready results for not-ready handoffs or metadata-only handoffs.
+
+Normalization input remains pre-normalization data. It does not canonicalize fields, transform values, convert units, infer categories, or execute normalization.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -57,6 +65,7 @@ This boundary does not add:
 
 - [Parser Execution Result Boundary](parser-execution-result-boundary.md)
 - [Parser Execution Normalization Handoff Boundary](parser-execution-normalization-handoff-boundary.md)
+- [Normalization Input Boundary](normalization-input-boundary.md)
 - [Parser File Content Input Boundary](parser-file-content-input-boundary.md)
 - [Source-Specific Parser Adapter Boundary](source-specific-parser-adapter-boundary.md)
 - [Public Safety](public-safety.md)
