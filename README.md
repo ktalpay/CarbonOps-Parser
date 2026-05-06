@@ -271,6 +271,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Source Acquisition Implementation Readiness Examples Boundary](docs/source-acquisition-implementation-readiness-examples-boundary.md)
 - [Source Acquisition Implementation Sequencing Checklist](docs/source-acquisition-implementation-sequencing-checklist.md)
 - [Source Acquisition Implementation Sequencing Examples Boundary](docs/source-acquisition-implementation-sequencing-examples-boundary.md)
+- [Source Acquisition Parser Handoff Contract](docs/source-acquisition-parser-handoff-contract.md)
 - [Artificial Source Acquisition Validation Pipeline](docs/artificial-source-acquisition-validation-pipeline.md)
 - [Artificial Source Acquisition Module Recap](docs/artificial-source-acquisition-module-recap.md)
 - [Artificial Source Acquisition Phase Closure](docs/artificial-source-acquisition-phase-closure.md)
