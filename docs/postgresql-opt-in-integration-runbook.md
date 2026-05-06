@@ -247,12 +247,13 @@ Expected result shape:
 
 Deferred local setup issues:
 
-- `pip install -e .` failed because `pyproject.toml` is missing
-  `project.version`.
+- The earlier editable-install metadata blocker from this smoke setup was
+  resolved by adding the minimum required `project.name` and `project.version`
+  metadata in CO-103K.
 - The declared `psycopg>=3,<4` local import path failed because the local
   environment lacked the required libpq or binary wrapper.
 - The manual smoke was unblocked locally with `psycopg[binary]>=3,<4`.
-- Package metadata and dependency strategy are not changed by this record task.
+- The libpq/binary packaging decision remains deferred.
 
 Redaction checklist:
 
