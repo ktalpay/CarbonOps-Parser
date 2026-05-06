@@ -78,6 +78,8 @@ back, skipped, upserted, or otherwise completed as a database operation.
 - CO-102J repository disabled execution preview can compose `PersistenceInput`
   through insert-builder metadata into this disabled runtime result without
   changing repository `persist()` behavior.
+- CO-102K runtime execution gate keeps runtime execution disabled by default
+  and records future explicit enablement intent as no-execution metadata.
 - `PostgreSQLPersistenceRepository` remains unsupported and must not call this
   boundary as a runtime write path.
 
@@ -96,6 +98,7 @@ tests, and sanitized operational reporting in separately reviewed tasks.
 - [PostgreSQL Idempotency Conflict Strategy Boundary](postgresql-idempotency-conflict-strategy-boundary.md)
 - [PostgreSQL psycopg Session Adapter Boundary](postgresql-psycopg-session-adapter-boundary.md)
 - [PostgreSQL Repository Disabled Execution Preview Boundary](postgresql-repository-disabled-execution-preview-boundary.md)
+- [PostgreSQL Runtime Execution Gate Boundary](postgresql-runtime-execution-gate-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
