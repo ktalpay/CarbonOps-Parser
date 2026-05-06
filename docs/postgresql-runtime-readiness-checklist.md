@@ -48,7 +48,8 @@ A future real runtime execution task is blocked until all of these are true:
   inspected without connecting or running SQL.
 - Public safety checks pass without weakening rules.
 - Integration test opt-in plan exists, the opt-in integration runbook is
-  reviewed, and normal test runs do not touch PostgreSQL.
+  reviewed, marker enforcement tests pass, and normal test runs do not touch
+  PostgreSQL.
 - No credentials, config files, or environment variables are loaded by library
   code.
 - No secrets appear in docs, tests, logs, fixtures, examples, exceptions, or

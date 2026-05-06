@@ -11,6 +11,9 @@ pythonpath = [
 testpaths = [
     "tests",
 ]
+markers = [
+    "postgresql_integration: future opt-in PostgreSQL integration tests; disabled by default unless an explicit test harness enables them",
+]
 
 [project.scripts]
 carbonops-parser = "carbonfactor_parser.cli:main"
