@@ -1,6 +1,13 @@
 """Intentional public exports for parser contracts."""
 
 from carbonfactor_parser.parsers.adapter import ParserAdapter
+from carbonfactor_parser.parsers.adapter_registry import (
+    ParserAdapterRegistry,
+    create_parser_adapter_registry,
+    list_parser_adapters,
+    register_parser_adapter,
+    resolve_parser_adapters,
+)
 from carbonfactor_parser.parsers.contracts import (
     ParserIssue,
     ParserIssueSeverity,
@@ -36,6 +43,7 @@ __all__ = (
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
     "ParserAdapter",
+    "ParserAdapterRegistry",
     "ParserInputContract",
     "ParserInputValidationIssue",
     "ParserInputValidationResult",
@@ -46,7 +54,11 @@ __all__ = (
     "ParserPipelineSummary",
     "ParserResult",
     "ParserResultSummary",
+    "create_parser_adapter_registry",
     "create_parser_input_contract",
+    "list_parser_adapters",
+    "register_parser_adapter",
+    "resolve_parser_adapters",
     "validate_parser_input_contract",
     "build_fixture_parser_input_mapping",
     "summarize_parser_pipeline",

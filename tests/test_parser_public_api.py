@@ -1,6 +1,7 @@
 import carbonfactor_parser.parsers as parsers
 from carbonfactor_parser.parsers import (
     adapter,
+    adapter_registry,
     contracts,
     defra_desnz_parser,
     example_parser,
@@ -16,6 +17,7 @@ from carbonfactor_parser.parsers import (
     ExampleInMemoryParser,
     ExampleSourceSpecificParser,
     ParserAdapter,
+    ParserAdapterRegistry,
     ParserInputContract,
     ParserInputValidationIssue,
     ParserInputValidationResult,
@@ -26,8 +28,12 @@ from carbonfactor_parser.parsers import (
     ParserPipelineSummary,
     ParserResult,
     ParserResultSummary,
+    create_parser_adapter_registry,
     build_fixture_parser_input_mapping,
     create_parser_input_contract,
+    list_parser_adapters,
+    register_parser_adapter,
+    resolve_parser_adapters,
     summarize_parser_pipeline,
     validate_parser_input_contract,
 )
@@ -39,6 +45,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
     "ParserAdapter",
+    "ParserAdapterRegistry",
     "ParserInputContract",
     "ParserInputValidationIssue",
     "ParserInputValidationResult",
@@ -49,7 +56,11 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "ParserPipelineSummary",
     "ParserResult",
     "ParserResultSummary",
+    "create_parser_adapter_registry",
     "create_parser_input_contract",
+    "list_parser_adapters",
+    "register_parser_adapter",
+    "resolve_parser_adapters",
     "validate_parser_input_contract",
     "build_fixture_parser_input_mapping",
     "summarize_parser_pipeline",
@@ -63,6 +74,7 @@ EXPECTED_PUBLIC_EXPORTS = {
         example_source_specific_parser.ExampleSourceSpecificParser
     ),
     "ParserAdapter": adapter.ParserAdapter,
+    "ParserAdapterRegistry": adapter_registry.ParserAdapterRegistry,
     "ParserInputContract": input_contract.ParserInputContract,
     "ParserInputValidationIssue": input_contract.ParserInputValidationIssue,
     "ParserInputValidationResult": input_contract.ParserInputValidationResult,
@@ -73,7 +85,13 @@ EXPECTED_PUBLIC_EXPORTS = {
     "ParserPipelineSummary": pipeline_summary.ParserPipelineSummary,
     "ParserResult": contracts.ParserResult,
     "ParserResultSummary": contracts.ParserResultSummary,
+    "create_parser_adapter_registry": (
+        adapter_registry.create_parser_adapter_registry
+    ),
     "create_parser_input_contract": input_contract.create_parser_input_contract,
+    "list_parser_adapters": adapter_registry.list_parser_adapters,
+    "register_parser_adapter": adapter_registry.register_parser_adapter,
+    "resolve_parser_adapters": adapter_registry.resolve_parser_adapters,
     "validate_parser_input_contract": input_contract.validate_parser_input_contract,
     "build_fixture_parser_input_mapping": (
         input_mapping.build_fixture_parser_input_mapping
@@ -89,6 +107,7 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "ExampleInMemoryParser": ExampleInMemoryParser,
         "ExampleSourceSpecificParser": ExampleSourceSpecificParser,
         "ParserAdapter": ParserAdapter,
+        "ParserAdapterRegistry": ParserAdapterRegistry,
         "ParserInputContract": ParserInputContract,
         "ParserInputValidationIssue": ParserInputValidationIssue,
         "ParserInputValidationResult": ParserInputValidationResult,
@@ -99,7 +118,11 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "ParserPipelineSummary": ParserPipelineSummary,
         "ParserResult": ParserResult,
         "ParserResultSummary": ParserResultSummary,
+        "create_parser_adapter_registry": create_parser_adapter_registry,
         "create_parser_input_contract": create_parser_input_contract,
+        "list_parser_adapters": list_parser_adapters,
+        "register_parser_adapter": register_parser_adapter,
+        "resolve_parser_adapters": resolve_parser_adapters,
         "validate_parser_input_contract": validate_parser_input_contract,
         "build_fixture_parser_input_mapping": build_fixture_parser_input_mapping,
         "summarize_parser_pipeline": summarize_parser_pipeline,
@@ -128,6 +151,7 @@ def test_parser_all_names_resolve_to_package_attributes() -> None:
 
 def test_parser_all_excludes_internal_module_names() -> None:
     assert "adapter" not in parsers.__all__
+    assert "adapter_registry" not in parsers.__all__
     assert "contracts" not in parsers.__all__
     assert "defra_desnz_parser" not in parsers.__all__
     assert "example_parser" not in parsers.__all__
