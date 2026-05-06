@@ -141,6 +141,10 @@ The [PostgreSQL Runtime Execution Gate Boundary](postgresql-runtime-execution-ga
 adds the explicit enablement gate for that future work. It is disabled by
 default, remains metadata-only, and does not enable repository execution.
 
+The [PostgreSQL Runtime Readiness Checklist](postgresql-runtime-readiness-checklist.md)
+defines the go/no-go criteria that must be satisfied before the first real
+runtime execution task begins.
+
 ## Transaction Strategy
 
 The first runtime implementation should use one transaction per
@@ -239,6 +243,7 @@ explicitly constructs a runtime-capable repository with approved configuration.
 The first task that adds runtime PostgreSQL persistence must pass this checklist:
 
 - The PostgreSQL implementation safety gate is explicitly satisfied.
+- The PostgreSQL runtime readiness checklist has a go decision.
 - The `psycopg` dependency remains isolated from pure preview/domain modules.
 - Runtime writes require explicit caller-provided configuration.
 - No default local, staging, production, or cloud database target exists.

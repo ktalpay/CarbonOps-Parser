@@ -68,6 +68,8 @@ session, call an adapter, or execute SQL.
   satisfy the PostgreSQL implementation safety gate.
 - Future PostgreSQL integration tests must remain default-disabled and opt-in
   until a scoped runtime task introduces database behavior.
+- The runtime readiness checklist defines the go/no-go criteria before a future
+  task may use this gate for real execution.
 
 ## Non-Goals
 
@@ -92,5 +94,6 @@ This gate does not add:
 - [PostgreSQL Disabled Runtime Execution Adapter Boundary](postgresql-disabled-runtime-execution-adapter-boundary.md)
 - [PostgreSQL Repository Disabled Execution Preview Boundary](postgresql-repository-disabled-execution-preview-boundary.md)
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
+- [PostgreSQL Runtime Readiness Checklist](postgresql-runtime-readiness-checklist.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Integration Test Boundary](postgresql-integration-test-boundary.md)

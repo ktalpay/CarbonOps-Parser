@@ -123,6 +123,11 @@ open a connection, create a cursor, run SQL, write records, start a transaction,
 or change `PostgreSQLPersistenceRepository.persist()` before this gate is
 satisfied.
 
+The PostgreSQL runtime readiness checklist must also have a go decision before
+any real runtime execution task begins. That checklist records dependency,
+import, session, transaction, conflict, test, credential, and repository
+behavior criteria for the first runtime task.
+
 ## Transaction Policy Relationship
 
 `PostgreSQLTransactionPolicy` may describe future single-batch, caller-provided
@@ -260,6 +265,7 @@ This safety gate does not add:
 - [PostgreSQL Disabled Runtime Execution Adapter Boundary](postgresql-disabled-runtime-execution-adapter-boundary.md)
 - [PostgreSQL Repository Disabled Execution Preview Boundary](postgresql-repository-disabled-execution-preview-boundary.md)
 - [PostgreSQL Runtime Execution Gate Boundary](postgresql-runtime-execution-gate-boundary.md)
+- [PostgreSQL Runtime Readiness Checklist](postgresql-runtime-readiness-checklist.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
