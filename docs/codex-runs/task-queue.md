@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-098A: Added `carbonops-parser local-dry-run` CLI entry path for explicit local DEFRA/DESNZ fixture dry-run summaries with text/JSON output, focused tests, and documentation without DB connections, DB writes, SQL execution, migrations, network calls, source acquisition integration, config loading, credentials, scheduler behavior, or production ingestion claims.
 - CO-097B: Added local DEFRA/DESNZ fixture file to normalized persistence dry-run pipeline with structured intermediate results, `PersistenceInput`, DDL preview metadata, public exports, focused tests, and documentation without DB connections, DB writes, SQL execution, migrations, credentials, scheduler behavior, production ingestion claims, or network calls.
 - CO-097A: Added explicit local UTF-8 parser file content loader boundary with structured load statuses, public exports, focused temp-file tests, and documentation without parser execution, normalization, DB writes, SQL, migrations, credentials, scheduler behavior, or network calls.
 - CO-096C: Added deterministic PostgreSQL DDL preview rendering from the logical schema descriptor, public exports, focused tests, and documentation without DB connections, SQL execution, migrations, runtime table creation, credentials, file I/O, or network behavior.
