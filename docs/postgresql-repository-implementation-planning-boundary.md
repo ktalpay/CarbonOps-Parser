@@ -25,6 +25,10 @@ The PostgreSQL integration test boundary is also present, but it is
 default-disabled metadata only. It does not add runtime database tests or
 database dependencies.
 
+The PostgreSQL insert builder can produce deterministic parameterized statement
+data from `PersistenceInput`. It does not execute SQL or replace the future
+repository implementation decisions below.
+
 ## Safety Gate
 
 No PostgreSQL repository implementation, runtime database connection, SQL execution, migration, or database write may be added until the [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md) is satisfied.
@@ -124,6 +128,7 @@ Future implementation PRs should confirm:
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
+- [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [Database Model](database-model.md)
 - [Database Startup](database-startup.md)

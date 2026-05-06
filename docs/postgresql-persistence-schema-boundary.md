@@ -48,6 +48,17 @@ The preview may include `CREATE TABLE` text, descriptor columns, nullability mar
 
 Runtime schema ownership, migration tooling, repository writes, and conflict handling remain deferred.
 
+## Insert Builder Relationship
+
+`build_postgresql_insert_statement()` can build deterministic parameterized
+insert statement data from `PersistenceInput` using this logical schema
+descriptor.
+
+The builder uses the descriptor table name, column order, and idempotency key
+fields. It returns SQL text with placeholders and ordered in-memory parameter
+values only. It does not connect to PostgreSQL, execute SQL, write records,
+create tables, run migrations, load credentials, or add a database dependency.
+
 ## Idempotency Strategy
 
 Future idempotency should be based on a stable combination of:
@@ -102,6 +113,7 @@ This boundary does not add:
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
+- [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [Database Model](database-model.md)

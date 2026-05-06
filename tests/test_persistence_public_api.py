@@ -3,6 +3,7 @@ from carbonfactor_parser.persistence import (
     ddl_preview,
     input,
     integration_test_boundary,
+    postgresql_insert_builder,
     postgresql_options,
     postgresql_repository,
     repository,
@@ -22,6 +23,10 @@ from carbonfactor_parser.persistence import (
     PersistenceResult,
     PersistenceResultStatus,
     PostgreSQLIntegrationTestBoundary,
+    PostgreSQLInsertBuildIssue,
+    PostgreSQLInsertBuildResult,
+    PostgreSQLInsertBuildStatus,
+    PostgreSQLInsertStatement,
     PostgreSQLPersistenceColumn,
     PostgreSQLPersistenceOptions,
     PostgreSQLPersistenceOptionsValidationIssue,
@@ -29,6 +34,7 @@ from carbonfactor_parser.persistence import (
     PostgreSQLPersistenceRepository,
     PostgreSQLPersistenceSchema,
     build_persistence_input_from_normalization_result,
+    build_postgresql_insert_statement,
     create_persistence_result,
     create_postgresql_integration_test_boundary,
     create_postgresql_persistence_options,
@@ -53,6 +59,10 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PersistenceResult",
     "PersistenceResultStatus",
     "PostgreSQLIntegrationTestBoundary",
+    "PostgreSQLInsertBuildIssue",
+    "PostgreSQLInsertBuildResult",
+    "PostgreSQLInsertBuildStatus",
+    "PostgreSQLInsertStatement",
     "PostgreSQLPersistenceColumn",
     "PostgreSQLPersistenceOptions",
     "PostgreSQLPersistenceOptionsValidationIssue",
@@ -60,6 +70,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLPersistenceRepository",
     "PostgreSQLPersistenceSchema",
     "build_persistence_input_from_normalization_result",
+    "build_postgresql_insert_statement",
     "create_persistence_result",
     "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",
@@ -89,6 +100,18 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PostgreSQLIntegrationTestBoundary": (
         integration_test_boundary.PostgreSQLIntegrationTestBoundary
     ),
+    "PostgreSQLInsertBuildIssue": (
+        postgresql_insert_builder.PostgreSQLInsertBuildIssue
+    ),
+    "PostgreSQLInsertBuildResult": (
+        postgresql_insert_builder.PostgreSQLInsertBuildResult
+    ),
+    "PostgreSQLInsertBuildStatus": (
+        postgresql_insert_builder.PostgreSQLInsertBuildStatus
+    ),
+    "PostgreSQLInsertStatement": (
+        postgresql_insert_builder.PostgreSQLInsertStatement
+    ),
     "PostgreSQLPersistenceColumn": schema.PostgreSQLPersistenceColumn,
     "PostgreSQLPersistenceOptions": (
         postgresql_options.PostgreSQLPersistenceOptions
@@ -105,6 +128,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PostgreSQLPersistenceSchema": schema.PostgreSQLPersistenceSchema,
     "build_persistence_input_from_normalization_result": (
         input.build_persistence_input_from_normalization_result
+    ),
+    "build_postgresql_insert_statement": (
+        postgresql_insert_builder.build_postgresql_insert_statement
     ),
     "create_persistence_result": repository.create_persistence_result,
     "create_postgresql_integration_test_boundary": (
@@ -143,6 +169,10 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PersistenceResult": PersistenceResult,
         "PersistenceResultStatus": PersistenceResultStatus,
         "PostgreSQLIntegrationTestBoundary": PostgreSQLIntegrationTestBoundary,
+        "PostgreSQLInsertBuildIssue": PostgreSQLInsertBuildIssue,
+        "PostgreSQLInsertBuildResult": PostgreSQLInsertBuildResult,
+        "PostgreSQLInsertBuildStatus": PostgreSQLInsertBuildStatus,
+        "PostgreSQLInsertStatement": PostgreSQLInsertStatement,
         "PostgreSQLPersistenceColumn": PostgreSQLPersistenceColumn,
         "PostgreSQLPersistenceOptions": PostgreSQLPersistenceOptions,
         "PostgreSQLPersistenceOptionsValidationIssue": (
@@ -156,6 +186,7 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "build_persistence_input_from_normalization_result": (
             build_persistence_input_from_normalization_result
         ),
+        "build_postgresql_insert_statement": build_postgresql_insert_statement,
         "create_persistence_result": create_persistence_result,
         "create_postgresql_integration_test_boundary": (
             create_postgresql_integration_test_boundary
@@ -199,6 +230,7 @@ def test_persistence_all_names_resolve_to_package_attributes() -> None:
 def test_persistence_all_excludes_internal_module_names() -> None:
     assert "input" not in persistence.__all__
     assert "integration_test_boundary" not in persistence.__all__
+    assert "postgresql_insert_builder" not in persistence.__all__
     assert "repository" not in persistence.__all__
     assert "schema" not in persistence.__all__
     assert "ddl_preview" not in persistence.__all__
