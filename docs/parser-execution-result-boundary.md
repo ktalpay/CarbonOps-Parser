@@ -41,6 +41,12 @@ If an adapter raises while parsing, the runner converts the exception into a `fa
 
 Minimal already-loaded content helpers, such as `parse_defra_desnz_file_content()`, also return `ParserExecutionResult`. They may report `success` with a parsed record count, `no_records` for empty in-memory content, or `failed` for invalid fixture shape. They must not include normalized records or persistence output.
 
+## Normalization Handoff
+
+`build_parser_execution_normalization_handoff()` creates a ready normalization handoff only from `success` parser execution results. Failed, unsupported, and no-records parser execution results become structured not-ready handoff results.
+
+The handoff preserves parser/source identity and parsed record count. It does not invent parsed record payloads; `parsed_records_payload_status` remains `deferred` until a future parser payload mapping task is explicitly scoped.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -62,5 +68,6 @@ This boundary does not add:
 - [Parser Execution Planning Boundary](parser-execution-planning-boundary.md)
 - [Parser Execution Runner Boundary](parser-execution-runner-boundary.md)
 - [Parser File Content Input Boundary](parser-file-content-input-boundary.md)
+- [Parser Execution Normalization Handoff Boundary](parser-execution-normalization-handoff-boundary.md)
 - [Parser Contract Boundaries](parser-contract-boundaries.md)
 - [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md)

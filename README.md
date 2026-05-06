@@ -202,7 +202,7 @@ For boundary details, see:
 
 See [examples/example_acquisition_artifact_parser_input_mapping.py](examples/example_acquisition_artifact_parser_input_mapping.py) for a deterministic in-memory example of mapping acquisition artifact metadata into a future parser input boundary without executing a parser.
 
-The parser package exposes `ParserInputContract`, `create_parser_input_contract()`, `validate_parser_input_contract()`, `ParserFileContentInput`, parser file content validation helpers, `parse_defra_desnz_file_content()`, the `ParserAdapter` protocol, `NoopParserAdapter`, `ArtificialParserAdapter`, `DefraDesnzParserAdapter`, parser adapter registry helpers, parser execution planning and runner helpers, and parser execution result contracts for future parser adapter input handoff. The contracts keep acquisition metadata and already-loaded content separate; they do not contain normalization output or database persistence fields.
+The parser package exposes `ParserInputContract`, `create_parser_input_contract()`, `validate_parser_input_contract()`, `ParserFileContentInput`, parser file content validation helpers, `parse_defra_desnz_file_content()`, the `ParserAdapter` protocol, `NoopParserAdapter`, `ArtificialParserAdapter`, `DefraDesnzParserAdapter`, parser adapter registry helpers, parser execution planning and runner helpers, and parser execution result contracts for future parser adapter input handoff. The normalization package exposes parser execution handoff helpers for successful parser results. These contracts keep acquisition metadata, already-loaded content, parser output metadata, and normalization handoff metadata separate; they do not contain normalization output or database persistence fields.
 
 ## Source Support
 
@@ -300,6 +300,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Parser Execution Runner Boundary](docs/parser-execution-runner-boundary.md)
 - [Source-Specific Parser Adapter Boundary](docs/source-specific-parser-adapter-boundary.md)
 - [Parser File Content Input Boundary](docs/parser-file-content-input-boundary.md)
+- [Parser Execution Normalization Handoff Boundary](docs/parser-execution-normalization-handoff-boundary.md)
 - [Parser Handoff Boundary](docs/parser-handoff-boundary.md)
 - [Parser Contract Boundaries](docs/parser-contract-boundaries.md)
 - [Source-Specific Parser Skeleton Boundaries](docs/source-specific-parser-skeleton-boundaries.md)
