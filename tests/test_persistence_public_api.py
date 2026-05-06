@@ -5,6 +5,7 @@ from carbonfactor_parser.persistence import (
     integration_test_boundary,
     postgresql_insert_builder,
     postgresql_options,
+    postgresql_persistence_preview,
     postgresql_repository,
     repository,
     schema,
@@ -31,10 +32,15 @@ from carbonfactor_parser.persistence import (
     PostgreSQLPersistenceOptions,
     PostgreSQLPersistenceOptionsValidationIssue,
     PostgreSQLPersistenceOptionsValidationResult,
+    PostgreSQLPersistencePreview,
+    PostgreSQLPersistencePreviewIssue,
+    PostgreSQLPersistencePreviewResult,
+    PostgreSQLPersistencePreviewStatus,
     PostgreSQLPersistenceRepository,
     PostgreSQLPersistenceSchema,
     build_persistence_input_from_normalization_result,
     build_postgresql_insert_statement,
+    build_postgresql_persistence_preview,
     create_persistence_result,
     create_postgresql_integration_test_boundary,
     create_postgresql_persistence_options,
@@ -67,10 +73,15 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLPersistenceOptions",
     "PostgreSQLPersistenceOptionsValidationIssue",
     "PostgreSQLPersistenceOptionsValidationResult",
+    "PostgreSQLPersistencePreview",
+    "PostgreSQLPersistencePreviewIssue",
+    "PostgreSQLPersistencePreviewResult",
+    "PostgreSQLPersistencePreviewStatus",
     "PostgreSQLPersistenceRepository",
     "PostgreSQLPersistenceSchema",
     "build_persistence_input_from_normalization_result",
     "build_postgresql_insert_statement",
+    "build_postgresql_persistence_preview",
     "create_persistence_result",
     "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",
@@ -122,6 +133,18 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PostgreSQLPersistenceOptionsValidationResult": (
         postgresql_options.PostgreSQLPersistenceOptionsValidationResult
     ),
+    "PostgreSQLPersistencePreview": (
+        postgresql_persistence_preview.PostgreSQLPersistencePreview
+    ),
+    "PostgreSQLPersistencePreviewIssue": (
+        postgresql_persistence_preview.PostgreSQLPersistencePreviewIssue
+    ),
+    "PostgreSQLPersistencePreviewResult": (
+        postgresql_persistence_preview.PostgreSQLPersistencePreviewResult
+    ),
+    "PostgreSQLPersistencePreviewStatus": (
+        postgresql_persistence_preview.PostgreSQLPersistencePreviewStatus
+    ),
     "PostgreSQLPersistenceRepository": (
         postgresql_repository.PostgreSQLPersistenceRepository
     ),
@@ -131,6 +154,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     ),
     "build_postgresql_insert_statement": (
         postgresql_insert_builder.build_postgresql_insert_statement
+    ),
+    "build_postgresql_persistence_preview": (
+        postgresql_persistence_preview.build_postgresql_persistence_preview
     ),
     "create_persistence_result": repository.create_persistence_result,
     "create_postgresql_integration_test_boundary": (
@@ -181,12 +207,19 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLPersistenceOptionsValidationResult": (
             PostgreSQLPersistenceOptionsValidationResult
         ),
+        "PostgreSQLPersistencePreview": PostgreSQLPersistencePreview,
+        "PostgreSQLPersistencePreviewIssue": PostgreSQLPersistencePreviewIssue,
+        "PostgreSQLPersistencePreviewResult": PostgreSQLPersistencePreviewResult,
+        "PostgreSQLPersistencePreviewStatus": PostgreSQLPersistencePreviewStatus,
         "PostgreSQLPersistenceRepository": PostgreSQLPersistenceRepository,
         "PostgreSQLPersistenceSchema": PostgreSQLPersistenceSchema,
         "build_persistence_input_from_normalization_result": (
             build_persistence_input_from_normalization_result
         ),
         "build_postgresql_insert_statement": build_postgresql_insert_statement,
+        "build_postgresql_persistence_preview": (
+            build_postgresql_persistence_preview
+        ),
         "create_persistence_result": create_persistence_result,
         "create_postgresql_integration_test_boundary": (
             create_postgresql_integration_test_boundary
@@ -235,5 +268,6 @@ def test_persistence_all_excludes_internal_module_names() -> None:
     assert "schema" not in persistence.__all__
     assert "ddl_preview" not in persistence.__all__
     assert "postgresql_options" not in persistence.__all__
+    assert "postgresql_persistence_preview" not in persistence.__all__
     assert "postgresql_repository" not in persistence.__all__
     assert all(not name.startswith("_") for name in persistence.__all__)

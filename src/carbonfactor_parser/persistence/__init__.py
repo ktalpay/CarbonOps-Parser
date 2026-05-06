@@ -23,6 +23,13 @@ from carbonfactor_parser.persistence.postgresql_insert_builder import (
     PostgreSQLInsertStatement,
     build_postgresql_insert_statement,
 )
+from carbonfactor_parser.persistence.postgresql_persistence_preview import (
+    PostgreSQLPersistencePreview,
+    PostgreSQLPersistencePreviewIssue,
+    PostgreSQLPersistencePreviewResult,
+    PostgreSQLPersistencePreviewStatus,
+    build_postgresql_persistence_preview,
+)
 from carbonfactor_parser.persistence.repository import (
     PersistenceIssue,
     PersistenceIssueSeverity,
@@ -69,10 +76,15 @@ __all__ = (
     "PostgreSQLPersistenceOptions",
     "PostgreSQLPersistenceOptionsValidationIssue",
     "PostgreSQLPersistenceOptionsValidationResult",
+    "PostgreSQLPersistencePreview",
+    "PostgreSQLPersistencePreviewIssue",
+    "PostgreSQLPersistencePreviewResult",
+    "PostgreSQLPersistencePreviewStatus",
     "PostgreSQLPersistenceRepository",
     "PostgreSQLPersistenceSchema",
     "build_persistence_input_from_normalization_result",
     "build_postgresql_insert_statement",
+    "build_postgresql_persistence_preview",
     "create_persistence_result",
     "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",

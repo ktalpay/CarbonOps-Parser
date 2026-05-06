@@ -76,6 +76,7 @@
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Insert SQL Builder Boundary](postgresql-insert-sql-builder-boundary.md)
+- [PostgreSQL Persistence Preview Boundary](postgresql-persistence-preview-boundary.md)
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Integration Test Boundary](postgresql-integration-test-boundary.md)
