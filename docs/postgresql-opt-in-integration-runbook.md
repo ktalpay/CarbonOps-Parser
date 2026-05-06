@@ -174,6 +174,39 @@ Current execution record:
 - post-run cleanup: temporary clone and virtual environment were removed after
   the smoke.
 
+## Public Install Smoke Closure Checkpoint
+
+CO-103O closes the public install smoke checkpoint with the verified paths
+below:
+
+- `python -m pip install -e .` passed in a fresh clone.
+- `carbonops-parser --help` passed.
+- `carbonops-parser local-dry-run` passed with text output.
+- `carbonops-parser local-dry-run --json` passed with JSON output.
+- `python -m pip install -e ".[postgresql]"` passed.
+- `python -c "import psycopg; print(psycopg.__version__)"` passed.
+- The fresh clone install smoke passed.
+- The Docker PostgreSQL connection smoke passed as a manual opt-in smoke.
+- Default `python -m pytest` remains DB-free.
+- PostgreSQL smoke remains manual/opt-in through `postgresql_integration` and
+  the canonical external controls.
+- `PostgreSQLPersistenceRepository.persist()` remains unsupported/no-execution.
+
+Deferred runtime and production work remains out of scope:
+
+- real SQL execution
+- DB writes
+- repository runtime persistence
+- migrations and table lifecycle
+- transaction behavior
+- idempotency/conflict runtime behavior
+- production release hardening
+- real source/parser coverage beyond the fixture/minimal path
+
+This checkpoint does not claim production persistence readiness. It records
+install and smoke evidence only, with no DSN, password, credential, or secret
+values.
+
 ## Connection Smoke Skeleton
 
 CO-103C adds a default-skipped connection smoke skeleton for future local

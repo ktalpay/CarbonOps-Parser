@@ -469,6 +469,43 @@ def test_runbook_fresh_clone_install_smoke_passed_record_has_required_evidence()
         assert evidence in current_record
 
 
+def test_runbook_documents_public_install_smoke_closure_checkpoint() -> None:
+    runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    normalized_runbook_text = " ".join(runbook_text.split())
+
+    assert "## Public Install Smoke Closure Checkpoint" in runbook_text
+    assert "`python -m pip install -e .` passed in a fresh clone." in runbook_text
+    assert "`carbonops-parser --help` passed." in runbook_text
+    assert "`carbonops-parser local-dry-run` passed with text output." in runbook_text
+    assert (
+        "`carbonops-parser local-dry-run --json` passed with JSON output."
+        in runbook_text
+    )
+    assert '`python -m pip install -e ".[postgresql]"` passed.' in runbook_text
+    assert (
+        '`python -c "import psycopg; print(psycopg.__version__)"` passed.'
+        in runbook_text
+    )
+    assert "The fresh clone install smoke passed." in runbook_text
+    assert "The Docker PostgreSQL connection smoke passed" in runbook_text
+    assert "Default `python -m pytest` remains DB-free." in runbook_text
+    assert "PostgreSQL smoke remains manual/opt-in" in normalized_runbook_text
+    assert "postgresql_integration" in runbook_text
+    assert "canonical external controls" in runbook_text
+    assert "PostgreSQLPersistenceRepository.persist()" in runbook_text
+    assert "remains unsupported/no-execution" in normalized_runbook_text
+    assert "real SQL execution" in runbook_text
+    assert "DB writes" in runbook_text
+    assert "repository runtime persistence" in runbook_text
+    assert "migrations and table lifecycle" in runbook_text
+    assert "transaction behavior" in runbook_text
+    assert "idempotency/conflict runtime behavior" in runbook_text
+    assert "production release hardening" in runbook_text
+    assert "real source/parser coverage beyond the fixture/minimal path" in runbook_text
+    assert "does not claim production persistence readiness" in runbook_text
+    assert "no DSN, password, credential, or secret values" in normalized_runbook_text
+
+
 def test_runbook_documents_local_postgresql_setup_checklist() -> None:
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
     normalized_runbook_text = " ".join(runbook_text.split())
