@@ -18,6 +18,7 @@ from carbonfactor_parser.parsers import (
     input_mapping,
     noop_adapter,
     pipeline_summary,
+    raw_record,
 )
 from carbonfactor_parser.parsers import (
     ArtificialFixtureParser,
@@ -47,9 +48,15 @@ from carbonfactor_parser.parsers import (
     ParserIssue,
     ParserIssueSeverity,
     ParserPipelineSummary,
+    ParsedRawRecord,
+    ParsedRawRecordPayload,
+    ParsedRawRecordValidationIssue,
+    ParsedRawRecordValidationResult,
     ParserResult,
     ParserResultSummary,
     create_parser_adapter_registry,
+    create_parsed_raw_record,
+    create_parsed_raw_record_payload,
     create_parser_execution_result,
     create_parser_file_content_input,
     build_fixture_parser_input_mapping,
@@ -61,6 +68,8 @@ from carbonfactor_parser.parsers import (
     resolve_parser_adapters,
     run_parser_execution,
     summarize_parser_pipeline,
+    validate_parsed_raw_record,
+    validate_parsed_raw_record_payload,
     validate_parser_file_content_input,
     validate_parser_input_contract,
 )
@@ -94,12 +103,18 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "ParserIssue",
     "ParserIssueSeverity",
     "ParserPipelineSummary",
+    "ParsedRawRecord",
+    "ParsedRawRecordPayload",
+    "ParsedRawRecordValidationIssue",
+    "ParsedRawRecordValidationResult",
     "ParserResult",
     "ParserResultSummary",
     "create_parser_adapter_registry",
     "create_parser_execution_result",
     "create_parser_file_content_input",
     "create_parser_input_contract",
+    "create_parsed_raw_record",
+    "create_parsed_raw_record_payload",
     "list_parser_adapters",
     "plan_parser_execution",
     "parse_defra_desnz_file_content",
@@ -108,6 +123,8 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "run_parser_execution",
     "validate_parser_file_content_input",
     "validate_parser_input_contract",
+    "validate_parsed_raw_record",
+    "validate_parsed_raw_record_payload",
     "build_fixture_parser_input_mapping",
     "summarize_parser_pipeline",
 )
@@ -150,6 +167,12 @@ EXPECTED_PUBLIC_EXPORTS = {
     "ParserIssue": contracts.ParserIssue,
     "ParserIssueSeverity": contracts.ParserIssueSeverity,
     "ParserPipelineSummary": pipeline_summary.ParserPipelineSummary,
+    "ParsedRawRecord": raw_record.ParsedRawRecord,
+    "ParsedRawRecordPayload": raw_record.ParsedRawRecordPayload,
+    "ParsedRawRecordValidationIssue": raw_record.ParsedRawRecordValidationIssue,
+    "ParsedRawRecordValidationResult": (
+        raw_record.ParsedRawRecordValidationResult
+    ),
     "ParserResult": contracts.ParserResult,
     "ParserResultSummary": contracts.ParserResultSummary,
     "create_parser_adapter_registry": (
@@ -162,6 +185,10 @@ EXPECTED_PUBLIC_EXPORTS = {
         file_content_input.create_parser_file_content_input
     ),
     "create_parser_input_contract": input_contract.create_parser_input_contract,
+    "create_parsed_raw_record": raw_record.create_parsed_raw_record,
+    "create_parsed_raw_record_payload": (
+        raw_record.create_parsed_raw_record_payload
+    ),
     "list_parser_adapters": adapter_registry.list_parser_adapters,
     "plan_parser_execution": execution_plan.plan_parser_execution,
     "parse_defra_desnz_file_content": (
@@ -174,6 +201,10 @@ EXPECTED_PUBLIC_EXPORTS = {
         file_content_input.validate_parser_file_content_input
     ),
     "validate_parser_input_contract": input_contract.validate_parser_input_contract,
+    "validate_parsed_raw_record": raw_record.validate_parsed_raw_record,
+    "validate_parsed_raw_record_payload": (
+        raw_record.validate_parsed_raw_record_payload
+    ),
     "build_fixture_parser_input_mapping": (
         input_mapping.build_fixture_parser_input_mapping
     ),
@@ -212,12 +243,18 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "ParserIssue": ParserIssue,
         "ParserIssueSeverity": ParserIssueSeverity,
         "ParserPipelineSummary": ParserPipelineSummary,
+        "ParsedRawRecord": ParsedRawRecord,
+        "ParsedRawRecordPayload": ParsedRawRecordPayload,
+        "ParsedRawRecordValidationIssue": ParsedRawRecordValidationIssue,
+        "ParsedRawRecordValidationResult": ParsedRawRecordValidationResult,
         "ParserResult": ParserResult,
         "ParserResultSummary": ParserResultSummary,
         "create_parser_adapter_registry": create_parser_adapter_registry,
         "create_parser_execution_result": create_parser_execution_result,
         "create_parser_file_content_input": create_parser_file_content_input,
         "create_parser_input_contract": create_parser_input_contract,
+        "create_parsed_raw_record": create_parsed_raw_record,
+        "create_parsed_raw_record_payload": create_parsed_raw_record_payload,
         "list_parser_adapters": list_parser_adapters,
         "plan_parser_execution": plan_parser_execution,
         "parse_defra_desnz_file_content": parse_defra_desnz_file_content,
@@ -226,6 +263,8 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "run_parser_execution": run_parser_execution,
         "validate_parser_file_content_input": validate_parser_file_content_input,
         "validate_parser_input_contract": validate_parser_input_contract,
+        "validate_parsed_raw_record": validate_parsed_raw_record,
+        "validate_parsed_raw_record_payload": validate_parsed_raw_record_payload,
         "build_fixture_parser_input_mapping": build_fixture_parser_input_mapping,
         "summarize_parser_pipeline": summarize_parser_pipeline,
     }
@@ -270,4 +309,5 @@ def test_parser_all_excludes_internal_module_names() -> None:
     assert "input_mapping" not in parsers.__all__
     assert "noop_adapter" not in parsers.__all__
     assert "pipeline_summary" not in parsers.__all__
+    assert "raw_record" not in parsers.__all__
     assert all(not name.startswith("_") for name in parsers.__all__)

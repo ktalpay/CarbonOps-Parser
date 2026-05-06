@@ -63,6 +63,16 @@ from carbonfactor_parser.parsers.pipeline_summary import (
     ParserPipelineSummary,
     summarize_parser_pipeline,
 )
+from carbonfactor_parser.parsers.raw_record import (
+    ParsedRawRecord,
+    ParsedRawRecordPayload,
+    ParsedRawRecordValidationIssue,
+    ParsedRawRecordValidationResult,
+    create_parsed_raw_record,
+    create_parsed_raw_record_payload,
+    validate_parsed_raw_record,
+    validate_parsed_raw_record_payload,
+)
 
 __all__ = (
     "ArtificialFixtureParser",
@@ -92,12 +102,18 @@ __all__ = (
     "ParserIssue",
     "ParserIssueSeverity",
     "ParserPipelineSummary",
+    "ParsedRawRecord",
+    "ParsedRawRecordPayload",
+    "ParsedRawRecordValidationIssue",
+    "ParsedRawRecordValidationResult",
     "ParserResult",
     "ParserResultSummary",
     "create_parser_adapter_registry",
     "create_parser_execution_result",
     "create_parser_file_content_input",
     "create_parser_input_contract",
+    "create_parsed_raw_record",
+    "create_parsed_raw_record_payload",
     "list_parser_adapters",
     "plan_parser_execution",
     "parse_defra_desnz_file_content",
@@ -106,6 +122,8 @@ __all__ = (
     "run_parser_execution",
     "validate_parser_file_content_input",
     "validate_parser_input_contract",
+    "validate_parsed_raw_record",
+    "validate_parsed_raw_record_payload",
     "build_fixture_parser_input_mapping",
     "summarize_parser_pipeline",
 )

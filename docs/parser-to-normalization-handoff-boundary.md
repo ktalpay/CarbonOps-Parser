@@ -12,7 +12,7 @@ No parser-to-normalization handoff implementation exists yet.
 
 `ParserNormalizationHandoff`, `ParserNormalizationHandoffEntry`, and `build_parser_normalization_handoff()` now provide a minimal source-agnostic handoff model for already-computed parser result metadata. They do not execute normalization or convert values.
 
-`ParserExecutionNormalizationHandoff`, `ParserExecutionNormalizationHandoffResult`, and `build_parser_execution_normalization_handoff()` provide the newer handoff boundary from `ParserExecutionResult`. They create ready handoffs only for successful parser execution results and keep parsed record payloads deferred.
+`ParserExecutionNormalizationHandoff`, `ParserExecutionNormalizationHandoffResult`, and `build_parser_execution_normalization_handoff()` provide the newer handoff boundary from `ParserExecutionResult`. They create ready handoffs only for successful parser execution results and pass through raw parsed record payloads when a successful parser result already carries them.
 
 See `examples/parser_normalization_handoff_example.py` for an in-memory parser-to-normalization handoff usage example.
 
@@ -34,6 +34,7 @@ See [Normalization Execution Boundary](normalization-execution-boundary.md) befo
 Future normalization input may later receive:
 
 - Parser records.
+- Raw parser record payloads from successful parser execution results.
 - Parser issue context.
 - Source document reference or context.
 - Optional artificial source labels.
