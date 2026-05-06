@@ -8,6 +8,8 @@ It is a contract boundary only. It does not add parser execution, file reading, 
 
 `ParserAdapter` describes the shape future parser adapters should satisfy when they consume `ParserInputContract` metadata. It lets future work distinguish parser adapter compatibility checks from real parser execution.
 
+Future real source-specific adapters must also follow the source-specific parser adapter boundary. That boundary keeps adapter identity, capability metadata, result shape, file-content ownership, source acquisition separation, normalization separation, and persistence separation explicit before any DEFRA/DESNZ, GHG Protocol, IPCC, or other real adapter is added.
+
 ## Interface Shape
 
 The public parser adapter protocol exposes:
@@ -71,6 +73,7 @@ This boundary does not add:
 
 ## Related Documents
 
+- [Source-Specific Parser Adapter Boundary](source-specific-parser-adapter-boundary.md)
 - [Parser Execution Planning Boundary](parser-execution-planning-boundary.md)
 - [Parser Execution Result Boundary](parser-execution-result-boundary.md)
 - [Source Acquisition Parser Handoff Contract](source-acquisition-parser-handoff-contract.md)

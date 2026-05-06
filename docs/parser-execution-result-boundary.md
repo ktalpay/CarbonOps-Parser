@@ -25,6 +25,8 @@ The result carries parser/source identity, the originating `ParserInputContract`
 
 `ParserAdapter.parse()` is typed to return `ParserExecutionResult`. This aligns future parser adapter implementations with the execution result boundary while still leaving real parsing deferred.
 
+Future real source-specific adapters must use this result boundary for parser output only. Parser execution results should not carry normalized records, database persistence fields, acquisition retry state, scheduler state, or production correctness claims.
+
 ## Runner Results
 
 `run_parser_execution()` returns `ParserExecutionResult` for each planning outcome:
@@ -52,6 +54,7 @@ This boundary does not add:
 ## Related Documents
 
 - [Parser Adapter Boundary](parser-adapter-boundary.md)
+- [Source-Specific Parser Adapter Boundary](source-specific-parser-adapter-boundary.md)
 - [Parser Execution Planning Boundary](parser-execution-planning-boundary.md)
 - [Parser Execution Runner Boundary](parser-execution-runner-boundary.md)
 - [Parser Contract Boundaries](parser-contract-boundaries.md)

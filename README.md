@@ -298,6 +298,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Parser Execution Planning Boundary](docs/parser-execution-planning-boundary.md)
 - [Parser Execution Result Boundary](docs/parser-execution-result-boundary.md)
 - [Parser Execution Runner Boundary](docs/parser-execution-runner-boundary.md)
+- [Source-Specific Parser Adapter Boundary](docs/source-specific-parser-adapter-boundary.md)
 - [Parser Handoff Boundary](docs/parser-handoff-boundary.md)
 - [Parser Contract Boundaries](docs/parser-contract-boundaries.md)
 - [Source-Specific Parser Skeleton Boundaries](docs/source-specific-parser-skeleton-boundaries.md)

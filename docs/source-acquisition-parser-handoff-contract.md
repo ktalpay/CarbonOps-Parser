@@ -51,6 +51,8 @@ A future parser adapter should treat acquisition output as an explicit input con
 
 Parser adapters should not infer hidden retry behavior, hidden source lookups, implicit credential access, scheduler state, or persistence behavior from acquisition metadata.
 
+Future real source-specific parser adapters must follow the source-specific parser adapter boundary. Acquisition remains responsible for source targets, artifact references, manifest metadata, and acquisition status; parser adapters remain responsible only for explicitly scoped parser execution results.
+
 ## Example Mapping
 
 `ParserInputContract` and `create_parser_input_contract()` provide the small public parser input boundary for source acquisition output prepared for future parser execution. The contract preserves source identity, artifact reference, checksum metadata, content type or format hints, acquisition status, and run or manifest metadata without carrying parser output, normalization output, or database persistence fields.
@@ -143,6 +145,7 @@ Reviewers should confirm:
 - [Source Acquisition HTTP Client Boundary](source-acquisition-http-client-boundary.md)
 - [Source Acquisition Registry](source-acquisition-registry.md)
 - [Parser Adapter Boundary](parser-adapter-boundary.md)
+- [Source-Specific Parser Adapter Boundary](source-specific-parser-adapter-boundary.md)
 - [Parser Handoff Boundary](parser-handoff-boundary.md)
 - [Parser Contract Boundaries](parser-contract-boundaries.md)
 - [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md)
