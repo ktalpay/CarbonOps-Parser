@@ -1,0 +1,219 @@
+# Codex Task Queue
+
+This queue is intentionally lightweight. It should help select the next small task without replacing human review or prioritization.
+
+## Active
+
+- No active task currently queued.
+
+## Next
+
+- No next task currently queued.
+
+## Backlog
+
+- No backlog task currently queued.
+
+## Completed
+
+- CO-103O: Added a public install smoke closure checkpoint to the PostgreSQL opt-in integration runbook summarizing verified editable install, CLI help, local dry-run text/JSON, optional `postgresql` extra install, `psycopg` import, fresh-clone install smoke, Docker PostgreSQL manual opt-in smoke, DB-free default suite status, unsupported repository persistence, and deferred runtime/production work, with focused checkpoint assertions while preserving no PostgreSQL connections from project code, no SQL execution from project code, no DB writes, no migrations or table creation, no repository runtime persistence, no local dry-run behavior changes, no package metadata changes, and no library env/config/credential loading.
+- CO-103N: Documented a sanitized successful fresh-clone install smoke in the PostgreSQL opt-in integration runbook after validating editable install, CLI help, local dry-run text/JSON, optional `postgresql` extra install, and `psycopg` import in a temporary clean clone, with focused record assertions while preserving no PostgreSQL connections from project code, no SQL execution from project code, no DB writes, no migrations or table creation, no repository runtime persistence, no local dry-run behavior changes, no package metadata changes, and no library env/config/credential loading.
+- CO-103M: Added a fresh-clone install smoke checklist to the PostgreSQL opt-in integration runbook with clean-checkout, virtual environment, editable install, CLI help, local dry-run text/JSON, optional `postgresql` extra install, and `psycopg` import check commands, plus focused runbook assertions while preserving no PostgreSQL connections from project code, no SQL execution from project code, no DB writes, no migrations or table creation, no repository runtime persistence, no local dry-run behavior changes, no package metadata changes, and no library env/config/credential loading.
+- CO-103L: Added the PostgreSQL optional install extra `postgresql` with `psycopg[binary]>=3,<4` while preserving the core `psycopg>=3,<4` dependency, documented the psycopg binary/libpq packaging decision and explicit local smoke install command, updated focused dependency/runbook assertions, and preserved no PostgreSQL connections, no SQL execution, no DB writes, no migrations or table creation, no repository runtime persistence, no local dry-run behavior changes, and no library env/config/credential loading.
+- CO-103K: Added the minimal `project.name` and `project.version` metadata required for editable Python installs, focused pyproject metadata coverage, and runbook clarification that the editable-install metadata blocker is resolved while preserving the existing `psycopg>=3,<4` dependency strategy, no PostgreSQL connections, no SQL execution, no DB writes, no migrations or table creation, no repository runtime persistence, no local dry-run behavior changes, and no library env/config/credential loading.
+- CO-103J: Documented the successful Docker-based PostgreSQL opt-in connection smoke record with sanitized `passed` status evidence for the `postgres:16` container, PostgreSQL 16.11, container readiness logs, manual `psql --version` smoke, and project opt-in smoke result of 1 passed and 15 deselected, while redacting DSN/password details, preserving no SQL execution from the project smoke, no DB writes, no repository runtime persistence, no migrations or table creation from project code, no package metadata changes, no local dry-run behavior changes, and no library env/config/credential loading.
+- CO-103I: Documented the manual PostgreSQL opt-in connection smoke execution record with a truthful `blocked_missing_local_postgresql` status after safe local availability checks found no `psql` client and no canonical opt-in controls, while preserving no passed smoke claim, placeholder-only metadata, canonical marker/control names, no SQL execution, no DB writes, no repository runtime persistence, no migrations or table creation from project code, no local dry-run behavior changes, and no library env/config/credential loading.
+- CO-103H: Added a pending manual PostgreSQL opt-in connection smoke execution record template to the opt-in integration runbook with allowed `not_run`, `passed`, and `failed_sanitized` statuses, placeholder-only local run metadata, canonical marker/control names, exact opt-in command shape, expected no-SQL/no-write/no-repository-persistence result wording, DSN/password/secret redaction checklist, post-run cleanup checklist, and focused runbook assertions while preserving no project runtime connections, no SQL execution, no DB writes, no migrations or table creation from project code, no repository runtime persistence, no local dry-run behavior changes, and no library env/config/credential loading.
+- CO-103G: Added system-level PostgreSQL install smoke documentation to the opt-in integration runbook with manual shell checks for service status, `psql` version, placeholder test database and role presence, optional placeholder DSN connection checks, clear separation from project test commands, redaction warnings, and focused runbook assertions while preserving no project runtime connections, no SQL execution from project library code, no DB writes from project code, no migrations or table creation from project code, no repository runtime persistence, no local dry-run behavior changes, and no library env/config/credential loading.
+- CO-103F: Added a local PostgreSQL setup checklist to the opt-in integration runbook with macOS/Homebrew placeholder install guidance, service start/status/stop commands, placeholder-only local database/user/DSN construction guidance, credential/DSN logging warnings, default DB-free reminders, repository persistence disabled/no-execution reminders, manual connection smoke checklist linkage, manual local cleanup commands, and focused runbook assertions while preserving no project runtime connections, no SQL execution from project code, no DB writes, no migrations or table creation from project code, no repository runtime persistence, no local dry-run behavior changes, and no library env/config/credential loading.
+- CO-103E: Added a PostgreSQL opt-in connection smoke manual run checklist with clean-tree, default DB-free verification, local setup placeholders, canonical opt-in and DSN controls, exact opt-in pytest command shape, expected skipped/enabled outcomes, no SQL execution, no DB writes, no migrations or table creation, repository persistence disabled/no-execution, secret redaction, post-run cleanup, and unset guidance while preserving no default PostgreSQL requirement, no default DB connection, no SQL execution, no DB writes, no migrations, no table creation, no repository runtime persistence, no local dry-run behavior changes, and no library env/config/credential loading.
+- CO-103D: Added PostgreSQL opt-in connection smoke runbook verification coverage with runbook consistency assertions for canonical marker/control names, default DB-free behavior, no SQL execution, no write behavior, sanitized secret handling, default-skipped smoke behavior, and no write-DDL/DML terms in the smoke test source while preserving no default PostgreSQL requirement, no default DB connection, no SQL execution, no DB writes, no migrations, no table creation, no repository runtime persistence, no local dry-run behavior changes, and no library env/config/credential loading.
+- CO-103C: Added a default-skipped PostgreSQL opt-in connection smoke skeleton with pure guard-state tests, sanitized metadata, canonical marker/control usage, and repository unsupported assertions while preserving no default PostgreSQL requirement, no default DB connection, no SQL execution, no DB writes, no migrations, no table creation, no repository runtime persistence, no local dry-run behavior changes, and no library env/config/credential loading.
+- CO-103B: Added PostgreSQL integration marker enforcement metadata and tests for canonical `postgresql_integration` marker naming, canonical external opt-in control names, pytest marker registration, default-disabled helper behavior, repository `persist()` unsupported behavior, and no DB connection, cursor, SQL execution, transaction, credential, config, or network behavior in the default test boundary.
+- CO-103A: Added PostgreSQL opt-in integration runbook documentation for future default-disabled integration tests, including marker alignment, external runner controls, local test database guidance, credential redaction rules, manual run shape, DB-free default verification, cleanup guidance, and troubleshooting while preserving unsupported repository `persist()` behavior and no default PostgreSQL connections, DB writes, SQL execution, cursor creation, real transaction behavior, migrations, table creation, environment loading in library code, config file loading in library code, credential loading, scheduler behavior, source acquisition integration, runtime repository behavior, or network calls.
+- CO-102L: Added PostgreSQL runtime readiness checklist documentation with go/no-go criteria, must-not-proceed blockers, future CO-103 task sequencing, first real execution acceptance criteria, and risk register while preserving unsupported repository `persist()` behavior and no PostgreSQL connections, DB writes, SQL execution, cursor creation, real transaction behavior, migrations, table creation, environment loading, config file loading, credential loading, scheduler behavior, source acquisition integration, runtime repository behavior, or network calls.
+- CO-102K: Added a PostgreSQL runtime execution enablement gate boundary that records explicit future execution intent as disabled, blocked, or not-enabled no-execution metadata while preserving unsupported repository `persist()` behavior and no PostgreSQL connections, DB writes, SQL execution, cursor creation, real transaction behavior, migrations, table creation, environment loading, config file loading, credential loading, scheduler behavior, source acquisition integration, runtime repository behavior, or network calls.
+- CO-102J: Added a repository-level PostgreSQL disabled execution preview boundary that composes `PersistenceInput`, insert-statement metadata, transaction-policy metadata, conflict-strategy metadata, and disabled runtime execution results into structured diagnostics while preserving unsupported repository `persist()` behavior and no PostgreSQL connections, DB writes, SQL execution, cursor creation, real transaction behavior, migrations, table creation, environment loading, config file loading, credential loading, scheduler behavior, source acquisition integration, runtime repository behavior, or network calls.
+- CO-102I: Added a disabled PostgreSQL runtime execution adapter boundary that composes existing statement, execution-plan, transaction-policy, conflict-strategy, and optional session-adapter metadata into structured no-execution results while preserving no PostgreSQL connections, DB writes, SQL execution, cursor creation, real transaction behavior, migrations, table creation, environment loading, config file loading, credential loading, scheduler behavior, source acquisition integration, runtime repository behavior, or network calls.
+- CO-102H: Added a dedicated `psycopg` session adapter skeleton with disabled no-execution metadata, public exports, focused import-boundary tests, and documentation links while preserving no PostgreSQL connections, DB writes, SQL execution, cursor creation, real transaction behavior, migrations, table creation, environment loading, config file loading, credential loading, scheduler behavior, source acquisition integration, runtime repository behavior, or network calls.
+- CO-102G: Added the approved `psycopg` 3 dependency declaration and focused dependency/import-boundary tests while keeping pure persistence modules driver-free and preserving no database connections, DB writes, SQL execution, transaction behavior, migrations, table creation, environment loading, config file loading, credential loading, scheduler behavior, source acquisition integration, runtime repository behavior, or network calls.
+- CO-102F: Added PostgreSQL idempotency/conflict strategy boundary with deterministic Phase 1 fail-on-conflict metadata, strategy plan/result contracts, public exports, focused tests, and documentation links without adding database dependencies, DB connections, DB writes, SQL execution, conflict SQL generation, silent skip behavior, upsert behavior, migrations, table creation, environment loading, config file loading, credential loading, scheduler behavior, source acquisition integration, or network calls.
+- CO-102E: Added PostgreSQL transaction policy boundary with deterministic Phase 1 single-batch caller-provided-session policy metadata, transaction plan/result contracts, public exports, focused tests, and documentation links without adding database dependencies, DB connections, DB writes, SQL execution, real transaction start, real transaction completion, real transaction rollback, migrations, table creation, environment loading, config file loading, credential loading, scheduler behavior, source acquisition integration, or network calls.
+- CO-102D: Added driver-neutral PostgreSQL execution adapter boundary with plan/result/status contracts, disabled no-execution result helper, public exports, focused tests, and documentation links without adding database dependencies, DB connections, DB writes, SQL execution, migrations, table creation, environment loading, config file loading, credential loading, scheduler behavior, source acquisition integration, or network calls.
+- CO-102C: Added driver-neutral PostgreSQL connection/session contract boundary with public protocol exports, descriptive statement and transaction contract types, focused tests, and documentation links without adding database dependencies, DB connections, DB writes, SQL execution, migrations, table creation, environment loading, config file loading, credential loading, scheduler behavior, source acquisition integration, or network calls.
+- CO-102B: Added PostgreSQL driver dependency decision documentation recommending a future synchronous `psycopg` 3 adapter direction, comparing SQLAlchemy Core/Engine and `asyncpg`, defining dependency/import/parameter/transaction/session boundaries, acceptance criteria, risks, and documentation links without adding database dependencies, DB connections, DB writes, SQL execution, migrations, table creation, environment loading, config file loading, credential loading, scheduler behavior, source acquisition integration, or network calls.
+- CO-102A: Added PostgreSQL runtime persistence implementation planning documentation with current-state summary, explicit non-goals, future task sequence, dependency/config/execution/transaction/idempotency/schema/integration-test/observability strategies, acceptance criteria, risks, and documentation links without adding PostgreSQL runtime behavior, database dependencies, DB connections, DB writes, SQL execution, migrations, table creation, environment loading, config file loading, credential loading, scheduler behavior, source acquisition integration, or network calls.
+- CO-101E: Added README and local dry-run documentation for copy-paste PostgreSQL preview demo commands, including text output and `--json --include-postgresql-preview` examples with deterministic checked-in fixture snippets, plus a focused fixture smoke test, without adding PostgreSQL connections, DB writes, SQL execution, migrations, table creation, database dependencies, environment loading, config file loading, credential loading, scheduler behavior, source acquisition integration, or network calls.
+- CO-101D: Added explicit `carbonops-parser local-dry-run --include-postgresql-preview` output integration that delegates to the PostgreSQL persistence preview layer and exposes preview status, SQL, table, ordered columns, ordered parameter rows, record count, and idempotency metadata without changing default dry-run output, PostgreSQL connections, DB writes, SQL execution, migrations, table creation, database dependencies, environment loading, config file loading, credential loading, scheduler behavior, source acquisition integration, or network calls.
+- CO-101C: Added PostgreSQL persistence preview result integration that delegates to the insert SQL builder, exposes preview SQL/parameters/table/column/record/idempotency metadata, public exports, focused tests, and documentation without PostgreSQL connections, DB writes, SQL execution, migrations, table creation, database dependencies, environment loading, config file loading, credential loading, scheduler behavior, source acquisition integration, or network calls.
+- CO-101B: Added deterministic PostgreSQL insert SQL builder boundary for `PersistenceInput` with structured build statuses, parameterized statement model, public exports, focused tests, and documentation without PostgreSQL connections, DB writes, SQL execution, migrations, table creation, database dependencies, config file loading, credential loading, scheduler behavior, source acquisition integration, or network calls.
+- CO-101A: Added default-disabled PostgreSQL integration test boundary helpers, public exports, focused tests, and documentation for explicit future opt-in without DB dependencies, PostgreSQL connections, DB writes, SQL generation or execution, migrations, config file loading, credential loading, secret exposure, scheduler behavior, source acquisition integration, or network calls.
+- CO-100C: Added explicit caller-provided PostgreSQL persistence options contract with validation, public exports, skeleton repository option acceptance, focused tests, and documentation without environment loading, config file loading, credential loading, secret exposure, DB dependencies, PostgreSQL connections, DB writes, SQL generation or execution, migrations, scheduler behavior, source acquisition integration, or network calls.
+- CO-100B: Added `PostgreSQLPersistenceRepository` skeleton with public export, unsupported `PersistenceResult`, attempted-count preservation, focused tests, and documentation without PostgreSQL connections, DB writes, SQL generation or execution, migrations, database dependencies, config loading, credentials, scheduler behavior, source acquisition integration, or network calls.
+- CO-100A: Added PostgreSQL implementation safety gate documentation and linked it from persistence, schema, DDL preview, repository planning, README, and docs index without PostgreSQL implementation, DB connections, DB writes, SQL execution, migrations, database dependencies, config loading, credentials, source acquisition integration, scheduler behavior, or network calls.
+- CO-099B: Added README install-and-run local dry-run quickstart with editable install, optional tests, fixture CLI commands, JSON variant, key output interpretation, and safety links without runtime behavior changes, DB connections, DB writes, SQL execution, migrations, network calls, source acquisition integration, config loading, credentials, scheduler behavior, or production ingestion claims.
+- CO-099A: Added local dry-run troubleshooting documentation with expected missing-file, directory, encoding, parser-header, normalization-field, no-record, and unsupported outcomes plus README/doc links without runtime behavior changes, DB connections, DB writes, SQL execution, migrations, network calls, source acquisition integration, config loading, credentials, scheduler behavior, or production ingestion claims.
+- CO-098B: Added a minimal local DEFRA/DESNZ fixture, README and boundary quickstart output examples, and a deterministic CLI smoke test without DB connections, DB writes, SQL execution, migrations, network calls, source acquisition integration, config loading, credentials, scheduler behavior, or production ingestion claims.
+- CO-098A: Added `carbonops-parser local-dry-run` CLI entry path for explicit local DEFRA/DESNZ fixture dry-run summaries with text/JSON output, focused tests, and documentation without DB connections, DB writes, SQL execution, migrations, network calls, source acquisition integration, config loading, credentials, scheduler behavior, or production ingestion claims.
+- CO-097B: Added local DEFRA/DESNZ fixture file to normalized persistence dry-run pipeline with structured intermediate results, `PersistenceInput`, DDL preview metadata, public exports, focused tests, and documentation without DB connections, DB writes, SQL execution, migrations, credentials, scheduler behavior, production ingestion claims, or network calls.
+- CO-097A: Added explicit local UTF-8 parser file content loader boundary with structured load statuses, public exports, focused temp-file tests, and documentation without parser execution, normalization, DB writes, SQL, migrations, credentials, scheduler behavior, or network calls.
+- CO-096C: Added deterministic PostgreSQL DDL preview rendering from the logical schema descriptor, public exports, focused tests, and documentation without DB connections, SQL execution, migrations, runtime table creation, credentials, file I/O, or network behavior.
+- CO-096B: Added PostgreSQL repository implementation planning boundary documentation and persistence doc links without PostgreSQL implementation, DB connections, SQL, migrations, credentials, file I/O, or network behavior.
+- CO-096A: Added persistence repository protocol and result boundary contracts with public exports, fake in-memory repository tests, and documentation without PostgreSQL implementation, DB connections, SQL, migrations, credentials, file I/O, or network behavior.
+- CO-095B: Added logical PostgreSQL persistence schema boundary descriptor, public exports, focused tests, and documentation without DB connections, SQL execution, migrations, runtime writes, credentials, or PostgreSQL dependencies.
+- CO-095A: Added normalized result persistence input boundary contracts, build statuses, public exports, focused tests, and documentation without database connections, SQL, migrations, file I/O, network calls, or persistence writes.
+- CO-094B: Added minimal DEFRA/DESNZ fixture normalization mapper from NormalizationInput to NormalizationResult status wrapper with focused in-memory tests and docs, without file I/O, network calls, persistence, unit conversion, or category inference.
+- CO-094A: Added normalization input boundary contracts and helpers for parser raw payloads and ready parser execution handoffs without normalization, transformation, file I/O, network calls, or persistence.
+- CO-093B: Added parsed raw record payload boundary contracts, optional ParserExecutionResult payload carriage, minimal DEFRA/DESNZ in-memory raw payload attachment, public exports, tests, and docs without normalization or persistence behavior.
+- CO-093A: Added parser execution result to normalization handoff boundary with ready/not-ready status, deferred parsed payload marker, public exports, tests, and docs.
+- CO-092B: Added minimal already-loaded DEFRA/DESNZ content parser path returning ParserExecutionResult without file I/O, normalization, persistence, or real source support claims.
+- CO-092A: Added parser file content input boundary contract, validation helpers, public exports, focused tests, and documentation for separating already-loaded content from acquisition metadata.
+- CO-091B: Added DEFRA/DESNZ parser adapter skeleton with metadata-only matching, unsupported not-implemented parse result, public export, docs, and no real parsing behavior.
+- CO-091A: Added source-specific parser adapter boundary documentation and checklist for future real adapters without implementing parser execution.
+- CO-090B: Added ArtificialParserAdapter for deterministic in-memory ParserExecutionResult success paths without real source parsing or side effects.
+- CO-090A: Added parser execution runner boundary that converts non-ready plans into structured execution results and calls parser adapters only for ready plans.
+- CO-089B: Added ParserAdapter.parse() and NoopParserAdapter.parse() annotation alignment with ParserExecutionResult while preserving no-op behavior and parser execution deferral.
+- CO-089A: Added parser execution result contracts and documentation for future parser adapter outcomes without changing parser execution behavior.
+- CO-088B: Added NoopParserAdapter for metadata-only registry and planning coverage without parser output or side effects.
+- CO-088A: Added parser execution planning helpers that combine input validation and metadata-only adapter registry resolution without calling parser execution.
+- CO-087B: Added parser adapter registry helpers with deterministic listing, metadata-only resolution, duplicate source family rejection, public exports, and focused registry tests.
+- CO-087A: Added the public parser adapter protocol boundary with metadata-only fake adapter tests and parser adapter boundary documentation.
+- CO-086B: Added parser input contract validation helpers with structured issues, public exports, focused validation tests, and handoff contract documentation updates.
+- CO-086A: Added a public parser input contract for acquisition metadata handoff, updated the acquisition artifact mapping example to use it, and covered exports and boundary behavior with focused tests.
+- CO-085B: Added an in-memory acquisition artifact to parser input mapping example with focused tests and handoff contract documentation updates.
+- CO-085A: Documented the source acquisition to parser handoff contract, including boundary definitions, allowed metadata, deferred parser/normalization/persistence behavior, and documentation map links.
+- CO-084A: Added a README source acquisition CLI quickstart section with local validation/list/run examples, explicit noop vs HTTP mode notes, and links to detailed boundary documentation.
+- CO-083B: Added descriptor validation public API exports, public API smoke-test coverage updates, and CLI boundary documentation consistency checks for the `validate` command.
+- CO-083C: Added deterministic descriptor validation report helpers and CLI `validate` command with local-only warning/error reporting, source ID filtering, and offline tests.
+- CO-082B: Added source acquisition CLI status summary documentation examples for list, filtered list, noop run, dry-run, JSON output, manifest output, and explicit HTTP mode.
+- CO-081D: Added standard-library HTTP transport implementation behind the existing transport protocol with offline tests.
+- CO-080C: Added package console script entrypoint for the offline source acquisition CLI.
+- CO-080B: Added deterministic JSON output mode for source acquisition CLI list/run commands.
+- CO-078B: Added deterministic local source acquisition manifest model, serializer, and writer boundary.
+- CO-078A: Added optional HTTP acquisition file persistence using target planning and deterministic offline tests.
+- CO-077D: Added in-memory acquisition checksum helper and wired HTTP acquisition result checksum metadata.
+- CO-082A: Added repeatable source ID filtering for source acquisition CLI list/run/dry-run flows with deterministic registry-order filtering, clear unknown/duplicate ID validation, documentation updates, and offline tests.
+- CO-081C: Added CLI dry-run target planning mode with deterministic text/JSON outputs, argument guardrails, and offline tests.
+- CO-081B: Added explicit CLI `--client {noop,http}` mode selection with implemented run-path client construction, opt-in HTTP persistence and timeout flags, clear noop-mode argument validation, and offline tests for HTTP CLI mode.
+- CO-081A: Documented artificial manifest next-phase option matrix.
+- CO-080A: Added source acquisition CLI skeleton using no-op client.
+- CO-079B: Added acquisition status constants and deterministic counting helper.
+- CO-079A: Added artificial manifest collection validation summary shape.
+- CO-078C: Documented artificial manifest metadata collection boundary.
+- CO-077B: Documented artificial manifest validation summary boundary.
+- CO-077C: Added mocked-transport HTTP acquisition client skeleton.
+- CO-077A: Added artificial manifest validation summary shape.
+- CO-076C: Documented artificial manifest metadata boundaries.
+- CO-076B: Added artificial manifest metadata root public API export.
+- CO-083D: Added source acquisition client contract and no-op implementation.
+- CO-083A: Added source acquisition configuration model and registry skeleton.
+- CO-084B: Added acquisition file target planning model.
+- CO-076A: Added artificial manifest metadata model shape with root public API export deferred.
+- CO-075B: Documented artificial source acquisition phase closure.
+- CO-075A: Added artificial source acquisition README usage snippet.
+- CO-074A: Added artificial source acquisition public API stability test.
+- CO-073A: Documented artificial source acquisition module recap.
+- CO-072A: Documented artificial source acquisition validation pipeline.
+- CO-071B: Added artificial source acquisition validation pipeline example.
+- CO-071A: Added artificial source acquisition validation pipeline helper.
+- CO-070A: Added artificial source acquisition validation summary shape.
+- CO-069B: Added artificial source acquisition metadata validation helper.
+- CO-069A: Added artificial source acquisition validation result shape.
+- CO-068B: Added source acquisition public API export.
+- CO-068A: Added artificial source acquisition metadata model shape.
+- CO-067B: Documented source acquisition implementation sequencing examples boundary.
+- CO-067A: Documented source acquisition implementation sequencing checklist.
+- CO-066B: Documented source acquisition implementation readiness examples boundary.
+- CO-066A: Documented source acquisition implementation readiness boundary.
+- CO-065B: Documented source acquisition review gate examples boundary.
+- CO-065A: Documented source acquisition review gate boundary.
+- CO-064B: Documented source acquisition error taxonomy examples boundary.
+- CO-064A: Documented source acquisition error taxonomy boundary.
+- CO-063B: Documented source acquisition validation examples boundary.
+- CO-063A: Documented source acquisition validation boundary.
+- CO-062B: Documented source manifest adapter handoff examples boundary.
+- CO-062A: Documented source manifest adapter handoff boundary.
+- CO-061B: Documented local source manifest examples boundary.
+- CO-061A: Documented local source manifest boundary.
+- CO-060B: Documented local source acquisition examples boundary.
+- CO-060A: Documented local source acquisition contract boundary.
+- CO-059B: Documented source acquisition sequencing checklist.
+- CO-059A: Documented source acquisition boundary.
+- CO-058B: Documented production readiness sequencing roadmap.
+- CO-058A: Documented production readiness gap analysis.
+- CO-015A: Added local file source adapter skeleton.
+- CO-016A: Added source adapter registry integration example.
+- CO-017A: Documented source adapter execution flow.
+- CO-018A: Added local source fixture discovery example.
+- CO-019A: Documented source adapter error and warning handling.
+- CO-020A: Added source adapter summary helper.
+- CO-AUTO-001: Added Codex task queue and review workflow scaffolding.
+- CO-020B: Added source adapter summary example.
+- CO-021A: Documented source adapter configuration boundaries.
+- CO-021B: Added static source adapter configuration example.
+- CO-022A: Documented source-specific adapter skeleton guidance.
+- CO-022B: Added artificial source-specific adapter skeleton.
+- CO-023A: Added DEFRA/DESNZ source adapter skeleton.
+- CO-023B: Documented DEFRA/DESNZ adapter skeleton boundaries.
+- CO-024A: Added local public safety validation script.
+- CO-025A: Added DEFRA/DESNZ fixture manifest model skeleton.
+- CO-025B: Added DEFRA/DESNZ fixture manifest example.
+- CO-026A: Documented parser handoff boundary.
+- CO-026B: Documented parser contract boundaries.
+- CO-027A: Added source-agnostic parser result contract skeleton.
+- CO-027B: Added parser result contract example.
+- CO-028A: Added artificial in-memory parser skeleton.
+- CO-028B: Added artificial parser usage example.
+- CO-029A: Documented source-specific parser skeleton boundaries.
+- CO-029B: Added artificial source-specific parser skeleton.
+- CO-029C: Added artificial source-specific parser usage example.
+- CO-030A: Documented DEFRA/DESNZ parser skeleton boundaries.
+- CO-030B: Added DEFRA/DESNZ artificial parser skeleton.
+- CO-030C: Added DEFRA/DESNZ artificial parser usage example.
+- CO-031A: Documented real format parser boundary.
+- CO-031B: Added fixture-only parser input mapping model.
+- CO-031C: Added fixture-only parser input mapping example.
+- CO-032A: Added artificial fixture parser skeleton.
+- CO-032B: Added artificial fixture parser usage example.
+- CO-033A: Added fixture-only parser pipeline example.
+- CO-034A: Added parser pipeline summary helper.
+- CO-034B: Added parser pipeline summary usage example.
+- CO-035A: Documented normalization boundary.
+- CO-035B: Added normalization contract skeleton.
+- CO-035C: Added normalization contract usage example.
+- CO-036A: Documented parser-to-normalization handoff boundary.
+- CO-036B: Added parser-to-normalization handoff model skeleton.
+- CO-036C: Added parser-to-normalization handoff usage example.
+- CO-037A: Documented normalization execution boundary.
+- CO-037B: Added artificial normalization executor skeleton.
+- CO-037C: Added artificial normalization executor usage example.
+- CO-038A: Documented normalization result summary boundary.
+- CO-038B: Added artificial normalization result summary model.
+- CO-038C: Added artificial normalization result summary usage example.
+- CO-039A: Documented normalization summary builder boundary.
+- CO-039B: Added artificial normalization summary builder skeleton.
+- CO-039C: Added artificial normalization summary builder usage example.
+- CO-040A: Documented normalization pipeline recap.
+- CO-041A: Documented normalization public API recap.
+- CO-042A: Documented normalization test coverage recap.
+- CO-043A: Documented normalization deferred implementation roadmap.
+- CO-044A: Documented parser-to-normalization integration recap.
+- CO-045A: Documented source-to-normalization pipeline recap.
+- CO-046A: Documented public roadmap checkpoint.
+- CO-047A: Documented repository navigation guide.
+- CO-048A: Documented review readiness checklist.
+- CO-049A: Documented documentation map consistency checklist.
+- CO-050A: Documented milestone checkpoint for CO-037 to CO-049.
+- CO-051A: Added documentation map reference smoke test.
+- CO-051B: Expanded documentation reference smoke test to related-doc references.
+- CO-051C: Documented documentation reference smoke test coverage.
+- CO-052A: Added task queue consistency smoke test.
+- CO-052B: Documented task queue smoke test coverage.
+- CO-053A: Documented governance smoke test checkpoint.
+- CO-054A: Added normalization public API export smoke test hardening.
+- CO-054B: Documented normalization public API smoke test coverage.
+- CO-055A: Added parser public API export smoke test hardening.
+- CO-055B: Documented parser public API smoke test coverage.
+- CO-056A: Added source adapter public API export smoke test hardening.
+- CO-056B: Documented source adapter public API smoke test coverage.
+- CO-057A: Documented stabilization checkpoint.

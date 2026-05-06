@@ -1,0 +1,3 @@
+factor_id,factor_name,unit
+fixture-factor-001,Electricity generated - fixture only,kWh
+fixture-factor-002,Natural gas - fixture only,kWh

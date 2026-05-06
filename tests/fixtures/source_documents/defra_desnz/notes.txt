@@ -1,0 +1,1 @@
+Artificial notes that should not be discovered by the prefixed adapter defaults.

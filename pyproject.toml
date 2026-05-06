@@ -1,0 +1,27 @@
+[project]
+name = "carbonops-parser"
+version = "0.1.0"
+dependencies = [
+    "psycopg>=3,<4",
+]
+
+[project.optional-dependencies]
+postgresql = [
+    "psycopg[binary]>=3,<4",
+]
+
+[tool.pytest.ini_options]
+pythonpath = [
+    "src",
+    "tests",
+]
+testpaths = [
+    "tests",
+]
+markers = [
+    "postgresql_integration: future opt-in PostgreSQL integration tests; disabled by default unless an explicit test harness enables them",
+]
+
+[project.scripts]
+carbonops-parser = "carbonfactor_parser.cli:main"
+carbonops-source-acquisition = "carbonfactor_parser.source_acquisition.cli:main"
