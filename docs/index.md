@@ -58,6 +58,7 @@
 - [Parser Execution Runner Boundary](parser-execution-runner-boundary.md)
 - [Source-Specific Parser Adapter Boundary](source-specific-parser-adapter-boundary.md)
 - [Parser File Content Input Boundary](parser-file-content-input-boundary.md)
+- [Parser Execution Normalization Handoff Boundary](parser-execution-normalization-handoff-boundary.md)
 - [Parser Handoff Boundary](parser-handoff-boundary.md)
 - [Parser Contract Boundaries](parser-contract-boundaries.md)
 - [Source-Specific Parser Skeleton Boundaries](source-specific-parser-skeleton-boundaries.md)

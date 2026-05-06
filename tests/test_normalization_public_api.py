@@ -8,8 +8,13 @@ from carbonfactor_parser.normalization import (
     NormalizationResult,
     NormalizationResultSummary,
     NormalizedRecord,
+    ParserExecutionNormalizationHandoff,
+    ParserExecutionNormalizationHandoffIssue,
+    ParserExecutionNormalizationHandoffResult,
+    ParserExecutionNormalizationHandoffStatus,
     ParserNormalizationHandoff,
     ParserNormalizationHandoffEntry,
+    build_parser_execution_normalization_handoff,
     build_parser_normalization_handoff,
 )
 from carbonfactor_parser.normalization.summary import (
@@ -25,8 +30,13 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "NormalizedRecord",
     "ArtificialNormalizationExecutor",
     "ArtificialNormalizationSummaryBuilder",
+    "ParserExecutionNormalizationHandoff",
+    "ParserExecutionNormalizationHandoffIssue",
+    "ParserExecutionNormalizationHandoffResult",
+    "ParserExecutionNormalizationHandoffStatus",
     "ParserNormalizationHandoff",
     "ParserNormalizationHandoffEntry",
+    "build_parser_execution_normalization_handoff",
     "build_parser_normalization_handoff",
 )
 
@@ -40,8 +50,23 @@ EXPECTED_PUBLIC_EXPORTS = {
     "ArtificialNormalizationSummaryBuilder": (
         summary_builder.ArtificialNormalizationSummaryBuilder
     ),
+    "ParserExecutionNormalizationHandoff": (
+        handoff.ParserExecutionNormalizationHandoff
+    ),
+    "ParserExecutionNormalizationHandoffIssue": (
+        handoff.ParserExecutionNormalizationHandoffIssue
+    ),
+    "ParserExecutionNormalizationHandoffResult": (
+        handoff.ParserExecutionNormalizationHandoffResult
+    ),
+    "ParserExecutionNormalizationHandoffStatus": (
+        handoff.ParserExecutionNormalizationHandoffStatus
+    ),
     "ParserNormalizationHandoff": handoff.ParserNormalizationHandoff,
     "ParserNormalizationHandoffEntry": handoff.ParserNormalizationHandoffEntry,
+    "build_parser_execution_normalization_handoff": (
+        handoff.build_parser_execution_normalization_handoff
+    ),
     "build_parser_normalization_handoff": handoff.build_parser_normalization_handoff,
 }
 
@@ -55,8 +80,21 @@ def test_expected_normalization_public_symbols_import_from_package() -> None:
         "NormalizedRecord": NormalizedRecord,
         "ArtificialNormalizationExecutor": ArtificialNormalizationExecutor,
         "ArtificialNormalizationSummaryBuilder": ArtificialNormalizationSummaryBuilder,
+        "ParserExecutionNormalizationHandoff": ParserExecutionNormalizationHandoff,
+        "ParserExecutionNormalizationHandoffIssue": (
+            ParserExecutionNormalizationHandoffIssue
+        ),
+        "ParserExecutionNormalizationHandoffResult": (
+            ParserExecutionNormalizationHandoffResult
+        ),
+        "ParserExecutionNormalizationHandoffStatus": (
+            ParserExecutionNormalizationHandoffStatus
+        ),
         "ParserNormalizationHandoff": ParserNormalizationHandoff,
         "ParserNormalizationHandoffEntry": ParserNormalizationHandoffEntry,
+        "build_parser_execution_normalization_handoff": (
+            build_parser_execution_normalization_handoff
+        ),
         "build_parser_normalization_handoff": build_parser_normalization_handoff,
     }
 

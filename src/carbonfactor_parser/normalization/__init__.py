@@ -8,8 +8,13 @@ from carbonfactor_parser.normalization.contracts import (
 )
 from carbonfactor_parser.normalization.executor import ArtificialNormalizationExecutor
 from carbonfactor_parser.normalization.handoff import (
+    ParserExecutionNormalizationHandoff,
+    ParserExecutionNormalizationHandoffIssue,
+    ParserExecutionNormalizationHandoffResult,
+    ParserExecutionNormalizationHandoffStatus,
     ParserNormalizationHandoff,
     ParserNormalizationHandoffEntry,
+    build_parser_execution_normalization_handoff,
     build_parser_normalization_handoff,
 )
 from carbonfactor_parser.normalization.summary import NormalizationResultSummary
@@ -25,7 +30,12 @@ __all__ = (
     "NormalizedRecord",
     "ArtificialNormalizationExecutor",
     "ArtificialNormalizationSummaryBuilder",
+    "ParserExecutionNormalizationHandoff",
+    "ParserExecutionNormalizationHandoffIssue",
+    "ParserExecutionNormalizationHandoffResult",
+    "ParserExecutionNormalizationHandoffStatus",
     "ParserNormalizationHandoff",
     "ParserNormalizationHandoffEntry",
+    "build_parser_execution_normalization_handoff",
     "build_parser_normalization_handoff",
 )

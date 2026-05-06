@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-093A: Added parser execution result to normalization handoff boundary with ready/not-ready status, deferred parsed payload marker, public exports, tests, and docs.
 - CO-092B: Added minimal already-loaded DEFRA/DESNZ content parser path returning ParserExecutionResult without file I/O, normalization, persistence, or real source support claims.
 - CO-092A: Added parser file content input boundary contract, validation helpers, public exports, focused tests, and documentation for separating already-loaded content from acquisition metadata.
 - CO-091B: Added DEFRA/DESNZ parser adapter skeleton with metadata-only matching, unsupported not-implemented parse result, public export, docs, and no real parsing behavior.
