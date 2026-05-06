@@ -34,6 +34,14 @@ Registry resolution uses `can_parse(parser_input)` only. It must not call `parse
 
 `NoopParserAdapter.parse()` does not parse files or produce parser output. It raises `NotImplementedError` so no-op planning cannot be mistaken for real parser execution.
 
+## Artificial Adapter
+
+`ArtificialParserAdapter` is an explicitly artificial in-memory adapter for demo and boundary tests. It advertises `source_family` as `artificial`, supports deterministic artificial content type and format hint metadata, and uses only `ParserInputContract` metadata in `can_parse()`.
+
+`ArtificialParserAdapter.parse()` returns a deterministic `ParserExecutionResult` for matching artificial input. Its parsed record count comes from adapter configuration, not artifact file contents. Result metadata marks the adapter kind as artificial and records that it is not a real source parser.
+
+This adapter must not be used to represent DEFRA/DESNZ, GHG Protocol, IPCC, or any other real source-specific parsing behavior.
+
 ## Execution Planning Boundary
 
 `ParserExecutionPlan` and `plan_parser_execution()` combine `ParserInputContract` validation with metadata-only registry resolution. Planning returns `ready`, `invalid_input`, or `no_adapter` status without calling `parse()`, opening files, making network calls, running normalization, or writing to a database.
@@ -49,9 +57,10 @@ This boundary does not add:
 - Real parser execution.
 - Source-specific real adapters.
 - No-op parser output.
+- Real source parser output.
 - Normalized parser output.
-- Registry-driven parser execution.
-- Planning-driven parser execution.
+- Real registry-driven parser execution.
+- Real planning-driven parser execution.
 - File content reading.
 - HTTP or network calls.
 - Normalization execution.

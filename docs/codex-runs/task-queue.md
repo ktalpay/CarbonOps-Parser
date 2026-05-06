@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-090B: Added ArtificialParserAdapter for deterministic in-memory ParserExecutionResult success paths without real source parsing or side effects.
 - CO-090A: Added parser execution runner boundary that converts non-ready plans into structured execution results and calls parser adapters only for ready plans.
 - CO-089B: Added ParserAdapter.parse() and NoopParserAdapter.parse() annotation alignment with ParserExecutionResult while preserving no-op behavior and parser execution deferral.
 - CO-089A: Added parser execution result contracts and documentation for future parser adapter outcomes without changing parser execution behavior.

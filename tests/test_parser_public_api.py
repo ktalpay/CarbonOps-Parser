@@ -2,6 +2,7 @@ import carbonfactor_parser.parsers as parsers
 from carbonfactor_parser.parsers import (
     adapter,
     adapter_registry,
+    artificial_adapter,
     contracts,
     defra_desnz_parser,
     example_parser,
@@ -17,6 +18,7 @@ from carbonfactor_parser.parsers import (
 )
 from carbonfactor_parser.parsers import (
     ArtificialFixtureParser,
+    ArtificialParserAdapter,
     DefraDesnzParser,
     ExampleInMemoryParser,
     ExampleSourceSpecificParser,
@@ -55,6 +57,7 @@ from carbonfactor_parser.parsers import (
 
 EXPECTED_PUBLIC_SYMBOLS = (
     "ArtificialFixtureParser",
+    "ArtificialParserAdapter",
     "DefraDesnzParser",
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
@@ -92,6 +95,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
 
 EXPECTED_PUBLIC_EXPORTS = {
     "ArtificialFixtureParser": fixture_parser.ArtificialFixtureParser,
+    "ArtificialParserAdapter": artificial_adapter.ArtificialParserAdapter,
     "DefraDesnzParser": defra_desnz_parser.DefraDesnzParser,
     "ExampleInMemoryParser": example_parser.ExampleInMemoryParser,
     "ExampleSourceSpecificParser": (
@@ -141,6 +145,7 @@ EXPECTED_PUBLIC_EXPORTS = {
 def test_expected_parser_public_symbols_import_from_package() -> None:
     imported_symbols = {
         "ArtificialFixtureParser": ArtificialFixtureParser,
+        "ArtificialParserAdapter": ArtificialParserAdapter,
         "DefraDesnzParser": DefraDesnzParser,
         "ExampleInMemoryParser": ExampleInMemoryParser,
         "ExampleSourceSpecificParser": ExampleSourceSpecificParser,
@@ -200,6 +205,7 @@ def test_parser_all_names_resolve_to_package_attributes() -> None:
 def test_parser_all_excludes_internal_module_names() -> None:
     assert "adapter" not in parsers.__all__
     assert "adapter_registry" not in parsers.__all__
+    assert "artificial_adapter" not in parsers.__all__
     assert "contracts" not in parsers.__all__
     assert "defra_desnz_parser" not in parsers.__all__
     assert "example_parser" not in parsers.__all__
