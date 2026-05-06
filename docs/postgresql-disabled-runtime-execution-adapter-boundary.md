@@ -75,6 +75,9 @@ back, skipped, upserted, or otherwise completed as a database operation.
   strategy metadata without SQL mutation.
 - CO-102H psycopg session adapter skeleton can supply optional disabled session
   metadata.
+- CO-102J repository disabled execution preview can compose `PersistenceInput`
+  through insert-builder metadata into this disabled runtime result without
+  changing repository `persist()` behavior.
 - `PostgreSQLPersistenceRepository` remains unsupported and must not call this
   boundary as a runtime write path.
 
@@ -92,6 +95,7 @@ tests, and sanitized operational reporting in separately reviewed tasks.
 - [PostgreSQL Transaction Policy Boundary](postgresql-transaction-policy-boundary.md)
 - [PostgreSQL Idempotency Conflict Strategy Boundary](postgresql-idempotency-conflict-strategy-boundary.md)
 - [PostgreSQL psycopg Session Adapter Boundary](postgresql-psycopg-session-adapter-boundary.md)
+- [PostgreSQL Repository Disabled Execution Preview Boundary](postgresql-repository-disabled-execution-preview-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
 - [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)

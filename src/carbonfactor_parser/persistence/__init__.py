@@ -53,6 +53,14 @@ from carbonfactor_parser.persistence.postgresql_disabled_runtime_execution_adapt
     build_postgresql_disabled_runtime_execution_result,
     describe_postgresql_disabled_runtime_execution,
 )
+from carbonfactor_parser.persistence.postgresql_repository_disabled_execution_preview import (
+    PostgreSQLRepositoryDisabledExecutionPreviewDescription,
+    PostgreSQLRepositoryDisabledExecutionPreviewIssue,
+    PostgreSQLRepositoryDisabledExecutionPreviewResult,
+    PostgreSQLRepositoryDisabledExecutionPreviewStatus,
+    build_postgresql_repository_disabled_execution_preview,
+    describe_postgresql_repository_disabled_execution_preview,
+)
 from carbonfactor_parser.persistence.postgresql_transaction_policy import (
     PostgreSQLBatchTransactionMode,
     PostgreSQLPartialSuccessPolicy,
@@ -175,6 +183,10 @@ __all__ = (
     "PostgreSQLPersistencePreviewStatus",
     "PostgreSQLPersistenceRepository",
     "PostgreSQLPersistenceSchema",
+    "PostgreSQLRepositoryDisabledExecutionPreviewDescription",
+    "PostgreSQLRepositoryDisabledExecutionPreviewIssue",
+    "PostgreSQLRepositoryDisabledExecutionPreviewResult",
+    "PostgreSQLRepositoryDisabledExecutionPreviewStatus",
     "PostgreSQLStatementExecutionContract",
     "PostgreSQLTransactionBoundary",
     "PostgreSQLTransactionFailurePolicy",
@@ -196,6 +208,7 @@ __all__ = (
     "build_postgresql_execution_plan",
     "build_postgresql_insert_statement",
     "build_postgresql_persistence_preview",
+    "build_postgresql_repository_disabled_execution_preview",
     "build_postgresql_transaction_plan",
     "create_persistence_result",
     "create_postgresql_integration_test_boundary",
@@ -204,6 +217,7 @@ __all__ = (
     "describe_postgresql_disabled_runtime_execution",
     "describe_postgresql_execution_adapter_boundary",
     "describe_postgresql_idempotency_conflict_strategy_boundary",
+    "describe_postgresql_repository_disabled_execution_preview",
     "describe_postgresql_transaction_policy_boundary",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
