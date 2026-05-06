@@ -41,6 +41,10 @@ This keeps no-op or future adapter failures represented as parser execution boun
 
 That success result is artificial. Its record count comes from adapter configuration, and its metadata marks that it is not a real source parser result.
 
+## DEFRA/DESNZ Skeleton Path
+
+`DefraDesnzParserAdapter` may produce a `ready` plan for matching DEFRA/DESNZ metadata. When run, it returns its skeleton `unsupported` `ParserExecutionResult` instead of parsing real DEFRA/DESNZ files.
+
 ## Non-Goals
 
 This boundary does not add:

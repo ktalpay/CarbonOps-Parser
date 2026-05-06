@@ -15,6 +15,7 @@ from carbonfactor_parser.parsers.contracts import (
     ParserResult,
     ParserResultSummary,
 )
+from carbonfactor_parser.parsers.defra_desnz_adapter import DefraDesnzParserAdapter
 from carbonfactor_parser.parsers.defra_desnz_parser import DefraDesnzParser
 from carbonfactor_parser.parsers.example_parser import ExampleInMemoryParser
 from carbonfactor_parser.parsers.example_source_specific_parser import (
@@ -55,6 +56,7 @@ from carbonfactor_parser.parsers.pipeline_summary import (
 __all__ = (
     "ArtificialFixtureParser",
     "ArtificialParserAdapter",
+    "DefraDesnzParserAdapter",
     "DefraDesnzParser",
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
