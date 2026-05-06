@@ -53,7 +53,9 @@ Parser adapters should not infer hidden retry behavior, hidden source lookups, i
 
 ## Example Mapping
 
-See `examples/example_acquisition_artifact_parser_input_mapping.py` for an in-memory, deterministic example that maps source acquisition artifact metadata into an example-local future parser input representation. The example preserves source identity, artifact reference, checksum metadata, content type/format hint, acquisition status, and run/manifest metadata without reading files, making network calls, executing a parser, executing normalization, or writing to a database.
+`ParserInputContract` and `create_parser_input_contract()` provide the small public parser input boundary for source acquisition output prepared for future parser execution. The contract preserves source identity, artifact reference, checksum metadata, content type or format hints, acquisition status, and run or manifest metadata without carrying parser output, normalization output, or database persistence fields.
+
+See `examples/example_acquisition_artifact_parser_input_mapping.py` for an in-memory, deterministic example that maps source acquisition artifact metadata into `ParserInputContract`. The example preserves source identity, artifact reference, checksum metadata, content type/format hint, acquisition status, and run/manifest metadata without reading files, making network calls, executing a parser, executing normalization, or writing to a database.
 
 ## Normalization Handoff Expectations
 

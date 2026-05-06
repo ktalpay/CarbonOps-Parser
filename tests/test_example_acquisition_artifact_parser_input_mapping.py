@@ -50,6 +50,7 @@ def test_example_represents_acquisition_status_and_run_metadata() -> None:
     run_metadata = parser_input["run_metadata"]
 
     assert parser_input["acquisition_status"] == "acquired"
+    assert parser_input["acquisition_run_id"] == "static-example-run"
     assert parser_input["manifest_metadata"]["status"] == "acquired"
     assert run_metadata == {
         "run_label": "static-example-run",
@@ -69,4 +70,5 @@ def test_example_produces_no_parser_or_normalization_output() -> None:
     assert result["normalization_output_produced"] is False
     assert "parser_output" not in result
     assert "normalization_output" not in result
-    assert result["parser_input"]["parser_boundary"] == "future_parser_input"
+    assert "records" not in result["parser_input"]
+    assert "normalization_records" not in result["parser_input"]

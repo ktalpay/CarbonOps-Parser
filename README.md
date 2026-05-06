@@ -202,6 +202,8 @@ For boundary details, see:
 
 See [examples/example_acquisition_artifact_parser_input_mapping.py](examples/example_acquisition_artifact_parser_input_mapping.py) for a deterministic in-memory example of mapping acquisition artifact metadata into a future parser input boundary without executing a parser.
 
+The parser package exposes `ParserInputContract` and `create_parser_input_contract()` for future parser adapter input handoff. The contract carries acquisition metadata only; it does not contain parser output, normalization output, or database persistence fields.
+
 ## Source Support
 
 Each Phase 1 source family will have its own schedule, source version/hash check, parser, validation rules, archive layout, and source-specific tables.
