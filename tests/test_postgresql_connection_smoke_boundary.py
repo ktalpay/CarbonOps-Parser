@@ -283,7 +283,11 @@ def test_runbook_documents_manual_connection_smoke_execution_record() -> None:
 
 def test_runbook_manual_connection_smoke_execution_record_has_one_current_status() -> None:
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
-    current_record = runbook_text.split("Current execution record:", maxsplit=1)[1]
+    current_record = runbook_text.split(
+        "## Manual Connection Smoke Execution Record",
+        maxsplit=1,
+    )[1]
+    current_record = current_record.split("Current execution record:", maxsplit=1)[1]
     current_record = current_record.split("```bash", maxsplit=1)[0]
 
     status_lines = [
@@ -310,7 +314,11 @@ def test_runbook_manual_connection_smoke_execution_record_has_one_current_status
 
 def test_runbook_successful_smoke_record_captures_deferred_packaging_issues() -> None:
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
-    current_record = runbook_text.split("Current execution record:", maxsplit=1)[1]
+    current_record = runbook_text.split(
+        "## Manual Connection Smoke Execution Record",
+        maxsplit=1,
+    )[1]
+    current_record = current_record.split("Current execution record:", maxsplit=1)[1]
     current_record = current_record.split(
         "## Local PostgreSQL Setup Checklist",
         maxsplit=1,
@@ -379,6 +387,86 @@ def test_runbook_documents_fresh_clone_install_smoke_checklist() -> None:
         "No DSN, password, credential, or secret is required"
         in normalized_runbook_text
     )
+
+
+def test_runbook_documents_fresh_clone_install_smoke_execution_record() -> None:
+    runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    normalized_runbook_text = " ".join(runbook_text.split())
+
+    assert "## Fresh Clone Install Smoke Execution Record" in runbook_text
+    assert "`not_run`" in runbook_text
+    assert "`passed`" in runbook_text
+    assert "`failed_sanitized`" in runbook_text
+    assert "`blocked_environment`" in runbook_text
+    assert "status: `passed`" in runbook_text
+    assert "temporary clean local clone" in normalized_runbook_text
+    assert "`pyproject.toml` unchanged in this task" in runbook_text
+    assert "editable install passed." in runbook_text
+    assert "CLI help passed." in runbook_text
+    assert "local dry-run passed with `status=success`." in runbook_text
+    assert "JSON local dry-run passed with `status` set to `success`." in runbook_text
+    assert "PostgreSQL extra install passed." in runbook_text
+    assert "`psycopg` import passed and reported version" in runbook_text
+    assert "no PostgreSQL connection was performed." in runbook_text
+    assert "no SQL execution was performed." in runbook_text
+    assert "no DB write was performed." in runbook_text
+    assert "no repository persistence was performed." in runbook_text
+    assert "no migration or table creation was performed." in runbook_text
+    assert "no DSN was required." in runbook_text
+    assert "no password was required." in runbook_text
+    assert "no credential or secret value was recorded." in runbook_text
+    assert "temporary clone and virtual environment were removed" in (
+        normalized_runbook_text
+    )
+
+
+def test_runbook_fresh_clone_install_smoke_record_has_one_current_status() -> None:
+    runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    current_record = runbook_text.split(
+        "## Fresh Clone Install Smoke Execution Record",
+        maxsplit=1,
+    )[1]
+    current_record = current_record.split("## Connection Smoke Skeleton", maxsplit=1)[0]
+
+    status_lines = [
+        line.strip()
+        for line in current_record.splitlines()
+        if line.strip().startswith("- status:")
+    ]
+    allowed_statuses = {
+        "`not_run`",
+        "`passed`",
+        "`failed_sanitized`",
+        "`blocked_environment`",
+    }
+
+    assert status_lines == ["- status: `passed`"]
+    current_status = status_lines[0].removeprefix("- status: ").strip()
+    assert current_status in allowed_statuses
+
+
+def test_runbook_fresh_clone_install_smoke_passed_record_has_required_evidence() -> None:
+    runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
+    current_record = runbook_text.split(
+        "## Fresh Clone Install Smoke Execution Record",
+        maxsplit=1,
+    )[1]
+    current_record = current_record.split("## Connection Smoke Skeleton", maxsplit=1)[0]
+
+    if "- status: `passed`" not in current_record:
+        return
+
+    required_evidence = (
+        "editable install passed.",
+        "CLI help passed.",
+        "local dry-run passed with `status=success`.",
+        "JSON local dry-run passed with `status` set to `success`.",
+        "PostgreSQL extra install passed.",
+        "`psycopg` import passed",
+    )
+
+    for evidence in required_evidence:
+        assert evidence in current_record
 
 
 def test_runbook_documents_local_postgresql_setup_checklist() -> None:
