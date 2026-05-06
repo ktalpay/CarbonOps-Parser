@@ -15,6 +15,8 @@ from carbonfactor_parser.parsers import (
     ExampleInMemoryParser,
     ExampleSourceSpecificParser,
     ParserInputContract,
+    ParserInputValidationIssue,
+    ParserInputValidationResult,
     ParserInputMapping,
     ParserInputMappingEntry,
     ParserIssue,
@@ -25,6 +27,7 @@ from carbonfactor_parser.parsers import (
     build_fixture_parser_input_mapping,
     create_parser_input_contract,
     summarize_parser_pipeline,
+    validate_parser_input_contract,
 )
 
 
@@ -34,6 +37,8 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
     "ParserInputContract",
+    "ParserInputValidationIssue",
+    "ParserInputValidationResult",
     "ParserInputMapping",
     "ParserInputMappingEntry",
     "ParserIssue",
@@ -42,6 +47,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "ParserResult",
     "ParserResultSummary",
     "create_parser_input_contract",
+    "validate_parser_input_contract",
     "build_fixture_parser_input_mapping",
     "summarize_parser_pipeline",
 )
@@ -54,6 +60,8 @@ EXPECTED_PUBLIC_EXPORTS = {
         example_source_specific_parser.ExampleSourceSpecificParser
     ),
     "ParserInputContract": input_contract.ParserInputContract,
+    "ParserInputValidationIssue": input_contract.ParserInputValidationIssue,
+    "ParserInputValidationResult": input_contract.ParserInputValidationResult,
     "ParserInputMapping": input_mapping.ParserInputMapping,
     "ParserInputMappingEntry": input_mapping.ParserInputMappingEntry,
     "ParserIssue": contracts.ParserIssue,
@@ -62,6 +70,7 @@ EXPECTED_PUBLIC_EXPORTS = {
     "ParserResult": contracts.ParserResult,
     "ParserResultSummary": contracts.ParserResultSummary,
     "create_parser_input_contract": input_contract.create_parser_input_contract,
+    "validate_parser_input_contract": input_contract.validate_parser_input_contract,
     "build_fixture_parser_input_mapping": (
         input_mapping.build_fixture_parser_input_mapping
     ),
@@ -76,6 +85,8 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "ExampleInMemoryParser": ExampleInMemoryParser,
         "ExampleSourceSpecificParser": ExampleSourceSpecificParser,
         "ParserInputContract": ParserInputContract,
+        "ParserInputValidationIssue": ParserInputValidationIssue,
+        "ParserInputValidationResult": ParserInputValidationResult,
         "ParserInputMapping": ParserInputMapping,
         "ParserInputMappingEntry": ParserInputMappingEntry,
         "ParserIssue": ParserIssue,
@@ -84,6 +95,7 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "ParserResult": ParserResult,
         "ParserResultSummary": ParserResultSummary,
         "create_parser_input_contract": create_parser_input_contract,
+        "validate_parser_input_contract": validate_parser_input_contract,
         "build_fixture_parser_input_mapping": build_fixture_parser_input_mapping,
         "summarize_parser_pipeline": summarize_parser_pipeline,
     }

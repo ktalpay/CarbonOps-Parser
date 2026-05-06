@@ -55,6 +55,8 @@ Parser adapters should not infer hidden retry behavior, hidden source lookups, i
 
 `ParserInputContract` and `create_parser_input_contract()` provide the small public parser input boundary for source acquisition output prepared for future parser execution. The contract preserves source identity, artifact reference, checksum metadata, content type or format hints, acquisition status, and run or manifest metadata without carrying parser output, normalization output, or database persistence fields.
 
+`validate_parser_input_contract()` provides shape validation for this boundary. It checks required identity, artifact reference, acquisition status, and optional metadata presence rules without reading files, making network calls, executing a parser, executing normalization, or writing to a database.
+
 See `examples/example_acquisition_artifact_parser_input_mapping.py` for an in-memory, deterministic example that maps source acquisition artifact metadata into `ParserInputContract`. The example preserves source identity, artifact reference, checksum metadata, content type/format hint, acquisition status, and run/manifest metadata without reading files, making network calls, executing a parser, executing normalization, or writing to a database.
 
 ## Normalization Handoff Expectations
