@@ -71,6 +71,10 @@ controls for that future work. The runbook does not add runtime repository
 behavior, default DB execution, library environment loading, SQL execution, or
 credential loading.
 
+The `postgresql_integration` marker may be registered for discoverability, but
+marker registration alone must not enable DB tests in default `python -m pytest`
+runs.
+
 ## Connection Session Contract Relationship
 
 `PostgreSQLConnectionSession` defines a driver-neutral future caller-provided

@@ -24,7 +24,9 @@ from carbonfactor_parser.persistence import (
     PersistenceInputBuildStatus,
     PersistenceInputIssue,
     PersistenceInputRecord,
+    POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR,
     POSTGRESQL_INTEGRATION_TEST_MARKER,
+    POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR,
     POSTGRESQL_INTEGRATION_TEST_SKIP_REASON,
     PersistenceIssue,
     PersistenceIssueSeverity,
@@ -131,7 +133,9 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PersistenceInputBuildStatus",
     "PersistenceInputIssue",
     "PersistenceInputRecord",
+    "POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR",
     "POSTGRESQL_INTEGRATION_TEST_MARKER",
+    "POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR",
     "POSTGRESQL_INTEGRATION_TEST_SKIP_REASON",
     "PersistenceIssue",
     "PersistenceIssueSeverity",
@@ -237,8 +241,14 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PersistenceInputBuildStatus": input.PersistenceInputBuildStatus,
     "PersistenceInputIssue": input.PersistenceInputIssue,
     "PersistenceInputRecord": input.PersistenceInputRecord,
+    "POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR": (
+        integration_test_boundary.POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR
+    ),
     "POSTGRESQL_INTEGRATION_TEST_MARKER": (
         integration_test_boundary.POSTGRESQL_INTEGRATION_TEST_MARKER
+    ),
+    "POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR": (
+        integration_test_boundary.POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR
     ),
     "POSTGRESQL_INTEGRATION_TEST_SKIP_REASON": (
         integration_test_boundary.POSTGRESQL_INTEGRATION_TEST_SKIP_REASON
@@ -559,7 +569,13 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PersistenceInputBuildStatus": PersistenceInputBuildStatus,
         "PersistenceInputIssue": PersistenceInputIssue,
         "PersistenceInputRecord": PersistenceInputRecord,
+        "POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR": (
+            POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR
+        ),
         "POSTGRESQL_INTEGRATION_TEST_MARKER": POSTGRESQL_INTEGRATION_TEST_MARKER,
+        "POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR": (
+            POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR
+        ),
         "POSTGRESQL_INTEGRATION_TEST_SKIP_REASON": (
             POSTGRESQL_INTEGRATION_TEST_SKIP_REASON
         ),

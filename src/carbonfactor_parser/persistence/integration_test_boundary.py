@@ -6,6 +6,10 @@ from dataclasses import dataclass
 
 
 POSTGRESQL_INTEGRATION_TEST_MARKER = "postgresql_integration"
+POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR = (
+    "CARBONOPS_RUN_POSTGRESQL_INTEGRATION"
+)
+POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR = "CARBONOPS_POSTGRESQL_TEST_DSN"
 POSTGRESQL_INTEGRATION_TEST_SKIP_REASON = (
     "PostgreSQL integration tests are disabled by default and require an "
     "explicit opt-in test boundary."
@@ -20,6 +24,8 @@ class PostgreSQLIntegrationTestBoundary:
     marker_name: str
     enable_source: str | None = None
     skip_reason: str | None = None
+    opt_in_control_name: str = POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR
+    test_dsn_input_name: str = POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR
 
 
 def create_postgresql_integration_test_boundary(
@@ -35,6 +41,8 @@ def create_postgresql_integration_test_boundary(
         marker_name=POSTGRESQL_INTEGRATION_TEST_MARKER,
         enable_source=enable_source if enabled else None,
         skip_reason=None if enabled else POSTGRESQL_INTEGRATION_TEST_SKIP_REASON,
+        opt_in_control_name=POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR,
+        test_dsn_input_name=POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR,
     )
 
 

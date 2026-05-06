@@ -26,6 +26,8 @@ represented only by metadata.
 Use the existing PostgreSQL integration test boundary:
 
 - marker name: `postgresql_integration`
+- opt-in control name: `CARBONOPS_RUN_POSTGRESQL_INTEGRATION`
+- test connection input name: `CARBONOPS_POSTGRESQL_TEST_DSN`
 - helper: `create_postgresql_integration_test_boundary()`
 - skip helper: `should_skip_postgresql_integration_tests()`
 - skip reason: `POSTGRESQL_INTEGRATION_TEST_SKIP_REASON`
@@ -35,7 +37,8 @@ read config files, load credentials, connect to PostgreSQL, create cursors,
 execute SQL, or write records.
 
 Do not introduce a competing marker name. Future integration tests should align
-with `postgresql_integration`.
+with `postgresql_integration`. The control names are passive boundary metadata;
+the library does not read their values.
 
 ## Opt-In Controls For Future Tests
 
@@ -50,6 +53,10 @@ These names are external test-runner inputs only. Library code must not read
 them implicitly. A future test harness may read them inside an opt-in test path,
 but only after a scoped task adds that behavior and proves default test runs
 remain DB-free.
+
+The marker is registered in pytest configuration only to make future marked
+tests explicit and discoverable. Registration does not enable DB tests by
+default.
 
 ## Suggested Local Test Environment
 
