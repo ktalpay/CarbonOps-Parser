@@ -85,6 +85,12 @@ Parser adapters must not download sources, mutate acquisition manifests, retry a
 
 Future source-specific adapters should remain compatible with this planner and runner path. They must not rely on side effects from planning or registry resolution.
 
+## DEFRA/DESNZ Skeleton Status
+
+`DefraDesnzParserAdapter` is the current DEFRA/DESNZ source-specific parser adapter skeleton. It declares deterministic `defra_desnz` identity and DEFRA/DESNZ format metadata for registry, planning, and runner wiring tests.
+
+Its `can_parse()` behavior is metadata-only. Its `parse()` method returns an `unsupported` `ParserExecutionResult` with a `DEFRA_DESNZ_PARSER_NOT_IMPLEMENTED` issue. It does not read artifact paths, parse real DEFRA/DESNZ content, execute normalization, write to a database, perform network calls, or claim real DEFRA/DESNZ support.
+
 ## Minimal Implementation Checklist
 
 Before a real source-specific parser adapter is added, reviewers should confirm:

@@ -44,6 +44,12 @@ Registry resolution uses `can_parse(parser_input)` only. It must not call `parse
 
 This adapter must not be used to represent DEFRA/DESNZ, GHG Protocol, IPCC, or any other real source-specific parsing behavior.
 
+## DEFRA/DESNZ Adapter Skeleton
+
+`DefraDesnzParserAdapter` is a source-specific parser adapter skeleton. It advertises `source_family` as `defra_desnz` and supports deterministic DEFRA/DESNZ content type and format hint metadata for registry, planning, and runner coverage.
+
+`DefraDesnzParserAdapter.parse()` returns an `unsupported` `ParserExecutionResult` with a not-implemented issue. It does not read files or parse real DEFRA/DESNZ content.
+
 ## Execution Planning Boundary
 
 `ParserExecutionPlan` and `plan_parser_execution()` combine `ParserInputContract` validation with metadata-only registry resolution. Planning returns `ready`, `invalid_input`, or `no_adapter` status without calling `parse()`, opening files, making network calls, running normalization, or writing to a database.
