@@ -53,6 +53,7 @@
 - [Source-Specific Adapter Skeleton Guidance](source-specific-adapter-skeleton-guidance.md)
 - [DEFRA/DESNZ Adapter Skeleton Boundaries](defra-desnz-adapter-skeleton-boundaries.md)
 - [Parser Adapter Boundary](parser-adapter-boundary.md)
+- [Parser Execution Planning Boundary](parser-execution-planning-boundary.md)
 - [Parser Handoff Boundary](parser-handoff-boundary.md)
 - [Parser Contract Boundaries](parser-contract-boundaries.md)
 - [Source-Specific Parser Skeleton Boundaries](source-specific-parser-skeleton-boundaries.md)

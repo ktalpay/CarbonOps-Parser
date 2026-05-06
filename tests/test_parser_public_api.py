@@ -6,6 +6,7 @@ from carbonfactor_parser.parsers import (
     defra_desnz_parser,
     example_parser,
     example_source_specific_parser,
+    execution_plan,
     fixture_parser,
     input_contract,
     input_mapping,
@@ -18,6 +19,8 @@ from carbonfactor_parser.parsers import (
     ExampleSourceSpecificParser,
     ParserAdapter,
     ParserAdapterRegistry,
+    ParserExecutionPlan,
+    ParserExecutionPlanStatus,
     ParserInputContract,
     ParserInputValidationIssue,
     ParserInputValidationResult,
@@ -32,6 +35,7 @@ from carbonfactor_parser.parsers import (
     build_fixture_parser_input_mapping,
     create_parser_input_contract,
     list_parser_adapters,
+    plan_parser_execution,
     register_parser_adapter,
     resolve_parser_adapters,
     summarize_parser_pipeline,
@@ -46,6 +50,8 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "ExampleSourceSpecificParser",
     "ParserAdapter",
     "ParserAdapterRegistry",
+    "ParserExecutionPlan",
+    "ParserExecutionPlanStatus",
     "ParserInputContract",
     "ParserInputValidationIssue",
     "ParserInputValidationResult",
@@ -59,6 +65,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "create_parser_adapter_registry",
     "create_parser_input_contract",
     "list_parser_adapters",
+    "plan_parser_execution",
     "register_parser_adapter",
     "resolve_parser_adapters",
     "validate_parser_input_contract",
@@ -75,6 +82,8 @@ EXPECTED_PUBLIC_EXPORTS = {
     ),
     "ParserAdapter": adapter.ParserAdapter,
     "ParserAdapterRegistry": adapter_registry.ParserAdapterRegistry,
+    "ParserExecutionPlan": execution_plan.ParserExecutionPlan,
+    "ParserExecutionPlanStatus": execution_plan.ParserExecutionPlanStatus,
     "ParserInputContract": input_contract.ParserInputContract,
     "ParserInputValidationIssue": input_contract.ParserInputValidationIssue,
     "ParserInputValidationResult": input_contract.ParserInputValidationResult,
@@ -90,6 +99,7 @@ EXPECTED_PUBLIC_EXPORTS = {
     ),
     "create_parser_input_contract": input_contract.create_parser_input_contract,
     "list_parser_adapters": adapter_registry.list_parser_adapters,
+    "plan_parser_execution": execution_plan.plan_parser_execution,
     "register_parser_adapter": adapter_registry.register_parser_adapter,
     "resolve_parser_adapters": adapter_registry.resolve_parser_adapters,
     "validate_parser_input_contract": input_contract.validate_parser_input_contract,
@@ -108,6 +118,8 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "ExampleSourceSpecificParser": ExampleSourceSpecificParser,
         "ParserAdapter": ParserAdapter,
         "ParserAdapterRegistry": ParserAdapterRegistry,
+        "ParserExecutionPlan": ParserExecutionPlan,
+        "ParserExecutionPlanStatus": ParserExecutionPlanStatus,
         "ParserInputContract": ParserInputContract,
         "ParserInputValidationIssue": ParserInputValidationIssue,
         "ParserInputValidationResult": ParserInputValidationResult,
@@ -121,6 +133,7 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "create_parser_adapter_registry": create_parser_adapter_registry,
         "create_parser_input_contract": create_parser_input_contract,
         "list_parser_adapters": list_parser_adapters,
+        "plan_parser_execution": plan_parser_execution,
         "register_parser_adapter": register_parser_adapter,
         "resolve_parser_adapters": resolve_parser_adapters,
         "validate_parser_input_contract": validate_parser_input_contract,
@@ -156,6 +169,7 @@ def test_parser_all_excludes_internal_module_names() -> None:
     assert "defra_desnz_parser" not in parsers.__all__
     assert "example_parser" not in parsers.__all__
     assert "example_source_specific_parser" not in parsers.__all__
+    assert "execution_plan" not in parsers.__all__
     assert "fixture_parser" not in parsers.__all__
     assert "input_contract" not in parsers.__all__
     assert "input_mapping" not in parsers.__all__

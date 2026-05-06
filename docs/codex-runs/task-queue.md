@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-088A: Added parser execution planning helpers that combine input validation and metadata-only adapter registry resolution without calling parser execution.
 - CO-087B: Added parser adapter registry helpers with deterministic listing, metadata-only resolution, duplicate source family rejection, public exports, and focused registry tests.
 - CO-087A: Added the public parser adapter protocol boundary with metadata-only fake adapter tests and parser adapter boundary documentation.
 - CO-086B: Added parser input contract validation helpers with structured issues, public exports, focused validation tests, and handoff contract documentation updates.

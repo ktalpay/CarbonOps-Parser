@@ -19,6 +19,11 @@ from carbonfactor_parser.parsers.example_parser import ExampleInMemoryParser
 from carbonfactor_parser.parsers.example_source_specific_parser import (
     ExampleSourceSpecificParser,
 )
+from carbonfactor_parser.parsers.execution_plan import (
+    ParserExecutionPlan,
+    ParserExecutionPlanStatus,
+    plan_parser_execution,
+)
 from carbonfactor_parser.parsers.fixture_parser import ArtificialFixtureParser
 from carbonfactor_parser.parsers.input_contract import (
     ParserInputContract,
@@ -44,6 +49,8 @@ __all__ = (
     "ExampleSourceSpecificParser",
     "ParserAdapter",
     "ParserAdapterRegistry",
+    "ParserExecutionPlan",
+    "ParserExecutionPlanStatus",
     "ParserInputContract",
     "ParserInputValidationIssue",
     "ParserInputValidationResult",
@@ -57,6 +64,7 @@ __all__ = (
     "create_parser_adapter_registry",
     "create_parser_input_contract",
     "list_parser_adapters",
+    "plan_parser_execution",
     "register_parser_adapter",
     "resolve_parser_adapters",
     "validate_parser_input_contract",
