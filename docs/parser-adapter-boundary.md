@@ -22,12 +22,19 @@ The public parser adapter protocol exposes:
 
 `parse()` is a future parser execution boundary. This task defines only the protocol method; it does not implement real parsing.
 
+## Registry Boundary
+
+`ParserAdapterRegistry` provides a deterministic registry boundary for future parser adapters. It accepts `ParserAdapter`-compatible objects, preserves registration order for listing and resolution, and rejects duplicate `source_family` registrations so adapter identity stays explicit.
+
+Registry resolution uses `can_parse(parser_input)` only. It must not call `parse()`, open artifact paths, call remote services, run normalization, or write to a database.
+
 ## Non-Goals
 
 This boundary does not add:
 
 - Real parser execution.
 - Source-specific real adapters.
+- Registry-driven parser execution.
 - File content reading.
 - HTTP or network calls.
 - Normalization execution.
