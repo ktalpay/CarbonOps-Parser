@@ -45,6 +45,12 @@ Validation reports structured issues for:
 `password_set=False` is valid. Future credential requirements remain part of the
 PostgreSQL implementation safety gate and explicit runtime configuration work.
 
+## Integration Test Relationship
+
+PostgreSQL integration tests must not infer options from environment variables,
+config files, or committed credentials. The current integration test boundary is
+disabled by default and can only represent explicit opt-in metadata.
+
 ## Repository Relationship
 
 `PostgreSQLPersistenceRepository` may accept `PostgreSQLPersistenceOptions`, but
@@ -74,6 +80,7 @@ This boundary does not add:
 
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
+- [PostgreSQL Integration Test Boundary](postgresql-integration-test-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)

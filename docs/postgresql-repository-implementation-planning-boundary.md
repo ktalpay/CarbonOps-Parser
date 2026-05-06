@@ -21,6 +21,10 @@ made and the safe sequence for later implementation.
 shape for future repository work. It does not load environment variables, read
 config files, load credentials, connect, or execute SQL.
 
+The PostgreSQL integration test boundary is also present, but it is
+default-disabled metadata only. It does not add runtime database tests or
+database dependencies.
+
 ## Safety Gate
 
 No PostgreSQL repository implementation, runtime database connection, SQL execution, migration, or database write may be added until the [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md) is satisfied.
@@ -72,7 +76,9 @@ A conservative future sequence is:
    `PostgreSQLPersistenceRepository`; keep it unable to connect or write.
 3. Explicit config model: present as `PostgreSQLPersistenceOptions`; keep it
    caller-provided and without implicit credential loading.
-4. Test DB integration only: keep tests explicit, isolated, and disabled from accidental local or remote database access.
+4. Test DB integration only: use the default-disabled integration test boundary
+   and keep tests explicit, isolated, and disabled from accidental local or
+   remote database access.
 5. Idempotency enforcement: implement approved key enforcement and verification behavior.
 6. Limited insert path: add the narrowest approved insert behavior for `PersistenceInput`.
 7. Conflict handling: implement approved conflict behavior and structured result reporting.
@@ -113,6 +119,7 @@ Future implementation PRs should confirm:
 
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
+- [PostgreSQL Integration Test Boundary](postgresql-integration-test-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)

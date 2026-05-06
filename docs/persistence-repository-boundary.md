@@ -27,6 +27,10 @@ shape for future PostgreSQL repository work. Options validation remains separate
 from repository persistence and does not load environment variables, config
 files, or credentials.
 
+`PostgreSQLIntegrationTestBoundary` provides default-disabled metadata for
+future PostgreSQL integration tests. It does not add database dependencies,
+connections, SQL execution, or writes.
+
 ## Result Boundary
 
 `PersistenceResult` reports:
@@ -101,6 +105,7 @@ This boundary does not add:
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
+- [PostgreSQL Integration Test Boundary](postgresql-integration-test-boundary.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
