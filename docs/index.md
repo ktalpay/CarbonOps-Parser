@@ -70,6 +70,7 @@
 - [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
+- [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md)

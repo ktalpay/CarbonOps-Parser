@@ -1,5 +1,5 @@
 import carbonfactor_parser.persistence as persistence
-from carbonfactor_parser.persistence import input, repository, schema
+from carbonfactor_parser.persistence import ddl_preview, input, repository, schema
 from carbonfactor_parser.persistence import (
     PersistenceInput,
     PersistenceInputBuildResult,
@@ -16,6 +16,7 @@ from carbonfactor_parser.persistence import (
     build_persistence_input_from_normalization_result,
     create_persistence_result,
     get_normalized_record_postgresql_schema,
+    render_postgresql_ddl_preview,
 )
 
 
@@ -35,6 +36,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "build_persistence_input_from_normalization_result",
     "create_persistence_result",
     "get_normalized_record_postgresql_schema",
+    "render_postgresql_ddl_preview",
 )
 
 EXPECTED_PUBLIC_EXPORTS = {
@@ -57,6 +59,7 @@ EXPECTED_PUBLIC_EXPORTS = {
     "get_normalized_record_postgresql_schema": (
         schema.get_normalized_record_postgresql_schema
     ),
+    "render_postgresql_ddl_preview": ddl_preview.render_postgresql_ddl_preview,
 }
 
 
@@ -81,6 +84,7 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "get_normalized_record_postgresql_schema": (
             get_normalized_record_postgresql_schema
         ),
+        "render_postgresql_ddl_preview": render_postgresql_ddl_preview,
     }
 
     assert tuple(imported_symbols) == EXPECTED_PUBLIC_SYMBOLS
@@ -108,4 +112,5 @@ def test_persistence_all_excludes_internal_module_names() -> None:
     assert "input" not in persistence.__all__
     assert "repository" not in persistence.__all__
     assert "schema" not in persistence.__all__
+    assert "ddl_preview" not in persistence.__all__
     assert all(not name.startswith("_") for name in persistence.__all__)

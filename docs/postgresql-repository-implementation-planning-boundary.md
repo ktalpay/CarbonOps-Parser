@@ -6,7 +6,7 @@ It is planning documentation only. It does not add a PostgreSQL repository, conn
 
 ## Purpose
 
-`PersistenceRepository` now defines the repository protocol for future persistence implementations. `get_normalized_record_postgresql_schema()` defines logical schema metadata for normalized records.
+`PersistenceRepository` now defines the repository protocol for future persistence implementations. `get_normalized_record_postgresql_schema()` defines logical schema metadata for normalized records, and `render_postgresql_ddl_preview()` can render review-only DDL text from that descriptor.
 
 A PostgreSQL repository implementation must be planned separately before runtime code is added. This document records the decisions that must be made and the safe sequence for later implementation.
 
@@ -48,7 +48,7 @@ This planning boundary does not add:
 
 A conservative future sequence is:
 
-1. DDL preview boundary: define reviewable schema text or migration preview artifacts without execution.
+1. DDL preview boundary: use the existing review-only schema text helper without database access.
 2. Repository implementation behind explicit config: add a concrete repository only after configuration and credential ownership are scoped.
 3. Integration tests with a test database only: keep tests explicit, isolated, and disabled from accidental local or remote database access.
 4. Idempotency and conflict handling: implement key enforcement and conflict result reporting after schema ownership is settled.
@@ -62,7 +62,7 @@ Each step should remain small, reviewable, and separately validated.
 
 `PersistenceRepository` is the protocol. It does not require a PostgreSQL implementation to exist.
 
-`PostgreSQLPersistenceSchema` is logical metadata. It is not DDL and does not imply table creation.
+`PostgreSQLPersistenceSchema` is logical metadata. The DDL preview helper renders that metadata as review text only and does not imply table creation.
 
 `PersistenceResult` is the repository result boundary. It should report attempted and persisted counts, issues, and repository metadata without exposing credentials or connection internals.
 
@@ -82,6 +82,7 @@ Future implementation PRs should confirm:
 
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
+- [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [Database Model](database-model.md)
 - [Database Startup](database-startup.md)

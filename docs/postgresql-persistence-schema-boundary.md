@@ -2,7 +2,7 @@
 
 This document defines the logical PostgreSQL schema boundary for future persistence of normalized records.
 
-It is a schema boundary only. It does not connect to PostgreSQL, execute SQL, generate executable SQL, create tables, run migrations, write records, read files, perform HTTP or network calls, schedule work, or use credentials.
+It is a schema boundary only. It does not connect to PostgreSQL, execute SQL, create tables, run migrations, write records, read files, perform HTTP or network calls, schedule work, or use credentials.
 
 ## Purpose
 
@@ -38,7 +38,15 @@ Future normalized record persistence is expected to include:
 - `created_at`: future operational creation timestamp
 - `updated_at`: future operational update timestamp
 
-The descriptor uses logical type labels such as `text`, `jsonb`, and `timestamptz`. These labels are documentation-oriented metadata, not executable DDL.
+The descriptor uses logical type labels such as `text`, `jsonb`, and `timestamptz`. These labels are schema metadata for review and preview boundaries, not runtime table management behavior.
+
+## DDL Preview Relationship
+
+`render_postgresql_ddl_preview()` can render deterministic PostgreSQL DDL preview text from the logical descriptor.
+
+The preview may include `CREATE TABLE` text, descriptor columns, nullability markers, and a unique constraint preview for descriptor idempotency fields. It remains review text only. It does not connect to PostgreSQL, execute SQL, create tables, run migrations, write records, load credentials, or add a database dependency.
+
+Runtime schema ownership, migration tooling, repository writes, and conflict handling remain deferred.
 
 ## Idempotency Strategy
 
@@ -70,7 +78,7 @@ None of those runtime behaviors are implemented by this boundary.
 
 ## Repository Planning Relationship
 
-The PostgreSQL repository implementation planning boundary defines the decisions required before this logical schema can be used by runtime repository code. Schema descriptors stay descriptive until a later task explicitly adds DDL preview, migrations, repository implementation, integration tests, and operational behavior.
+The PostgreSQL repository implementation planning boundary defines the decisions required before this logical schema can be used by runtime repository code. Schema descriptors and DDL previews stay descriptive until a later task explicitly adds migrations, repository implementation, integration tests, and operational behavior.
 
 ## Non-Goals
 
@@ -79,7 +87,6 @@ This boundary does not add:
 - PostgreSQL connections.
 - Database writes.
 - SQL execution.
-- Executable SQL generation.
 - Migrations.
 - Table creation.
 - PostgreSQL package dependencies.
@@ -92,6 +99,7 @@ This boundary does not add:
 
 - [Normalized Result Persistence Boundary](normalized-result-persistence-boundary.md)
 - [Persistence Repository Boundary](persistence-repository-boundary.md)
+- [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)
 - [Database Model](database-model.md)
 - [Database Startup](database-startup.md)
