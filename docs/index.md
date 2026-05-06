@@ -67,6 +67,7 @@
 - [Real Format Parser Boundary](real-format-parser-boundary.md)
 - [Normalization Boundary](normalization-boundary.md)
 - [Normalization Input Boundary](normalization-input-boundary.md)
+- [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
 - [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md)
 - [Parser To Normalization Integration Recap](parser-to-normalization-integration-recap.md)
 - [Source To Normalization Pipeline Recap](source-to-normalization-pipeline-recap.md)

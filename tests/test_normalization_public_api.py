@@ -1,6 +1,7 @@
 import carbonfactor_parser.normalization as normalization
 from carbonfactor_parser.normalization import (
     contracts,
+    defra_desnz_mapper,
     executor,
     handoff,
     input,
@@ -9,6 +10,9 @@ from carbonfactor_parser.normalization import (
 from carbonfactor_parser.normalization import (
     ArtificialNormalizationExecutor,
     ArtificialNormalizationSummaryBuilder,
+    DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS,
+    DefraDesnzNormalizationMappingResult,
+    DefraDesnzNormalizationMappingStatus,
     NormalizationInput,
     NormalizationInputBuildResult,
     NormalizationInputBuildStatus,
@@ -32,6 +36,8 @@ from carbonfactor_parser.normalization import (
     build_parser_normalization_handoff,
     create_normalization_input_from_raw_payload,
     create_normalization_input_record_from_raw_record,
+    map_defra_desnz_normalization_input,
+    map_defra_desnz_normalization_input_record,
     validate_normalization_input,
     validate_normalization_input_record,
 )
@@ -46,6 +52,9 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "NormalizationResult",
     "NormalizationResultSummary",
     "NormalizedRecord",
+    "DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS",
+    "DefraDesnzNormalizationMappingResult",
+    "DefraDesnzNormalizationMappingStatus",
     "ArtificialNormalizationExecutor",
     "ArtificialNormalizationSummaryBuilder",
     "NormalizationInput",
@@ -66,6 +75,8 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "build_parser_normalization_handoff",
     "create_normalization_input_from_raw_payload",
     "create_normalization_input_record_from_raw_record",
+    "map_defra_desnz_normalization_input",
+    "map_defra_desnz_normalization_input_record",
     "validate_normalization_input",
     "validate_normalization_input_record",
 )
@@ -76,6 +87,15 @@ EXPECTED_PUBLIC_EXPORTS = {
     "NormalizationResult": contracts.NormalizationResult,
     "NormalizationResultSummary": SummaryModuleNormalizationResultSummary,
     "NormalizedRecord": contracts.NormalizedRecord,
+    "DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS": (
+        defra_desnz_mapper.DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS
+    ),
+    "DefraDesnzNormalizationMappingResult": (
+        defra_desnz_mapper.DefraDesnzNormalizationMappingResult
+    ),
+    "DefraDesnzNormalizationMappingStatus": (
+        defra_desnz_mapper.DefraDesnzNormalizationMappingStatus
+    ),
     "ArtificialNormalizationExecutor": executor.ArtificialNormalizationExecutor,
     "ArtificialNormalizationSummaryBuilder": (
         summary_builder.ArtificialNormalizationSummaryBuilder
@@ -116,6 +136,12 @@ EXPECTED_PUBLIC_EXPORTS = {
     "create_normalization_input_record_from_raw_record": (
         input.create_normalization_input_record_from_raw_record
     ),
+    "map_defra_desnz_normalization_input": (
+        defra_desnz_mapper.map_defra_desnz_normalization_input
+    ),
+    "map_defra_desnz_normalization_input_record": (
+        defra_desnz_mapper.map_defra_desnz_normalization_input_record
+    ),
     "validate_normalization_input": input.validate_normalization_input,
     "validate_normalization_input_record": (
         input.validate_normalization_input_record
@@ -130,6 +156,15 @@ def test_expected_normalization_public_symbols_import_from_package() -> None:
         "NormalizationResult": NormalizationResult,
         "NormalizationResultSummary": NormalizationResultSummary,
         "NormalizedRecord": NormalizedRecord,
+        "DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS": (
+            DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS
+        ),
+        "DefraDesnzNormalizationMappingResult": (
+            DefraDesnzNormalizationMappingResult
+        ),
+        "DefraDesnzNormalizationMappingStatus": (
+            DefraDesnzNormalizationMappingStatus
+        ),
         "ArtificialNormalizationExecutor": ArtificialNormalizationExecutor,
         "ArtificialNormalizationSummaryBuilder": ArtificialNormalizationSummaryBuilder,
         "NormalizationInput": NormalizationInput,
@@ -166,6 +201,10 @@ def test_expected_normalization_public_symbols_import_from_package() -> None:
         "create_normalization_input_record_from_raw_record": (
             create_normalization_input_record_from_raw_record
         ),
+        "map_defra_desnz_normalization_input": map_defra_desnz_normalization_input,
+        "map_defra_desnz_normalization_input_record": (
+            map_defra_desnz_normalization_input_record
+        ),
         "validate_normalization_input": validate_normalization_input,
         "validate_normalization_input_record": validate_normalization_input_record,
     }
@@ -194,6 +233,7 @@ def test_normalization_all_names_resolve_to_package_attributes() -> None:
 
 def test_normalization_all_excludes_internal_module_names() -> None:
     assert "contracts" not in normalization.__all__
+    assert "defra_desnz_mapper" not in normalization.__all__
     assert "executor" not in normalization.__all__
     assert "handoff" not in normalization.__all__
     assert "input" not in normalization.__all__

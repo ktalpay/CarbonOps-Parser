@@ -52,6 +52,12 @@ Failed, unsupported, no-records, not-ready, or metadata-only handoffs return not
 
 Validation does not decide factor correctness, normalize records, or interpret source-owner semantics.
 
+## Minimal DEFRA/DESNZ Mapping
+
+`map_defra_desnz_normalization_input()` can map `NormalizationInput` created from the minimal DEFRA/DESNZ fixture parser path into `NormalizationResult` output wrapped by `DefraDesnzNormalizationMappingResult`.
+
+The mapper copies only the known fixture raw fields `factor_id`, `factor_name`, and `unit`. It preserves source family, source id, record index, and row number. It does not convert units, infer categories, canonicalize fields, read files, call remote services, or claim full DEFRA/DESNZ normalization support.
+
 ## Non-Goals
 
 This boundary does not add:
@@ -70,6 +76,7 @@ This boundary does not add:
 ## Related Documents
 
 - [Parsed Raw Record Payload Boundary](parsed-raw-record-payload-boundary.md)
+- [DEFRA/DESNZ Minimal Normalization Mapping Boundary](defra-desnz-minimal-normalization-mapping-boundary.md)
 - [Parser Execution Normalization Handoff Boundary](parser-execution-normalization-handoff-boundary.md)
 - [Parser Execution Result Boundary](parser-execution-result-boundary.md)
 - [Normalization Boundary](normalization-boundary.md)
