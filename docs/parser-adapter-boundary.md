@@ -40,7 +40,7 @@ Registry resolution uses `can_parse(parser_input)` only. It must not call `parse
 
 ## Execution Result Boundary
 
-`ParserExecutionResult` defines future parser execution outcomes such as `success`, `failed`, `unsupported`, and `no_records`. It is parser-output metadata only and does not include normalized records or persistence fields. The existing `ParserAdapter.parse()` return type remains aligned to the older source-agnostic `ParserResult` contract until a future adapter contract migration task explicitly changes it.
+`ParserExecutionResult` defines future parser execution outcomes such as `success`, `failed`, `unsupported`, and `no_records`. It is parser-output metadata only and does not include normalized records or persistence fields. `ParserAdapter.parse()` is typed to return `ParserExecutionResult`, but real parser execution remains deferred.
 
 ## Non-Goals
 

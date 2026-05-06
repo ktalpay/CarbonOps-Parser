@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-089B: Added ParserAdapter.parse() and NoopParserAdapter.parse() annotation alignment with ParserExecutionResult while preserving no-op behavior and parser execution deferral.
 - CO-089A: Added parser execution result contracts and documentation for future parser adapter outcomes without changing parser execution behavior.
 - CO-088B: Added NoopParserAdapter for metadata-only registry and planning coverage without parser output or side effects.
 - CO-088A: Added parser execution planning helpers that combine input validation and metadata-only adapter registry resolution without calling parser execution.

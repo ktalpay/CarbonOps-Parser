@@ -1,12 +1,16 @@
 import builtins
 import sqlite3
 import urllib.request
+from typing import get_type_hints
 
 import pytest
 
 from carbonfactor_parser.parsers import (
     ParserAdapter,
+    ParserExecutionResult,
+    ParserExecutionResultStatus,
     ParserInputContract,
+    create_parser_execution_result,
     create_parser_input_contract,
 )
 
@@ -27,8 +31,24 @@ class FakeMetadataOnlyParserAdapter:
         raise NotImplementedError("Parser execution is outside this boundary.")
 
 
+class FakeExecutionResultParserAdapter(FakeMetadataOnlyParserAdapter):
+    def parse(self, parser_input: ParserInputContract) -> ParserExecutionResult:
+        return create_parser_execution_result(
+            status=ParserExecutionResultStatus.SUCCESS,
+            parser_input=parser_input,
+            parsed_record_count=1,
+            parser_metadata={"adapter": "fake"},
+        )
+
+
 def test_parser_adapter_protocol_is_importable_from_public_api() -> None:
     assert ParserAdapter.__name__ == "ParserAdapter"
+
+
+def test_parser_adapter_parse_boundary_returns_execution_result_type() -> None:
+    type_hints = get_type_hints(ParserAdapter.parse)
+
+    assert type_hints["return"] is ParserExecutionResult
 
 
 def test_fake_in_memory_adapter_satisfies_protocol() -> None:
@@ -117,3 +137,21 @@ def test_parse_is_not_real_execution_in_fake_adapter() -> None:
 
     with pytest.raises(NotImplementedError, match="outside this boundary"):
         adapter.parse(parser_input)
+
+
+def test_fake_adapter_can_return_parser_execution_result() -> None:
+    adapter = FakeExecutionResultParserAdapter()
+    parser_input = create_parser_input_contract(
+        source_family="defra_desnz",
+        source_id="defra_desnz",
+        acquisition_status="acquired",
+        artifact_reference="data/source-acquisition/defra_desnz/source.csv",
+        content_type="text/csv",
+    )
+
+    result = adapter.parse(parser_input)
+
+    assert isinstance(result, ParserExecutionResult)
+    assert result.status == ParserExecutionResultStatus.SUCCESS
+    assert result.parsed_record_count == 1
+    assert result.parser_metadata == {"adapter": "fake"}
