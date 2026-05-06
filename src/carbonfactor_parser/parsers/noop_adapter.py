@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from carbonfactor_parser.parsers.contracts import ParserResult
+from carbonfactor_parser.parsers.execution_result import ParserExecutionResult
 from carbonfactor_parser.parsers.input_contract import ParserInputContract
 
 
@@ -22,7 +22,7 @@ class NoopParserAdapter:
             return True
         return parser_input.format_hint in self.supported_format_hints
 
-    def parse(self, parser_input: ParserInputContract) -> ParserResult:
+    def parse(self, parser_input: ParserInputContract) -> ParserExecutionResult:
         """Refuse parser execution because this adapter is no-op only."""
 
         raise NotImplementedError(

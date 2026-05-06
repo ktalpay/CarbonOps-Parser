@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from carbonfactor_parser.parsers.contracts import ParserResult
+from carbonfactor_parser.parsers.execution_result import ParserExecutionResult
 from carbonfactor_parser.parsers.input_contract import ParserInputContract
 
 
@@ -27,5 +27,5 @@ class ParserAdapter(Protocol):
     def can_parse(self, parser_input: ParserInputContract) -> bool:
         """Return whether parser input metadata is compatible."""
 
-    def parse(self, parser_input: ParserInputContract) -> ParserResult:
+    def parse(self, parser_input: ParserInputContract) -> ParserExecutionResult:
         """Future parser execution boundary."""

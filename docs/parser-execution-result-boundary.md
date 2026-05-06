@@ -23,7 +23,7 @@ The result carries parser/source identity, the originating `ParserInputContract`
 
 ## Protocol Alignment
 
-The existing `ParserAdapter.parse()` protocol still returns the older source-agnostic `ParserResult` contract. Aligning `parse()` with `ParserExecutionResult` is deferred to a future adapter contract migration task so this result boundary can remain small and non-disruptive.
+`ParserAdapter.parse()` is typed to return `ParserExecutionResult`. This aligns future parser adapter implementations with the execution result boundary while still leaving real parsing deferred.
 
 ## Non-Goals
 
