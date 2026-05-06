@@ -1,5 +1,6 @@
 """Intentional public exports for parser contracts."""
 
+from carbonfactor_parser.parsers.adapter import ParserAdapter
 from carbonfactor_parser.parsers.contracts import (
     ParserIssue,
     ParserIssueSeverity,
@@ -34,6 +35,7 @@ __all__ = (
     "DefraDesnzParser",
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
+    "ParserAdapter",
     "ParserInputContract",
     "ParserInputValidationIssue",
     "ParserInputValidationResult",

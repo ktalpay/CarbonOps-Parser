@@ -57,6 +57,8 @@ Parser adapters should not infer hidden retry behavior, hidden source lookups, i
 
 `validate_parser_input_contract()` provides shape validation for this boundary. It checks required identity, artifact reference, acquisition status, and optional metadata presence rules without reading files, making network calls, executing a parser, executing normalization, or writing to a database.
 
+`ParserAdapter` defines the future parser adapter protocol for consuming `ParserInputContract`. Its compatibility checks should remain metadata-only, and real `parse()` behavior remains deferred to explicit future parser implementation tasks.
+
 See `examples/example_acquisition_artifact_parser_input_mapping.py` for an in-memory, deterministic example that maps source acquisition artifact metadata into `ParserInputContract`. The example preserves source identity, artifact reference, checksum metadata, content type/format hint, acquisition status, and run/manifest metadata without reading files, making network calls, executing a parser, executing normalization, or writing to a database.
 
 ## Normalization Handoff Expectations
@@ -140,6 +142,7 @@ Reviewers should confirm:
 - [Source Acquisition Run Boundary](source-acquisition-run-boundary.md)
 - [Source Acquisition HTTP Client Boundary](source-acquisition-http-client-boundary.md)
 - [Source Acquisition Registry](source-acquisition-registry.md)
+- [Parser Adapter Boundary](parser-adapter-boundary.md)
 - [Parser Handoff Boundary](parser-handoff-boundary.md)
 - [Parser Contract Boundaries](parser-contract-boundaries.md)
 - [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md)

@@ -1,5 +1,6 @@
 import carbonfactor_parser.parsers as parsers
 from carbonfactor_parser.parsers import (
+    adapter,
     contracts,
     defra_desnz_parser,
     example_parser,
@@ -14,6 +15,7 @@ from carbonfactor_parser.parsers import (
     DefraDesnzParser,
     ExampleInMemoryParser,
     ExampleSourceSpecificParser,
+    ParserAdapter,
     ParserInputContract,
     ParserInputValidationIssue,
     ParserInputValidationResult,
@@ -36,6 +38,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "DefraDesnzParser",
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
+    "ParserAdapter",
     "ParserInputContract",
     "ParserInputValidationIssue",
     "ParserInputValidationResult",
@@ -59,6 +62,7 @@ EXPECTED_PUBLIC_EXPORTS = {
     "ExampleSourceSpecificParser": (
         example_source_specific_parser.ExampleSourceSpecificParser
     ),
+    "ParserAdapter": adapter.ParserAdapter,
     "ParserInputContract": input_contract.ParserInputContract,
     "ParserInputValidationIssue": input_contract.ParserInputValidationIssue,
     "ParserInputValidationResult": input_contract.ParserInputValidationResult,
@@ -84,6 +88,7 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "DefraDesnzParser": DefraDesnzParser,
         "ExampleInMemoryParser": ExampleInMemoryParser,
         "ExampleSourceSpecificParser": ExampleSourceSpecificParser,
+        "ParserAdapter": ParserAdapter,
         "ParserInputContract": ParserInputContract,
         "ParserInputValidationIssue": ParserInputValidationIssue,
         "ParserInputValidationResult": ParserInputValidationResult,
@@ -122,6 +127,7 @@ def test_parser_all_names_resolve_to_package_attributes() -> None:
 
 
 def test_parser_all_excludes_internal_module_names() -> None:
+    assert "adapter" not in parsers.__all__
     assert "contracts" not in parsers.__all__
     assert "defra_desnz_parser" not in parsers.__all__
     assert "example_parser" not in parsers.__all__
