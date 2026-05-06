@@ -210,21 +210,49 @@ Use the `carbonops-parser local-dry-run` command for explicit local DEFRA/DESNZ 
 
 ```bash
 carbonops-parser local-dry-run \
-  --local-path ./fixtures/defra_minimal.csv \
+  --local-path examples/fixtures/defra_desnz_minimal.csv \
   --source-family defra_desnz \
-  --source-id defra-desnz-fixture \
+  --source-id defra-desnz-minimal-fixture \
   --content-type text/csv \
   --format-hint csv
 
 carbonops-parser local-dry-run \
-  --local-path ./fixtures/defra_minimal.csv \
+  --local-path examples/fixtures/defra_desnz_minimal.csv \
   --source-family defra_desnz \
-  --source-id defra-desnz-fixture \
+  --source-id defra-desnz-minimal-fixture \
   --format-hint csv \
   --output-format json
 ```
 
 The command reads only the explicit local file path and prints deterministic dry-run summary output. It does not connect to PostgreSQL, write records, execute SQL, run migrations, perform network calls, load config files, trigger source acquisition, or use credentials.
+
+Expected text summary for the checked-in fixture:
+
+```text
+status=success
+parsed_record_count=2
+normalization_record_count=2
+persistence_input_record_count=2
+ddl_preview_present=True
+issue_count=0
+```
+
+Trimmed JSON output:
+
+```json
+{
+  "status": "success",
+  "parsed_record_count": 2,
+  "normalization_record_count": 2,
+  "persistence_input_record_count": 2,
+  "ddl_preview_present": true,
+  "source_family": "defra_desnz",
+  "source_id": "defra-desnz-minimal-fixture",
+  "issues": []
+}
+```
+
+The fixture is a minimal local CSV-like example for exercising the dry-run boundary. It is not source acquisition, does not use real source data, and does not make production DEFRA/DESNZ correctness claims.
 
 For boundary details, see [Local Dry-Run CLI Boundary](docs/local-dry-run-cli-boundary.md) and [Local File Normalized Persistence Dry-Run Boundary](docs/local-file-normalized-persistence-dry-run-boundary.md).
 
