@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from pathlib import PurePosixPath
 
+from carbonfactor_parser.parsers import (
+    ParserInputContract,
+    create_parser_input_contract,
+)
 from carbonfactor_parser.source_acquisition import (
     ACQUISITION_STATUS_ACQUIRED,
     SourceAcquisitionManifestEntry,
@@ -12,22 +16,6 @@ from carbonfactor_parser.source_acquisition import (
     SourceAcquisitionRunResult,
     create_manifest_entry,
 )
-
-
-@dataclass(frozen=True)
-class AcquisitionArtifactParserInput:
-    """Example-only parser input reference built from acquisition metadata."""
-
-    source_family: str
-    source_id: str
-    artifact_reference: str | None
-    checksum_sha256: str | None
-    content_type: str | None
-    format_hint: str | None
-    acquisition_status: str
-    run_metadata: dict[str, object]
-    manifest_metadata: dict[str, object]
-    parser_boundary: str = "future_parser_input"
 
 
 def build_acquisition_artifact_parser_input_mapping_example() -> dict[str, object]:
@@ -79,17 +67,18 @@ def map_acquisition_artifact_to_parser_input(
     manifest_entry: SourceAcquisitionManifestEntry,
     run_result: SourceAcquisitionRunResult,
     run_label: str,
-) -> AcquisitionArtifactParserInput:
-    """Build an example-local parser input reference from acquisition metadata."""
+) -> ParserInputContract:
+    """Build a parser input contract from acquisition metadata."""
 
-    return AcquisitionArtifactParserInput(
+    return create_parser_input_contract(
         source_family=acquisition_result.source_family,
         source_id=acquisition_result.source_id,
-        artifact_reference=acquisition_result.local_path,
+        acquisition_status=acquisition_result.status,
         checksum_sha256=acquisition_result.checksum_sha256,
+        artifact_reference=acquisition_result.local_path,
         content_type=acquisition_result.content_type,
         format_hint=_format_hint_from_artifact(acquisition_result),
-        acquisition_status=acquisition_result.status,
+        acquisition_run_id=run_label,
         run_metadata={
             "run_label": run_label,
             "result_count": len(run_result.results),

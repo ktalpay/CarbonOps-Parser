@@ -5,6 +5,7 @@ from carbonfactor_parser.parsers import (
     example_parser,
     example_source_specific_parser,
     fixture_parser,
+    input_contract,
     input_mapping,
     pipeline_summary,
 )
@@ -13,6 +14,7 @@ from carbonfactor_parser.parsers import (
     DefraDesnzParser,
     ExampleInMemoryParser,
     ExampleSourceSpecificParser,
+    ParserInputContract,
     ParserInputMapping,
     ParserInputMappingEntry,
     ParserIssue,
@@ -21,6 +23,7 @@ from carbonfactor_parser.parsers import (
     ParserResult,
     ParserResultSummary,
     build_fixture_parser_input_mapping,
+    create_parser_input_contract,
     summarize_parser_pipeline,
 )
 
@@ -30,6 +33,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "DefraDesnzParser",
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
+    "ParserInputContract",
     "ParserInputMapping",
     "ParserInputMappingEntry",
     "ParserIssue",
@@ -37,6 +41,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "ParserPipelineSummary",
     "ParserResult",
     "ParserResultSummary",
+    "create_parser_input_contract",
     "build_fixture_parser_input_mapping",
     "summarize_parser_pipeline",
 )
@@ -48,6 +53,7 @@ EXPECTED_PUBLIC_EXPORTS = {
     "ExampleSourceSpecificParser": (
         example_source_specific_parser.ExampleSourceSpecificParser
     ),
+    "ParserInputContract": input_contract.ParserInputContract,
     "ParserInputMapping": input_mapping.ParserInputMapping,
     "ParserInputMappingEntry": input_mapping.ParserInputMappingEntry,
     "ParserIssue": contracts.ParserIssue,
@@ -55,6 +61,7 @@ EXPECTED_PUBLIC_EXPORTS = {
     "ParserPipelineSummary": pipeline_summary.ParserPipelineSummary,
     "ParserResult": contracts.ParserResult,
     "ParserResultSummary": contracts.ParserResultSummary,
+    "create_parser_input_contract": input_contract.create_parser_input_contract,
     "build_fixture_parser_input_mapping": (
         input_mapping.build_fixture_parser_input_mapping
     ),
@@ -68,6 +75,7 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "DefraDesnzParser": DefraDesnzParser,
         "ExampleInMemoryParser": ExampleInMemoryParser,
         "ExampleSourceSpecificParser": ExampleSourceSpecificParser,
+        "ParserInputContract": ParserInputContract,
         "ParserInputMapping": ParserInputMapping,
         "ParserInputMappingEntry": ParserInputMappingEntry,
         "ParserIssue": ParserIssue,
@@ -75,6 +83,7 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "ParserPipelineSummary": ParserPipelineSummary,
         "ParserResult": ParserResult,
         "ParserResultSummary": ParserResultSummary,
+        "create_parser_input_contract": create_parser_input_contract,
         "build_fixture_parser_input_mapping": build_fixture_parser_input_mapping,
         "summarize_parser_pipeline": summarize_parser_pipeline,
     }
@@ -106,6 +115,7 @@ def test_parser_all_excludes_internal_module_names() -> None:
     assert "example_parser" not in parsers.__all__
     assert "example_source_specific_parser" not in parsers.__all__
     assert "fixture_parser" not in parsers.__all__
+    assert "input_contract" not in parsers.__all__
     assert "input_mapping" not in parsers.__all__
     assert "pipeline_summary" not in parsers.__all__
     assert all(not name.startswith("_") for name in parsers.__all__)

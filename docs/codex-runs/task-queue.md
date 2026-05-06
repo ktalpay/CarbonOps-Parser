@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-086A: Added a public parser input contract for acquisition metadata handoff, updated the acquisition artifact mapping example to use it, and covered exports and boundary behavior with focused tests.
 - CO-085B: Added an in-memory acquisition artifact to parser input mapping example with focused tests and handoff contract documentation updates.
 - CO-085A: Documented the source acquisition to parser handoff contract, including boundary definitions, allowed metadata, deferred parser/normalization/persistence behavior, and documentation map links.
 - CO-084A: Added a README source acquisition CLI quickstart section with local validation/list/run examples, explicit noop vs HTTP mode notes, and links to detailed boundary documentation.
