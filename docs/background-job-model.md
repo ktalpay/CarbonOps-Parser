@@ -140,6 +140,7 @@ The background service coordinates parser, validator, and persistence steps but 
 
 Phase 1 keeps source-specific records in `ghg_*`, `defra_*`, and `ipcc_*` table groups rather than forcing all sources into one canonical factor table. See [Source Support](source-support.md) and [Database Model](database-model.md).
 
+
 ## Job Lifecycle
 
 At a high level, a scheduled job should:

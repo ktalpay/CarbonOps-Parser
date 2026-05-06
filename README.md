@@ -370,7 +370,7 @@ The conceptual configuration model includes:
 - Database provider and connection settings.
 - Raw archive path.
 - Source-specific enabled flags.
-- Source-specific schedules with day, week, month, time, and timezone support.
+- Source-specific schedules with day, week, month, year, time, and timezone support.
 
 Phase 1 implements only `postgres` as the database provider. `mysql` and `mssql` are recognized as conceptual provider names but are not implemented in Phase 1.
 
