@@ -47,6 +47,14 @@ Future source-specific parser adapters may use `ParserInputContract` for metadat
 
 `ParserFileContentInput` is not parser output. Parser output remains represented by `ParserExecutionResult`, and normalization remains downstream of parser execution.
 
+## Minimal DEFRA/DESNZ Content Path
+
+`parse_defra_desnz_file_content()` accepts `ParserFileContentInput` and parses a tiny deterministic in-memory DEFRA/DESNZ CSV-like fixture format with the header `factor_id,factor_name,unit`.
+
+This helper counts parsed in-memory rows and returns `ParserExecutionResult`. Empty content returns `no_records` with an issue, and invalid header or row shape returns `failed` with an issue.
+
+This is not full DEFRA/DESNZ parsing. It does not read `artifact_reference`, open files, perform HTTP calls, normalize values, persist records, or claim real source support.
+
 ## Non-Goals
 
 This boundary does not add:

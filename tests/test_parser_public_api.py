@@ -5,6 +5,7 @@ from carbonfactor_parser.parsers import (
     artificial_adapter,
     contracts,
     defra_desnz_adapter,
+    defra_desnz_content_parser,
     defra_desnz_parser,
     example_parser,
     example_source_specific_parser,
@@ -21,6 +22,7 @@ from carbonfactor_parser.parsers import (
 from carbonfactor_parser.parsers import (
     ArtificialFixtureParser,
     ArtificialParserAdapter,
+    DEFRA_DESNZ_MINIMAL_CONTENT_HEADER,
     DefraDesnzParserAdapter,
     DefraDesnzParser,
     ExampleInMemoryParser,
@@ -54,6 +56,7 @@ from carbonfactor_parser.parsers import (
     create_parser_input_contract,
     list_parser_adapters,
     plan_parser_execution,
+    parse_defra_desnz_file_content,
     register_parser_adapter,
     resolve_parser_adapters,
     run_parser_execution,
@@ -66,6 +69,7 @@ from carbonfactor_parser.parsers import (
 EXPECTED_PUBLIC_SYMBOLS = (
     "ArtificialFixtureParser",
     "ArtificialParserAdapter",
+    "DEFRA_DESNZ_MINIMAL_CONTENT_HEADER",
     "DefraDesnzParserAdapter",
     "DefraDesnzParser",
     "ExampleInMemoryParser",
@@ -98,6 +102,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "create_parser_input_contract",
     "list_parser_adapters",
     "plan_parser_execution",
+    "parse_defra_desnz_file_content",
     "register_parser_adapter",
     "resolve_parser_adapters",
     "run_parser_execution",
@@ -110,6 +115,9 @@ EXPECTED_PUBLIC_SYMBOLS = (
 EXPECTED_PUBLIC_EXPORTS = {
     "ArtificialFixtureParser": fixture_parser.ArtificialFixtureParser,
     "ArtificialParserAdapter": artificial_adapter.ArtificialParserAdapter,
+    "DEFRA_DESNZ_MINIMAL_CONTENT_HEADER": (
+        defra_desnz_content_parser.DEFRA_DESNZ_MINIMAL_CONTENT_HEADER
+    ),
     "DefraDesnzParserAdapter": defra_desnz_adapter.DefraDesnzParserAdapter,
     "DefraDesnzParser": defra_desnz_parser.DefraDesnzParser,
     "ExampleInMemoryParser": example_parser.ExampleInMemoryParser,
@@ -156,6 +164,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     "create_parser_input_contract": input_contract.create_parser_input_contract,
     "list_parser_adapters": adapter_registry.list_parser_adapters,
     "plan_parser_execution": execution_plan.plan_parser_execution,
+    "parse_defra_desnz_file_content": (
+        defra_desnz_content_parser.parse_defra_desnz_file_content
+    ),
     "register_parser_adapter": adapter_registry.register_parser_adapter,
     "resolve_parser_adapters": adapter_registry.resolve_parser_adapters,
     "run_parser_execution": execution_runner.run_parser_execution,
@@ -174,6 +185,9 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
     imported_symbols = {
         "ArtificialFixtureParser": ArtificialFixtureParser,
         "ArtificialParserAdapter": ArtificialParserAdapter,
+        "DEFRA_DESNZ_MINIMAL_CONTENT_HEADER": (
+            DEFRA_DESNZ_MINIMAL_CONTENT_HEADER
+        ),
         "DefraDesnzParserAdapter": DefraDesnzParserAdapter,
         "DefraDesnzParser": DefraDesnzParser,
         "ExampleInMemoryParser": ExampleInMemoryParser,
@@ -206,6 +220,7 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "create_parser_input_contract": create_parser_input_contract,
         "list_parser_adapters": list_parser_adapters,
         "plan_parser_execution": plan_parser_execution,
+        "parse_defra_desnz_file_content": parse_defra_desnz_file_content,
         "register_parser_adapter": register_parser_adapter,
         "resolve_parser_adapters": resolve_parser_adapters,
         "run_parser_execution": run_parser_execution,
@@ -242,6 +257,7 @@ def test_parser_all_excludes_internal_module_names() -> None:
     assert "artificial_adapter" not in parsers.__all__
     assert "contracts" not in parsers.__all__
     assert "defra_desnz_adapter" not in parsers.__all__
+    assert "defra_desnz_content_parser" not in parsers.__all__
     assert "defra_desnz_parser" not in parsers.__all__
     assert "example_parser" not in parsers.__all__
     assert "example_source_specific_parser" not in parsers.__all__

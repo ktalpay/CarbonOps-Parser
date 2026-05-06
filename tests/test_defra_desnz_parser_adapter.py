@@ -9,6 +9,7 @@ from carbonfactor_parser.parsers import (
     ParserExecutionResult,
     ParserExecutionResultStatus,
     create_parser_adapter_registry,
+    create_parser_file_content_input,
     create_parser_input_contract,
     list_parser_adapters,
     plan_parser_execution,
@@ -117,6 +118,25 @@ def test_run_parser_execution_returns_defra_desnz_skeleton_result() -> None:
     assert result.status == ParserExecutionResultStatus.UNSUPPORTED
     assert result.issues[0].code == "DEFRA_DESNZ_PARSER_NOT_IMPLEMENTED"
     assert result.parser_metadata["real_parsing_implemented"] is False
+
+
+def test_defra_desnz_adapter_parse_content_uses_already_loaded_content() -> None:
+    adapter = DefraDesnzParserAdapter()
+    content_input = create_parser_file_content_input(
+        source_family="defra_desnz",
+        source_id="defra_desnz",
+        content="factor_id,factor_name,unit\nF1,Electricity,kWh\n",
+        content_type="text/csv",
+        format_hint="csv",
+    )
+
+    result = adapter.parse_content(content_input)
+
+    assert result.status == ParserExecutionResultStatus.SUCCESS
+    assert result.parsed_record_count == 1
+    assert result.parser_metadata["parser_kind"] == (
+        "minimal_defra_desnz_content_fixture"
+    )
 
 
 def test_defra_desnz_parse_has_no_file_http_normalization_or_db_side_effects(

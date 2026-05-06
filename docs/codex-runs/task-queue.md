@@ -16,6 +16,7 @@ This queue is intentionally lightweight. It should help select the next small ta
 
 ## Completed
 
+- CO-092B: Added minimal already-loaded DEFRA/DESNZ content parser path returning ParserExecutionResult without file I/O, normalization, persistence, or real source support claims.
 - CO-092A: Added parser file content input boundary contract, validation helpers, public exports, focused tests, and documentation for separating already-loaded content from acquisition metadata.
 - CO-091B: Added DEFRA/DESNZ parser adapter skeleton with metadata-only matching, unsupported not-implemented parse result, public export, docs, and no real parsing behavior.
 - CO-091A: Added source-specific parser adapter boundary documentation and checklist for future real adapters without implementing parser execution.

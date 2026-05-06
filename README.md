@@ -202,7 +202,7 @@ For boundary details, see:
 
 See [examples/example_acquisition_artifact_parser_input_mapping.py](examples/example_acquisition_artifact_parser_input_mapping.py) for a deterministic in-memory example of mapping acquisition artifact metadata into a future parser input boundary without executing a parser.
 
-The parser package exposes `ParserInputContract`, `create_parser_input_contract()`, `validate_parser_input_contract()`, `ParserFileContentInput`, parser file content validation helpers, the `ParserAdapter` protocol, `NoopParserAdapter`, `ArtificialParserAdapter`, `DefraDesnzParserAdapter`, parser adapter registry helpers, parser execution planning and runner helpers, and parser execution result contracts for future parser adapter input handoff. The contracts keep acquisition metadata and already-loaded content separate; they do not contain normalization output or database persistence fields.
+The parser package exposes `ParserInputContract`, `create_parser_input_contract()`, `validate_parser_input_contract()`, `ParserFileContentInput`, parser file content validation helpers, `parse_defra_desnz_file_content()`, the `ParserAdapter` protocol, `NoopParserAdapter`, `ArtificialParserAdapter`, `DefraDesnzParserAdapter`, parser adapter registry helpers, parser execution planning and runner helpers, and parser execution result contracts for future parser adapter input handoff. The contracts keep acquisition metadata and already-loaded content separate; they do not contain normalization output or database persistence fields.
 
 ## Source Support
 
