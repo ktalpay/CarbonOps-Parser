@@ -28,6 +28,12 @@ The public parser adapter protocol exposes:
 
 Registry resolution uses `can_parse(parser_input)` only. It must not call `parse()`, open artifact paths, call remote services, run normalization, or write to a database.
 
+## No-Op Adapter
+
+`NoopParserAdapter` is a metadata-only adapter implementation for registry and planning tests. It advertises `source_family` as `noop`, supports the deterministic no-op content type and format hint, and uses `ParserInputContract` metadata in `can_parse()`.
+
+`NoopParserAdapter.parse()` does not parse files or produce parser output. It raises `NotImplementedError` so no-op planning cannot be mistaken for real parser execution.
+
 ## Execution Planning Boundary
 
 `ParserExecutionPlan` and `plan_parser_execution()` combine `ParserInputContract` validation with metadata-only registry resolution. Planning returns `ready`, `invalid_input`, or `no_adapter` status without calling `parse()`, opening files, making network calls, running normalization, or writing to a database.
@@ -38,6 +44,7 @@ This boundary does not add:
 
 - Real parser execution.
 - Source-specific real adapters.
+- No-op parser output.
 - Registry-driven parser execution.
 - Planning-driven parser execution.
 - File content reading.

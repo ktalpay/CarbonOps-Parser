@@ -27,6 +27,8 @@ The planning status values are:
 
 The plan records the input contract, validation result, selected adapter source family when ready, and issue codes or reasons when planning cannot become ready.
 
+`NoopParserAdapter` can be used in planning tests to produce a `ready` plan for deterministic no-op metadata. It still does not make planning equivalent to parser execution, and its `parse()` method does not produce parser output.
+
 ## Non-Goals
 
 This boundary does not add:
