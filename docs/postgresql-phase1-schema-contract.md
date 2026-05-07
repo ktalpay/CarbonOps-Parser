@@ -1,138 +1,154 @@
 # PostgreSQL Phase 1 Schema Contract
 
-This document defines a documentation-only PostgreSQL Phase 1 schema contract for CarbonOps-Parser.
+This document defines the **documentation-only** Phase 1 PostgreSQL schema contract for CarbonOps-Parser.
 
-It records intended table-shape boundaries before any runtime persistence implementation. It does not implement persistence behavior.
+It is a planning contract and does **not** add runtime code, migrations, SQL execution, database connections, downloader behavior, parser execution, scheduler behavior, or any fixture/sample/temp/manual data flow.
 
-## Scope And Status
+## 1) Scope, Status, and Phase Constraint
 
-This contract describes intended PostgreSQL table responsibilities for:
+- Phase 1 source families in scope:
+  - GHG
+  - DEFRA
+  - IPCC
+- Database target in scope: **PostgreSQL only**.
+- Status: **contract-only architecture documentation**.
 
-- shared ingestion/source metadata
-- GHG Protocol source-family master/detail storage
-- DEFRA/DESNZ source-family master/detail storage
-- IPCC EFDB source-family master/detail storage
+Conceptual future portability may mention `postgres/mysql/mssql` in configuration discussions, but this contract defines PostgreSQL table responsibilities only and does not define MySQL/MSSQL DDL.
 
-Status: planning contract only. Runtime persistence remains unsupported/no-execution.
+## 2) Explicit Non-Goals
 
-## Explicit Non-Goals
+This document does not:
 
-This task does not add:
+- implement schema creation logic
+- implement startup bootstrap code
+- implement downloader/parser/persistence agents
+- implement SQL statements or transaction flows
+- implement parser execution against source files
+- introduce hardcoded JSON, temporary files, fake data, hand-authored fixtures, or manual input-data flow
+- claim production readiness or carbon-accounting correctness
 
-- runtime repository persistence
-- SQL execution
-- DB writes
-- migrations or runtime table creation behavior
-- transaction behavior
-- environment/config/credential loading in library code
-- parser execution changes
-- source downloading behavior
-- production persistence readiness claims
+## 3) Shared Ingestion/System Metadata Contract
 
-## Contract Principles
+Phase 1 requires shared ingestion/system metadata tables (names may vary by implementation) that can represent:
 
-- Keep source-family-specific data separated by family-specific master/detail tables.
-- Keep shared ingestion and provenance metadata normalized into dedicated shared tables.
-- Preserve source-native traceability without forcing all source-native fields into one canonical payload shape.
-- Keep idempotency/conflict handling at contract intent level only in this phase.
-- Keep schema initialization and data persistence as separate future implementation concerns.
+- ingestion run identity
+- source family and source type
+- acquisition status
+- parse status
+- source URL **or** source document identity
+- local document identity when applicable
+- checksum/hash metadata
+- created/updated timestamps
+- error code and error message
+- retry and correlation metadata when applicable
 
-## Shared Ingestion/Source Metadata Contract
+These shared tables are the system-of-record for ingestion/provenance lifecycle state and must be linkable from each source-family master/detail pair.
 
-Intended shared contract responsibilities:
+## 4) Source-Family Master/Detail Contracts
 
-- register ingestion runs as immutable ingestion events
-- register source artifacts and source identity/version metadata
-- record checksum/hash metadata for artifact-level integrity tracking
-- attach parser-version and pipeline provenance metadata to ingestion events
-- provide references that source-family tables can link back to
+Each source family must have dedicated master/detail tables. No cross-family merged "one-size-fits-all" factor table is required in Phase 1.
 
-Intended shared entities (names illustrative, not implemented):
+### 4.1 GHG Contract
 
-- ingestion run record entity
-- source artifact record entity
-- parser/provenance metadata entity
-- optional normalized-factor reference catalog entity
+**GHG master table responsibilities:**
 
-## Source-Family Master/Detail Contract
+- source family (`GHG`) and source type identity
+- year/reporting period context
+- short description
+- source document identity
+- source document version if available
+- acquisition metadata reference
+- lifecycle/status fields
+- timestamps
 
-### GHG Protocol Contract
+**GHG detail table responsibilities:**
 
-Intended split:
+- parsed calculation parameters/factors derived from downloaded/acquired GHG source documents
+- row-level linkage back to GHG master
+- row-level provenance linkage to shared ingestion/system metadata as needed
 
-- GHG Protocol master entity stores source-level record identity and source-version context.
-- GHG Protocol detail entity stores granular factor rows/segments tied to a master row.
+### 4.2 DEFRA Contract
 
-Intent:
+**DEFRA master table responsibilities:**
 
-- preserve GHG Protocol source-native semantics
-- support one-to-many record decomposition when source-native structures require row expansion
-- preserve reference linkage to shared ingestion/source metadata
+- source family (`DEFRA`) and source type identity
+- year/reporting period context
+- short description
+- source document identity
+- source document version if available
+- acquisition metadata reference
+- lifecycle/status fields
+- timestamps
 
-### DEFRA/DESNZ Contract
+**DEFRA detail table responsibilities:**
 
-Intended split:
+- parsed calculation parameters/factors derived from downloaded/acquired DEFRA source documents
+- row-level linkage back to DEFRA master
+- row-level provenance linkage to shared ingestion/system metadata as needed
 
-- DEFRA/DESNZ master entity stores source publication/version context and grouping identity.
-- DEFRA/DESNZ detail entity stores factor-level rows from the source-native tabular payload.
+### 4.3 IPCC Contract
 
-Intent:
+**IPCC master table responsibilities:**
 
-- preserve DEFRA/DESNZ source-native structure and row-level traceability
-- support deterministic linkage to shared ingestion/source metadata
-- preserve mapping references used by normalization/dry-run boundaries
+- source family (`IPCC`) and source type identity
+- year/reporting period context
+- short description
+- source document identity
+- source document version if available
+- acquisition metadata reference
+- lifecycle/status fields
+- timestamps
 
-### IPCC EFDB Contract
+**IPCC detail table responsibilities:**
 
-Intended split:
+- parsed calculation parameters/factors derived from downloaded/acquired IPCC source documents
+- row-level linkage back to IPCC master
+- row-level provenance linkage to shared ingestion/system metadata as needed
 
-- IPCC EFDB master entity stores source entry grouping identity and version/date context.
-- IPCC EFDB detail entity stores source-native factor components tied to each master entry.
+## 5) Startup Bootstrap Expectations (Future Runtime Behavior)
 
-Intent:
+Future service implementations (Python and .NET) must follow this startup expectation:
 
-- preserve IPCC EFDB source-native structure
-- support one-to-many detail row expansion tied to each source entry
-- preserve provenance linkage through shared ingestion/source metadata references
+1. Check the configured PostgreSQL database at service startup.
+2. Validate required shared system tables and required GHG/DEFRA/IPCC master-detail tables.
+3. If required tables are missing, create missing tables before runtime ingestion/parse persistence proceeds.
 
-## Field Contract (Required Intent)
+This section defines required behavior only; it does not implement bootstrap logic in this task.
 
-The following field intents are required at contract level across shared and family-specific entities.
+## 6) Downloader → Parser → Persistence Boundary
 
-### Common/Shared Field Intents
+Phase 1 architecture requires strict sequencing:
 
-- **provenance identifiers**: stable references linking records to ingestion run and source artifact identity.
-- **source identity**: source family + source identifier values used for deterministic record lineage.
-- **source version/date**: publication/release identifiers or effective dates from the source.
-- **checksum/hash**: source artifact hash values for change detection and lineage.
-- **ingestion timestamp**: ingestion event timestamp metadata.
-- **parser version**: parser implementation/version marker used during parsing.
-- **normalized factor references**: optional reference identifiers linking source-native rows to normalized factor projections.
-- **idempotency/conflict intent metadata**: deterministic keys/fields declared for future conflict strategy wiring (contract only; not runtime behavior).
+1. **Download/acquire source documents first.**
+2. **Parse second** using acquired documents.
+3. **Persist third** into source-family master/detail tables with shared metadata linkage.
 
-### Source-Native Field Intents
+Why download-before-parse is mandatory:
 
-- **raw/source-specific payload traceability**: source-native fields remain recoverable through detail records or explicit source payload metadata references.
-- **master/detail separation markers**: each source-family contract must define master identity fields and detail row identity fields.
-- **source-specific attributes**: family-specific factor attributes stay in family-specific detail structures and are not flattened into one generic canonical table in this phase.
+- ensures parser inputs are real acquired source artifacts, not hand-authored substitutes
+- ensures checksum/document identity can be attached before parse output persistence
+- ensures reproducible provenance and correlation across retries/runs
+- keeps runtime behavior aligned with future operational ingestion controls
 
-## Future Implementation Gates
+Parser agents must consume downloaded/acquired source documents and must not rely on hardcoded JSON, temp data, fake data, or fixtures.
 
-The following gates remain mandatory for later tasks:
+## 7) Python/.NET Parity Expectations
 
-1. **DDL generation is a separate future task.**
-2. **Schema initialization must be explicit/manual/opt-in.**
-3. **Repository data persistence must remain separate from schema initialization.**
-4. **Integration tests remain default-off unless explicitly opt-in and safety-gated.**
-5. **Runtime SQL execution/write behavior requires dedicated runtime implementation tasks and safety validation.**
+Python and .NET implementations must remain conceptually equivalent for:
 
-## Related Documents
+- source-family master/detail contract boundaries
+- shared ingestion/system metadata contract
+- startup bootstrap expectations
+- downloader-before-parser sequencing
+- provenance and status lifecycle semantics
 
+Language/runtime differences are acceptable at implementation detail level, but contract semantics must remain aligned.
+
+## 8) Documentation Map / Related References
+
+- [Documentation Index](index.md)
+- [Database Model](database-model.md)
+- [Database Startup](database-startup.md)
+- [Ingestion Metadata Model](ingestion-metadata-model.md)
+- [Source Acquisition Parser Handoff Contract](source-acquisition-parser-handoff-contract.md)
 - [PostgreSQL Persistence Schema Boundary](postgresql-persistence-schema-boundary.md)
-- [PostgreSQL DDL Preview Boundary](postgresql-ddl-preview-boundary.md)
-- [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
-- [PostgreSQL Runtime Execution Gate Boundary](postgresql-runtime-execution-gate-boundary.md)
-- [PostgreSQL Integration Test Boundary](postgresql-integration-test-boundary.md)
-- [PostgreSQL Opt-In Integration Runbook](postgresql-opt-in-integration-runbook.md)
-- [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
-- [Public Safety](public-safety.md)
