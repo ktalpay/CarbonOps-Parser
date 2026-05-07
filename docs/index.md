@@ -6,6 +6,7 @@
 - [Database Model](database-model.md)
 - [Database Startup](database-startup.md)
 - [Ingestion Metadata Model](ingestion-metadata-model.md)
+- [Ingestion Contracts](ingestion-contracts.md)
 - [Engineering Standards](engineering-standards.md)
 - [Source Support](source-support.md)
 - [Source Discovery](source-discovery.md)
