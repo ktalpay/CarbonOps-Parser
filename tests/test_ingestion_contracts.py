@@ -110,10 +110,28 @@ def test_frozen_contract_instances_are_immutable() -> None:
 
 
 def test_contract_package_import_has_no_runtime_behavior(monkeypatch: pytest.MonkeyPatch) -> None:
+    import builtins
     import importlib
     import sys
 
-    monkeypatch.delitem(sys.modules, "carbonfactor_parser.contracts", raising=False)
+    removed_modules = [
+        module_name
+        for module_name in list(sys.modules)
+        if module_name == "carbonfactor_parser.contracts"
+        or module_name.startswith("carbonfactor_parser.contracts.")
+    ]
+    for module_name in removed_modules:
+        monkeypatch.delitem(sys.modules, module_name, raising=False)
+
+    open_calls: list[tuple[object, ...]] = []
+
+    def guard_open(*args: object, **kwargs: object) -> object:
+        open_calls.append(args)
+        raise AssertionError(
+            "carbonfactor_parser.contracts import attempted file open side effects"
+        )
+
+    monkeypatch.setattr(builtins, "open", guard_open)
 
     imported_modules_before = set(sys.modules)
     module = importlib.import_module("carbonfactor_parser.contracts")
@@ -121,6 +139,7 @@ def test_contract_package_import_has_no_runtime_behavior(monkeypatch: pytest.Mon
 
     assert hasattr(module, "SourceType")
     assert hasattr(module, "IngestionRun")
+    assert open_calls == []
 
     newly_imported = imported_modules_after - imported_modules_before
     banned_prefixes = ("requests", "psycopg", "sqlalchemy", "dotenv")
