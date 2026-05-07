@@ -34,6 +34,22 @@ This contract layer intentionally forbids runtime behavior:
 
 Contracts must not perform file reads, downloads, migrations, or side effects at import time.
 
+## SourceType Naming and Compatibility
+
+`SourceType` enum values should follow a stable three-part naming convention:
+
+- source family,
+- publisher/program, and
+- dataset identifier.
+
+Use lowercase snake case with `_` separators (for example, `defra_desnz`). Published enum values are part of the shared contract and are expected to remain stable over time.
+
+Compatibility expectations:
+
+- additive enum members are backward-compatible additions,
+- enum removals or renames are breaking changes, and
+- downstream parser and persistence agents must treat published contract symbols as stable interfaces.
+
 ## Guidance for Parallel Agents
 
 Future parallel agents should use these contracts as shared interfaces:
