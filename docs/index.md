@@ -94,6 +94,7 @@
 - [PostgreSQL Disabled Runtime Execution Adapter Boundary](postgresql-disabled-runtime-execution-adapter-boundary.md)
 - [PostgreSQL Repository Disabled Execution Preview Boundary](postgresql-repository-disabled-execution-preview-boundary.md)
 - [PostgreSQL Runtime Execution Gate Boundary](postgresql-runtime-execution-gate-boundary.md)
+- [PostgreSQL Phase 1 Schema Contract](postgresql-phase1-schema-contract.md)
 - [PostgreSQL Runtime Readiness Checklist](postgresql-runtime-readiness-checklist.md)
 - [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md)
 - [Parser To Normalization Integration Recap](parser-to-normalization-integration-recap.md)
