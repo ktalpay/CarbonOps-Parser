@@ -372,6 +372,125 @@ public static class ContractValidators
         return ContractValidationResult.FromErrors(errors);
     }
 
+    public static ContractValidationResult Validate(this SourceArtifactParserInputBridge? value)
+    {
+        var errors = new List<string>();
+
+        if (value is null)
+        {
+            errors.Add("SourceArtifactParserInputBridge is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        ValidateParserAdapterMetadata(
+            errors,
+            value.SourceFamily,
+            value.SourceKey,
+            value.ParserKey);
+
+        if (string.IsNullOrWhiteSpace(value.SourceArtifactId))
+        {
+            errors.Add("SourceArtifactId is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.ParserInputArtifactId))
+        {
+            errors.Add("ParserInputArtifactId is required.");
+        }
+
+        AppendErrors(errors, "SourceArtifact.", value.SourceArtifact.Validate());
+        AppendErrors(errors, "ParserInputArtifact.", value.ParserInputArtifact.Validate());
+
+        if (value.SourceArtifact is not null)
+        {
+            if (value.SourceArtifact.SourceFamily != value.SourceFamily)
+            {
+                errors.Add("SourceArtifact.SourceFamily must match bridge SourceFamily.");
+            }
+
+            if (value.SourceArtifact.SourceKey != value.SourceKey)
+            {
+                errors.Add("SourceArtifact.SourceKey must match bridge SourceKey.");
+            }
+
+            if (value.SourceArtifact.ArtifactId != value.SourceArtifactId)
+            {
+                errors.Add("SourceArtifact.ArtifactId must match SourceArtifactId.");
+            }
+        }
+
+        if (value.ParserInputArtifact is not null)
+        {
+            if (value.ParserInputArtifact.SourceFamily != value.SourceFamily)
+            {
+                errors.Add("ParserInputArtifact.SourceFamily must match bridge SourceFamily.");
+            }
+
+            if (value.ParserInputArtifact.SourceKey != value.SourceKey)
+            {
+                errors.Add("ParserInputArtifact.SourceKey must match bridge SourceKey.");
+            }
+
+            if (value.ParserInputArtifact.ParserKey != value.ParserKey)
+            {
+                errors.Add("ParserInputArtifact.ParserKey must match bridge ParserKey.");
+            }
+        }
+
+        if (value.SourceArtifact is not null && value.ParserInputArtifact is not null)
+        {
+            if (value.ParserInputArtifact.SourceFormat != value.SourceArtifact.SourceFormat)
+            {
+                errors.Add("ParserInputArtifact.SourceFormat must match SourceArtifact.SourceFormat.");
+            }
+
+            if (value.ParserInputArtifact.ArtifactReference != value.SourceArtifact.LocalReference)
+            {
+                errors.Add("ParserInputArtifact.ArtifactReference must match SourceArtifact.LocalReference.");
+            }
+
+            if (value.ParserInputArtifact.DisplayName != value.SourceArtifact.DisplayName)
+            {
+                errors.Add("ParserInputArtifact.DisplayName must match SourceArtifact.DisplayName.");
+            }
+
+            if (value.ParserInputArtifact.ContentType != value.SourceArtifact.ContentType)
+            {
+                errors.Add("ParserInputArtifact.ContentType must match SourceArtifact.ContentType.");
+            }
+
+            if (value.ParserInputArtifact.Extension != value.SourceArtifact.Extension)
+            {
+                errors.Add("ParserInputArtifact.Extension must match SourceArtifact.Extension.");
+            }
+
+            if (value.ParserInputArtifact.ReportingYear != value.SourceArtifact.ReportingYear)
+            {
+                errors.Add("ParserInputArtifact.ReportingYear must match SourceArtifact.ReportingYear.");
+            }
+
+            if (value.SourceArtifact.Checksum is not null &&
+                value.ParserInputArtifact.ChecksumAlgorithm != value.SourceArtifact.Checksum.Algorithm)
+            {
+                errors.Add("ParserInputArtifact.ChecksumAlgorithm must match SourceArtifact.Checksum.Algorithm.");
+            }
+
+            if (value.SourceArtifact.Checksum is not null &&
+                value.ParserInputArtifact.ChecksumValue != value.SourceArtifact.Checksum.Value)
+            {
+                errors.Add("ParserInputArtifact.ChecksumValue must match SourceArtifact.Checksum.Value.");
+            }
+
+            if (value.SourceArtifact.Checksum is not null &&
+                value.ParserInputArtifact.IsDryRunChecksum != value.SourceArtifact.Checksum.IsDryRunPlaceholder)
+            {
+                errors.Add("ParserInputArtifact.IsDryRunChecksum must match SourceArtifact.Checksum.IsDryRunPlaceholder.");
+            }
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
     public static ContractValidationResult Validate(this ParserRunSummary value)
     {
         var errors = new List<string>();
