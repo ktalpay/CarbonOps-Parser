@@ -11,14 +11,14 @@ public sealed class ContractRecordTests
             SourceFamily.DefraDesnz,
             SourceDocumentStatus.Discovered,
             "DEFRA conversion factors",
-            "https://example.test/defra.csv",
+            "defra-source-placeholder.csv",
             2024,
             "sha256:abc123");
 
         Assert.Equal(SourceFamily.DefraDesnz, metadata.SourceFamily);
         Assert.Equal(SourceDocumentStatus.Discovered, metadata.SourceDocumentStatus);
         Assert.Equal("DEFRA conversion factors", metadata.SourceName);
-        Assert.Equal("https://example.test/defra.csv", metadata.SourceUrl);
+        Assert.Equal("defra-source-placeholder.csv", metadata.SourceUrl);
         Assert.Equal(2024, metadata.ReportingYear);
         Assert.Equal("sha256:abc123", metadata.Checksum);
     }
