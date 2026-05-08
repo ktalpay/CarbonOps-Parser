@@ -42,6 +42,13 @@ public static class ContractWireNames
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown parser run status."),
         };
 
+    public static string ToWireName(this SourceDiscoveryStatus value) =>
+        value switch
+        {
+            SourceDiscoveryStatus.Declared => "declared",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown source discovery status."),
+        };
+
     public static bool TryParseSourceFamilyWireName(string? wireName, out SourceFamily value)
     {
         value = wireName switch
@@ -96,5 +103,16 @@ public static class ContractWireNames
         };
 
         return wireName is "pending" or "running" or "completed" or "failed";
+    }
+
+    public static bool TryParseSourceDiscoveryStatusWireName(string? wireName, out SourceDiscoveryStatus value)
+    {
+        value = wireName switch
+        {
+            "declared" => SourceDiscoveryStatus.Declared,
+            _ => default,
+        };
+
+        return wireName is "declared";
     }
 }
