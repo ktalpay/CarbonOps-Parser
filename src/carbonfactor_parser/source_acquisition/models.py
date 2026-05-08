@@ -95,3 +95,23 @@ class SourceAcquisitionDryRunExecutionResult:
     selected_source_families: tuple[str, ...]
     family_results: tuple[SourceAcquisitionDryRunFamilyResult, ...]
     warnings: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class SourceDownloadRequest:
+    """Runtime-passive request describing a future source download."""
+
+    source_family: str
+    source_name: str
+    source_reference: str
+    target_logical_path: str
+    mode: SourceAcquisitionPlanMode = SourceAcquisitionPlanMode.DRY_RUN
+
+
+@dataclass(frozen=True)
+class SourceDownloadBatchPlan:
+    """Runtime-passive batch of source download requests."""
+
+    mode: SourceAcquisitionPlanMode
+    selected_source_families: tuple[str, ...]
+    requests: tuple[SourceDownloadRequest, ...]
