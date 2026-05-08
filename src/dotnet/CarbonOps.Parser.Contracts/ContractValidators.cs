@@ -603,6 +603,156 @@ public static class ContractValidators
         return ContractValidationResult.FromErrors(errors);
     }
 
+    public static ContractValidationResult Validate(this Phase1OrchestrationPlan? value)
+    {
+        var errors = new List<string>();
+
+        if (value is null)
+        {
+            errors.Add("Phase1OrchestrationPlan is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        ValidateSourceKeyMetadata(errors, value.SourceFamily, value.SourceKey);
+
+        if (!Enum.IsDefined(value.Status))
+        {
+            errors.Add("Phase1OrchestrationPlanStatus must be a defined Phase 1 orchestration plan status.");
+        }
+
+        if (value.OrchestrationPlanId is not null && string.IsNullOrWhiteSpace(value.OrchestrationPlanId))
+        {
+            errors.Add("OrchestrationPlanId must not be whitespace when provided.");
+        }
+
+        if (value.CorrelationId is not null && string.IsNullOrWhiteSpace(value.CorrelationId))
+        {
+            errors.Add("CorrelationId must not be whitespace when provided.");
+        }
+
+        AppendErrors(errors, "AcquisitionRequest.", value.AcquisitionRequest.Validate());
+        AppendErrors(errors, "AcquisitionResult.", value.AcquisitionResult.Validate());
+        AppendErrors(errors, "AcquisitionToParserPlan.", value.AcquisitionToParserPlan.Validate());
+
+        if (value.AcquisitionRequest is not null)
+        {
+            ValidateSourceAligned(errors, "AcquisitionRequest", value.AcquisitionRequest.SourceFamily, value.AcquisitionRequest.SourceKey, value.SourceFamily, value.SourceKey);
+        }
+
+        if (value.AcquisitionResult is not null)
+        {
+            ValidateSourceAligned(errors, "AcquisitionResult", value.AcquisitionResult.SourceFamily, value.AcquisitionResult.SourceKey, value.SourceFamily, value.SourceKey);
+        }
+
+        if (value.AcquisitionToParserPlan is not null)
+        {
+            ValidateSourceAligned(errors, "AcquisitionToParserPlan", value.AcquisitionToParserPlan.SourceFamily, value.AcquisitionToParserPlan.SourceKey, value.SourceFamily, value.SourceKey);
+        }
+
+        for (var index = 0; index < value.ParserRunRequests.Count; index++)
+        {
+            var request = value.ParserRunRequests[index];
+
+            AppendErrors(errors, $"ParserRunRequests[{index}].", request.Validate());
+            if (request is null)
+            {
+                continue;
+            }
+
+            ValidateSourceAligned(errors, $"ParserRunRequests[{index}]", request.SourceFamily, request.SourceKey, value.SourceFamily, value.SourceKey);
+        }
+
+        for (var index = 0; index < value.DryRunPlans.Count; index++)
+        {
+            var dryRunPlan = value.DryRunPlans[index];
+
+            AppendErrors(errors, $"DryRunPlans[{index}].", dryRunPlan.Validate());
+            if (dryRunPlan is null)
+            {
+                continue;
+            }
+
+            ValidateSourceAligned(errors, $"DryRunPlans[{index}]", dryRunPlan.SourceFamily, dryRunPlan.SourceKey, value.SourceFamily, value.SourceKey);
+            if (!value.ParserRunRequests.Any(request => request == dryRunPlan.Request))
+            {
+                errors.Add($"DryRunPlans[{index}].Request must match a parser run request.");
+            }
+        }
+
+        for (var index = 0; index < value.DryRunResults.Count; index++)
+        {
+            var dryRunResult = value.DryRunResults[index];
+
+            AppendErrors(errors, $"DryRunResults[{index}].", dryRunResult.Validate());
+            if (dryRunResult is null)
+            {
+                continue;
+            }
+
+            ValidateSourceAligned(errors, $"DryRunResults[{index}]", dryRunResult.SourceFamily, dryRunResult.SourceKey, value.SourceFamily, value.SourceKey);
+            if (!value.DryRunPlans.Any(plan => plan.Request == dryRunResult.Request))
+            {
+                errors.Add($"DryRunResults[{index}].Request must match a dry-run plan request.");
+            }
+        }
+
+        for (var index = 0; index < value.PlanIssues.Count; index++)
+        {
+            var issue = value.PlanIssues[index];
+
+            AppendErrors(errors, $"PlanIssues[{index}].", issue.Validate());
+            if (issue is null)
+            {
+                continue;
+            }
+
+            ValidateSourceAligned(errors, $"PlanIssues[{index}]", issue.SourceFamily, issue.SourceKey, value.SourceFamily, value.SourceKey);
+        }
+
+        if (value.AcquisitionResult is not null)
+        {
+            if (value.SourceCandidateCount != value.AcquisitionResult.CandidateCount)
+            {
+                errors.Add("SourceCandidateCount must match acquisition result CandidateCount.");
+            }
+
+            if (value.DownloadedArtifactCount != value.AcquisitionResult.ArtifactCount)
+            {
+                errors.Add("DownloadedArtifactCount must match acquisition result ArtifactCount.");
+            }
+        }
+
+        if (value.AcquisitionToParserPlan is not null)
+        {
+            if (value.ParserInputArtifactCount != value.AcquisitionToParserPlan.ParserInputArtifactCount)
+            {
+                errors.Add("ParserInputArtifactCount must match acquisition-to-parser plan ParserInputArtifactCount.");
+            }
+        }
+
+        if (value.ParserRunRequestCount != value.ParserRunRequests.Count)
+        {
+            errors.Add("ParserRunRequestCount must match parser run request count.");
+        }
+
+        if (value.DryRunPlanCount != value.DryRunPlans.Count)
+        {
+            errors.Add("DryRunPlanCount must match dry-run plan count.");
+        }
+
+        if (value.DryRunResultCount != value.DryRunResults.Count)
+        {
+            errors.Add("DryRunResultCount must match dry-run result count.");
+        }
+
+        if (value.PlanIssueCount != value.PlanIssues.Count)
+        {
+            errors.Add("PlanIssueCount must match plan issue count.");
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
     public static ContractValidationResult Validate(this ParserRunSummary value)
     {
         var errors = new List<string>();
@@ -1474,6 +1624,25 @@ public static class ContractValidators
             !ParserAdapterDescriptorRegistry.TryGetBySourceKey(sourceKey, out _))
         {
             errors.Add("SourceKey must match a registered parser adapter descriptor.");
+        }
+    }
+
+    private static void ValidateSourceAligned(
+        List<string> errors,
+        string label,
+        SourceFamily sourceFamily,
+        string sourceKey,
+        SourceFamily expectedSourceFamily,
+        string expectedSourceKey)
+    {
+        if (sourceFamily != expectedSourceFamily)
+        {
+            errors.Add($"{label}.SourceFamily must match orchestration plan SourceFamily.");
+        }
+
+        if (sourceKey != expectedSourceKey)
+        {
+            errors.Add($"{label}.SourceKey must match orchestration plan SourceKey.");
         }
     }
 }
