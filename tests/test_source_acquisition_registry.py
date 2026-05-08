@@ -5,9 +5,15 @@ import sys
 import pytest
 
 from carbonfactor_parser.contracts import SourceType
-from carbonfactor_parser.source_acquisition.models import SourceAcquisitionDescriptor
+from carbonfactor_parser.source_acquisition.models import (
+    SourceAcquisitionDescriptor,
+    SourceDiscoveryDocument,
+    SourceDiscoveryResult,
+    SourceDiscoveryStatus,
+)
 from carbonfactor_parser.source_acquisition.registry import (
     create_default_source_acquisition_registry,
+    create_default_source_discovery_result,
     validate_source_acquisition_registry,
 )
 from carbonfactor_parser.source_adapters import SourceFamily
@@ -224,3 +230,73 @@ def test_registry_exports_are_stable_and_deterministic() -> None:
             enabled=True,
         ),
     )
+
+
+def test_default_discovery_result_contains_exactly_phase1_sources() -> None:
+    result = create_default_source_discovery_result()
+
+    assert result == SourceDiscoveryResult(
+        status=SourceDiscoveryStatus.DECLARED,
+        documents=(
+            SourceDiscoveryDocument(
+                source_family="ghg_protocol",
+                source_name="GHG Protocol",
+                source_reference="discovery://ghg_protocol/acquisition",
+                reporting_year=None,
+                status=SourceDiscoveryStatus.DECLARED,
+            ),
+            SourceDiscoveryDocument(
+                source_family="defra_desnz",
+                source_name="DEFRA/DESNZ",
+                source_reference="discovery://defra_desnz/homepage",
+                reporting_year=None,
+                status=SourceDiscoveryStatus.DECLARED,
+            ),
+            SourceDiscoveryDocument(
+                source_family="ipcc_efdb",
+                source_name="IPCC EFDB",
+                source_reference="discovery://ipcc_efdb/homepage",
+                reporting_year=None,
+                status=SourceDiscoveryStatus.DECLARED,
+            ),
+        ),
+    )
+
+
+def test_default_discovery_result_is_deterministic() -> None:
+    first = create_default_source_discovery_result()
+    second = create_default_source_discovery_result()
+
+    assert first == second
+    assert (
+        tuple(document.source_family for document in first.documents)
+        == EXPECTED_PHASE1_SOURCE_FAMILIES
+    )
+    assert tuple(document.status for document in first.documents) == (
+        SourceDiscoveryStatus.DECLARED,
+        SourceDiscoveryStatus.DECLARED,
+        SourceDiscoveryStatus.DECLARED,
+    )
+    assert first.warnings == ()
+
+
+def test_default_discovery_references_are_offline_placeholders() -> None:
+    result = create_default_source_discovery_result()
+
+    for document in result.documents:
+        assert document.source_reference.startswith("discovery://")
+        assert not document.source_reference.startswith(("http://", "https://"))
+        assert document.reporting_year is None
+
+
+def test_default_discovery_result_excludes_non_contract_source_families() -> None:
+    result = create_default_source_discovery_result()
+
+    assert tuple(document.source_family for document in result.documents) == tuple(
+        item.value for item in SourceType
+    )
+    for document in result.documents:
+        assert not any(
+            fragment in document.source_family
+            for fragment in FORBIDDEN_SOURCE_FAMILY_FRAGMENTS
+        )
