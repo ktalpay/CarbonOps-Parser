@@ -98,6 +98,7 @@
 - [PostgreSQL Runtime Execution Gate Boundary](postgresql-runtime-execution-gate-boundary.md)
 - [PostgreSQL Phase 1 Schema Contract](postgresql-phase1-schema-contract.md)
 - [PostgreSQL Bootstrap Boundary Contract (Phase 1)](postgresql-bootstrap-boundary.md)
+- [PostgreSQL Schema Bootstrap Execution Adapter Boundary](postgresql-schema-bootstrap-execution-adapter.md)
 - [PostgreSQL DDL Strategy Contract (Phase 1 Planning)](postgresql-ddl-strategy-contract.md)
 - [PostgreSQL Runtime Readiness Checklist](postgresql-runtime-readiness-checklist.md)
 - [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md)
