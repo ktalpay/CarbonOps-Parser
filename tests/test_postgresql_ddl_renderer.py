@@ -7,14 +7,28 @@ import pytest
 
 from carbonfactor_parser.persistence.postgresql_schema_catalog import (
     ColumnDefinition,
+    IndexDefinition,
     PostgreSQLDataType,
     TableDefinition,
 )
 from carbonfactor_parser.persistence.postgresql_ddl_renderer import (
+    _render_identifier,
     render_create_index_statements,
     render_create_table_statement,
     render_postgresql_phase1_schema_ddl,
 )
+
+
+def _rendered_table_constraint_and_index_identifiers() -> tuple[str, ...]:
+    rendered = render_postgresql_phase1_schema_ddl()
+    identifiers: list[str] = [table.table_name for table in rendered.tables]
+
+    for statement in rendered.statements:
+        identifiers.extend(re.findall(r"\bCREATE TABLE ([a-z][a-z0-9_]*)", statement))
+        identifiers.extend(re.findall(r"\bCONSTRAINT ([a-z][a-z0-9_]*)", statement))
+        identifiers.extend(re.findall(r"\bCREATE (?:UNIQUE )?INDEX ([a-z][a-z0-9_]*)", statement))
+
+    return tuple(identifiers)
 
 
 def test_renderer_import_is_runtime_passive() -> None:
@@ -72,6 +86,30 @@ def test_renderer_output_is_deterministic() -> None:
     assert first.statements == second.statements
 
 
+def test_rendered_table_constraint_and_index_identifiers_fit_postgresql_limit() -> None:
+    identifiers = _rendered_table_constraint_and_index_identifiers()
+    assert identifiers
+    assert all(len(identifier.encode("utf-8")) <= 63 for identifier in identifiers)
+
+
+def test_known_long_foreign_key_and_index_names_are_shortened_deterministically() -> None:
+    statements = "\n".join(render_postgresql_phase1_schema_ddl().statements)
+
+    long_fk_name = "fk_defra_emission_factor_details_defra_emission_factor_master_id"
+    long_index_name = "idx_defra_emission_factor_details_defra_emission_factor_master_id"
+    expected_fk_name = _render_identifier(long_fk_name, "constraint")
+    expected_index_name = _render_identifier(long_index_name, "index")
+
+    assert expected_fk_name == _render_identifier(long_fk_name, "constraint")
+    assert expected_index_name == _render_identifier(long_index_name, "index")
+    assert expected_fk_name != long_fk_name
+    assert expected_index_name != long_index_name
+    assert f"CONSTRAINT {expected_fk_name} FOREIGN KEY" in statements
+    assert f"CREATE INDEX {expected_index_name} ON defra_emission_factor_details" in statements
+    assert long_fk_name not in statements
+    assert long_index_name not in statements
+
+
 def test_invalid_identifier_rejected() -> None:
     invalid = TableDefinition(
         name="bad-table",
@@ -83,6 +121,20 @@ def test_invalid_identifier_rejected() -> None:
         render_create_table_statement(invalid)
 
 
+def test_invalid_unsafe_index_identifier_rejected() -> None:
+    invalid_table = TableDefinition(
+        name="good_table",
+        columns=(
+            ColumnDefinition("id", PostgreSQLDataType.UUID, nullable=False, is_primary_key=True),
+        ),
+        indexes=(
+            IndexDefinition(name="idx_Good_Table", column_names=("id",)),
+        ),
+    )
+    with pytest.raises(ValueError, match="Invalid index identifier"):
+        render_create_index_statements(invalid_table)
+
+
 def test_forbidden_name_fragments_do_not_appear() -> None:
     forbidden = ("temp", "test", "fake", "sample", "manual", "json_input")
     statements = "\n".join(render_postgresql_phase1_schema_ddl().statements)
@@ -92,17 +144,28 @@ def test_forbidden_name_fragments_do_not_appear() -> None:
 
 def test_identifiers_follow_lowercase_snake_case() -> None:
     snake_case = re.compile(r"^[a-z][a-z0-9_]*$")
-    rendered = render_postgresql_phase1_schema_ddl()
-    for table in rendered.tables:
-        assert snake_case.match(table.table_name)
+    for identifier in _rendered_table_constraint_and_index_identifiers():
+        assert snake_case.match(identifier)
 
 
-def test_render_create_index_statements_rejects_invalid_index_name() -> None:
-    invalid_table = TableDefinition(
+def test_different_long_identifiers_with_same_visible_prefix_do_not_collapse() -> None:
+    base_name = "idx_shared_visible_prefix_for_length_hardening_collision_case"
+    first_name = f"{base_name}_left"
+    second_name = f"{base_name}_right"
+    table = TableDefinition(
         name="good_table",
         columns=(
             ColumnDefinition("id", PostgreSQLDataType.UUID, nullable=False, is_primary_key=True),
         ),
-        indexes=(),
+        indexes=(
+            IndexDefinition(name=first_name, column_names=("id",)),
+            IndexDefinition(name=second_name, column_names=("id",)),
+        ),
     )
-    assert render_create_index_statements(invalid_table) == ()
+    statements = render_create_index_statements(table)
+
+    first_rendered = _render_identifier(first_name, "index")
+    second_rendered = _render_identifier(second_name, "index")
+    assert first_rendered != second_rendered
+    assert f"CREATE INDEX {first_rendered} ON good_table (id);" in statements
+    assert f"CREATE INDEX {second_rendered} ON good_table (id);" in statements
