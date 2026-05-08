@@ -54,7 +54,7 @@ jobs:
           PR_BODY="$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json body --jq '.body // ""')"
 
           TASK_ID="$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[[:space:]]*Task-ID:[[:space:]]*([A-Za-z]+-[0-9A-Za-z-]+)[[:space:]]*$/\1/p' | head -n 1)"
-          ISSUE_NUMBER="$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[[:space:]]*(Closes|Fixes|Resolves)[[:space:]]+#([0-9]+)[[:space:]]*$/\2/ip' | head -n 1)"
+          ISSUE_NUMBER="$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[[:space:]]*Task-Issue:[[:space:]]*#?([0-9]+)[[:space:]]*$/\1/ip' | head -n 1)"
 
           if [ -z "$TASK_ID" ]; then
             echo "Missing Task-ID in PR #$PR_NUMBER body. No label changes applied."
@@ -63,7 +63,7 @@ jobs:
           fi
 
           if [ -z "$ISSUE_NUMBER" ]; then
-            echo "Missing standalone linked issue reference such as Closes #123 in PR #$PR_NUMBER body. No label changes applied."
+            echo "Missing Task-Issue metadata such as Task-Issue: #123 in PR #$PR_NUMBER body. No label changes applied."
             echo "should_process=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
