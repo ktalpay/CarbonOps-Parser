@@ -30,6 +30,12 @@ class SourceDocumentChecksumStatus(str, Enum):
     DRY_RUN_UNAVAILABLE = "dry_run_unavailable"
 
 
+class SourceDocumentPersistenceMappingStatus(str, Enum):
+    """Runtime-passive source document persistence mapping statuses."""
+
+    DRY_RUN_MAPPED = "dry_run_mapped"
+
+
 @dataclass(frozen=True)
 class SourceAcquisitionDescriptor:
     """Immutable metadata describing a known source acquisition family."""
@@ -151,3 +157,34 @@ class SourceDocumentManifest:
     mode: SourceAcquisitionPlanMode
     selected_source_families: tuple[str, ...]
     entries: tuple[SourceDocumentManifestEntry, ...]
+
+
+@dataclass(frozen=True)
+class SourceDocumentPersistenceRecord:
+    """Runtime-passive source document persistence record contract."""
+
+    source_document_id: str
+    ingestion_run_id: str
+    source_family: str
+    source_document_uri: str
+    source_checksum_sha256: str | None
+    checksum_status: SourceDocumentChecksumStatus
+    acquisition_status: SourceDocumentPersistenceMappingStatus
+    acquired_at: str | None
+    created_at: str
+    updated_at: str
+    logical_document_name: str
+    target_logical_path: str
+    mode: SourceAcquisitionPlanMode = SourceAcquisitionPlanMode.DRY_RUN
+
+
+@dataclass(frozen=True)
+class SourceDocumentPersistenceMappingResult:
+    """Runtime-passive mapping from manifest entries to persistence records."""
+
+    status: SourceDocumentPersistenceMappingStatus
+    mode: SourceAcquisitionPlanMode
+    table_name: str
+    column_names: tuple[str, ...]
+    selected_source_families: tuple[str, ...]
+    records: tuple[SourceDocumentPersistenceRecord, ...]
