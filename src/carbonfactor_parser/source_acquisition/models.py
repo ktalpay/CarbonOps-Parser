@@ -24,6 +24,12 @@ class SourceAcquisitionDryRunResultStatus(str, Enum):
     PLANNED = "planned"
 
 
+class SourceDocumentChecksumStatus(str, Enum):
+    """Runtime-passive source document checksum contract statuses."""
+
+    DRY_RUN_UNAVAILABLE = "dry_run_unavailable"
+
+
 @dataclass(frozen=True)
 class SourceAcquisitionDescriptor:
     """Immutable metadata describing a known source acquisition family."""
@@ -115,3 +121,33 @@ class SourceDownloadBatchPlan:
     mode: SourceAcquisitionPlanMode
     selected_source_families: tuple[str, ...]
     requests: tuple[SourceDownloadRequest, ...]
+
+
+@dataclass(frozen=True)
+class SourceDocumentChecksum:
+    """Runtime-passive checksum metadata for a future source document."""
+
+    algorithm: str
+    value: str | None
+    status: SourceDocumentChecksumStatus
+
+
+@dataclass(frozen=True)
+class SourceDocumentManifestEntry:
+    """Runtime-passive identity metadata for one future source document."""
+
+    source_family: str
+    logical_document_name: str
+    source_reference: str
+    target_logical_path: str
+    checksum: SourceDocumentChecksum
+    mode: SourceAcquisitionPlanMode = SourceAcquisitionPlanMode.DRY_RUN
+
+
+@dataclass(frozen=True)
+class SourceDocumentManifest:
+    """Runtime-passive manifest of future Phase 1 source documents."""
+
+    mode: SourceAcquisitionPlanMode
+    selected_source_families: tuple[str, ...]
+    entries: tuple[SourceDocumentManifestEntry, ...]
