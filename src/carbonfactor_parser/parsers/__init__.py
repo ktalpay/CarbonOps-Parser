@@ -1,141 +1,111 @@
-"""Intentional public exports for parser contracts."""
+"""Intentional public exports for parser contracts and helpers."""
 
-from carbonfactor_parser.parsers.adapter import ParserAdapter
-from carbonfactor_parser.parsers.adapter_registry import (
-    ParserAdapterRegistry,
-    create_parser_adapter_registry,
-    list_parser_adapters,
-    register_parser_adapter,
-    resolve_parser_adapters,
-)
-from carbonfactor_parser.parsers.artificial_adapter import ArtificialParserAdapter
-from carbonfactor_parser.parsers.contracts import (
-    ParserIssue,
-    ParserIssueSeverity,
-    ParserResult,
-    ParserResultSummary,
-)
-from carbonfactor_parser.parsers.defra_desnz_content_parser import (
-    DEFRA_DESNZ_MINIMAL_CONTENT_HEADER,
-    parse_defra_desnz_file_content,
-)
-from carbonfactor_parser.parsers.defra_desnz_adapter import DefraDesnzParserAdapter
-from carbonfactor_parser.parsers.defra_desnz_parser import DefraDesnzParser
-from carbonfactor_parser.parsers.example_parser import ExampleInMemoryParser
-from carbonfactor_parser.parsers.example_source_specific_parser import (
-    ExampleSourceSpecificParser,
-)
-from carbonfactor_parser.parsers.execution_plan import (
-    ParserExecutionPlan,
-    ParserExecutionPlanStatus,
-    plan_parser_execution,
-)
-from carbonfactor_parser.parsers.execution_result import (
-    ParserExecutionIssue,
-    ParserExecutionIssueSeverity,
-    ParserExecutionResult,
-    ParserExecutionResultStatus,
-    create_parser_execution_result,
-)
-from carbonfactor_parser.parsers.execution_runner import run_parser_execution
-from carbonfactor_parser.parsers.file_content_input import (
-    ParserFileContentInput,
-    ParserFileContentValidationIssue,
-    ParserFileContentValidationResult,
-    create_parser_file_content_input,
-    validate_parser_file_content_input,
-)
-from carbonfactor_parser.parsers.file_content_loader import (
-    DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES,
-    ParserFileContentLoadIssue,
-    ParserFileContentLoadResult,
-    ParserFileContentLoadStatus,
-    load_parser_file_content_from_local_path,
-)
-from carbonfactor_parser.parsers.fixture_parser import ArtificialFixtureParser
-from carbonfactor_parser.parsers.input_contract import (
-    ParserInputContract,
-    ParserInputValidationIssue,
-    ParserInputValidationResult,
-    create_parser_input_contract,
-    validate_parser_input_contract,
-)
-from carbonfactor_parser.parsers.input_mapping import (
-    ParserInputMapping,
-    ParserInputMappingEntry,
-    build_fixture_parser_input_mapping,
-)
-from carbonfactor_parser.parsers.noop_adapter import NoopParserAdapter
-from carbonfactor_parser.parsers.pipeline_summary import (
-    ParserPipelineSummary,
-    summarize_parser_pipeline,
-)
-from carbonfactor_parser.parsers.raw_record import (
-    ParsedRawRecord,
-    ParsedRawRecordPayload,
-    ParsedRawRecordValidationIssue,
-    ParsedRawRecordValidationResult,
-    create_parsed_raw_record,
-    create_parsed_raw_record_payload,
-    validate_parsed_raw_record,
-    validate_parsed_raw_record_payload,
+from __future__ import annotations
+
+from importlib import import_module
+from typing import Any
+
+
+_PUBLIC_EXPORTS = {
+    "ArtificialFixtureParser": "fixture_parser",
+    "ArtificialParserAdapter": "artificial_adapter",
+    "DEFRA_DESNZ_MINIMAL_CONTENT_HEADER": "defra_desnz_content_parser",
+    "DefraDesnzParserAdapter": "defra_desnz_adapter",
+    "DefraDesnzParser": "defra_desnz_parser",
+    "ExampleInMemoryParser": "example_parser",
+    "ExampleSourceSpecificParser": "example_source_specific_parser",
+    "DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES": "file_content_loader",
+    "NoopParserAdapter": "noop_adapter",
+    "ParserAdapter": "adapter",
+    "ParserAdapterRegistry": "adapter_registry",
+    "ParserExecutionIssue": "execution_result",
+    "ParserExecutionIssueSeverity": "execution_result",
+    "ParserExecutionPlan": "execution_plan",
+    "ParserExecutionPlanStatus": "execution_plan",
+    "ParserExecutionResult": "execution_result",
+    "ParserExecutionResultStatus": "execution_result",
+    "ParserFileContentInput": "file_content_input",
+    "ParserFileContentLoadIssue": "file_content_loader",
+    "ParserFileContentLoadResult": "file_content_loader",
+    "ParserFileContentLoadStatus": "file_content_loader",
+    "ParserFileContentValidationIssue": "file_content_input",
+    "ParserFileContentValidationResult": "file_content_input",
+    "ParserInputContract": "input_contract",
+    "ParserInputValidationIssue": "input_contract",
+    "ParserInputValidationResult": "input_contract",
+    "ParserInputMapping": "input_mapping",
+    "ParserInputMappingEntry": "input_mapping",
+    "ParserIssue": "contracts",
+    "ParserIssueSeverity": "contracts",
+    "ParserPipelineSummary": "pipeline_summary",
+    "ParsedRawRecord": "raw_record",
+    "ParsedRawRecordPayload": "raw_record",
+    "ParsedRawRecordValidationIssue": "raw_record",
+    "ParsedRawRecordValidationResult": "raw_record",
+    "ParserResult": "contracts",
+    "ParserResultSummary": "contracts",
+    "create_parser_adapter_registry": "adapter_registry",
+    "create_parser_execution_result": "execution_result",
+    "create_parser_file_content_input": "file_content_input",
+    "create_parser_input_contract": "input_contract",
+    "create_parsed_raw_record": "raw_record",
+    "create_parsed_raw_record_payload": "raw_record",
+    "list_parser_adapters": "adapter_registry",
+    "load_parser_file_content_from_local_path": "file_content_loader",
+    "plan_parser_execution": "execution_plan",
+    "parse_defra_desnz_file_content": "defra_desnz_content_parser",
+    "register_parser_adapter": "adapter_registry",
+    "resolve_parser_adapters": "adapter_registry",
+    "run_parser_execution": "execution_runner",
+    "validate_parser_file_content_input": "file_content_input",
+    "validate_parser_input_contract": "input_contract",
+    "validate_parsed_raw_record": "raw_record",
+    "validate_parsed_raw_record_payload": "raw_record",
+    "build_fixture_parser_input_mapping": "input_mapping",
+    "summarize_parser_pipeline": "pipeline_summary",
+}
+
+_PUBLIC_MODULES = (
+    "adapter",
+    "adapter_registry",
+    "artificial_adapter",
+    "contracts",
+    "contract_api",
+    "defra_desnz_adapter",
+    "defra_desnz_content_parser",
+    "defra_desnz_parser",
+    "example_parser",
+    "example_source_specific_parser",
+    "execution_plan",
+    "execution_result",
+    "execution_runner",
+    "file_content_input",
+    "file_content_loader",
+    "fixture_parser",
+    "input_contract",
+    "input_mapping",
+    "noop_adapter",
+    "pipeline_summary",
+    "raw_record",
 )
 
-__all__ = (
-    "ArtificialFixtureParser",
-    "ArtificialParserAdapter",
-    "DEFRA_DESNZ_MINIMAL_CONTENT_HEADER",
-    "DefraDesnzParserAdapter",
-    "DefraDesnzParser",
-    "ExampleInMemoryParser",
-    "ExampleSourceSpecificParser",
-    "DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES",
-    "NoopParserAdapter",
-    "ParserAdapter",
-    "ParserAdapterRegistry",
-    "ParserExecutionIssue",
-    "ParserExecutionIssueSeverity",
-    "ParserExecutionPlan",
-    "ParserExecutionPlanStatus",
-    "ParserExecutionResult",
-    "ParserExecutionResultStatus",
-    "ParserFileContentInput",
-    "ParserFileContentLoadIssue",
-    "ParserFileContentLoadResult",
-    "ParserFileContentLoadStatus",
-    "ParserFileContentValidationIssue",
-    "ParserFileContentValidationResult",
-    "ParserInputContract",
-    "ParserInputValidationIssue",
-    "ParserInputValidationResult",
-    "ParserInputMapping",
-    "ParserInputMappingEntry",
-    "ParserIssue",
-    "ParserIssueSeverity",
-    "ParserPipelineSummary",
-    "ParsedRawRecord",
-    "ParsedRawRecordPayload",
-    "ParsedRawRecordValidationIssue",
-    "ParsedRawRecordValidationResult",
-    "ParserResult",
-    "ParserResultSummary",
-    "create_parser_adapter_registry",
-    "create_parser_execution_result",
-    "create_parser_file_content_input",
-    "create_parser_input_contract",
-    "create_parsed_raw_record",
-    "create_parsed_raw_record_payload",
-    "list_parser_adapters",
-    "load_parser_file_content_from_local_path",
-    "plan_parser_execution",
-    "parse_defra_desnz_file_content",
-    "register_parser_adapter",
-    "resolve_parser_adapters",
-    "run_parser_execution",
-    "validate_parser_file_content_input",
-    "validate_parser_input_contract",
-    "validate_parsed_raw_record",
-    "validate_parsed_raw_record_payload",
-    "build_fixture_parser_input_mapping",
-    "summarize_parser_pipeline",
-)
+__all__ = tuple(_PUBLIC_EXPORTS)
+
+
+def __getattr__(name: str) -> Any:
+    if name in _PUBLIC_EXPORTS:
+        module = import_module(f"{__name__}.{_PUBLIC_EXPORTS[name]}")
+        value = getattr(module, name)
+        globals()[name] = value
+        return value
+
+    if name in _PUBLIC_MODULES:
+        module = import_module(f"{__name__}.{name}")
+        globals()[name] = module
+        return module
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_PUBLIC_EXPORTS, *_PUBLIC_MODULES})
