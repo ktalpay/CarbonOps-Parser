@@ -14,6 +14,7 @@ from carbonfactor_parser.persistence import (
     postgresql_repository,
     postgresql_repository_disabled_execution_preview,
     postgresql_runtime_execution_gate,
+    postgresql_schema_bootstrap,
     postgresql_schema_bootstrap_planner,
     postgresql_transaction_policy,
     repository,
@@ -86,8 +87,13 @@ from carbonfactor_parser.persistence import (
     PostgreSQLRuntimeExecutionGateDescription,
     PostgreSQLRuntimeExecutionGateIssue,
     PostgreSQLRuntimeExecutionGateStatus,
+    PostgreSQLSchemaBootstrapMode,
     PostgreSQLSchemaBootstrapPlan,
     PostgreSQLSchemaBootstrapPlanStatement,
+    PostgreSQLSchemaBootstrapReport,
+    PostgreSQLSchemaBootstrapRequest,
+    PostgreSQLSchemaBootstrapTableResult,
+    PostgreSQLSchemaBootstrapTableStatus,
     PostgreSQLStatementExecutionContract,
     PostgreSQLTransactionBoundary,
     PostgreSQLTransactionFailurePolicy,
@@ -110,6 +116,8 @@ from carbonfactor_parser.persistence import (
     build_postgresql_insert_statement,
     build_postgresql_persistence_preview,
     build_postgresql_phase1_schema_bootstrap_plan,
+    build_postgresql_phase1_schema_bootstrap_report,
+    build_postgresql_phase1_schema_bootstrap_request,
     build_postgresql_repository_disabled_execution_preview,
     build_postgresql_transaction_plan,
     create_persistence_result,
@@ -198,8 +206,13 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLRuntimeExecutionGateDescription",
     "PostgreSQLRuntimeExecutionGateIssue",
     "PostgreSQLRuntimeExecutionGateStatus",
+    "PostgreSQLSchemaBootstrapMode",
     "PostgreSQLSchemaBootstrapPlan",
     "PostgreSQLSchemaBootstrapPlanStatement",
+    "PostgreSQLSchemaBootstrapReport",
+    "PostgreSQLSchemaBootstrapRequest",
+    "PostgreSQLSchemaBootstrapTableResult",
+    "PostgreSQLSchemaBootstrapTableStatus",
     "PostgreSQLStatementExecutionContract",
     "PostgreSQLTransactionBoundary",
     "PostgreSQLTransactionFailurePolicy",
@@ -222,6 +235,8 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "build_postgresql_insert_statement",
     "build_postgresql_persistence_preview",
     "build_postgresql_phase1_schema_bootstrap_plan",
+    "build_postgresql_phase1_schema_bootstrap_report",
+    "build_postgresql_phase1_schema_bootstrap_request",
     "build_postgresql_repository_disabled_execution_preview",
     "build_postgresql_transaction_plan",
     "create_persistence_result",
@@ -438,12 +453,27 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PostgreSQLRuntimeExecutionGateStatus": (
         postgresql_runtime_execution_gate.PostgreSQLRuntimeExecutionGateStatus
     ),
+    "PostgreSQLSchemaBootstrapMode": (
+        postgresql_schema_bootstrap.PostgreSQLSchemaBootstrapMode
+    ),
     "PostgreSQLSchemaBootstrapPlan": (
         postgresql_schema_bootstrap_planner.PostgreSQLSchemaBootstrapPlan
     ),
     "PostgreSQLSchemaBootstrapPlanStatement": (
         postgresql_schema_bootstrap_planner
         .PostgreSQLSchemaBootstrapPlanStatement
+    ),
+    "PostgreSQLSchemaBootstrapReport": (
+        postgresql_schema_bootstrap.PostgreSQLSchemaBootstrapReport
+    ),
+    "PostgreSQLSchemaBootstrapRequest": (
+        postgresql_schema_bootstrap.PostgreSQLSchemaBootstrapRequest
+    ),
+    "PostgreSQLSchemaBootstrapTableResult": (
+        postgresql_schema_bootstrap.PostgreSQLSchemaBootstrapTableResult
+    ),
+    "PostgreSQLSchemaBootstrapTableStatus": (
+        postgresql_schema_bootstrap.PostgreSQLSchemaBootstrapTableStatus
     ),
     "PostgreSQLStatementExecutionContract": (
         postgresql_connection_session_contract.PostgreSQLStatementExecutionContract
@@ -516,6 +546,14 @@ EXPECTED_PUBLIC_EXPORTS = {
     "build_postgresql_phase1_schema_bootstrap_plan": (
         postgresql_schema_bootstrap_planner
         .build_postgresql_phase1_schema_bootstrap_plan
+    ),
+    "build_postgresql_phase1_schema_bootstrap_report": (
+        postgresql_schema_bootstrap
+        .build_postgresql_phase1_schema_bootstrap_report
+    ),
+    "build_postgresql_phase1_schema_bootstrap_request": (
+        postgresql_schema_bootstrap
+        .build_postgresql_phase1_schema_bootstrap_request
     ),
     "build_postgresql_repository_disabled_execution_preview": (
         postgresql_repository_disabled_execution_preview
@@ -702,9 +740,18 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLRuntimeExecutionGateStatus": (
             PostgreSQLRuntimeExecutionGateStatus
         ),
+        "PostgreSQLSchemaBootstrapMode": PostgreSQLSchemaBootstrapMode,
         "PostgreSQLSchemaBootstrapPlan": PostgreSQLSchemaBootstrapPlan,
         "PostgreSQLSchemaBootstrapPlanStatement": (
             PostgreSQLSchemaBootstrapPlanStatement
+        ),
+        "PostgreSQLSchemaBootstrapReport": PostgreSQLSchemaBootstrapReport,
+        "PostgreSQLSchemaBootstrapRequest": PostgreSQLSchemaBootstrapRequest,
+        "PostgreSQLSchemaBootstrapTableResult": (
+            PostgreSQLSchemaBootstrapTableResult
+        ),
+        "PostgreSQLSchemaBootstrapTableStatus": (
+            PostgreSQLSchemaBootstrapTableStatus
         ),
         "PostgreSQLStatementExecutionContract": PostgreSQLStatementExecutionContract,
         "PostgreSQLTransactionBoundary": PostgreSQLTransactionBoundary,
@@ -749,6 +796,12 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         ),
         "build_postgresql_phase1_schema_bootstrap_plan": (
             build_postgresql_phase1_schema_bootstrap_plan
+        ),
+        "build_postgresql_phase1_schema_bootstrap_report": (
+            build_postgresql_phase1_schema_bootstrap_report
+        ),
+        "build_postgresql_phase1_schema_bootstrap_request": (
+            build_postgresql_phase1_schema_bootstrap_request
         ),
         "build_postgresql_repository_disabled_execution_preview": (
             build_postgresql_repository_disabled_execution_preview
@@ -835,4 +888,5 @@ def test_persistence_all_excludes_internal_module_names() -> None:
     assert "postgresql_repository" not in persistence.__all__
     assert "postgresql_repository_disabled_execution_preview" not in persistence.__all__
     assert "postgresql_runtime_execution_gate" not in persistence.__all__
+    assert "postgresql_schema_bootstrap" not in persistence.__all__
     assert all(not name.startswith("_") for name in persistence.__all__)

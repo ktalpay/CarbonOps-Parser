@@ -72,6 +72,15 @@ from carbonfactor_parser.persistence.postgresql_runtime_execution_gate import (
     describe_postgresql_runtime_execution_gate,
     evaluate_postgresql_runtime_execution_gate,
 )
+from carbonfactor_parser.persistence.postgresql_schema_bootstrap import (
+    PostgreSQLSchemaBootstrapMode,
+    PostgreSQLSchemaBootstrapReport,
+    PostgreSQLSchemaBootstrapRequest,
+    PostgreSQLSchemaBootstrapTableResult,
+    PostgreSQLSchemaBootstrapTableStatus,
+    build_postgresql_phase1_schema_bootstrap_report,
+    build_postgresql_phase1_schema_bootstrap_request,
+)
 from carbonfactor_parser.persistence.postgresql_schema_bootstrap_planner import (
     PostgreSQLSchemaBootstrapPlan,
     PostgreSQLSchemaBootstrapPlanStatement,
@@ -210,8 +219,13 @@ __all__ = (
     "PostgreSQLRuntimeExecutionGateDescription",
     "PostgreSQLRuntimeExecutionGateIssue",
     "PostgreSQLRuntimeExecutionGateStatus",
+    "PostgreSQLSchemaBootstrapMode",
     "PostgreSQLSchemaBootstrapPlan",
     "PostgreSQLSchemaBootstrapPlanStatement",
+    "PostgreSQLSchemaBootstrapReport",
+    "PostgreSQLSchemaBootstrapRequest",
+    "PostgreSQLSchemaBootstrapTableResult",
+    "PostgreSQLSchemaBootstrapTableStatus",
     "PostgreSQLStatementExecutionContract",
     "PostgreSQLTransactionBoundary",
     "PostgreSQLTransactionFailurePolicy",
@@ -234,6 +248,8 @@ __all__ = (
     "build_postgresql_insert_statement",
     "build_postgresql_persistence_preview",
     "build_postgresql_phase1_schema_bootstrap_plan",
+    "build_postgresql_phase1_schema_bootstrap_report",
+    "build_postgresql_phase1_schema_bootstrap_request",
     "build_postgresql_repository_disabled_execution_preview",
     "build_postgresql_transaction_plan",
     "create_persistence_result",
