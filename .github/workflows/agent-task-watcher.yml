@@ -53,8 +53,8 @@ jobs:
 
           PR_BODY="$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json body --jq '.body // ""')"
 
-          TASK_ID="$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[[:space:]]*Task-ID:[[:space:]]*([A-Za-z]+-[0-9A-Za-z-]+)[[:space:]]*$/\1/p' | head -n 1)"
-          ISSUE_NUMBER="$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[[:space:]]*Task-Issue:[[:space:]]*#?([0-9]+)[[:space:]]*$/\1/ip' | head -n 1)"
+          TASK_ID="$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[[:space:]]*Task-ID:[[:space:]]*([A-Za-z]+-[0-9A-Za-z-]+)[[:space:]]*$/\1/p' | tail -n 1)"
+          ISSUE_NUMBER="$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[[:space:]]*Task-Issue:[[:space:]]*#?([0-9]+)[[:space:]]*$/\1/ip' | tail -n 1)"
 
           if [ -z "$TASK_ID" ]; then
             echo "Missing Task-ID in PR #$PR_NUMBER body. No label changes applied."
