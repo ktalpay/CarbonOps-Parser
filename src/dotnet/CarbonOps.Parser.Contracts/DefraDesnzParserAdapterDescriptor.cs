@@ -1,6 +1,6 @@
 namespace CarbonOps.Parser.Contracts;
 
-public sealed record DefraDesnzParserAdapterDescriptor
+public sealed record DefraDesnzParserAdapterDescriptor : IParserAdapterDescriptor
 {
     public string AdapterName { get; }
 
