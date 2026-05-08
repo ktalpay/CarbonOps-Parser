@@ -210,6 +210,89 @@ public static class ContractValidators
         return ContractValidationResult.FromErrors(errors);
     }
 
+    public static ContractValidationResult Validate(this ParserNormalizedOutputRow? value)
+    {
+        var errors = new List<string>();
+
+        if (value is null)
+        {
+            errors.Add("ParserNormalizedOutputRow is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        if (!Enum.IsDefined(value.SourceFamily))
+        {
+            errors.Add("SourceFamily must be a defined source family.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.SourceKey))
+        {
+            errors.Add("SourceKey is required.");
+        }
+
+        if (value.ParserKey is null || string.IsNullOrWhiteSpace(value.ParserKey.Value))
+        {
+            errors.Add("ParserKey is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.ArtifactReference))
+        {
+            errors.Add("ArtifactReference is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.RowIdentifier))
+        {
+            errors.Add("RowIdentifier is required.");
+        }
+
+        if (value.SourceRowNumber <= 0)
+        {
+            errors.Add("SourceRowNumber must be positive when provided.");
+        }
+
+        if (value.ReportingYear is < MinimumReportingYear or > MaximumReportingYear)
+        {
+            errors.Add("ReportingYear must be between 1990 and 2100 when provided.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(value.SourceKey) &&
+            ContractWireNames.TryParseSourceFamilyWireName(value.SourceKey, out var sourceFamily) &&
+            sourceFamily != value.SourceFamily)
+        {
+            errors.Add("SourceKey must match SourceFamily.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(value.SourceKey) &&
+            !ParserAdapterDescriptorRegistry.TryGetBySourceKey(value.SourceKey, out _))
+        {
+            errors.Add("SourceKey must match a registered parser adapter descriptor.");
+        }
+
+        if (Enum.IsDefined(value.SourceFamily) &&
+            ParserAdapterDescriptorRegistry.TryGetBySourceFamily(value.SourceFamily, out var descriptor) &&
+            descriptor is not null &&
+            value.ParserKey is not null &&
+            descriptor.ParserKey != value.ParserKey)
+        {
+            errors.Add("ParserKey must match the registered parser adapter descriptor.");
+        }
+
+        for (var index = 0; index < value.Fields.Count; index++)
+        {
+            if (string.IsNullOrWhiteSpace(value.Fields[index].Key))
+            {
+                errors.Add($"Fields[{index}].Key is required.");
+            }
+        }
+
+        for (var index = 0; index < value.Issues.Count; index++)
+        {
+            AppendErrors(errors, $"Issues[{index}].", value.Issues[index].Validate());
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
     public static ContractValidationResult Validate(this ParserRunIssue? value)
     {
         var errors = new List<string>();
