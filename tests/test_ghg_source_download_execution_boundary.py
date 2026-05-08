@@ -4,6 +4,7 @@ from dataclasses import FrozenInstanceError, replace
 from hashlib import sha256
 import importlib
 from pathlib import Path
+import shutil
 import sys
 import urllib.request
 
@@ -312,6 +313,33 @@ def test_existing_final_target_symlink_is_rejected(tmp_path: Path) -> None:
     )
     assert not (outside / "escape.pdf").exists()
     assert (target_parent / "escape.pdf").is_symlink()
+
+
+def test_parent_symlink_swap_during_transport_cannot_escape_target_root(
+    tmp_path: Path,
+) -> None:
+    target_root = tmp_path / "target-root"
+    outside = tmp_path / "outside"
+    target_parent = target_root / "ghg"
+    target_parent.mkdir(parents=True)
+    outside.mkdir()
+    request = replace(
+        _valid_request(target_root),
+        target_relative_path="ghg/escape.pdf",
+    )
+
+    def swapping_transport(_: str) -> GHGSourceDownloadTransportResponse:
+        shutil.rmtree(target_parent)
+        _create_directory_symlink(outside, target_parent)
+        return GHGSourceDownloadTransportResponse(content=b"escape")
+
+    result = execute_ghg_source_download(request, swapping_transport)
+
+    assert result.status is not GHGSourceDownloadExecutionStatus.DOWNLOADED
+    assert result.downloaded is False
+    assert result.artifact is None
+    assert not (outside / "escape.pdf").exists()
+    assert target_parent.is_symlink()
 
 
 def test_checksum_mismatch_fails_without_writing_file(tmp_path: Path) -> None:

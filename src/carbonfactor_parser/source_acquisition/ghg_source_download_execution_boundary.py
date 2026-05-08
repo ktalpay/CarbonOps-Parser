@@ -140,6 +140,7 @@ class _SafeTargetPath:
     resolved_root: Path
     resolved_parent: Path
     resolved_target_path: Path
+    parent_fd: int
 
 
 def create_ghg_source_download_execution_request(
@@ -383,93 +384,99 @@ def execute_ghg_source_download(
         )
 
     try:
-        response = transport(request.source_reference_uri)
-    except Exception as error:  # noqa: BLE001
-        return GHGSourceDownloadExecutionResult(
-            status=GHGSourceDownloadExecutionStatus.FAILED,
-            request=request,
-            issues=(
-                GHGSourceDownloadExecutionIssue(
-                    code="GHG_SOURCE_DOWNLOAD_TRANSPORT_FAILED",
-                    message=f"transport failed: {error}",
-                    field_name="source_reference_uri",
+        try:
+            response = transport(request.source_reference_uri)
+        except Exception as error:  # noqa: BLE001
+            return GHGSourceDownloadExecutionResult(
+                status=GHGSourceDownloadExecutionStatus.FAILED,
+                request=request,
+                issues=(
+                    GHGSourceDownloadExecutionIssue(
+                        code="GHG_SOURCE_DOWNLOAD_TRANSPORT_FAILED",
+                        message=f"transport failed: {error}",
+                        field_name="source_reference_uri",
+                    ),
                 ),
-            ),
-        )
+            )
 
-    response_validation = _validate_transport_response(response)
-    if not response_validation.is_valid:
-        return GHGSourceDownloadExecutionResult(
-            status=GHGSourceDownloadExecutionStatus.FAILED,
-            request=request,
-            issues=response_validation.issues,
-        )
+        response_validation = _validate_transport_response(response)
+        if not response_validation.is_valid:
+            return GHGSourceDownloadExecutionResult(
+                status=GHGSourceDownloadExecutionStatus.FAILED,
+                request=request,
+                issues=response_validation.issues,
+            )
 
-    content = bytes(response.content)
-    checksum_sha256 = sha256(content).hexdigest()
-    if (
-        request.expected_checksum_sha256 is not None
-        and checksum_sha256.lower() != request.expected_checksum_sha256.lower()
-    ):
-        return GHGSourceDownloadExecutionResult(
-            status=GHGSourceDownloadExecutionStatus.FAILED,
-            request=request,
-            issues=(
-                GHGSourceDownloadExecutionIssue(
-                    code="GHG_SOURCE_DOWNLOAD_CHECKSUM_MISMATCH",
-                    message="downloaded content checksum did not match expected value.",
-                    field_name="expected_checksum_sha256",
+        content = bytes(response.content)
+        checksum_sha256 = sha256(content).hexdigest()
+        if (
+            request.expected_checksum_sha256 is not None
+            and checksum_sha256.lower() != request.expected_checksum_sha256.lower()
+        ):
+            return GHGSourceDownloadExecutionResult(
+                status=GHGSourceDownloadExecutionStatus.FAILED,
+                request=request,
+                issues=(
+                    GHGSourceDownloadExecutionIssue(
+                        code="GHG_SOURCE_DOWNLOAD_CHECKSUM_MISMATCH",
+                        message=(
+                            "downloaded content checksum did not match expected "
+                            "value."
+                        ),
+                        field_name="expected_checksum_sha256",
+                    ),
                 ),
-            ),
-        )
+            )
 
-    try:
-        _write_content_to_safe_target(
-            safe_target,
-            content,
-            allow_overwrite=request.allow_overwrite,
-        )
-    except Exception as error:  # noqa: BLE001
-        issue_code = "GHG_SOURCE_DOWNLOAD_WRITE_FAILED"
-        if isinstance(error, FileExistsError):
-            issue_code = "GHG_SOURCE_DOWNLOAD_TARGET_EXISTS"
-        elif isinstance(error, OSError) and error.errno == errno.ELOOP:
-            issue_code = "GHG_SOURCE_DOWNLOAD_TARGET_SYMLINK_UNSAFE"
-        return GHGSourceDownloadExecutionResult(
-            status=GHGSourceDownloadExecutionStatus.FAILED,
-            request=request,
-            issues=(
-                GHGSourceDownloadExecutionIssue(
-                    code=issue_code,
-                    message=f"target write failed: {error}",
-                    field_name="target_relative_path",
+        try:
+            _write_content_to_safe_target(
+                safe_target,
+                content,
+                allow_overwrite=request.allow_overwrite,
+            )
+        except Exception as error:  # noqa: BLE001
+            issue_code = "GHG_SOURCE_DOWNLOAD_WRITE_FAILED"
+            if isinstance(error, FileExistsError):
+                issue_code = "GHG_SOURCE_DOWNLOAD_TARGET_EXISTS"
+            elif isinstance(error, OSError) and error.errno == errno.ELOOP:
+                issue_code = "GHG_SOURCE_DOWNLOAD_TARGET_SYMLINK_UNSAFE"
+            return GHGSourceDownloadExecutionResult(
+                status=GHGSourceDownloadExecutionStatus.FAILED,
+                request=request,
+                issues=(
+                    GHGSourceDownloadExecutionIssue(
+                        code=issue_code,
+                        message=f"target write failed: {error}",
+                        field_name="target_relative_path",
+                    ),
                 ),
-            ),
-        )
+            )
 
-    artifact = GHGSourceDownloadedArtifact(
-        source_family=request.source_family,
-        source_key=request.source_key,
-        candidate_id=request.candidate_id,
-        artifact_id=f"ghg_source_download_artifact_{request.candidate_id}",
-        artifact_kind=request.artifact_kind,
-        source_reference_uri=request.source_reference_uri,
-        local_path=str(safe_target.resolved_target_path),
-        original_filename=safe_target.resolved_target_path.name,
-        checksum_sha256=checksum_sha256,
-        size_bytes=len(content),
-        content_type=response.content_type or request.content_type,
-        extension=request.extension,
-        final_uri=response.final_uri,
-        document_year=request.document_year,
-        reporting_year=request.reporting_year,
-        version_label=request.version_label,
-    )
-    return GHGSourceDownloadExecutionResult(
-        status=GHGSourceDownloadExecutionStatus.DOWNLOADED,
-        request=request,
-        artifact=artifact,
-    )
+        artifact = GHGSourceDownloadedArtifact(
+            source_family=request.source_family,
+            source_key=request.source_key,
+            candidate_id=request.candidate_id,
+            artifact_id=f"ghg_source_download_artifact_{request.candidate_id}",
+            artifact_kind=request.artifact_kind,
+            source_reference_uri=request.source_reference_uri,
+            local_path=str(safe_target.resolved_target_path),
+            original_filename=safe_target.resolved_target_path.name,
+            checksum_sha256=checksum_sha256,
+            size_bytes=len(content),
+            content_type=response.content_type or request.content_type,
+            extension=request.extension,
+            final_uri=response.final_uri,
+            document_year=request.document_year,
+            reporting_year=request.reporting_year,
+            version_label=request.version_label,
+        )
+        return GHGSourceDownloadExecutionResult(
+            status=GHGSourceDownloadExecutionStatus.DOWNLOADED,
+            request=request,
+            artifact=artifact,
+        )
+    finally:
+        _close_safe_target_path(safe_target)
 
 
 def validate_ghg_source_download_execution_result(
@@ -760,15 +767,50 @@ def _prepare_safe_target_path(
     if issues:
         return None, tuple(issues)
 
+    parent_fd, parent_fd_issue = _open_safe_parent_directory_fd(resolved_parent)
+    if parent_fd_issue is not None:
+        return None, (parent_fd_issue,)
+
     return (
         _SafeTargetPath(
             target_path=target_path,
             resolved_root=resolved_root,
             resolved_parent=resolved_parent,
             resolved_target_path=resolved_target_path,
+            parent_fd=parent_fd,
         ),
         (),
     )
+
+
+def _open_safe_parent_directory_fd(
+    resolved_parent: Path,
+) -> tuple[int, GHGSourceDownloadExecutionIssue | None]:
+    if not hasattr(os, "O_NOFOLLOW") or not hasattr(os, "O_DIRECTORY"):
+        return -1, GHGSourceDownloadExecutionIssue(
+            code="GHG_SOURCE_DOWNLOAD_TARGET_FD_UNSUPPORTED",
+            message="platform does not expose required safe directory flags.",
+            field_name="target_relative_path",
+        )
+    if os.open not in getattr(os, "supports_dir_fd", set()):
+        return -1, GHGSourceDownloadExecutionIssue(
+            code="GHG_SOURCE_DOWNLOAD_TARGET_FD_UNSUPPORTED",
+            message="platform does not support directory-relative file opening.",
+            field_name="target_relative_path",
+        )
+
+    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    try:
+        return os.open(resolved_parent, directory_flags), None
+    except OSError as error:
+        issue_code = "GHG_SOURCE_DOWNLOAD_TARGET_PARENT_OPEN_FAILED"
+        if error.errno == errno.ELOOP:
+            issue_code = "GHG_SOURCE_DOWNLOAD_TARGET_SYMLINK_UNSAFE"
+        return -1, GHGSourceDownloadExecutionIssue(
+            code=issue_code,
+            message=f"target parent directory could not be opened safely: {error}",
+            field_name="target_relative_path",
+        )
 
 
 def _write_content_to_safe_target(
@@ -777,28 +819,47 @@ def _write_content_to_safe_target(
     *,
     allow_overwrite: bool,
 ) -> None:
+    _ensure_parent_path_still_matches_open_fd(safe_target)
+
     flags = os.O_WRONLY | os.O_CREAT
     flags |= os.O_TRUNC if allow_overwrite else os.O_EXCL
-    flags |= getattr(os, "O_NOFOLLOW", 0)
-    directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    flags |= os.O_NOFOLLOW
 
-    directory_fd = os.open(safe_target.resolved_parent, directory_flags)
+    file_fd = os.open(
+        safe_target.resolved_target_path.name,
+        flags,
+        0o600,
+        dir_fd=safe_target.parent_fd,
+    )
     try:
-        file_fd = os.open(
-            safe_target.resolved_target_path.name,
-            flags,
-            0o600,
-            dir_fd=directory_fd,
+        target_file = os.fdopen(file_fd, "wb")
+    except Exception:
+        os.close(file_fd)
+        raise
+    with target_file:
+        target_file.write(content)
+
+
+def _close_safe_target_path(safe_target: _SafeTargetPath) -> None:
+    os.close(safe_target.parent_fd)
+
+
+def _ensure_parent_path_still_matches_open_fd(
+    safe_target: _SafeTargetPath,
+) -> None:
+    if safe_target.resolved_parent.is_symlink():
+        raise OSError(errno.ELOOP, "target parent path changed to a symlink")
+
+    parent_fd_stat = os.fstat(safe_target.parent_fd)
+    parent_path_stat = safe_target.resolved_parent.stat()
+    if (
+        parent_fd_stat.st_dev != parent_path_stat.st_dev
+        or parent_fd_stat.st_ino != parent_path_stat.st_ino
+    ):
+        raise OSError(
+            getattr(errno, "ESTALE", errno.EIO),
+            "target parent path changed after validation",
         )
-        try:
-            target_file = os.fdopen(file_fd, "wb")
-        except Exception:
-            os.close(file_fd)
-            raise
-        with target_file:
-            target_file.write(content)
-    finally:
-        os.close(directory_fd)
 
 
 def _is_relative_to(path: Path, parent: Path) -> bool:
