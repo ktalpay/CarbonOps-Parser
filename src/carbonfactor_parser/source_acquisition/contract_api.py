@@ -35,6 +35,16 @@ from carbonfactor_parser.source_acquisition.run_contract import (
     validate_source_acquisition_run_request,
     validate_source_acquisition_run_result,
 )
+from carbonfactor_parser.source_acquisition.source_artifact_parser_input_bridge_contract import (
+    SourceArtifactParserInputBridgeEntry,
+    SourceArtifactParserInputBridgeResult,
+    SourceArtifactParserInputBridgeValidationIssue,
+    SourceArtifactParserInputBridgeValidationResult,
+    create_phase1_source_artifact_parser_input_bridge,
+    create_source_artifact_parser_input_bridge_entry,
+    validate_source_artifact_parser_input_bridge_entry,
+    validate_source_artifact_parser_input_bridge_result,
+)
 
 
 __all__ = (
@@ -48,17 +58,25 @@ __all__ = (
     "SourceDiscoveryCandidateResult",
     "SourceDiscoveryCandidateValidationIssue",
     "SourceDiscoveryCandidateValidationResult",
+    "SourceArtifactParserInputBridgeEntry",
+    "SourceArtifactParserInputBridgeResult",
+    "SourceArtifactParserInputBridgeValidationIssue",
+    "SourceArtifactParserInputBridgeValidationResult",
     "SourceDownloadArtifact",
     "SourceDownloadArtifactResult",
     "SourceDownloadArtifactValidationIssue",
     "SourceDownloadArtifactValidationResult",
+    "create_phase1_source_artifact_parser_input_bridge",
     "create_phase1_source_acquisition_run_requests",
     "create_phase1_source_acquisition_run_results",
     "create_phase1_source_discovery_candidates",
     "create_phase1_source_download_artifacts",
+    "create_source_artifact_parser_input_bridge_entry",
     "create_source_acquisition_run_request",
     "create_source_acquisition_run_result",
     "create_source_download_artifact_from_candidate",
+    "validate_source_artifact_parser_input_bridge_entry",
+    "validate_source_artifact_parser_input_bridge_result",
     "validate_source_acquisition_run_request",
     "validate_source_acquisition_run_result",
     "validate_source_discovery_candidate",

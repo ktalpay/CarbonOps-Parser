@@ -17,17 +17,25 @@ EXPECTED_CONTRACT_API_SYMBOLS = (
     "SourceDiscoveryCandidateResult",
     "SourceDiscoveryCandidateValidationIssue",
     "SourceDiscoveryCandidateValidationResult",
+    "SourceArtifactParserInputBridgeEntry",
+    "SourceArtifactParserInputBridgeResult",
+    "SourceArtifactParserInputBridgeValidationIssue",
+    "SourceArtifactParserInputBridgeValidationResult",
     "SourceDownloadArtifact",
     "SourceDownloadArtifactResult",
     "SourceDownloadArtifactValidationIssue",
     "SourceDownloadArtifactValidationResult",
+    "create_phase1_source_artifact_parser_input_bridge",
     "create_phase1_source_acquisition_run_requests",
     "create_phase1_source_acquisition_run_results",
     "create_phase1_source_discovery_candidates",
     "create_phase1_source_download_artifacts",
+    "create_source_artifact_parser_input_bridge_entry",
     "create_source_acquisition_run_request",
     "create_source_acquisition_run_result",
     "create_source_download_artifact_from_candidate",
+    "validate_source_artifact_parser_input_bridge_entry",
+    "validate_source_artifact_parser_input_bridge_result",
     "validate_source_acquisition_run_request",
     "validate_source_acquisition_run_result",
     "validate_source_discovery_candidate",
@@ -96,11 +104,16 @@ def test_public_source_acquisition_contract_api_exports_work_together() -> None:
         request,
         status=contract_api.SourceAcquisitionRunStatus.COMPLETED,
     )
+    bridge = contract_api.create_phase1_source_artifact_parser_input_bridge()
 
     assert result.source_key == "ghg_protocol"
     assert result.status is contract_api.SourceAcquisitionRunStatus.COMPLETED
     assert contract_api.validate_source_acquisition_run_request(request).is_valid
     assert contract_api.validate_source_acquisition_run_result(result).is_valid
+    assert bridge.entries[0].parser_input_artifact.source_key == "ghg_protocol"
+    assert contract_api.validate_source_artifact_parser_input_bridge_result(
+        bridge,
+    ).is_valid
 
 
 def test_source_acquisition_package_import_is_lazy_and_runtime_passive() -> None:
@@ -166,6 +179,7 @@ def test_source_acquisition_contract_api_does_not_export_internal_module_names()
     assert "discovery_candidate_contract" not in contract_api.__all__
     assert "download_artifact_contract" not in contract_api.__all__
     assert "run_contract" not in contract_api.__all__
+    assert "source_artifact_parser_input_bridge_contract" not in contract_api.__all__
     assert all(not name.startswith("_") for name in contract_api.__all__)
 
 
