@@ -1,0 +1,105 @@
+name: "Parity Task"
+description: "Create a Python/.NET parity review task."
+title: "[PARITY] "
+labels:
+  - parity-task
+body:
+  - type: input
+    id: task_id
+    attributes:
+      label: "Task ID"
+      description: "Example: PT-004"
+      placeholder: "PT-004"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: lane
+    attributes:
+      label: "Lane"
+      options:
+        - parity
+    validations:
+      required: true
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: "Status"
+      options:
+        - blocked
+        - ready
+        - in-progress
+        - in-review
+        - needs-fix
+        - merged
+    validations:
+      required: true
+
+  - type: dropdown
+    id: agent
+    attributes:
+      label: "Agent"
+      options:
+        - parity-agent
+    validations:
+      required: true
+
+  - type: input
+    id: python_task
+    attributes:
+      label: "Python task"
+      placeholder: "PY-004"
+    validations:
+      required: true
+
+  - type: input
+    id: dotnet_task
+    attributes:
+      label: ".NET task"
+      placeholder: "DN-004"
+    validations:
+      required: true
+
+  - type: input
+    id: depends_on
+    attributes:
+      label: "Depends on"
+      description: "Usually the paired Python and .NET tasks."
+      placeholder: "PY-004, DN-004"
+    validations:
+      required: true
+
+  - type: textarea
+    id: parity_scope
+    attributes:
+      label: "Parity scope"
+      description: "Contracts and behavior that must be compared."
+    validations:
+      required: true
+
+  - type: textarea
+    id: parity_rules
+    attributes:
+      label: "Parity rules"
+      value: |
+        The parity-agent compares Python and .NET behavior, contracts, naming, schema alignment, state transitions, and error semantics.
+        The parity-agent must not modify code unless explicitly requested.
+        The parity-agent must identify drift, risks, and required follow-up tasks.
+    validations:
+      required: true
+
+  - type: textarea
+    id: required_final_report
+    attributes:
+      label: "Required final report"
+      value: |
+        - Verdict: aligned / drift-found / blocked
+        - Python side reviewed
+        - .NET side reviewed
+        - Contract comparison
+        - Drift findings
+        - Required follow-up tasks
+        - Remaining risks
+    validations:
+      required: true

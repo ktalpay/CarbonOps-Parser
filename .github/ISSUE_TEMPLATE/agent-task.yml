@@ -1,0 +1,133 @@
+name: "Agent Task"
+description: "Create an implementation or ops task for an assigned agent lane."
+title: "[TASK] "
+labels:
+  - agent-task
+body:
+  - type: input
+    id: task_id
+    attributes:
+      label: "Task ID"
+      description: "Example: PY-004, DN-004, OPS-004"
+      placeholder: "DN-004"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: lane
+    attributes:
+      label: "Lane"
+      options:
+        - python
+        - dotnet
+        - ops
+    validations:
+      required: true
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: "Status"
+      options:
+        - blocked
+        - ready
+        - in-progress
+        - in-review
+        - needs-fix
+        - merged
+    validations:
+      required: true
+
+  - type: dropdown
+    id: agent
+    attributes:
+      label: "Agent"
+      options:
+        - python-agent
+        - dotnet-agent
+        - ops-agent
+    validations:
+      required: true
+
+  - type: input
+    id: base_branch
+    attributes:
+      label: "Base branch"
+      placeholder: "develop"
+    validations:
+      required: true
+
+  - type: input
+    id: expected_branch
+    attributes:
+      label: "Expected branch"
+      placeholder: "feature/dn-004-source-acquisition-run-contract"
+    validations:
+      required: true
+
+  - type: input
+    id: depends_on
+    attributes:
+      label: "Depends on"
+      description: "Comma-separated task IDs. Leave empty if none."
+      placeholder: "DN-003"
+
+  - type: input
+    id: unblocks
+    attributes:
+      label: "Unblocks"
+      description: "Comma-separated task IDs. Leave empty if none."
+      placeholder: "DN-005, PT-004"
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: "Scope"
+      description: "What this task must do."
+    validations:
+      required: true
+
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: "Non-goals"
+      description: "What this task must not do."
+    validations:
+      required: true
+
+  - type: textarea
+    id: allowed_files
+    attributes:
+      label: "Allowed files"
+      description: "Files or paths the agent may change."
+    validations:
+      required: true
+
+  - type: textarea
+    id: forbidden_changes
+    attributes:
+      label: "Forbidden changes"
+      description: "Explicitly disallowed changes."
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: "Acceptance criteria"
+      description: "Conditions required for completion."
+    validations:
+      required: true
+
+  - type: textarea
+    id: required_final_report
+    attributes:
+      label: "Required final report"
+      value: |
+        - Summary
+        - Files changed
+        - Validation performed
+        - Remaining risks
+        - Commit-ready or merge-ready verdict
+    validations:
+      required: true
