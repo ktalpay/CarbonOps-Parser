@@ -260,6 +260,60 @@ def test_target_exists_blocks_before_transport_by_default(tmp_path: Path) -> Non
     assert target_path.read_bytes() == b"existing"
 
 
+def test_symlinked_parent_path_cannot_escape_target_root(tmp_path: Path) -> None:
+    target_root = tmp_path / "target-root"
+    outside = tmp_path / "outside"
+    target_root.mkdir()
+    outside.mkdir()
+    _create_directory_symlink(outside, target_root / "link")
+    request = replace(
+        _valid_request(target_root),
+        target_relative_path="link/escape.pdf",
+    )
+
+    result = execute_ghg_source_download(
+        request,
+        lambda _: GHGSourceDownloadTransportResponse(content=b"escape"),
+    )
+
+    assert result.status is GHGSourceDownloadExecutionStatus.BLOCKED
+    assert result.downloaded is False
+    assert result.artifact is None
+    assert _issue_codes(result.issues) == (
+        "GHG_SOURCE_DOWNLOAD_TARGET_SYMLINK_UNSAFE",
+    )
+    assert not (outside / "escape.pdf").exists()
+    assert not (target_root / "link/escape.pdf").exists()
+
+
+def test_existing_final_target_symlink_is_rejected(tmp_path: Path) -> None:
+    target_root = tmp_path / "target-root"
+    outside = tmp_path / "outside"
+    target_parent = target_root / "ghg"
+    target_parent.mkdir(parents=True)
+    outside.mkdir()
+    (target_parent / "escape.pdf").symlink_to(outside / "escape.pdf")
+    request = replace(
+        _valid_request(target_root),
+        target_relative_path="ghg/escape.pdf",
+        allow_overwrite=True,
+    )
+
+    result = execute_ghg_source_download(
+        request,
+        lambda _: GHGSourceDownloadTransportResponse(content=b"escape"),
+    )
+
+    assert result.status is GHGSourceDownloadExecutionStatus.BLOCKED
+    assert result.downloaded is False
+    assert result.artifact is None
+    assert _issue_codes(result.issues) == (
+        "GHG_SOURCE_DOWNLOAD_TARGET_SYMLINK_UNSAFE",
+    )
+    assert not (outside / "escape.pdf").exists()
+    assert (target_parent / "escape.pdf").is_symlink()
+
+
 def test_checksum_mismatch_fails_without_writing_file(tmp_path: Path) -> None:
     request = replace(_valid_request(tmp_path), expected_checksum_sha256="a" * 64)
 
@@ -451,6 +505,13 @@ def _unexpected_transport(
     source_reference_uri: str,
 ) -> GHGSourceDownloadTransportResponse:
     raise AssertionError(f"unexpected transport call for {source_reference_uri}")
+
+
+def _create_directory_symlink(target: Path, link: Path) -> None:
+    try:
+        link.symlink_to(target, target_is_directory=True)
+    except OSError as error:
+        pytest.skip(f"directory symlink unavailable: {error}")
 
 
 def _issue_codes(

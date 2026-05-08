@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+import errno
 from hashlib import sha256
+import os
 from pathlib import Path
 from typing import Protocol
 from urllib.parse import urlparse
@@ -130,6 +132,14 @@ class GHGSourceDownloadExecutionResult:
     @property
     def downloaded(self) -> bool:
         return self.status is GHGSourceDownloadExecutionStatus.DOWNLOADED
+
+
+@dataclass(frozen=True)
+class _SafeTargetPath:
+    target_path: Path
+    resolved_root: Path
+    resolved_parent: Path
+    resolved_target_path: Path
 
 
 def create_ghg_source_download_execution_request(
@@ -352,15 +362,21 @@ def execute_ghg_source_download(
             issues=validation.issues,
         )
 
-    target_path = _target_path(request)
-    if target_path.exists() and not request.allow_overwrite:
+    safe_target, target_issues = _prepare_safe_target_path(request)
+    if target_issues:
+        return GHGSourceDownloadExecutionResult(
+            status=GHGSourceDownloadExecutionStatus.BLOCKED,
+            request=request,
+            issues=target_issues,
+        )
+    if safe_target is None:
         return GHGSourceDownloadExecutionResult(
             status=GHGSourceDownloadExecutionStatus.BLOCKED,
             request=request,
             issues=(
                 GHGSourceDownloadExecutionIssue(
-                    code="GHG_SOURCE_DOWNLOAD_TARGET_EXISTS",
-                    message="target path already exists and overwrite is disabled.",
+                    code="GHG_SOURCE_DOWNLOAD_TARGET_PATH_UNRESOLVED",
+                    message="target path could not be resolved safely.",
                     field_name="target_relative_path",
                 ),
             ),
@@ -408,15 +424,23 @@ def execute_ghg_source_download(
         )
 
     try:
-        target_path.parent.mkdir(parents=True, exist_ok=True)
-        target_path.write_bytes(content)
+        _write_content_to_safe_target(
+            safe_target,
+            content,
+            allow_overwrite=request.allow_overwrite,
+        )
     except Exception as error:  # noqa: BLE001
+        issue_code = "GHG_SOURCE_DOWNLOAD_WRITE_FAILED"
+        if isinstance(error, FileExistsError):
+            issue_code = "GHG_SOURCE_DOWNLOAD_TARGET_EXISTS"
+        elif isinstance(error, OSError) and error.errno == errno.ELOOP:
+            issue_code = "GHG_SOURCE_DOWNLOAD_TARGET_SYMLINK_UNSAFE"
         return GHGSourceDownloadExecutionResult(
             status=GHGSourceDownloadExecutionStatus.FAILED,
             request=request,
             issues=(
                 GHGSourceDownloadExecutionIssue(
-                    code="GHG_SOURCE_DOWNLOAD_WRITE_FAILED",
+                    code=issue_code,
                     message=f"target write failed: {error}",
                     field_name="target_relative_path",
                 ),
@@ -430,8 +454,8 @@ def execute_ghg_source_download(
         artifact_id=f"ghg_source_download_artifact_{request.candidate_id}",
         artifact_kind=request.artifact_kind,
         source_reference_uri=request.source_reference_uri,
-        local_path=str(target_path),
-        original_filename=target_path.name,
+        local_path=str(safe_target.resolved_target_path),
+        original_filename=safe_target.resolved_target_path.name,
         checksum_sha256=checksum_sha256,
         size_bytes=len(content),
         content_type=response.content_type or request.content_type,
@@ -600,6 +624,189 @@ def _validate_target_paths(
                 field_name="target_relative_path",
             )
         )
+
+
+def _prepare_safe_target_path(
+    request: GHGSourceDownloadExecutionRequest,
+) -> tuple[_SafeTargetPath | None, tuple[GHGSourceDownloadExecutionIssue, ...]]:
+    issues: list[GHGSourceDownloadExecutionIssue] = []
+    target_root = Path(request.target_root)
+    target_relative_path = Path(request.target_relative_path)
+
+    try:
+        target_root.mkdir(parents=True, exist_ok=True)
+    except OSError as error:
+        return None, (
+            GHGSourceDownloadExecutionIssue(
+                code="GHG_SOURCE_DOWNLOAD_TARGET_ROOT_CREATE_FAILED",
+                message=f"target_root could not be created: {error}",
+                field_name="target_root",
+            ),
+        )
+
+    if not target_root.is_dir():
+        return None, (
+            GHGSourceDownloadExecutionIssue(
+                code="GHG_SOURCE_DOWNLOAD_TARGET_ROOT_NOT_DIRECTORY",
+                message="target_root must resolve to a directory.",
+                field_name="target_root",
+            ),
+        )
+
+    try:
+        resolved_root = target_root.resolve(strict=True)
+    except OSError as error:
+        return None, (
+            GHGSourceDownloadExecutionIssue(
+                code="GHG_SOURCE_DOWNLOAD_TARGET_ROOT_RESOLVE_FAILED",
+                message=f"target_root could not be resolved: {error}",
+                field_name="target_root",
+            ),
+        )
+
+    current_path = target_root
+    resolved_parent = resolved_root
+    for part in target_relative_path.parts[:-1]:
+        current_path = current_path / part
+        if current_path.is_symlink():
+            issues.append(
+                GHGSourceDownloadExecutionIssue(
+                    code="GHG_SOURCE_DOWNLOAD_TARGET_SYMLINK_UNSAFE",
+                    message="target parent path must not contain symlinks.",
+                    field_name="target_relative_path",
+                )
+            )
+            continue
+        try:
+            if current_path.exists():
+                if not current_path.is_dir():
+                    issues.append(
+                        GHGSourceDownloadExecutionIssue(
+                            code="GHG_SOURCE_DOWNLOAD_TARGET_PARENT_NOT_DIRECTORY",
+                            message="target parent path must be a directory.",
+                            field_name="target_relative_path",
+                        )
+                    )
+                    continue
+            else:
+                current_path.mkdir()
+        except OSError as error:
+            issues.append(
+                GHGSourceDownloadExecutionIssue(
+                    code="GHG_SOURCE_DOWNLOAD_TARGET_PARENT_CREATE_FAILED",
+                    message=f"target parent path could not be prepared: {error}",
+                    field_name="target_relative_path",
+                )
+            )
+            continue
+
+        try:
+            resolved_parent = current_path.resolve(strict=True)
+        except OSError as error:
+            issues.append(
+                GHGSourceDownloadExecutionIssue(
+                    code="GHG_SOURCE_DOWNLOAD_TARGET_PARENT_RESOLVE_FAILED",
+                    message=f"target parent path could not be resolved: {error}",
+                    field_name="target_relative_path",
+                )
+            )
+            continue
+        if not _is_relative_to(resolved_parent, resolved_root):
+            issues.append(
+                GHGSourceDownloadExecutionIssue(
+                    code="GHG_SOURCE_DOWNLOAD_TARGET_CONTAINMENT_UNSAFE",
+                    message="resolved target parent escapes target_root.",
+                    field_name="target_relative_path",
+                )
+            )
+
+    target_path = target_root / target_relative_path
+    if target_path.is_symlink():
+        issues.append(
+            GHGSourceDownloadExecutionIssue(
+                code="GHG_SOURCE_DOWNLOAD_TARGET_SYMLINK_UNSAFE",
+                message="target path must not be an existing symlink.",
+                field_name="target_relative_path",
+            )
+        )
+    elif target_path.exists():
+        if target_path.is_dir():
+            issues.append(
+                GHGSourceDownloadExecutionIssue(
+                    code="GHG_SOURCE_DOWNLOAD_TARGET_NOT_FILE",
+                    message="target path must not be a directory.",
+                    field_name="target_relative_path",
+                )
+            )
+        elif not request.allow_overwrite:
+            issues.append(
+                GHGSourceDownloadExecutionIssue(
+                    code="GHG_SOURCE_DOWNLOAD_TARGET_EXISTS",
+                    message="target path already exists and overwrite is disabled.",
+                    field_name="target_relative_path",
+                )
+            )
+
+    resolved_target_path = resolved_parent / target_relative_path.name
+    if not _is_relative_to(resolved_target_path, resolved_root):
+        issues.append(
+            GHGSourceDownloadExecutionIssue(
+                code="GHG_SOURCE_DOWNLOAD_TARGET_CONTAINMENT_UNSAFE",
+                message="resolved target path escapes target_root.",
+                field_name="target_relative_path",
+            )
+        )
+
+    if issues:
+        return None, tuple(issues)
+
+    return (
+        _SafeTargetPath(
+            target_path=target_path,
+            resolved_root=resolved_root,
+            resolved_parent=resolved_parent,
+            resolved_target_path=resolved_target_path,
+        ),
+        (),
+    )
+
+
+def _write_content_to_safe_target(
+    safe_target: _SafeTargetPath,
+    content: bytes,
+    *,
+    allow_overwrite: bool,
+) -> None:
+    flags = os.O_WRONLY | os.O_CREAT
+    flags |= os.O_TRUNC if allow_overwrite else os.O_EXCL
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+
+    directory_fd = os.open(safe_target.resolved_parent, directory_flags)
+    try:
+        file_fd = os.open(
+            safe_target.resolved_target_path.name,
+            flags,
+            0o600,
+            dir_fd=directory_fd,
+        )
+        try:
+            target_file = os.fdopen(file_fd, "wb")
+        except Exception:
+            os.close(file_fd)
+            raise
+        with target_file:
+            target_file.write(content)
+    finally:
+        os.close(directory_fd)
+
+
+def _is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+    except ValueError:
+        return False
+    return True
 
 
 def _validate_transport_response(
