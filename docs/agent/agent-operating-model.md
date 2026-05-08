@@ -120,6 +120,7 @@ Examples:
 Every PR must include:
 
 - Task ID
+- Task-Issue metadata (`Task-Issue: #<number>`)
 - linked GitHub issue
 - summary
 - files changed
@@ -131,7 +132,17 @@ Recommended PR metadata:
 
 ```text
 Task-ID: DN-004
+Task-Issue: #123
 Closes #123
+```
+
+PR bodies should end with the task footer block so automation can parse the canonical task mapping deterministically:
+
+```text
+Task-ID: DN-004
+Task-Issue: #123
+```
+
 Review Requirements
 
 The review-agent must review the PR against:

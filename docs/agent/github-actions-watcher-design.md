@@ -52,15 +52,21 @@ Scheduled polling can be added later if needed.
 
 PR Requirements
 
-Each agent PR must include a machine-readable task identifier in the body:
+Each agent PR must include machine-readable task metadata in the body:
 
 Task-ID: DN-004
+Task-Issue: #123
 
 A PR should also link the GitHub issue:
 
 Closes #123
 
-The watcher should prefer Task-ID as the canonical task identity.
+The watcher uses `Task-Issue` to select the issue to label and `Task-ID` as canonical task identity metadata.
+
+PR bodies should end with this footer block:
+
+Task-ID: DN-004
+Task-Issue: #123
 
 Task Issue Requirements
 
@@ -84,7 +90,7 @@ Completed Task Flow
 When a PR is merged:
 
 Confirm the PR was actually merged.
-Read Task-ID from the PR body.
+Read Task-ID and Task-Issue from the PR body.
 Find the matching task issue.
 Remove active status labels from the issue:
 status:ready
