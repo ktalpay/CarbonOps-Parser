@@ -132,6 +132,7 @@ This task does not implement:
 ## 13) Related Documentation
 
 - [PostgreSQL Phase 1 Schema Contract](postgresql-phase1-schema-contract.md)
+- [PostgreSQL Schema Bootstrap Execution Adapter Boundary](postgresql-schema-bootstrap-execution-adapter.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
 - [Database Startup](database-startup.md)
 - [Documentation Index](index.md)
