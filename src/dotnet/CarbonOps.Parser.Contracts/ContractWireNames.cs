@@ -56,6 +56,13 @@ public static class ContractWireNames
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown parser source format."),
         };
 
+    public static string ToWireName(this ParserAdapterReadiness value) =>
+        value switch
+        {
+            ParserAdapterReadiness.ExecutionNotImplemented => "execution_not_implemented",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown parser adapter readiness."),
+        };
+
     public static bool TryParseSourceFamilyWireName(string? wireName, out SourceFamily value)
     {
         value = wireName switch
@@ -132,5 +139,16 @@ public static class ContractWireNames
         };
 
         return wireName is "discovery_reference";
+    }
+
+    public static bool TryParseParserAdapterReadinessWireName(string? wireName, out ParserAdapterReadiness value)
+    {
+        value = wireName switch
+        {
+            "execution_not_implemented" => ParserAdapterReadiness.ExecutionNotImplemented,
+            _ => default,
+        };
+
+        return wireName is "execution_not_implemented";
     }
 }
