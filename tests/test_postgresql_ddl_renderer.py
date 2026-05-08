@@ -8,9 +8,11 @@ import pytest
 
 from carbonfactor_parser.persistence.postgresql_schema_catalog import (
     ColumnDefinition,
+    ForeignKeyDefinition,
     IndexDefinition,
     PostgreSQLDataType,
     TableDefinition,
+    UniqueConstraintDefinition,
 )
 from carbonfactor_parser.persistence.postgresql_ddl_renderer import (
     _render_identifier,
@@ -200,3 +202,56 @@ def test_different_long_identifiers_with_same_visible_prefix_do_not_collapse() -
     assert first_rendered != second_rendered
     assert f"CREATE INDEX {first_rendered} ON good_table (id);" in statements
     assert f"CREATE INDEX {second_rendered} ON good_table (id);" in statements
+
+
+def test_structured_renderer_rejects_unknown_unique_and_foreign_key_columns() -> None:
+    invalid_table = TableDefinition(
+        name="good_table",
+        columns=(
+            ColumnDefinition(
+                "id",
+                PostgreSQLDataType.UUID,
+                nullable=False,
+                is_primary_key=True,
+            ),
+        ),
+        foreign_keys=(
+            ForeignKeyDefinition(
+                "missing_fk_id",
+                "referenced_table",
+                "referenced_id",
+            ),
+        ),
+        unique_constraints=(
+            UniqueConstraintDefinition(
+                name="uq_good_table_missing_unique_column",
+                column_names=("missing_unique_id",),
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="unknown columns"):
+        render_create_table_statement(invalid_table)
+
+
+def test_structured_renderer_rejects_unknown_index_columns() -> None:
+    invalid_table = TableDefinition(
+        name="good_table",
+        columns=(
+            ColumnDefinition(
+                "id",
+                PostgreSQLDataType.UUID,
+                nullable=False,
+                is_primary_key=True,
+            ),
+        ),
+        indexes=(
+            IndexDefinition(
+                name="idx_good_table_missing_column",
+                column_names=("missing_id",),
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="unknown columns"):
+        render_create_index_statements(invalid_table)
