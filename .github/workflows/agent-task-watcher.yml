@@ -1,0 +1,103 @@
+name: "Agent Task Watcher"
+
+on:
+  pull_request:
+    types:
+      - closed
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to process manually"
+        required: true
+        type: string
+
+permissions:
+  issues: write
+  pull-requests: read
+  contents: read
+
+jobs:
+  mark-task-merged:
+    name: "Mark linked task issue as merged"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Resolve PR metadata"
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          EVENT_PR_MERGED: ${{ github.event.pull_request.merged }}
+          INPUT_PR_NUMBER: ${{ inputs.pr_number }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            PR_NUMBER="$EVENT_PR_NUMBER"
+            PR_MERGED="$EVENT_PR_MERGED"
+          else
+            PR_NUMBER="$INPUT_PR_NUMBER"
+            PR_MERGED="$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json merged --jq '.merged')"
+          fi
+
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "pr_merged=$PR_MERGED" >> "$GITHUB_OUTPUT"
+
+          if [ "$PR_MERGED" != "true" ]; then
+            echo "PR #$PR_NUMBER is not merged. No action taken."
+            echo "should_process=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          PR_BODY="$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json body --jq '.body // ""')"
+
+          TASK_ID="$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[[:space:]]*Task-ID:[[:space:]]*([A-Za-z]+-[0-9]+)[[:space:]]*$/\1/p' | head -n 1)"
+          ISSUE_NUMBER="$(printf '%s\n' "$PR_BODY" | sed -nE 's/.*(Closes|Fixes|Resolves)[[:space:]]+#([0-9]+).*/\2/ip' | head -n 1)"
+
+          if [ -z "$TASK_ID" ]; then
+            echo "Missing Task-ID in PR #$PR_NUMBER body. No label changes applied."
+            echo "should_process=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ -z "$ISSUE_NUMBER" ]; then
+            echo "Missing linked issue reference such as Closes #123 in PR #$PR_NUMBER body. No label changes applied."
+            echo "should_process=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "task_id=$TASK_ID" >> "$GITHUB_OUTPUT"
+          echo "issue_number=$ISSUE_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "should_process=true" >> "$GITHUB_OUTPUT"
+
+      - name: "Mark issue as status merged"
+        if: steps.pr.outputs.should_process == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+          TASK_ID: ${{ steps.pr.outputs.task_id }}
+          ISSUE_NUMBER: ${{ steps.pr.outputs.issue_number }}
+        run: |
+          set -euo pipefail
+
+          STATUS_LABELS=(
+            "status:blocked"
+            "status:ready"
+            "status:in-progress"
+            "status:in-review"
+            "status:needs-fix"
+            "status:merged"
+          )
+
+          for LABEL in "${STATUS_LABELS[@]}"; do
+            gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$LABEL" || true
+          done
+
+          gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --add-label "status:merged"
+
+          COMMENT_BODY="$(printf 'Agent Task Watcher marked this issue as `status:merged`.\n\nDetected task: `%s`\nMerged PR: #%s\n\nNo dependent tasks were updated by this workflow version.' "$TASK_ID" "$PR_NUMBER")"
+
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "$COMMENT_BODY"
