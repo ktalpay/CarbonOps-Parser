@@ -183,3 +183,16 @@ local worktree cleanup
 task queue file mutation
 cross-repository orchestration
 scheduled polling
+
+Required Agent PR Footer
+
+Watcher-compatible PR bodies must end with:
+
+Task-ID: <TASK_ID>
+Task-Issue: #<ISSUE_NUMBER>
+
+Task-ID identifies the logical task.
+
+Task-Issue identifies the GitHub issue that the watcher updates after merge.
+
+The watcher must not use Closes, Fixes, or Resolves lines to resolve the task issue. Those keywords may still be used for normal GitHub behavior, but they are not watcher metadata.

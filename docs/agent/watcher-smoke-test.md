@@ -13,3 +13,12 @@ The expected behavior is:
 5. The watcher leaves a traceable issue comment.
 
 This file does not define product behavior.
+
+Current Metadata Requirement
+
+The watcher smoke-test standard now requires PR bodies to end with:
+
+Task-ID: OPS-007
+Task-Issue: #335
+
+The watcher should use Task-Issue as the target issue and should use the final matching metadata footer.
