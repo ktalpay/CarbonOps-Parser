@@ -145,6 +145,10 @@ The [PostgreSQL Runtime Readiness Checklist](postgresql-runtime-readiness-checkl
 defines the go/no-go criteria that must be satisfied before the first real
 runtime execution task begins.
 
+The [PostgreSQL Runtime Integration Boundary](postgresql-runtime-integration-boundary.md)
+provides the top-level runtime integration contract that ties together gate,
+session, adapter, and diagnostics boundaries for future execution tasks.
+
 ## Transaction Strategy
 
 The first runtime implementation should use one transaction per
