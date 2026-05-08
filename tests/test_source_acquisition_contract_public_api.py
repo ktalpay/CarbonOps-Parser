@@ -7,6 +7,11 @@ import pytest
 
 
 EXPECTED_CONTRACT_API_SYMBOLS = (
+    "AcquisitionToParserPlanIssue",
+    "AcquisitionToParserPlanResult",
+    "AcquisitionToParserPlanStatus",
+    "AcquisitionToParserPlanSummary",
+    "AcquisitionToParserPlanValidationResult",
     "SourceAcquisitionRunIssue",
     "SourceAcquisitionRunRequest",
     "SourceAcquisitionRunResult",
@@ -25,6 +30,8 @@ EXPECTED_CONTRACT_API_SYMBOLS = (
     "SourceDownloadArtifactResult",
     "SourceDownloadArtifactValidationIssue",
     "SourceDownloadArtifactValidationResult",
+    "create_acquisition_to_parser_plan",
+    "create_phase1_acquisition_to_parser_plans",
     "create_phase1_source_artifact_parser_input_bridge",
     "create_phase1_source_acquisition_run_requests",
     "create_phase1_source_acquisition_run_results",
@@ -34,6 +41,8 @@ EXPECTED_CONTRACT_API_SYMBOLS = (
     "create_source_acquisition_run_request",
     "create_source_acquisition_run_result",
     "create_source_download_artifact_from_candidate",
+    "validate_acquisition_to_parser_plan",
+    "validate_acquisition_to_parser_plans",
     "validate_source_artifact_parser_input_bridge_entry",
     "validate_source_artifact_parser_input_bridge_result",
     "validate_source_acquisition_run_request",
@@ -105,6 +114,7 @@ def test_public_source_acquisition_contract_api_exports_work_together() -> None:
         status=contract_api.SourceAcquisitionRunStatus.COMPLETED,
     )
     bridge = contract_api.create_phase1_source_artifact_parser_input_bridge()
+    plan = contract_api.create_phase1_acquisition_to_parser_plans()[0]
 
     assert result.source_key == "ghg_protocol"
     assert result.status is contract_api.SourceAcquisitionRunStatus.COMPLETED
@@ -114,6 +124,8 @@ def test_public_source_acquisition_contract_api_exports_work_together() -> None:
     assert contract_api.validate_source_artifact_parser_input_bridge_result(
         bridge,
     ).is_valid
+    assert plan.status is contract_api.AcquisitionToParserPlanStatus.PLANNED
+    assert contract_api.validate_acquisition_to_parser_plan(plan).is_valid
 
 
 def test_source_acquisition_package_import_is_lazy_and_runtime_passive() -> None:
@@ -180,6 +192,7 @@ def test_source_acquisition_contract_api_does_not_export_internal_module_names()
     assert "download_artifact_contract" not in contract_api.__all__
     assert "run_contract" not in contract_api.__all__
     assert "source_artifact_parser_input_bridge_contract" not in contract_api.__all__
+    assert "acquisition_to_parser_plan_contract" not in contract_api.__all__
     assert all(not name.startswith("_") for name in contract_api.__all__)
 
 
