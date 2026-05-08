@@ -293,6 +293,99 @@ public static class ContractValidators
         return ContractValidationResult.FromErrors(errors);
     }
 
+    public static ContractValidationResult Validate(this ParserValidationIssue? value)
+    {
+        var errors = new List<string>();
+
+        if (value is null)
+        {
+            errors.Add("ParserValidationIssue is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        if (!Enum.IsDefined(value.SourceFamily))
+        {
+            errors.Add("SourceFamily must be a defined source family.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.SourceKey))
+        {
+            errors.Add("SourceKey is required.");
+        }
+
+        if (value.ParserKey is null || string.IsNullOrWhiteSpace(value.ParserKey.Value))
+        {
+            errors.Add("ParserKey is required.");
+        }
+
+        if (!Enum.IsDefined(value.Severity))
+        {
+            errors.Add("ParserValidationIssueSeverity must be a defined parser validation issue severity.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.Code))
+        {
+            errors.Add("Code is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.Message))
+        {
+            errors.Add("Message is required.");
+        }
+
+        if (value.ArtifactReference is not null && string.IsNullOrWhiteSpace(value.ArtifactReference))
+        {
+            errors.Add("ArtifactReference must not be whitespace when provided.");
+        }
+
+        if (value.RowIdentifier is not null && string.IsNullOrWhiteSpace(value.RowIdentifier))
+        {
+            errors.Add("RowIdentifier must not be whitespace when provided.");
+        }
+
+        if (value.SourceRowNumber <= 0)
+        {
+            errors.Add("SourceRowNumber must be positive when provided.");
+        }
+
+        if (value.FieldKey is not null && string.IsNullOrWhiteSpace(value.FieldKey))
+        {
+            errors.Add("FieldKey must not be whitespace when provided.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(value.SourceKey) &&
+            ContractWireNames.TryParseSourceFamilyWireName(value.SourceKey, out var sourceFamily) &&
+            sourceFamily != value.SourceFamily)
+        {
+            errors.Add("SourceKey must match SourceFamily.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(value.SourceKey) &&
+            !ParserAdapterDescriptorRegistry.TryGetBySourceKey(value.SourceKey, out _))
+        {
+            errors.Add("SourceKey must match a registered parser adapter descriptor.");
+        }
+
+        if (Enum.IsDefined(value.SourceFamily) &&
+            ParserAdapterDescriptorRegistry.TryGetBySourceFamily(value.SourceFamily, out var descriptor) &&
+            descriptor is not null &&
+            value.ParserKey is not null &&
+            descriptor.ParserKey != value.ParserKey)
+        {
+            errors.Add("ParserKey must match the registered parser adapter descriptor.");
+        }
+
+        for (var index = 0; index < value.Context.Count; index++)
+        {
+            if (string.IsNullOrWhiteSpace(value.Context[index].Key))
+            {
+                errors.Add($"Context[{index}].Key is required.");
+            }
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
     public static ContractValidationResult Validate(this ParserRunIssue? value)
     {
         var errors = new List<string>();
