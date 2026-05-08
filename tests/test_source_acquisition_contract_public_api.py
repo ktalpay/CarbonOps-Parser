@@ -24,6 +24,13 @@ EXPECTED_CONTRACT_API_SYMBOLS = (
     "Phase1OrchestrationExecutorStatus",
     "Phase1OrchestrationExecutorSummary",
     "Phase1OrchestrationExecutorValidationResult",
+    "DEFRASourceDiscoveryIssue",
+    "DEFRASourceDiscoveryMode",
+    "DEFRASourceDiscoveryRequest",
+    "DEFRASourceDiscoveryResult",
+    "DEFRASourceDiscoveryStatus",
+    "DEFRASourceDiscoveryValidationResult",
+    "DEFRASourceDocumentCandidate",
     "GHGSourceDiscoveryIssue",
     "GHGSourceDiscoveryMode",
     "GHGSourceDiscoveryRequest",
@@ -68,6 +75,8 @@ EXPECTED_CONTRACT_API_SYMBOLS = (
     "create_phase1_source_acquisition_run_results",
     "create_phase1_source_discovery_candidates",
     "create_phase1_source_download_artifacts",
+    "create_defra_source_discovery_request",
+    "create_defra_source_discovery_result",
     "create_ghg_source_discovery_request",
     "create_ghg_source_discovery_result",
     "create_ghg_source_download_execution_request",
@@ -83,6 +92,9 @@ EXPECTED_CONTRACT_API_SYMBOLS = (
     "validate_phase1_orchestration_executor_request",
     "validate_phase1_orchestration_executor_result",
     "validate_phase1_orchestration_executor_results",
+    "validate_defra_source_discovery_request",
+    "validate_defra_source_discovery_result",
+    "validate_defra_source_document_candidate",
     "validate_ghg_source_discovery_request",
     "validate_ghg_source_discovery_result",
     "validate_ghg_source_document_candidate",
@@ -163,6 +175,7 @@ def test_public_source_acquisition_contract_api_exports_work_together() -> None:
     plan = contract_api.create_phase1_acquisition_to_parser_plans()[0]
     orchestration = contract_api.create_phase1_orchestration_plans()[0]
     executor = contract_api.create_phase1_orchestration_executor_boundaries()[0]
+    defra_discovery = contract_api.create_defra_source_discovery_result()
     ghg_discovery = contract_api.create_ghg_source_discovery_result()
 
     assert result.source_key == "ghg_protocol"
@@ -182,6 +195,11 @@ def test_public_source_acquisition_contract_api_exports_work_together() -> None:
         is contract_api.Phase1OrchestrationExecutorStatus.NOT_IMPLEMENTED
     )
     assert contract_api.validate_phase1_orchestration_executor_result(executor).is_valid
+    assert defra_discovery.status is contract_api.DEFRASourceDiscoveryStatus.DECLARED
+    assert defra_discovery.candidate_count == 1
+    assert contract_api.validate_defra_source_discovery_result(
+        defra_discovery,
+    ).is_valid
     assert ghg_discovery.status is contract_api.GHGSourceDiscoveryStatus.DECLARED
     assert ghg_discovery.candidate_count == 1
     assert contract_api.validate_ghg_source_discovery_result(ghg_discovery).is_valid
@@ -267,6 +285,7 @@ def test_source_acquisition_contract_api_does_not_export_internal_module_names()
     assert "acquisition_to_parser_plan_contract" not in contract_api.__all__
     assert "phase1_orchestration_plan_contract" not in contract_api.__all__
     assert "phase1_orchestration_executor_boundary" not in contract_api.__all__
+    assert "defra_source_discovery_boundary" not in contract_api.__all__
     assert "ghg_source_discovery_boundary" not in contract_api.__all__
     assert "ghg_source_download_execution_boundary" not in contract_api.__all__
     assert all(not name.startswith("_") for name in contract_api.__all__)
