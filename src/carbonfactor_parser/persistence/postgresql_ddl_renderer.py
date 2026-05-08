@@ -7,6 +7,7 @@ import hashlib
 import re
 
 from carbonfactor_parser.persistence.postgresql_schema_catalog import (
+    ColumnDefinition,
     PostgreSQLDataType,
     SchemaCatalog,
     TableDefinition,
@@ -74,6 +75,7 @@ def _render_identifier(identifier: str, kind: str) -> str:
 
 def render_create_table_statement(table_definition: TableDefinition) -> str:
     table_name = _render_identifier(table_definition.name, "table")
+    column_names = _catalog_column_names(table_definition.columns)
 
     primary_key_columns: list[str] = []
     lines: list[str] = []
@@ -92,6 +94,7 @@ def render_create_table_statement(table_definition: TableDefinition) -> str:
         lines.append(f"CONSTRAINT {pk_name} PRIMARY KEY ({', '.join(primary_key_columns)})")
 
     for unique_constraint in table_definition.unique_constraints:
+        _validate_known_columns(unique_constraint.column_names, column_names)
         unique_constraint_name = _render_identifier(unique_constraint.name, "constraint")
         unique_column_names: list[str] = []
         for column_name in unique_constraint.column_names:
@@ -100,6 +103,7 @@ def render_create_table_statement(table_definition: TableDefinition) -> str:
         lines.append(f"CONSTRAINT {unique_constraint_name} UNIQUE ({column_list})")
 
     for foreign_key in table_definition.foreign_keys:
+        _validate_known_columns((foreign_key.column_name,), column_names)
         column_name = _render_identifier(foreign_key.column_name, "column")
         referenced_table_name = _render_identifier(foreign_key.referenced_table_name, "table")
         referenced_column_name = _render_identifier(foreign_key.referenced_column_name, "column")
@@ -116,9 +120,11 @@ def render_create_table_statement(table_definition: TableDefinition) -> str:
 
 def render_create_index_statements(table_definition: TableDefinition) -> tuple[str, ...]:
     table_name = _render_identifier(table_definition.name, "table")
+    column_names = _catalog_column_names(table_definition.columns)
 
     statements: list[str] = []
     for index in table_definition.indexes:
+        _validate_known_columns(index.column_names, column_names)
         index_name = _render_identifier(index.name, "index")
         columns: list[str] = []
         for column_name in index.column_names:
@@ -144,3 +150,26 @@ def render_postgresql_phase1_schema_ddl(catalog: SchemaCatalog | None = None) ->
         )
 
     return RenderedSchemaDDL(tables=tuple(rendered_tables))
+
+
+def _catalog_column_names(columns: tuple[ColumnDefinition, ...]) -> frozenset[str]:
+    column_names = frozenset(column.name for column in columns)
+    if len(column_names) != len(columns):
+        raise ValueError("Catalog table contains duplicate column names")
+    return column_names
+
+
+def _validate_known_columns(
+    candidate_column_names: tuple[str, ...],
+    known_column_names: frozenset[str],
+) -> None:
+    unknown_column_names = tuple(
+        column_name
+        for column_name in candidate_column_names
+        if column_name not in known_column_names
+    )
+    if unknown_column_names:
+        raise ValueError(
+            "Catalog metadata references unknown columns: "
+            f"{unknown_column_names!r}"
+        )
