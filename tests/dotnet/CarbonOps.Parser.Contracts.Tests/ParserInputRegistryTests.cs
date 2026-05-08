@@ -41,41 +41,46 @@ public sealed class ParserInputRegistryTests
     }
 
     [Fact]
-    public void ParserInputSourceFormatMappingIsExplicitAndDeterministic()
+    public void ParserInputSourceFormatMappingIsConservativeAndDeterministic()
     {
         var batch = ParserInputRegistry.CreateDefaultDryRunBatch();
 
         Assert.Equal(
             [
-                ParserSourceFormat.Xlsx,
-                ParserSourceFormat.Csv,
-                ParserSourceFormat.Csv,
+                ParserSourceFormat.DiscoveryReference,
+                ParserSourceFormat.DiscoveryReference,
+                ParserSourceFormat.DiscoveryReference,
             ],
             batch.Documents.Select(document => document.SourceFormat));
         Assert.Equal(
             [
-                "xlsx",
-                "csv",
-                "csv",
+                "discovery",
+                "discovery",
+                "discovery",
             ],
             batch.Documents.Select(document => document.FormatHint));
-        Assert.Equal(ParserSourceFormat.Xlsx, ParserInputRegistry.GetSourceFormat(SourceFamily.GhgProtocol));
-        Assert.Equal(ParserSourceFormat.Csv, ParserInputRegistry.GetSourceFormat(SourceFamily.DefraDesnz));
-        Assert.Equal(ParserSourceFormat.Csv, ParserInputRegistry.GetSourceFormat(SourceFamily.IpccEfdb));
+        Assert.Equal(ParserSourceFormat.DiscoveryReference, ParserInputRegistry.GetSourceFormat(SourceFamily.GhgProtocol));
+        Assert.Equal(ParserSourceFormat.DiscoveryReference, ParserInputRegistry.GetSourceFormat(SourceFamily.DefraDesnz));
+        Assert.Equal(ParserSourceFormat.DiscoveryReference, ParserInputRegistry.GetSourceFormat(SourceFamily.IpccEfdb));
     }
 
     [Fact]
-    public void ParserInputContentTypesMatchSourceFormats()
+    public void ParserInputDefaultsDoNotClaimDownloadedFileFormats()
     {
         var batch = ParserInputRegistry.CreateDefaultDryRunBatch();
 
         Assert.Equal(
             [
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "text/csv",
-                "text/csv",
+                "application/x-carbonops-discovery-reference",
+                "application/x-carbonops-discovery-reference",
+                "application/x-carbonops-discovery-reference",
             ],
             batch.Documents.Select(document => document.ContentType));
+        Assert.DoesNotContain(batch.Documents, document => document.FormatHint is "csv" or "xlsx");
+        Assert.DoesNotContain(batch.Documents, document => document.ContentType is "text/csv");
+        Assert.DoesNotContain(
+            batch.Documents,
+            document => document.ContentType is "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     }
 
     [Fact]

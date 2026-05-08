@@ -52,8 +52,7 @@ public static class ContractWireNames
     public static string ToWireName(this ParserSourceFormat value) =>
         value switch
         {
-            ParserSourceFormat.Csv => "csv",
-            ParserSourceFormat.Xlsx => "xlsx",
+            ParserSourceFormat.DiscoveryReference => "discovery_reference",
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown parser source format."),
         };
 
@@ -128,11 +127,10 @@ public static class ContractWireNames
     {
         value = wireName switch
         {
-            "csv" => ParserSourceFormat.Csv,
-            "xlsx" => ParserSourceFormat.Xlsx,
+            "discovery_reference" => ParserSourceFormat.DiscoveryReference,
             _ => default,
         };
 
-        return wireName is "csv" or "xlsx";
+        return wireName is "discovery_reference";
     }
 }

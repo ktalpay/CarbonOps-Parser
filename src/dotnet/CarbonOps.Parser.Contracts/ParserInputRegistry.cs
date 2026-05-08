@@ -11,17 +11,16 @@ public static class ParserInputRegistry
     public static ParserSourceFormat GetSourceFormat(SourceFamily sourceFamily) =>
         sourceFamily switch
         {
-            SourceFamily.GhgProtocol => ParserSourceFormat.Xlsx,
-            SourceFamily.DefraDesnz => ParserSourceFormat.Csv,
-            SourceFamily.IpccEfdb => ParserSourceFormat.Csv,
+            SourceFamily.GhgProtocol => ParserSourceFormat.DiscoveryReference,
+            SourceFamily.DefraDesnz => ParserSourceFormat.DiscoveryReference,
+            SourceFamily.IpccEfdb => ParserSourceFormat.DiscoveryReference,
             _ => throw new ArgumentOutOfRangeException(nameof(sourceFamily), sourceFamily, "Unknown source family."),
         };
 
     public static string GetContentType(ParserSourceFormat sourceFormat) =>
         sourceFormat switch
         {
-            ParserSourceFormat.Csv => "text/csv",
-            ParserSourceFormat.Xlsx => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ParserSourceFormat.DiscoveryReference => "application/x-carbonops-discovery-reference",
             _ => throw new ArgumentOutOfRangeException(nameof(sourceFormat), sourceFormat, "Unknown parser source format."),
         };
 
@@ -34,7 +33,7 @@ public static class ParserInputRegistry
             record.SourceDocumentReference,
             sourceFormat,
             GetContentType(sourceFormat),
-            sourceFormat.ToWireName(),
+            "discovery",
             record.SourceChecksumAlgorithm,
             record.SourceChecksumValue,
             record.IsDryRunChecksum);
