@@ -1,0 +1,68 @@
+"""Runtime-passive public API for source acquisition contract modules."""
+
+from __future__ import annotations
+
+from carbonfactor_parser.source_acquisition.discovery_candidate_contract import (
+    SourceDiscoveryCandidate,
+    SourceDiscoveryCandidateResult,
+    SourceDiscoveryCandidateValidationIssue,
+    SourceDiscoveryCandidateValidationResult,
+    create_phase1_source_discovery_candidates,
+    validate_source_discovery_candidate,
+    validate_source_discovery_candidate_result,
+)
+from carbonfactor_parser.source_acquisition.download_artifact_contract import (
+    SourceDownloadArtifact,
+    SourceDownloadArtifactResult,
+    SourceDownloadArtifactValidationIssue,
+    SourceDownloadArtifactValidationResult,
+    create_phase1_source_download_artifacts,
+    create_source_download_artifact_from_candidate,
+    validate_source_download_artifact,
+    validate_source_download_artifact_result,
+)
+from carbonfactor_parser.source_acquisition.run_contract import (
+    SourceAcquisitionRunIssue,
+    SourceAcquisitionRunRequest,
+    SourceAcquisitionRunResult,
+    SourceAcquisitionRunStatus,
+    SourceAcquisitionRunSummary,
+    SourceAcquisitionRunValidationResult,
+    create_phase1_source_acquisition_run_requests,
+    create_phase1_source_acquisition_run_results,
+    create_source_acquisition_run_request,
+    create_source_acquisition_run_result,
+    validate_source_acquisition_run_request,
+    validate_source_acquisition_run_result,
+)
+
+
+__all__ = (
+    "SourceAcquisitionRunIssue",
+    "SourceAcquisitionRunRequest",
+    "SourceAcquisitionRunResult",
+    "SourceAcquisitionRunStatus",
+    "SourceAcquisitionRunSummary",
+    "SourceAcquisitionRunValidationResult",
+    "SourceDiscoveryCandidate",
+    "SourceDiscoveryCandidateResult",
+    "SourceDiscoveryCandidateValidationIssue",
+    "SourceDiscoveryCandidateValidationResult",
+    "SourceDownloadArtifact",
+    "SourceDownloadArtifactResult",
+    "SourceDownloadArtifactValidationIssue",
+    "SourceDownloadArtifactValidationResult",
+    "create_phase1_source_acquisition_run_requests",
+    "create_phase1_source_acquisition_run_results",
+    "create_phase1_source_discovery_candidates",
+    "create_phase1_source_download_artifacts",
+    "create_source_acquisition_run_request",
+    "create_source_acquisition_run_result",
+    "create_source_download_artifact_from_candidate",
+    "validate_source_acquisition_run_request",
+    "validate_source_acquisition_run_result",
+    "validate_source_discovery_candidate",
+    "validate_source_discovery_candidate_result",
+    "validate_source_download_artifact",
+    "validate_source_download_artifact_result",
+)
