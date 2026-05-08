@@ -28,6 +28,13 @@ BANNED_RUNTIME_MODULE_PREFIXES = (
 )
 
 
+def _is_banned_runtime_module(module_name: str) -> bool:
+    return any(
+        module_name == prefix or module_name.startswith(f"{prefix}.")
+        for prefix in BANNED_RUNTIME_MODULE_PREFIXES
+    )
+
+
 def _fresh_import_bootstrap_module():
     sys.modules.pop(
         "carbonfactor_parser.persistence.postgresql_schema_bootstrap",
@@ -42,17 +49,82 @@ def test_bootstrap_import_is_runtime_passive() -> None:
     _fresh_import_bootstrap_module()
 
 
-def test_bootstrap_import_does_not_import_runtime_heavy_modules() -> None:
+def test_bootstrap_import_does_not_read_files_or_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import builtins
+    import os
+
+    open_calls: list[tuple[object, ...]] = []
+    getenv_calls: list[tuple[object, ...]] = []
+
+    def guard_open(*args: object, **kwargs: object) -> object:
+        open_calls.append(args)
+        raise AssertionError("schema bootstrap import attempted file side effects")
+
+    def guard_getenv(*args: object, **kwargs: object) -> object:
+        getenv_calls.append(args)
+        raise AssertionError("schema bootstrap import attempted environment reads")
+
+    monkeypatch.setattr(builtins, "open", guard_open)
+    monkeypatch.setattr(os, "getenv", guard_getenv)
+    monkeypatch.setattr(os, "environ", {})
+
+    module = _fresh_import_bootstrap_module()
+
+    assert hasattr(module, "build_postgresql_phase1_schema_bootstrap_report")
+    assert open_calls == []
+    assert getenv_calls == []
+
+
+def test_bootstrap_import_does_not_import_runtime_heavy_modules(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import builtins
+
+    original_import = builtins.__import__
+    original_import_module = importlib.import_module
+
+    def guard_import(
+        name: str,
+        globals: dict[str, object] | None = None,
+        locals: dict[str, object] | None = None,
+        fromlist: tuple[object, ...] = (),
+        level: int = 0,
+    ) -> object:
+        if level == 0 and _is_banned_runtime_module(name):
+            raise AssertionError(
+                f"schema bootstrap import attempted runtime module import: {name}"
+            )
+        return original_import(name, globals, locals, fromlist, level)
+
+    def guard_import_module(name: str, package: str | None = None) -> object:
+        resolved_name = (
+            importlib.util.resolve_name(name, package)
+            if name.startswith(".") and package is not None
+            else name
+        )
+        if _is_banned_runtime_module(resolved_name):
+            raise AssertionError(
+                "schema bootstrap import attempted runtime module import: "
+                f"{resolved_name}"
+            )
+        return original_import_module(name, package)
+
+    monkeypatch.setattr(builtins, "__import__", guard_import)
+    monkeypatch.setattr(importlib, "import_module", guard_import_module)
+
     imported_modules_before = set(sys.modules)
 
     _fresh_import_bootstrap_module()
 
     newly_imported = set(sys.modules) - imported_modules_before
-    assert not any(
-        module_name == prefix or module_name.startswith(f"{prefix}.")
+    banned_newly_imported = sorted(
+        module_name
         for module_name in newly_imported
-        for prefix in BANNED_RUNTIME_MODULE_PREFIXES
+        if _is_banned_runtime_module(module_name)
     )
+    assert banned_newly_imported == []
 
 
 def test_phase1_bootstrap_request_includes_required_catalog_table_names() -> None:
