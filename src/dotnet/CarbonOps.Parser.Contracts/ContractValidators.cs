@@ -550,6 +550,166 @@ public static class ContractValidators
         return ContractValidationResult.FromErrors(errors);
     }
 
+    public static ContractValidationResult Validate(this ParserDryRunBoundaryPlan? value)
+    {
+        var errors = new List<string>();
+
+        if (value is null)
+        {
+            errors.Add("ParserDryRunBoundaryPlan is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        ValidateParserAdapterMetadata(
+            errors,
+            value.SourceFamily,
+            value.SourceKey,
+            value.ParserKey);
+
+        AppendErrors(errors, "Request.", value.Request.Validate());
+
+        if (value.Request.SourceFamily != value.SourceFamily)
+        {
+            errors.Add("Request.SourceFamily must match plan SourceFamily.");
+        }
+
+        if (value.Request.SourceKey != value.SourceKey)
+        {
+            errors.Add("Request.SourceKey must match plan SourceKey.");
+        }
+
+        if (value.Request.ParserKey != value.ParserKey)
+        {
+            errors.Add("Request.ParserKey must match plan ParserKey.");
+        }
+
+        if (!Enum.IsDefined(value.Status))
+        {
+            errors.Add("ParserDryRunStatus must be a defined parser dry-run status.");
+        }
+
+        if (!Enum.IsDefined(value.Readiness))
+        {
+            errors.Add("ParserAdapterReadiness must be a defined parser adapter readiness.");
+        }
+
+        for (var index = 0; index < value.ValidationIssues.Count; index++)
+        {
+            var issue = value.ValidationIssues[index];
+
+            AppendErrors(errors, $"ValidationIssues[{index}].", issue.Validate());
+            if (issue is null)
+            {
+                continue;
+            }
+
+            if (issue.SourceFamily != value.SourceFamily)
+            {
+                errors.Add($"ValidationIssues[{index}].SourceFamily must match plan SourceFamily.");
+            }
+
+            if (issue.SourceKey != value.SourceKey)
+            {
+                errors.Add($"ValidationIssues[{index}].SourceKey must match plan SourceKey.");
+            }
+
+            if (issue.ParserKey != value.ParserKey)
+            {
+                errors.Add($"ValidationIssues[{index}].ParserKey must match plan ParserKey.");
+            }
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
+    public static ContractValidationResult Validate(this ParserDryRunBoundaryResult? value)
+    {
+        var errors = new List<string>();
+
+        if (value is null)
+        {
+            errors.Add("ParserDryRunBoundaryResult is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        ValidateParserAdapterMetadata(
+            errors,
+            value.SourceFamily,
+            value.SourceKey,
+            value.ParserKey);
+
+        AppendErrors(errors, "Request.", value.Request.Validate());
+        AppendErrors(errors, "RunResult.", value.RunResult.Validate());
+
+        if (value.Request.SourceFamily != value.SourceFamily)
+        {
+            errors.Add("Request.SourceFamily must match result SourceFamily.");
+        }
+
+        if (value.Request.SourceKey != value.SourceKey)
+        {
+            errors.Add("Request.SourceKey must match result SourceKey.");
+        }
+
+        if (value.Request.ParserKey != value.ParserKey)
+        {
+            errors.Add("Request.ParserKey must match result ParserKey.");
+        }
+
+        if (value.RunResult.SourceFamily != value.SourceFamily)
+        {
+            errors.Add("RunResult.SourceFamily must match result SourceFamily.");
+        }
+
+        if (value.RunResult.SourceKey != value.SourceKey)
+        {
+            errors.Add("RunResult.SourceKey must match result SourceKey.");
+        }
+
+        if (value.RunResult.ParserKey != value.ParserKey)
+        {
+            errors.Add("RunResult.ParserKey must match result ParserKey.");
+        }
+
+        if (!Enum.IsDefined(value.Status))
+        {
+            errors.Add("ParserDryRunStatus must be a defined parser dry-run status.");
+        }
+
+        if (!Enum.IsDefined(value.Readiness))
+        {
+            errors.Add("ParserAdapterReadiness must be a defined parser adapter readiness.");
+        }
+
+        for (var index = 0; index < value.ValidationIssues.Count; index++)
+        {
+            var issue = value.ValidationIssues[index];
+
+            AppendErrors(errors, $"ValidationIssues[{index}].", issue.Validate());
+            if (issue is null)
+            {
+                continue;
+            }
+
+            if (issue.SourceFamily != value.SourceFamily)
+            {
+                errors.Add($"ValidationIssues[{index}].SourceFamily must match result SourceFamily.");
+            }
+
+            if (issue.SourceKey != value.SourceKey)
+            {
+                errors.Add($"ValidationIssues[{index}].SourceKey must match result SourceKey.");
+            }
+
+            if (issue.ParserKey != value.ParserKey)
+            {
+                errors.Add($"ValidationIssues[{index}].ParserKey must match result ParserKey.");
+            }
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
     public static ContractValidationResult Validate(this ParserRunIssue? value)
     {
         var errors = new List<string>();
