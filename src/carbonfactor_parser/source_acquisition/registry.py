@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from carbonfactor_parser.source_acquisition.models import SourceAcquisitionDescriptor
+from carbonfactor_parser.source_acquisition.models import (
+    SourceAcquisitionDescriptor,
+    SourceDiscoveryDocument,
+    SourceDiscoveryResult,
+    SourceDiscoveryStatus,
+)
 
 
 def create_default_source_acquisition_registry() -> tuple[SourceAcquisitionDescriptor, ...]:
@@ -56,6 +61,25 @@ def create_default_source_acquisition_registry() -> tuple[SourceAcquisitionDescr
 
     validate_source_acquisition_registry(registry)
     return registry
+
+
+def create_default_source_discovery_result() -> SourceDiscoveryResult:
+    """Return deterministic dry-run discovery metadata for Phase 1 sources."""
+
+    documents = tuple(
+        SourceDiscoveryDocument(
+            source_family=descriptor.source_family,
+            source_name=descriptor.display_name,
+            source_reference=descriptor.acquisition_url,
+            reporting_year=None,
+            status=SourceDiscoveryStatus.DECLARED,
+        )
+        for descriptor in create_default_source_acquisition_registry()
+    )
+    return SourceDiscoveryResult(
+        status=SourceDiscoveryStatus.DECLARED,
+        documents=documents,
+    )
 
 
 def validate_source_acquisition_registry(
