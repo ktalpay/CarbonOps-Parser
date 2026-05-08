@@ -207,6 +207,10 @@ Required footer:
 Task-ID: <TASK_ID>
 Task-Issue: #<ISSUE_NUMBER>
 
-The watcher uses Task-Issue as the canonical GitHub issue target for label updates.
+Task-ID identifies the logical task.
+
+Task-Issue identifies the GitHub issue that the watcher updates after merge.
+
+The watcher must not use Closes, Fixes, or Resolves lines to resolve the task issue. Those keywords may still be used for normal GitHub behavior, but they are not watcher metadata.
 
 The final matching Task-ID and Task-Issue lines in the PR body are treated as authoritative. This avoids accidentally parsing example metadata from earlier markdown code blocks.
