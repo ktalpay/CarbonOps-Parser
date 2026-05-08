@@ -1,6 +1,6 @@
 namespace CarbonOps.Parser.Contracts;
 
-public sealed record GhgProtocolParserAdapterDescriptor
+public sealed record GhgProtocolParserAdapterDescriptor : IParserAdapterDescriptor
 {
     public string AdapterName { get; }
 

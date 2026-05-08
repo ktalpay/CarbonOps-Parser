@@ -1,6 +1,6 @@
 namespace CarbonOps.Parser.Contracts;
 
-public sealed record IpccEfdbParserAdapterDescriptor
+public sealed record IpccEfdbParserAdapterDescriptor : IParserAdapterDescriptor
 {
     public string AdapterName { get; }
 
