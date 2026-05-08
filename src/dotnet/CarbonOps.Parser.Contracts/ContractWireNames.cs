@@ -72,6 +72,15 @@ public static class ContractWireNames
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown parser validation issue severity."),
         };
 
+    public static string ToWireName(this ParserDryRunStatus value) =>
+        value switch
+        {
+            ParserDryRunStatus.Planned => "planned",
+            ParserDryRunStatus.InvalidRequest => "invalid_request",
+            ParserDryRunStatus.ExecutionNotImplemented => "execution_not_implemented",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown parser dry-run status."),
+        };
+
     public static bool TryParseSourceFamilyWireName(string? wireName, out SourceFamily value)
     {
         value = wireName switch
@@ -174,5 +183,18 @@ public static class ContractWireNames
         };
 
         return wireName is "info" or "warning" or "error";
+    }
+
+    public static bool TryParseParserDryRunStatusWireName(string? wireName, out ParserDryRunStatus value)
+    {
+        value = wireName switch
+        {
+            "planned" => ParserDryRunStatus.Planned,
+            "invalid_request" => ParserDryRunStatus.InvalidRequest,
+            "execution_not_implemented" => ParserDryRunStatus.ExecutionNotImplemented,
+            _ => default,
+        };
+
+        return wireName is "planned" or "invalid_request" or "execution_not_implemented";
     }
 }
