@@ -49,6 +49,14 @@ public static class ContractWireNames
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown source discovery status."),
         };
 
+    public static string ToWireName(this ParserSourceFormat value) =>
+        value switch
+        {
+            ParserSourceFormat.Csv => "csv",
+            ParserSourceFormat.Xlsx => "xlsx",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown parser source format."),
+        };
+
     public static bool TryParseSourceFamilyWireName(string? wireName, out SourceFamily value)
     {
         value = wireName switch
@@ -114,5 +122,17 @@ public static class ContractWireNames
         };
 
         return wireName is "declared";
+    }
+
+    public static bool TryParseParserSourceFormatWireName(string? wireName, out ParserSourceFormat value)
+    {
+        value = wireName switch
+        {
+            "csv" => ParserSourceFormat.Csv,
+            "xlsx" => ParserSourceFormat.Xlsx,
+            _ => default,
+        };
+
+        return wireName is "csv" or "xlsx";
     }
 }
