@@ -491,6 +491,118 @@ public static class ContractValidators
         return ContractValidationResult.FromErrors(errors);
     }
 
+    public static ContractValidationResult Validate(this AcquisitionToParserPlan? value)
+    {
+        var errors = new List<string>();
+
+        if (value is null)
+        {
+            errors.Add("AcquisitionToParserPlan is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        ValidateSourceKeyMetadata(errors, value.SourceFamily, value.SourceKey);
+
+        if (!Enum.IsDefined(value.Status))
+        {
+            errors.Add("AcquisitionToParserPlanStatus must be a defined acquisition-to-parser plan status.");
+        }
+
+        if (value.AcquisitionRunId is not null && string.IsNullOrWhiteSpace(value.AcquisitionRunId))
+        {
+            errors.Add("AcquisitionRunId must not be whitespace when provided.");
+        }
+
+        AppendErrors(errors, "AcquisitionResult.", value.AcquisitionResult.Validate());
+        if (value.AcquisitionResult is not null)
+        {
+            if (value.AcquisitionResult.SourceFamily != value.SourceFamily)
+            {
+                errors.Add("AcquisitionResult.SourceFamily must match plan SourceFamily.");
+            }
+
+            if (value.AcquisitionResult.SourceKey != value.SourceKey)
+            {
+                errors.Add("AcquisitionResult.SourceKey must match plan SourceKey.");
+            }
+
+            if (value.AcquisitionResult.RunId != value.AcquisitionRunId)
+            {
+                errors.Add("AcquisitionResult.RunId must match AcquisitionRunId.");
+            }
+
+            if (value.AcquisitionResult.ArtifactCount != value.DownloadedArtifactCount)
+            {
+                errors.Add("DownloadedArtifactCount must match acquisition result ArtifactCount.");
+            }
+        }
+
+        for (var index = 0; index < value.Bridges.Count; index++)
+        {
+            var bridge = value.Bridges[index];
+
+            AppendErrors(errors, $"Bridges[{index}].", bridge.Validate());
+            if (bridge is null)
+            {
+                continue;
+            }
+
+            if (bridge.SourceFamily != value.SourceFamily)
+            {
+                errors.Add($"Bridges[{index}].SourceFamily must match plan SourceFamily.");
+            }
+
+            if (bridge.SourceKey != value.SourceKey)
+            {
+                errors.Add($"Bridges[{index}].SourceKey must match plan SourceKey.");
+            }
+        }
+
+        for (var index = 0; index < value.ParserRunRequests.Count; index++)
+        {
+            var request = value.ParserRunRequests[index];
+
+            AppendErrors(errors, $"ParserRunRequests[{index}].", request.Validate());
+            if (request is null)
+            {
+                continue;
+            }
+
+            if (request.SourceFamily != value.SourceFamily)
+            {
+                errors.Add($"ParserRunRequests[{index}].SourceFamily must match plan SourceFamily.");
+            }
+
+            if (request.SourceKey != value.SourceKey)
+            {
+                errors.Add($"ParserRunRequests[{index}].SourceKey must match plan SourceKey.");
+            }
+
+            for (var artifactIndex = 0; artifactIndex < request.Artifacts.Count; artifactIndex++)
+            {
+                var parserInputArtifact = request.Artifacts[artifactIndex];
+
+                if (!value.Bridges.Any(bridge => bridge.ParserInputArtifact == parserInputArtifact))
+                {
+                    errors.Add(
+                        $"ParserRunRequests[{index}].Artifacts[{artifactIndex}] must be produced by a bridge.");
+                }
+            }
+        }
+
+        if (value.ParserInputArtifactCount != value.Bridges.Count)
+        {
+            errors.Add("ParserInputArtifactCount must match bridge count.");
+        }
+
+        if (value.ParserRunRequestCount != value.ParserRunRequests.Count)
+        {
+            errors.Add("ParserRunRequestCount must match parser run request count.");
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
     public static ContractValidationResult Validate(this ParserRunSummary value)
     {
         var errors = new List<string>();
