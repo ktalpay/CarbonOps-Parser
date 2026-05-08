@@ -3,68 +3,57 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from importlib import import_module
 import re
-
-from carbonfactor_parser.source_acquisition.checksum import compute_sha256_hex
-from carbonfactor_parser.source_acquisition.file_store import write_acquired_content
-from carbonfactor_parser.source_acquisition.descriptor_validation import (
-    SourceDescriptorValidationIssue,
-    SourceDescriptorValidationReport,
-    serialize_descriptor_validation_report,
-    validate_source_descriptors,
-)
-
-from carbonfactor_parser.source_acquisition.client import (
-    NoopSourceAcquisitionClient,
-    SourceAcquisitionClient,
-    SourceAcquisitionResult,
-    acquire_all_sources,
-)
-from carbonfactor_parser.source_acquisition.http_client import (
-    HttpAcquisitionTransport,
-    HttpAcquisitionTransportResponse,
-    HttpSourceAcquisitionClient,
-)
-from carbonfactor_parser.source_acquisition.http_transport import (
-    StandardLibraryHttpAcquisitionTransport,
-)
-from carbonfactor_parser.source_acquisition.manifest import (
-    SourceAcquisitionManifestEntry,
-    create_manifest_entry,
-    serialize_manifest_entries,
-    write_acquisition_manifest,
-)
-from carbonfactor_parser.source_acquisition.models import SourceAcquisitionDescriptor
-from carbonfactor_parser.source_acquisition.registry import (
-    create_default_source_acquisition_registry,
-    validate_source_acquisition_registry,
-)
-from carbonfactor_parser.source_acquisition.run import (
-    SourceAcquisitionRunResult,
-    run_source_acquisition,
-)
-from carbonfactor_parser.source_acquisition.status import (
-    ACQUISITION_FAILED_STATUSES,
-    ACQUISITION_KNOWN_STATUSES,
-    ACQUISITION_SKIPPED_STATUSES,
-    ACQUISITION_STATUS_ACQUIRED,
-    ACQUISITION_STATUS_FAILED,
-    ACQUISITION_STATUS_NOT_IMPLEMENTED,
-    ACQUISITION_STATUS_SKIPPED,
-    ACQUISITION_SUCCESS_STATUSES,
-    count_acquisition_statuses,
-    is_acquired_status,
-    is_failed_status,
-    is_skipped_status,
-)
-from carbonfactor_parser.source_acquisition.targets import (
-    SourceAcquisitionTarget,
-    plan_source_acquisition_target,
-    plan_source_acquisition_targets,
-)
+from typing import Any
 
 
 _SHA256_HEX_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
+
+_PUBLIC_EXPORTS = {
+    "ACQUISITION_FAILED_STATUSES": "status",
+    "ACQUISITION_KNOWN_STATUSES": "status",
+    "ACQUISITION_SKIPPED_STATUSES": "status",
+    "ACQUISITION_STATUS_ACQUIRED": "status",
+    "ACQUISITION_STATUS_FAILED": "status",
+    "ACQUISITION_STATUS_NOT_IMPLEMENTED": "status",
+    "ACQUISITION_STATUS_SKIPPED": "status",
+    "ACQUISITION_SUCCESS_STATUSES": "status",
+    "HttpAcquisitionTransport": "http_client",
+    "HttpAcquisitionTransportResponse": "http_client",
+    "HttpSourceAcquisitionClient": "http_client",
+    "NoopSourceAcquisitionClient": "client",
+    "SourceAcquisitionClient": "client",
+    "SourceAcquisitionDescriptor": "models",
+    "SourceAcquisitionManifestEntry": "manifest",
+    "SourceAcquisitionResult": "client",
+    "SourceAcquisitionRunResult": "run",
+    "SourceAcquisitionTarget": "targets",
+    "SourceDescriptorValidationIssue": "descriptor_validation",
+    "SourceDescriptorValidationReport": "descriptor_validation",
+    "StandardLibraryHttpAcquisitionTransport": "http_transport",
+    "acquire_all_sources": "client",
+    "compute_sha256_hex": "checksum",
+    "count_acquisition_statuses": "status",
+    "create_default_source_acquisition_registry": "registry",
+    "create_manifest_entry": "manifest",
+    "is_acquired_status": "status",
+    "is_failed_status": "status",
+    "is_skipped_status": "status",
+    "plan_source_acquisition_target": "targets",
+    "plan_source_acquisition_targets": "targets",
+    "run_source_acquisition": "run",
+    "serialize_descriptor_validation_report": "descriptor_validation",
+    "serialize_manifest_entries": "manifest",
+    "validate_source_acquisition_registry": "registry",
+    "validate_source_descriptors": "descriptor_validation",
+    "write_acquired_content": "file_store",
+    "write_acquisition_manifest": "manifest",
+}
+
+_PUBLIC_MODULES = (
+    "contract_api",
+)
 
 
 @dataclass(frozen=True)
@@ -376,6 +365,25 @@ def _validate_optional_string(
 
     if not isinstance(value, str) or not value.strip():
         issues.append(f"{field_name} must be None or a non-empty string.")
+
+
+def __getattr__(name: str) -> Any:
+    if name in _PUBLIC_EXPORTS:
+        module = import_module(f"{__name__}.{_PUBLIC_EXPORTS[name]}")
+        value = getattr(module, name)
+        globals()[name] = value
+        return value
+
+    if name in _PUBLIC_MODULES:
+        module = import_module(f"{__name__}.{name}")
+        globals()[name] = module
+        return module
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_PUBLIC_EXPORTS, *_PUBLIC_MODULES})
 
 
 __all__ = (
