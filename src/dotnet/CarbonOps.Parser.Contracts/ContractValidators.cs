@@ -229,6 +229,149 @@ public static class ContractValidators
         return ContractValidationResult.FromErrors(errors);
     }
 
+    public static ContractValidationResult Validate(this SourceAcquisitionRunRequest? value)
+    {
+        var errors = new List<string>();
+
+        if (value is null)
+        {
+            errors.Add("SourceAcquisitionRunRequest is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        ValidateSourceKeyMetadata(errors, value.SourceFamily, value.SourceKey);
+
+        if (value.Candidates.Count == 0)
+        {
+            errors.Add("SourceAcquisitionRunRequest must include at least one discovery candidate.");
+        }
+
+        if (value.RunId is not null && string.IsNullOrWhiteSpace(value.RunId))
+        {
+            errors.Add("RunId must not be whitespace when provided.");
+        }
+
+        if (value.CorrelationId is not null && string.IsNullOrWhiteSpace(value.CorrelationId))
+        {
+            errors.Add("CorrelationId must not be whitespace when provided.");
+        }
+
+        if (value.RequestedReportingYear is < MinimumReportingYear or > MaximumReportingYear)
+        {
+            errors.Add("RequestedReportingYear must be between 1990 and 2100 when provided.");
+        }
+
+        if (value.RequestedVersionLabel is not null && string.IsNullOrWhiteSpace(value.RequestedVersionLabel))
+        {
+            errors.Add("RequestedVersionLabel must not be whitespace when provided.");
+        }
+
+        for (var index = 0; index < value.Candidates.Count; index++)
+        {
+            var candidate = value.Candidates[index];
+
+            AppendErrors(errors, $"Candidates[{index}].", candidate.Validate());
+            if (candidate is null)
+            {
+                continue;
+            }
+
+            if (candidate.SourceFamily != value.SourceFamily)
+            {
+                errors.Add($"Candidates[{index}].SourceFamily must match request SourceFamily.");
+            }
+
+            if (candidate.SourceKey != value.SourceKey)
+            {
+                errors.Add($"Candidates[{index}].SourceKey must match request SourceKey.");
+            }
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
+    public static ContractValidationResult Validate(this SourceAcquisitionRunResult? value)
+    {
+        var errors = new List<string>();
+
+        if (value is null)
+        {
+            errors.Add("SourceAcquisitionRunResult is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        ValidateSourceKeyMetadata(errors, value.SourceFamily, value.SourceKey);
+
+        if (!Enum.IsDefined(value.Status))
+        {
+            errors.Add("SourceAcquisitionRunStatus must be a defined source acquisition run status.");
+        }
+
+        if (value.RunId is not null && string.IsNullOrWhiteSpace(value.RunId))
+        {
+            errors.Add("RunId must not be whitespace when provided.");
+        }
+
+        if (value.CorrelationId is not null && string.IsNullOrWhiteSpace(value.CorrelationId))
+        {
+            errors.Add("CorrelationId must not be whitespace when provided.");
+        }
+
+        if (value.ReportingYear is < MinimumReportingYear or > MaximumReportingYear)
+        {
+            errors.Add("ReportingYear must be between 1990 and 2100 when provided.");
+        }
+
+        if (value.VersionLabel is not null && string.IsNullOrWhiteSpace(value.VersionLabel))
+        {
+            errors.Add("VersionLabel must not be whitespace when provided.");
+        }
+
+        for (var index = 0; index < value.Candidates.Count; index++)
+        {
+            var candidate = value.Candidates[index];
+
+            AppendErrors(errors, $"Candidates[{index}].", candidate.Validate());
+            if (candidate is null)
+            {
+                continue;
+            }
+
+            if (candidate.SourceFamily != value.SourceFamily)
+            {
+                errors.Add($"Candidates[{index}].SourceFamily must match result SourceFamily.");
+            }
+
+            if (candidate.SourceKey != value.SourceKey)
+            {
+                errors.Add($"Candidates[{index}].SourceKey must match result SourceKey.");
+            }
+        }
+
+        for (var index = 0; index < value.Artifacts.Count; index++)
+        {
+            var artifact = value.Artifacts[index];
+
+            AppendErrors(errors, $"Artifacts[{index}].", artifact.Validate());
+            if (artifact is null)
+            {
+                continue;
+            }
+
+            if (artifact.SourceFamily != value.SourceFamily)
+            {
+                errors.Add($"Artifacts[{index}].SourceFamily must match result SourceFamily.");
+            }
+
+            if (artifact.SourceKey != value.SourceKey)
+            {
+                errors.Add($"Artifacts[{index}].SourceKey must match result SourceKey.");
+            }
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
     public static ContractValidationResult Validate(this ParserRunSummary value)
     {
         var errors = new List<string>();
@@ -1071,6 +1214,35 @@ public static class ContractValidators
             descriptor.ParserKey != parserKey)
         {
             errors.Add("ParserKey must match the registered parser adapter descriptor.");
+        }
+    }
+
+    private static void ValidateSourceKeyMetadata(
+        List<string> errors,
+        SourceFamily sourceFamily,
+        string sourceKey)
+    {
+        if (!Enum.IsDefined(sourceFamily))
+        {
+            errors.Add("SourceFamily must be a defined source family.");
+        }
+
+        if (string.IsNullOrWhiteSpace(sourceKey))
+        {
+            errors.Add("SourceKey is required.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(sourceKey) &&
+            ContractWireNames.TryParseSourceFamilyWireName(sourceKey, out var parsedSourceFamily) &&
+            parsedSourceFamily != sourceFamily)
+        {
+            errors.Add("SourceKey must match SourceFamily.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(sourceKey) &&
+            !ParserAdapterDescriptorRegistry.TryGetBySourceKey(sourceKey, out _))
+        {
+            errors.Add("SourceKey must match a registered parser adapter descriptor.");
         }
     }
 }
