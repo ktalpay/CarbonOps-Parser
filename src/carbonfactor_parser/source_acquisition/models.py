@@ -18,6 +18,12 @@ class SourceAcquisitionPlanMode(str, Enum):
     DRY_RUN = "dry_run"
 
 
+class SourceAcquisitionDryRunResultStatus(str, Enum):
+    """Runtime-passive source acquisition dry-run result statuses."""
+
+    PLANNED = "planned"
+
+
 @dataclass(frozen=True)
 class SourceAcquisitionDescriptor:
     """Immutable metadata describing a known source acquisition family."""
@@ -67,3 +73,25 @@ class SourceAcquisitionPlan:
     mode: SourceAcquisitionPlanMode
     selected_source_families: tuple[str, ...]
     discovery_results: tuple[SourceDiscoveryResult, ...]
+
+
+@dataclass(frozen=True)
+class SourceAcquisitionDryRunFamilyResult:
+    """Runtime-passive dry-run result summary for one source family."""
+
+    source_family: str
+    status: SourceAcquisitionDryRunResultStatus
+    planned_document_count: int
+    discovery_result: SourceDiscoveryResult
+    warnings: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class SourceAcquisitionDryRunExecutionResult:
+    """Runtime-passive result of evaluating a source acquisition plan."""
+
+    status: SourceAcquisitionDryRunResultStatus
+    mode: SourceAcquisitionPlanMode
+    selected_source_families: tuple[str, ...]
+    family_results: tuple[SourceAcquisitionDryRunFamilyResult, ...]
+    warnings: tuple[str, ...] = ()
