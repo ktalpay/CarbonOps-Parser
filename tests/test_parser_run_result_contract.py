@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import sys
+from dataclasses import replace
 
 import pytest
 
@@ -10,9 +11,12 @@ from carbonfactor_parser.parsers.run_contract import (
     PARSER_RUNS_TABLE_NAME,
     ParserResultSummary,
     ParserRunContractResult,
+    ParserRunContractValidationIssue,
+    ParserRunContractValidationResult,
     ParserRunRequest,
     ParserRunStatus,
     create_phase1_parser_run_contract,
+    validate_parser_run_contract,
 )
 from carbonfactor_parser.persistence.postgresql_schema_catalog import (
     get_postgresql_phase1_schema_catalog,
@@ -201,6 +205,145 @@ def test_parser_run_result_summary_counts_are_deterministic_and_non_negative() -
     )
 
 
+def test_parser_run_contract_validation_accepts_default_contract() -> None:
+    result = validate_parser_run_contract(create_phase1_parser_run_contract())
+
+    assert result == ParserRunContractValidationResult(issues=())
+    assert result.is_valid
+
+
+def test_parser_run_contract_validation_reports_issue_shape() -> None:
+    issue = ParserRunContractValidationIssue(
+        code="PARSER_RUN_CONTRACT_TEST",
+        message="Parser run contract test issue.",
+        field_name="requests[0].parser_run_id",
+    )
+
+    result = ParserRunContractValidationResult(issues=(issue,))
+
+    assert not result.is_valid
+    assert result.issues == (issue,)
+    assert issue.severity == "error"
+
+
+def test_parser_run_contract_validation_rejects_blank_request_metadata() -> None:
+    contract = create_phase1_parser_run_contract()
+    request = replace(
+        contract.requests[0],
+        parser_run_id=" ",
+        source_document_id="",
+        source_document_uri=" ",
+    )
+    invalid = replace(contract, requests=(request,) + contract.requests[1:])
+
+    result = validate_parser_run_contract(invalid)
+
+    assert _issue_codes(result)[:3] == (
+        "PARSER_RUN_CONTRACT_MISSING_PARSER_RUN_ID",
+        "PARSER_RUN_CONTRACT_MISSING_SOURCE_DOCUMENT_ID",
+        "PARSER_RUN_CONTRACT_MISSING_SOURCE_DOCUMENT_URI",
+    )
+    assert not result.is_valid
+
+
+def test_parser_run_contract_validation_rejects_unsupported_source_families() -> None:
+    contract = create_phase1_parser_run_contract()
+    request = replace(contract.requests[0], source_family="unknown_family")
+    invalid = replace(
+        contract,
+        selected_source_families=("unknown_family",),
+        requests=(request,),
+        summary=replace(contract.summary, requested_source_document_count=1),
+    )
+
+    result = validate_parser_run_contract(invalid)
+
+    assert _issue_codes(result) == (
+        "PARSER_RUN_CONTRACT_UNSUPPORTED_SOURCE_FAMILY",
+        "PARSER_RUN_CONTRACT_UNSUPPORTED_REQUEST_SOURCE_FAMILY",
+    )
+
+
+def test_parser_run_contract_validation_rejects_invalid_status_values() -> None:
+    contract = create_phase1_parser_run_contract()
+    request = replace(contract.requests[0], parser_status="pending")
+    invalid = replace(
+        contract,
+        status="pending",
+        requests=(request,) + contract.requests[1:],
+    )
+
+    result = validate_parser_run_contract(invalid)  # type: ignore[arg-type]
+
+    assert _issue_codes(result) == (
+        "PARSER_RUN_CONTRACT_INVALID_STATUS",
+        "PARSER_RUN_CONTRACT_INVALID_REQUEST_STATUS",
+    )
+
+
+def test_parser_run_contract_validation_rejects_duplicate_request_ids() -> None:
+    contract = create_phase1_parser_run_contract()
+    duplicate = replace(
+        contract.requests[1],
+        parser_run_id=contract.requests[0].parser_run_id,
+        source_document_id=contract.requests[0].source_document_id,
+    )
+    invalid = replace(contract, requests=(contract.requests[0], duplicate))
+
+    result = validate_parser_run_contract(invalid)
+
+    assert _issue_codes(result) == (
+        "PARSER_RUN_CONTRACT_DUPLICATE_PARSER_RUN_ID",
+        "PARSER_RUN_CONTRACT_DUPLICATE_SOURCE_DOCUMENT_ID",
+        "PARSER_RUN_CONTRACT_SUMMARY_REQUEST_COUNT_MISMATCH",
+    )
+
+
+def test_parser_run_contract_validation_rejects_negative_summary_counts() -> None:
+    contract = create_phase1_parser_run_contract()
+    invalid = replace(
+        contract,
+        summary=replace(
+            contract.summary,
+            parsed_record_count=-1,
+            issue_count=-1,
+            warning_count=-1,
+            error_count=-1,
+        ),
+    )
+
+    result = validate_parser_run_contract(invalid)
+
+    assert _issue_codes(result) == (
+        "PARSER_RUN_CONTRACT_NEGATIVE_SUMMARY_COUNT",
+        "PARSER_RUN_CONTRACT_NEGATIVE_SUMMARY_COUNT",
+        "PARSER_RUN_CONTRACT_NEGATIVE_SUMMARY_COUNT",
+        "PARSER_RUN_CONTRACT_NEGATIVE_SUMMARY_COUNT",
+        "PARSER_RUN_CONTRACT_DRY_RUN_SUMMARY_NOT_ZERO",
+    )
+
+
+def test_parser_run_contract_validation_rejects_nonzero_dry_run_summary() -> None:
+    contract = create_phase1_parser_run_contract()
+    invalid = replace(
+        contract,
+        summary=ParserResultSummary(
+            requested_source_document_count=len(contract.requests),
+            parsed_record_count=2,
+            issue_count=1,
+            warning_count=1,
+            error_count=1,
+        ),
+    )
+
+    result = validate_parser_run_contract(invalid)
+
+    assert _issue_codes(result) == (
+        "PARSER_RUN_CONTRACT_SUMMARY_ISSUE_TOTAL_MISMATCH",
+        "PARSER_RUN_CONTRACT_DRY_RUN_SUMMARY_NOT_ZERO",
+    )
+
+
 def test_parser_run_contract_module_import_is_runtime_passive(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -239,3 +382,9 @@ def test_parser_run_contract_module_import_is_runtime_passive(
         for module_name in newly_imported
         for prefix in BANNED_RUNTIME_MODULE_PREFIXES
     )
+
+
+def _issue_codes(
+    result: ParserRunContractValidationResult,
+) -> tuple[str, ...]:
+    return tuple(issue.code for issue in result.issues)
