@@ -17,6 +17,13 @@ EXPECTED_CONTRACT_API_SYMBOLS = (
     "Phase1OrchestrationPlanStatus",
     "Phase1OrchestrationPlanSummary",
     "Phase1OrchestrationPlanValidationResult",
+    "Phase1OrchestrationExecutorIssue",
+    "Phase1OrchestrationExecutorReadiness",
+    "Phase1OrchestrationExecutorRequest",
+    "Phase1OrchestrationExecutorResult",
+    "Phase1OrchestrationExecutorStatus",
+    "Phase1OrchestrationExecutorSummary",
+    "Phase1OrchestrationExecutorValidationResult",
     "SourceAcquisitionRunIssue",
     "SourceAcquisitionRunRequest",
     "SourceAcquisitionRunResult",
@@ -38,6 +45,8 @@ EXPECTED_CONTRACT_API_SYMBOLS = (
     "create_acquisition_to_parser_plan",
     "create_phase1_orchestration_plan",
     "create_phase1_orchestration_plans",
+    "create_phase1_orchestration_executor_boundaries",
+    "create_phase1_orchestration_executor_request",
     "create_phase1_acquisition_to_parser_plans",
     "create_phase1_source_artifact_parser_input_bridge",
     "create_phase1_source_acquisition_run_requests",
@@ -52,6 +61,10 @@ EXPECTED_CONTRACT_API_SYMBOLS = (
     "validate_acquisition_to_parser_plans",
     "validate_phase1_orchestration_plan",
     "validate_phase1_orchestration_plans",
+    "plan_phase1_orchestration_executor_boundary",
+    "validate_phase1_orchestration_executor_request",
+    "validate_phase1_orchestration_executor_result",
+    "validate_phase1_orchestration_executor_results",
     "validate_source_artifact_parser_input_bridge_entry",
     "validate_source_artifact_parser_input_bridge_result",
     "validate_source_acquisition_run_request",
@@ -125,6 +138,7 @@ def test_public_source_acquisition_contract_api_exports_work_together() -> None:
     bridge = contract_api.create_phase1_source_artifact_parser_input_bridge()
     plan = contract_api.create_phase1_acquisition_to_parser_plans()[0]
     orchestration = contract_api.create_phase1_orchestration_plans()[0]
+    executor = contract_api.create_phase1_orchestration_executor_boundaries()[0]
 
     assert result.source_key == "ghg_protocol"
     assert result.status is contract_api.SourceAcquisitionRunStatus.COMPLETED
@@ -138,6 +152,11 @@ def test_public_source_acquisition_contract_api_exports_work_together() -> None:
     assert contract_api.validate_acquisition_to_parser_plan(plan).is_valid
     assert orchestration.status is contract_api.Phase1OrchestrationPlanStatus.PLANNED
     assert contract_api.validate_phase1_orchestration_plan(orchestration).is_valid
+    assert (
+        executor.status
+        is contract_api.Phase1OrchestrationExecutorStatus.NOT_IMPLEMENTED
+    )
+    assert contract_api.validate_phase1_orchestration_executor_result(executor).is_valid
 
 
 def test_source_acquisition_package_import_is_lazy_and_runtime_passive() -> None:
@@ -206,6 +225,7 @@ def test_source_acquisition_contract_api_does_not_export_internal_module_names()
     assert "source_artifact_parser_input_bridge_contract" not in contract_api.__all__
     assert "acquisition_to_parser_plan_contract" not in contract_api.__all__
     assert "phase1_orchestration_plan_contract" not in contract_api.__all__
+    assert "phase1_orchestration_executor_boundary" not in contract_api.__all__
     assert all(not name.startswith("_") for name in contract_api.__all__)
 
 
