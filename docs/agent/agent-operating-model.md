@@ -196,3 +196,17 @@ Files changed
 Validation performed
 Remaining risks
 Commit-ready or merge-ready verdict
+
+## Agent PR Footer Metadata
+
+Agent-created pull requests must end with a deterministic metadata footer.
+
+Required footer:
+
+```text
+Task-ID: <TASK_ID>
+Task-Issue: #<ISSUE_NUMBER>
+
+The watcher uses Task-Issue as the canonical GitHub issue target for label updates.
+
+The final matching Task-ID and Task-Issue lines in the PR body are treated as authoritative. This avoids accidentally parsing example metadata from earlier markdown code blocks.
