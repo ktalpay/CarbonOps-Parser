@@ -217,7 +217,10 @@ boundary helper and remain disabled by default. The
 [PostgreSQL Opt-In Integration Runbook](postgresql-opt-in-integration-runbook.md)
 documents the external test-runner controls, local test database guidance,
 secret-handling rules, cleanup expectations, and default-suite DB-free checks
-for that future work.
+for that future work. The
+[PostgreSQL Integration Test Container Strategy](postgresql-integration-test-container-strategy.md)
+defines the future ephemeral local or CI-owned PostgreSQL service model for
+those tests.
 
 Rules for the first runtime write task:
 
