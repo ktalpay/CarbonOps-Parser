@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+from pathlib import Path
 import re
 
 import pytest
@@ -17,6 +18,18 @@ from carbonfactor_parser.persistence.postgresql_ddl_renderer import (
     render_create_table_statement,
     render_postgresql_phase1_schema_ddl,
 )
+
+PHASE1_DDL_SNAPSHOT_PATH = Path(__file__).parent / "fixtures" / "postgresql_phase1_schema_ddl.sql"
+KNOWN_SHORTENED_FOREIGN_KEY_NAME = "fk_defra_emission_factor_details_defra_emission_fa_98fe08fa20f4"
+KNOWN_SHORTENED_INDEX_NAME = "idx_defra_emission_factor_details_defra_emission_f_532bf4e61faf"
+
+
+def _rendered_phase1_sql_contract() -> str:
+    return "\n\n".join(render_postgresql_phase1_schema_ddl().statements) + "\n"
+
+
+def _phase1_sql_snapshot() -> str:
+    return PHASE1_DDL_SNAPSHOT_PATH.read_text(encoding="utf-8").replace("\r\n", "\n")
 
 
 def _rendered_table_constraint_and_index_identifiers() -> tuple[str, ...]:
@@ -86,6 +99,22 @@ def test_renderer_output_is_deterministic() -> None:
     assert first.statements == second.statements
 
 
+def test_rendered_phase1_sql_matches_contract_snapshot() -> None:
+    assert _rendered_phase1_sql_contract() == _phase1_sql_snapshot()
+
+
+def test_repeated_render_calls_match_contract_snapshot() -> None:
+    snapshot = _phase1_sql_snapshot()
+    assert _rendered_phase1_sql_contract() == snapshot
+    assert _rendered_phase1_sql_contract() == snapshot
+
+
+def test_contract_snapshot_includes_known_shortened_identifiers() -> None:
+    snapshot = _phase1_sql_snapshot()
+    assert KNOWN_SHORTENED_FOREIGN_KEY_NAME in snapshot
+    assert KNOWN_SHORTENED_INDEX_NAME in snapshot
+
+
 def test_rendered_table_constraint_and_index_identifiers_fit_postgresql_limit() -> None:
     identifiers = _rendered_table_constraint_and_index_identifiers()
     assert identifiers
@@ -100,6 +129,8 @@ def test_known_long_foreign_key_and_index_names_are_shortened_deterministically(
     expected_fk_name = _render_identifier(long_fk_name, "constraint")
     expected_index_name = _render_identifier(long_index_name, "index")
 
+    assert expected_fk_name == KNOWN_SHORTENED_FOREIGN_KEY_NAME
+    assert expected_index_name == KNOWN_SHORTENED_INDEX_NAME
     assert expected_fk_name == _render_identifier(long_fk_name, "constraint")
     assert expected_index_name == _render_identifier(long_index_name, "index")
     assert expected_fk_name != long_fk_name
