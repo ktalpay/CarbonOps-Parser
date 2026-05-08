@@ -8,11 +8,17 @@ import pytest
 
 from carbonfactor_parser.persistence.postgresql_schema_catalog import (
     ColumnDefinition,
+    ForeignKeyDefinition,
     IndexDefinition,
     PostgreSQLDataType,
     TableDefinition,
+    UniqueConstraintDefinition,
     get_postgresql_phase1_schema_catalog,
     get_required_table_names,
+)
+from carbonfactor_parser.persistence.postgresql_ddl_renderer import (
+    render_create_index_statements as render_structured_create_index_statements,
+    render_create_table_statement as render_structured_create_table_statement,
 )
 from carbonfactor_parser.persistence.postgresql_schema_ddl import (
     render_postgresql_phase1_create_table_ddl,
@@ -168,3 +174,56 @@ def test_index_columns_must_exist_in_table_catalog_metadata() -> None:
 
     with pytest.raises(ValueError, match="unknown columns"):
         render_postgresql_table_index_ddl(invalid_table)
+
+
+def test_structured_renderer_rejects_unknown_unique_and_foreign_key_columns() -> None:
+    invalid_table = TableDefinition(
+        name="good_table",
+        columns=(
+            ColumnDefinition(
+                "id",
+                PostgreSQLDataType.UUID,
+                nullable=False,
+                is_primary_key=True,
+            ),
+        ),
+        foreign_keys=(
+            ForeignKeyDefinition(
+                "missing_fk_id",
+                "referenced_table",
+                "referenced_id",
+            ),
+        ),
+        unique_constraints=(
+            UniqueConstraintDefinition(
+                name="uq_good_table_missing_unique_column",
+                column_names=("missing_unique_id",),
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="unknown columns"):
+        render_structured_create_table_statement(invalid_table)
+
+
+def test_structured_renderer_rejects_unknown_index_columns() -> None:
+    invalid_table = TableDefinition(
+        name="good_table",
+        columns=(
+            ColumnDefinition(
+                "id",
+                PostgreSQLDataType.UUID,
+                nullable=False,
+                is_primary_key=True,
+            ),
+        ),
+        indexes=(
+            IndexDefinition(
+                name="idx_good_table_missing_column",
+                column_names=("missing_id",),
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="unknown columns"):
+        render_structured_create_index_statements(invalid_table)
