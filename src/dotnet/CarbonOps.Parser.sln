@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarbonOps.Parser.Contracts", "CarbonOps.Parser.Contracts\CarbonOps.Parser.Contracts.csproj", "{25E3398F-BC12-4650-99BD-E4DF10BFF449}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarbonOps.Parser.Contracts.Tests", "..\..\tests\dotnet\CarbonOps.Parser.Contracts.Tests\CarbonOps.Parser.Contracts.Tests.csproj", "{F3B9FC9B-48B1-489A-A042-8C97A02DFEE9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{25E3398F-BC12-4650-99BD-E4DF10BFF449}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25E3398F-BC12-4650-99BD-E4DF10BFF449}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25E3398F-BC12-4650-99BD-E4DF10BFF449}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25E3398F-BC12-4650-99BD-E4DF10BFF449}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3B9FC9B-48B1-489A-A042-8C97A02DFEE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3B9FC9B-48B1-489A-A042-8C97A02DFEE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3B9FC9B-48B1-489A-A042-8C97A02DFEE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3B9FC9B-48B1-489A-A042-8C97A02DFEE9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
