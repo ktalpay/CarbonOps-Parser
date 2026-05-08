@@ -86,4 +86,169 @@ public static class ContractValidators
 
         return ContractValidationResult.FromErrors(errors);
     }
+
+    public static ContractValidationResult Validate(this ParserRunRequest? value)
+    {
+        var errors = new List<string>();
+
+        if (value is null)
+        {
+            errors.Add("ParserRunRequest is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        if (!Enum.IsDefined(value.SourceFamily))
+        {
+            errors.Add("SourceFamily must be a defined source family.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.SourceDocumentReference))
+        {
+            errors.Add("SourceDocumentReference is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.SourceChecksumAlgorithm))
+        {
+            errors.Add("SourceChecksumAlgorithm is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.SourceChecksumValue))
+        {
+            errors.Add("SourceChecksumValue is required.");
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
+    public static ContractValidationResult Validate(this ParserRunIssue? value)
+    {
+        var errors = new List<string>();
+
+        if (value is null)
+        {
+            errors.Add("ParserRunIssue is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        if (string.IsNullOrWhiteSpace(value.Code))
+        {
+            errors.Add("Code is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.Message))
+        {
+            errors.Add("Message is required.");
+        }
+
+        if (!Enum.IsDefined(value.Severity))
+        {
+            errors.Add("ParserRunIssueSeverity must be a defined parser run issue severity.");
+        }
+
+        if (value.Location is not null && string.IsNullOrWhiteSpace(value.Location))
+        {
+            errors.Add("Location must not be whitespace when provided.");
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
+    public static ContractValidationResult Validate(this ParserRunResult? value)
+    {
+        var errors = new List<string>();
+
+        if (value is null)
+        {
+            errors.Add("ParserRunResult is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        AppendErrors(errors, "Request.", value.Request.Validate());
+
+        if (!Enum.IsDefined(value.Status))
+        {
+            errors.Add("ParserRunStatus must be a defined parser run status.");
+        }
+
+        if (value.TotalRows < 0)
+        {
+            errors.Add("TotalRows must be non-negative.");
+        }
+
+        if (value.AcceptedRows < 0)
+        {
+            errors.Add("AcceptedRows must be non-negative.");
+        }
+
+        if (value.RejectedRows < 0)
+        {
+            errors.Add("RejectedRows must be non-negative.");
+        }
+
+        if (value.AcceptedRows >= 0 &&
+            value.RejectedRows >= 0 &&
+            value.TotalRows >= 0 &&
+            value.AcceptedRows + value.RejectedRows > value.TotalRows)
+        {
+            errors.Add("AcceptedRows plus RejectedRows must not exceed TotalRows.");
+        }
+
+        for (var index = 0; index < value.Issues.Count; index++)
+        {
+            AppendErrors(errors, $"Issues[{index}].", value.Issues[index].Validate());
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
+    public static ContractValidationResult Validate(this ParserRunResultSet? value)
+    {
+        var errors = new List<string>();
+        var requestKeys = new HashSet<string>(StringComparer.Ordinal);
+
+        if (value is null)
+        {
+            errors.Add("ParserRunResultSet is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        for (var index = 0; index < value.Results.Count; index++)
+        {
+            var result = value.Results[index];
+
+            AppendErrors(errors, $"Results[{index}].", result.Validate());
+            if (result is null)
+            {
+                continue;
+            }
+
+            var request = result.Request;
+            if (request is null)
+            {
+                continue;
+            }
+
+            var requestKey = string.Join(
+                "|",
+                (int)request.SourceFamily,
+                request.SourceDocumentReference,
+                request.SourceChecksumAlgorithm,
+                request.SourceChecksumValue);
+
+            if (!requestKeys.Add(requestKey))
+            {
+                errors.Add("ParserRunResultSet must not contain duplicate parser run requests.");
+            }
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
+    private static void AppendErrors(
+        List<string> errors,
+        string prefix,
+        ContractValidationResult validationResult)
+    {
+        errors.AddRange(validationResult.Errors.Select(error => $"{prefix}{error}"));
+    }
 }
