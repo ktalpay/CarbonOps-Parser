@@ -889,4 +889,5 @@ def test_persistence_all_excludes_internal_module_names() -> None:
     assert "postgresql_repository_disabled_execution_preview" not in persistence.__all__
     assert "postgresql_runtime_execution_gate" not in persistence.__all__
     assert "postgresql_schema_bootstrap" not in persistence.__all__
+    assert "postgresql_schema_ddl" not in persistence.__all__
     assert all(not name.startswith("_") for name in persistence.__all__)
