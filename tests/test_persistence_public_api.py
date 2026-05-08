@@ -14,6 +14,7 @@ from carbonfactor_parser.persistence import (
     postgresql_repository,
     postgresql_repository_disabled_execution_preview,
     postgresql_runtime_execution_gate,
+    postgresql_schema_bootstrap_planner,
     postgresql_transaction_policy,
     repository,
     schema,
@@ -85,6 +86,8 @@ from carbonfactor_parser.persistence import (
     PostgreSQLRuntimeExecutionGateDescription,
     PostgreSQLRuntimeExecutionGateIssue,
     PostgreSQLRuntimeExecutionGateStatus,
+    PostgreSQLSchemaBootstrapPlan,
+    PostgreSQLSchemaBootstrapPlanStatement,
     PostgreSQLStatementExecutionContract,
     PostgreSQLTransactionBoundary,
     PostgreSQLTransactionFailurePolicy,
@@ -106,6 +109,7 @@ from carbonfactor_parser.persistence import (
     build_postgresql_execution_plan,
     build_postgresql_insert_statement,
     build_postgresql_persistence_preview,
+    build_postgresql_phase1_schema_bootstrap_plan,
     build_postgresql_repository_disabled_execution_preview,
     build_postgresql_transaction_plan,
     create_persistence_result,
@@ -194,6 +198,8 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLRuntimeExecutionGateDescription",
     "PostgreSQLRuntimeExecutionGateIssue",
     "PostgreSQLRuntimeExecutionGateStatus",
+    "PostgreSQLSchemaBootstrapPlan",
+    "PostgreSQLSchemaBootstrapPlanStatement",
     "PostgreSQLStatementExecutionContract",
     "PostgreSQLTransactionBoundary",
     "PostgreSQLTransactionFailurePolicy",
@@ -215,6 +221,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "build_postgresql_execution_plan",
     "build_postgresql_insert_statement",
     "build_postgresql_persistence_preview",
+    "build_postgresql_phase1_schema_bootstrap_plan",
     "build_postgresql_repository_disabled_execution_preview",
     "build_postgresql_transaction_plan",
     "create_persistence_result",
@@ -431,6 +438,13 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PostgreSQLRuntimeExecutionGateStatus": (
         postgresql_runtime_execution_gate.PostgreSQLRuntimeExecutionGateStatus
     ),
+    "PostgreSQLSchemaBootstrapPlan": (
+        postgresql_schema_bootstrap_planner.PostgreSQLSchemaBootstrapPlan
+    ),
+    "PostgreSQLSchemaBootstrapPlanStatement": (
+        postgresql_schema_bootstrap_planner
+        .PostgreSQLSchemaBootstrapPlanStatement
+    ),
     "PostgreSQLStatementExecutionContract": (
         postgresql_connection_session_contract.PostgreSQLStatementExecutionContract
     ),
@@ -498,6 +512,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     ),
     "build_postgresql_persistence_preview": (
         postgresql_persistence_preview.build_postgresql_persistence_preview
+    ),
+    "build_postgresql_phase1_schema_bootstrap_plan": (
+        postgresql_schema_bootstrap_planner
+        .build_postgresql_phase1_schema_bootstrap_plan
     ),
     "build_postgresql_repository_disabled_execution_preview": (
         postgresql_repository_disabled_execution_preview
@@ -684,6 +702,10 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLRuntimeExecutionGateStatus": (
             PostgreSQLRuntimeExecutionGateStatus
         ),
+        "PostgreSQLSchemaBootstrapPlan": PostgreSQLSchemaBootstrapPlan,
+        "PostgreSQLSchemaBootstrapPlanStatement": (
+            PostgreSQLSchemaBootstrapPlanStatement
+        ),
         "PostgreSQLStatementExecutionContract": PostgreSQLStatementExecutionContract,
         "PostgreSQLTransactionBoundary": PostgreSQLTransactionBoundary,
         "PostgreSQLTransactionFailurePolicy": (
@@ -724,6 +746,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "build_postgresql_insert_statement": build_postgresql_insert_statement,
         "build_postgresql_persistence_preview": (
             build_postgresql_persistence_preview
+        ),
+        "build_postgresql_phase1_schema_bootstrap_plan": (
+            build_postgresql_phase1_schema_bootstrap_plan
         ),
         "build_postgresql_repository_disabled_execution_preview": (
             build_postgresql_repository_disabled_execution_preview
