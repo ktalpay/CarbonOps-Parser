@@ -42,6 +42,92 @@ public static class ContractValidators
         return ContractValidationResult.FromErrors(errors);
     }
 
+    public static ContractValidationResult Validate(this SourceDiscoveryCandidate? value)
+    {
+        var errors = new List<string>();
+
+        if (value is null)
+        {
+            errors.Add("SourceDiscoveryCandidate is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        if (!Enum.IsDefined(value.SourceFamily))
+        {
+            errors.Add("SourceFamily must be a defined source family.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.SourceKey))
+        {
+            errors.Add("SourceKey is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.CandidateId))
+        {
+            errors.Add("CandidateId is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.Title))
+        {
+            errors.Add("Title is required.");
+        }
+
+        if (value.ReportingYear is < MinimumReportingYear or > MaximumReportingYear)
+        {
+            errors.Add("ReportingYear must be between 1990 and 2100 when provided.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.SourceReference))
+        {
+            errors.Add("SourceReference is required.");
+        }
+
+        if (!Enum.IsDefined(value.ExpectedSourceFormat))
+        {
+            errors.Add("ExpectedSourceFormat must be a defined parser source format.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.ContentType))
+        {
+            errors.Add("ContentType is required.");
+        }
+
+        if (value.Extension is not null && string.IsNullOrWhiteSpace(value.Extension))
+        {
+            errors.Add("Extension must not be whitespace when provided.");
+        }
+
+        if (value.VersionLabel is not null && string.IsNullOrWhiteSpace(value.VersionLabel))
+        {
+            errors.Add("VersionLabel must not be whitespace when provided.");
+        }
+
+        if (value.Checksum is not null && string.IsNullOrWhiteSpace(value.Checksum.Algorithm))
+        {
+            errors.Add("Checksum.Algorithm is required when Checksum is provided.");
+        }
+
+        if (value.Checksum is not null && string.IsNullOrWhiteSpace(value.Checksum.Value))
+        {
+            errors.Add("Checksum.Value is required when Checksum is provided.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(value.SourceKey) &&
+            ContractWireNames.TryParseSourceFamilyWireName(value.SourceKey, out var sourceFamily) &&
+            sourceFamily != value.SourceFamily)
+        {
+            errors.Add("SourceKey must match SourceFamily.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(value.SourceKey) &&
+            !ParserAdapterDescriptorRegistry.TryGetBySourceKey(value.SourceKey, out _))
+        {
+            errors.Add("SourceKey must match a registered parser adapter descriptor.");
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
     public static ContractValidationResult Validate(this ParserRunSummary value)
     {
         var errors = new List<string>();
