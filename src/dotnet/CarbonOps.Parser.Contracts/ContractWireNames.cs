@@ -63,6 +63,15 @@ public static class ContractWireNames
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown parser adapter readiness."),
         };
 
+    public static string ToWireName(this ParserValidationIssueSeverity value) =>
+        value switch
+        {
+            ParserValidationIssueSeverity.Info => "info",
+            ParserValidationIssueSeverity.Warning => "warning",
+            ParserValidationIssueSeverity.Error => "error",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown parser validation issue severity."),
+        };
+
     public static bool TryParseSourceFamilyWireName(string? wireName, out SourceFamily value)
     {
         value = wireName switch
@@ -150,5 +159,20 @@ public static class ContractWireNames
         };
 
         return wireName is "execution_not_implemented";
+    }
+
+    public static bool TryParseParserValidationIssueSeverityWireName(
+        string? wireName,
+        out ParserValidationIssueSeverity value)
+    {
+        value = wireName switch
+        {
+            "info" => ParserValidationIssueSeverity.Info,
+            "warning" => ParserValidationIssueSeverity.Warning,
+            "error" => ParserValidationIssueSeverity.Error,
+            _ => default,
+        };
+
+        return wireName is "info" or "warning" or "error";
     }
 }
