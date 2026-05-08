@@ -12,6 +12,12 @@ class SourceDiscoveryStatus(str, Enum):
     DECLARED = "declared"
 
 
+class SourceAcquisitionPlanMode(str, Enum):
+    """Runtime-passive source acquisition planning modes."""
+
+    DRY_RUN = "dry_run"
+
+
 @dataclass(frozen=True)
 class SourceAcquisitionDescriptor:
     """Immutable metadata describing a known source acquisition family."""
@@ -44,3 +50,20 @@ class SourceDiscoveryResult:
     status: SourceDiscoveryStatus
     documents: tuple[SourceDiscoveryDocument, ...]
     warnings: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class SourceAcquisitionRequest:
+    """Runtime-passive request for a Phase 1 source acquisition plan."""
+
+    selected_source_families: tuple[str, ...]
+    mode: SourceAcquisitionPlanMode = SourceAcquisitionPlanMode.DRY_RUN
+
+
+@dataclass(frozen=True)
+class SourceAcquisitionPlan:
+    """Runtime-passive Phase 1 source acquisition plan."""
+
+    mode: SourceAcquisitionPlanMode
+    selected_source_families: tuple[str, ...]
+    discovery_results: tuple[SourceDiscoveryResult, ...]
