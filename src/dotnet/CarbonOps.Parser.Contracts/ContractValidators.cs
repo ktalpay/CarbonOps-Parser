@@ -753,6 +753,139 @@ public static class ContractValidators
         return ContractValidationResult.FromErrors(errors);
     }
 
+    public static ContractValidationResult Validate(this Phase1OrchestrationExecutorRequest? value)
+    {
+        var errors = new List<string>();
+
+        if (value is null)
+        {
+            errors.Add("Phase1OrchestrationExecutorRequest is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        ValidateSourceKeyMetadata(errors, value.SourceFamily, value.SourceKey);
+
+        if (value.ExecutorRequestId is not null && string.IsNullOrWhiteSpace(value.ExecutorRequestId))
+        {
+            errors.Add("ExecutorRequestId must not be whitespace when provided.");
+        }
+
+        if (value.CorrelationId is not null && string.IsNullOrWhiteSpace(value.CorrelationId))
+        {
+            errors.Add("CorrelationId must not be whitespace when provided.");
+        }
+
+        AppendErrors(errors, "Plan.", value.Plan.Validate());
+        if (value.Plan is not null)
+        {
+            ValidateSourceAligned(errors, "Plan", value.Plan.SourceFamily, value.Plan.SourceKey, value.SourceFamily, value.SourceKey);
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
+    public static ContractValidationResult Validate(this Phase1OrchestrationExecutorResult? value)
+    {
+        var errors = new List<string>();
+
+        if (value is null)
+        {
+            errors.Add("Phase1OrchestrationExecutorResult is required.");
+            return ContractValidationResult.FromErrors(errors);
+        }
+
+        ValidateSourceKeyMetadata(errors, value.SourceFamily, value.SourceKey);
+
+        if (!Enum.IsDefined(value.Status))
+        {
+            errors.Add("Phase1OrchestrationExecutorStatus must be a defined Phase 1 orchestration executor status.");
+        }
+
+        if (string.IsNullOrWhiteSpace(value.ReadinessReason))
+        {
+            errors.Add("ReadinessReason is required.");
+        }
+
+        if (value.ExecutorRequestId is not null && string.IsNullOrWhiteSpace(value.ExecutorRequestId))
+        {
+            errors.Add("ExecutorRequestId must not be whitespace when provided.");
+        }
+
+        if (value.CorrelationId is not null && string.IsNullOrWhiteSpace(value.CorrelationId))
+        {
+            errors.Add("CorrelationId must not be whitespace when provided.");
+        }
+
+        AppendErrors(errors, "Plan.", value.Plan.Validate());
+        if (value.Plan is not null)
+        {
+            ValidateSourceAligned(errors, "Plan", value.Plan.SourceFamily, value.Plan.SourceKey, value.SourceFamily, value.SourceKey);
+        }
+
+        for (var index = 0; index < value.PlanIssues.Count; index++)
+        {
+            var issue = value.PlanIssues[index];
+
+            AppendErrors(errors, $"PlanIssues[{index}].", issue.Validate());
+            if (issue is null)
+            {
+                continue;
+            }
+
+            ValidateSourceAligned(errors, $"PlanIssues[{index}]", issue.SourceFamily, issue.SourceKey, value.SourceFamily, value.SourceKey);
+        }
+
+        if (value.Plan is not null)
+        {
+            if (value.SourceCandidateCount != value.Plan.SourceCandidateCount)
+            {
+                errors.Add("SourceCandidateCount must match plan SourceCandidateCount.");
+            }
+
+            if (value.DownloadedArtifactCount != value.Plan.DownloadedArtifactCount)
+            {
+                errors.Add("DownloadedArtifactCount must match plan DownloadedArtifactCount.");
+            }
+
+            if (value.ParserInputArtifactCount != value.Plan.ParserInputArtifactCount)
+            {
+                errors.Add("ParserInputArtifactCount must match plan ParserInputArtifactCount.");
+            }
+
+            if (value.ParserRunRequestCount != value.Plan.ParserRunRequestCount)
+            {
+                errors.Add("ParserRunRequestCount must match plan ParserRunRequestCount.");
+            }
+
+            if (value.DryRunPlanCount != value.Plan.DryRunPlanCount)
+            {
+                errors.Add("DryRunPlanCount must match plan DryRunPlanCount.");
+            }
+
+            if (value.DryRunResultCount != value.Plan.DryRunResultCount)
+            {
+                errors.Add("DryRunResultCount must match plan DryRunResultCount.");
+            }
+
+            if (value.StructurallyExecutableDryRunCount != value.Plan.StructurallyExecutableDryRunCount)
+            {
+                errors.Add("StructurallyExecutableDryRunCount must match plan StructurallyExecutableDryRunCount.");
+            }
+
+            if (value.ExecutionImplementedDryRunCount != value.Plan.ExecutionImplementedDryRunCount)
+            {
+                errors.Add("ExecutionImplementedDryRunCount must match plan ExecutionImplementedDryRunCount.");
+            }
+        }
+
+        if (value.PlanIssueCount != value.PlanIssues.Count)
+        {
+            errors.Add("PlanIssueCount must match plan issue count.");
+        }
+
+        return ContractValidationResult.FromErrors(errors);
+    }
+
     public static ContractValidationResult Validate(this ParserRunSummary value)
     {
         var errors = new List<string>();
