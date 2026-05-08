@@ -3,6 +3,37 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
+
+
+class SourceDiscoveryStatus(str, Enum):
+    """Runtime-passive source discovery contract status values."""
+
+    DECLARED = "declared"
+
+
+class SourceAcquisitionPlanMode(str, Enum):
+    """Runtime-passive source acquisition planning modes."""
+
+    DRY_RUN = "dry_run"
+
+
+class SourceAcquisitionDryRunResultStatus(str, Enum):
+    """Runtime-passive source acquisition dry-run result statuses."""
+
+    PLANNED = "planned"
+
+
+class SourceDocumentChecksumStatus(str, Enum):
+    """Runtime-passive source document checksum contract statuses."""
+
+    DRY_RUN_UNAVAILABLE = "dry_run_unavailable"
+
+
+class SourceDocumentPersistenceMappingStatus(str, Enum):
+    """Runtime-passive source document persistence mapping statuses."""
+
+    DRY_RUN_MAPPED = "dry_run_mapped"
 
 
 @dataclass(frozen=True)
@@ -17,3 +48,143 @@ class SourceAcquisitionDescriptor:
     expected_format: str
     description: str
     enabled: bool = True
+
+
+@dataclass(frozen=True)
+class SourceDiscoveryDocument:
+    """Dry-run discovery metadata for a Phase 1 source document reference."""
+
+    source_family: str
+    source_name: str
+    source_reference: str
+    reporting_year: int | None = None
+    status: SourceDiscoveryStatus = SourceDiscoveryStatus.DECLARED
+
+
+@dataclass(frozen=True)
+class SourceDiscoveryResult:
+    """Deterministic collection of dry-run source discovery metadata."""
+
+    status: SourceDiscoveryStatus
+    documents: tuple[SourceDiscoveryDocument, ...]
+    warnings: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class SourceAcquisitionRequest:
+    """Runtime-passive request for a Phase 1 source acquisition plan."""
+
+    selected_source_families: tuple[str, ...]
+    mode: SourceAcquisitionPlanMode = SourceAcquisitionPlanMode.DRY_RUN
+
+
+@dataclass(frozen=True)
+class SourceAcquisitionPlan:
+    """Runtime-passive Phase 1 source acquisition plan."""
+
+    mode: SourceAcquisitionPlanMode
+    selected_source_families: tuple[str, ...]
+    discovery_results: tuple[SourceDiscoveryResult, ...]
+
+
+@dataclass(frozen=True)
+class SourceAcquisitionDryRunFamilyResult:
+    """Runtime-passive dry-run result summary for one source family."""
+
+    source_family: str
+    status: SourceAcquisitionDryRunResultStatus
+    planned_document_count: int
+    discovery_result: SourceDiscoveryResult
+    warnings: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class SourceAcquisitionDryRunExecutionResult:
+    """Runtime-passive result of evaluating a source acquisition plan."""
+
+    status: SourceAcquisitionDryRunResultStatus
+    mode: SourceAcquisitionPlanMode
+    selected_source_families: tuple[str, ...]
+    family_results: tuple[SourceAcquisitionDryRunFamilyResult, ...]
+    warnings: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class SourceDownloadRequest:
+    """Runtime-passive request describing a future source download."""
+
+    source_family: str
+    source_name: str
+    source_reference: str
+    target_logical_path: str
+    mode: SourceAcquisitionPlanMode = SourceAcquisitionPlanMode.DRY_RUN
+
+
+@dataclass(frozen=True)
+class SourceDownloadBatchPlan:
+    """Runtime-passive batch of source download requests."""
+
+    mode: SourceAcquisitionPlanMode
+    selected_source_families: tuple[str, ...]
+    requests: tuple[SourceDownloadRequest, ...]
+
+
+@dataclass(frozen=True)
+class SourceDocumentChecksum:
+    """Runtime-passive checksum metadata for a future source document."""
+
+    algorithm: str
+    value: str | None
+    status: SourceDocumentChecksumStatus
+
+
+@dataclass(frozen=True)
+class SourceDocumentManifestEntry:
+    """Runtime-passive identity metadata for one future source document."""
+
+    source_family: str
+    logical_document_name: str
+    source_reference: str
+    target_logical_path: str
+    checksum: SourceDocumentChecksum
+    mode: SourceAcquisitionPlanMode = SourceAcquisitionPlanMode.DRY_RUN
+
+
+@dataclass(frozen=True)
+class SourceDocumentManifest:
+    """Runtime-passive manifest of future Phase 1 source documents."""
+
+    mode: SourceAcquisitionPlanMode
+    selected_source_families: tuple[str, ...]
+    entries: tuple[SourceDocumentManifestEntry, ...]
+
+
+@dataclass(frozen=True)
+class SourceDocumentPersistenceRecord:
+    """Runtime-passive source document persistence record contract."""
+
+    source_document_id: str
+    ingestion_run_id: str
+    source_family: str
+    source_document_uri: str
+    source_checksum_sha256: str | None
+    checksum_status: SourceDocumentChecksumStatus
+    acquisition_status: SourceDocumentPersistenceMappingStatus
+    acquired_at: str | None
+    created_at: str
+    updated_at: str
+    logical_document_name: str
+    target_logical_path: str
+    mode: SourceAcquisitionPlanMode = SourceAcquisitionPlanMode.DRY_RUN
+
+
+@dataclass(frozen=True)
+class SourceDocumentPersistenceMappingResult:
+    """Runtime-passive mapping from manifest entries to persistence records."""
+
+    status: SourceDocumentPersistenceMappingStatus
+    mode: SourceAcquisitionPlanMode
+    table_name: str
+    column_names: tuple[str, ...]
+    selected_source_families: tuple[str, ...]
+    records: tuple[SourceDocumentPersistenceRecord, ...]

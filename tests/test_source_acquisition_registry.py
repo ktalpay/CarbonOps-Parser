@@ -1,21 +1,76 @@
 from dataclasses import FrozenInstanceError
+import importlib
+import sys
 
 import pytest
 
-from carbonfactor_parser.source_acquisition.models import SourceAcquisitionDescriptor
+from carbonfactor_parser.contracts import SourceType
+from carbonfactor_parser.source_acquisition.models import (
+    SourceAcquisitionDescriptor,
+    SourceDiscoveryDocument,
+    SourceDiscoveryResult,
+    SourceDiscoveryStatus,
+)
 from carbonfactor_parser.source_acquisition.registry import (
     create_default_source_acquisition_registry,
+    create_default_source_discovery_result,
     validate_source_acquisition_registry,
 )
+from carbonfactor_parser.source_adapters import SourceFamily
+
+EXPECTED_PHASE1_SOURCE_FAMILIES = (
+    "ghg_protocol",
+    "defra_desnz",
+    "ipcc_efdb",
+)
+
+FORBIDDEN_SOURCE_FAMILY_FRAGMENTS = (
+    "temp",
+    "test",
+    "fake",
+    "sample",
+    "manual",
+    "json_input",
+)
+
+BANNED_RUNTIME_MODULE_PREFIXES = (
+    "requests",
+    "psycopg",
+    "sqlalchemy",
+    "asyncpg",
+    "dotenv",
+    "boto3",
+    "httpx",
+    "urllib3",
+)
+
+
+def _fresh_import_registry_module():
+    sys.modules.pop("carbonfactor_parser.source_acquisition.registry", None)
+    return importlib.import_module("carbonfactor_parser.source_acquisition.registry")
 
 
 def test_default_registry_contains_exactly_phase1_source_descriptors() -> None:
     registry = create_default_source_acquisition_registry()
 
-    assert tuple(descriptor.source_id for descriptor in registry) == (
-        "ghg_protocol",
-        "defra_desnz",
-        "ipcc_efdb",
+    assert (
+        tuple(descriptor.source_id for descriptor in registry)
+        == EXPECTED_PHASE1_SOURCE_FAMILIES
+    )
+    assert (
+        tuple(descriptor.source_family for descriptor in registry)
+        == EXPECTED_PHASE1_SOURCE_FAMILIES
+    )
+
+
+def test_default_registry_matches_phase1_source_family_contracts() -> None:
+    registry = create_default_source_acquisition_registry()
+
+    assert tuple(descriptor.source_family for descriptor in registry) == tuple(
+        item.value for item in SourceType
+    )
+    assert tuple(descriptor.source_family for descriptor in registry) == tuple(
+        item.value for item in SourceFamily
     )
 
 
@@ -33,6 +88,32 @@ def test_default_registry_required_fields_are_non_empty() -> None:
         assert descriptor.source_family.strip()
         assert descriptor.homepage_url.strip()
         assert descriptor.acquisition_url.strip()
+
+
+def test_default_registry_uses_offline_discovery_placeholders() -> None:
+    registry = create_default_source_acquisition_registry()
+
+    for descriptor in registry:
+        assert descriptor.homepage_url.startswith("discovery://")
+        assert descriptor.acquisition_url.startswith("discovery://")
+        assert "://" in descriptor.homepage_url
+        assert "://" in descriptor.acquisition_url
+
+
+def test_default_registry_excludes_non_contract_source_family_fragments() -> None:
+    registry = create_default_source_acquisition_registry()
+
+    source_identifiers = tuple(
+        value
+        for descriptor in registry
+        for value in (descriptor.source_id, descriptor.source_family)
+    )
+
+    for identifier in source_identifiers:
+        assert not any(
+            fragment in identifier
+            for fragment in FORBIDDEN_SOURCE_FAMILY_FRAGMENTS
+        )
 
 
 def test_source_acquisition_descriptor_is_immutable() -> None:
@@ -68,6 +149,43 @@ def test_duplicate_source_ids_raise_clear_exception() -> None:
 
     with pytest.raises(ValueError, match="Duplicate source_id found: duplicate_source"):
         validate_source_acquisition_registry(duplicate_registry)
+
+
+def test_registry_module_import_is_runtime_passive(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import builtins
+    import os
+
+    open_calls: list[tuple[object, ...]] = []
+    getenv_calls: list[tuple[object, ...]] = []
+
+    def guard_open(*args: object, **kwargs: object) -> object:
+        open_calls.append(args)
+        raise AssertionError("source acquisition registry import read a file")
+
+    def guard_getenv(*args: object, **kwargs: object) -> object:
+        getenv_calls.append(args)
+        raise AssertionError("source acquisition registry import read environment")
+
+    monkeypatch.setattr(builtins, "open", guard_open)
+    monkeypatch.setattr(os, "getenv", guard_getenv)
+    monkeypatch.setattr(os, "environ", {})
+
+    imported_modules_before = set(sys.modules)
+    module = _fresh_import_registry_module()
+    imported_modules_after = set(sys.modules)
+
+    assert hasattr(module, "create_default_source_acquisition_registry")
+    assert open_calls == []
+    assert getenv_calls == []
+
+    newly_imported = imported_modules_after - imported_modules_before
+    assert not any(
+        module_name == prefix or module_name.startswith(f"{prefix}.")
+        for module_name in newly_imported
+        for prefix in BANNED_RUNTIME_MODULE_PREFIXES
+    )
 
 
 def test_registry_exports_are_stable_and_deterministic() -> None:
@@ -112,3 +230,73 @@ def test_registry_exports_are_stable_and_deterministic() -> None:
             enabled=True,
         ),
     )
+
+
+def test_default_discovery_result_contains_exactly_phase1_sources() -> None:
+    result = create_default_source_discovery_result()
+
+    assert result == SourceDiscoveryResult(
+        status=SourceDiscoveryStatus.DECLARED,
+        documents=(
+            SourceDiscoveryDocument(
+                source_family="ghg_protocol",
+                source_name="GHG Protocol",
+                source_reference="discovery://ghg_protocol/acquisition",
+                reporting_year=None,
+                status=SourceDiscoveryStatus.DECLARED,
+            ),
+            SourceDiscoveryDocument(
+                source_family="defra_desnz",
+                source_name="DEFRA/DESNZ",
+                source_reference="discovery://defra_desnz/homepage",
+                reporting_year=None,
+                status=SourceDiscoveryStatus.DECLARED,
+            ),
+            SourceDiscoveryDocument(
+                source_family="ipcc_efdb",
+                source_name="IPCC EFDB",
+                source_reference="discovery://ipcc_efdb/homepage",
+                reporting_year=None,
+                status=SourceDiscoveryStatus.DECLARED,
+            ),
+        ),
+    )
+
+
+def test_default_discovery_result_is_deterministic() -> None:
+    first = create_default_source_discovery_result()
+    second = create_default_source_discovery_result()
+
+    assert first == second
+    assert (
+        tuple(document.source_family for document in first.documents)
+        == EXPECTED_PHASE1_SOURCE_FAMILIES
+    )
+    assert tuple(document.status for document in first.documents) == (
+        SourceDiscoveryStatus.DECLARED,
+        SourceDiscoveryStatus.DECLARED,
+        SourceDiscoveryStatus.DECLARED,
+    )
+    assert first.warnings == ()
+
+
+def test_default_discovery_references_are_offline_placeholders() -> None:
+    result = create_default_source_discovery_result()
+
+    for document in result.documents:
+        assert document.source_reference.startswith("discovery://")
+        assert not document.source_reference.startswith(("http://", "https://"))
+        assert document.reporting_year is None
+
+
+def test_default_discovery_result_excludes_non_contract_source_families() -> None:
+    result = create_default_source_discovery_result()
+
+    assert tuple(document.source_family for document in result.documents) == tuple(
+        item.value for item in SourceType
+    )
+    for document in result.documents:
+        assert not any(
+            fragment in document.source_family
+            for fragment in FORBIDDEN_SOURCE_FAMILY_FRAGMENTS
+        )
