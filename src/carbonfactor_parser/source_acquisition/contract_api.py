@@ -2,6 +2,17 @@
 
 from __future__ import annotations
 
+from carbonfactor_parser.source_acquisition.acquisition_to_parser_plan_contract import (
+    AcquisitionToParserPlanIssue,
+    AcquisitionToParserPlanResult,
+    AcquisitionToParserPlanStatus,
+    AcquisitionToParserPlanSummary,
+    AcquisitionToParserPlanValidationResult,
+    create_acquisition_to_parser_plan,
+    create_phase1_acquisition_to_parser_plans,
+    validate_acquisition_to_parser_plan,
+    validate_acquisition_to_parser_plans,
+)
 from carbonfactor_parser.source_acquisition.discovery_candidate_contract import (
     SourceDiscoveryCandidate,
     SourceDiscoveryCandidateResult,
@@ -48,6 +59,11 @@ from carbonfactor_parser.source_acquisition.source_artifact_parser_input_bridge_
 
 
 __all__ = (
+    "AcquisitionToParserPlanIssue",
+    "AcquisitionToParserPlanResult",
+    "AcquisitionToParserPlanStatus",
+    "AcquisitionToParserPlanSummary",
+    "AcquisitionToParserPlanValidationResult",
     "SourceAcquisitionRunIssue",
     "SourceAcquisitionRunRequest",
     "SourceAcquisitionRunResult",
@@ -66,6 +82,8 @@ __all__ = (
     "SourceDownloadArtifactResult",
     "SourceDownloadArtifactValidationIssue",
     "SourceDownloadArtifactValidationResult",
+    "create_acquisition_to_parser_plan",
+    "create_phase1_acquisition_to_parser_plans",
     "create_phase1_source_artifact_parser_input_bridge",
     "create_phase1_source_acquisition_run_requests",
     "create_phase1_source_acquisition_run_results",
@@ -75,6 +93,8 @@ __all__ = (
     "create_source_acquisition_run_request",
     "create_source_acquisition_run_result",
     "create_source_download_artifact_from_candidate",
+    "validate_acquisition_to_parser_plan",
+    "validate_acquisition_to_parser_plans",
     "validate_source_artifact_parser_input_bridge_entry",
     "validate_source_artifact_parser_input_bridge_result",
     "validate_source_acquisition_run_request",
