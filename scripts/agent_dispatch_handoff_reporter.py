@@ -102,6 +102,7 @@ class DependencySummary:
 class QueueState:
     ready_issues: tuple[Issue, ...]
     in_progress_issues: tuple[Issue, ...]
+    blocked_issues: tuple[Issue, ...]
     all_issues: tuple[Issue, ...]
     open_prs: tuple[PullRequest, ...]
     all_prs: tuple[PullRequest, ...] = ()
@@ -209,9 +210,20 @@ class RunOnceOutcome:
     claim_result: ClaimResult | None
     lifecycle_outcome: LifecycleOutcome | None
     review_outcome: ReviewReadinessOutcome | None
+    frontier_items: tuple["DependencyFrontierItem", ...]
     blockers: tuple[str, ...]
     task_prs: tuple[PullRequest, ...]
     human_action_needed: str
+
+
+@dataclass(frozen=True)
+class DependencyFrontierItem:
+    category: str
+    issue_number: int
+    task_id: str | None
+    title: str
+    lane: str | None
+    dependencies: tuple[DependencySummary, ...]
 
 
 def subprocess_runner(command: Sequence[str]) -> str:
@@ -269,6 +281,28 @@ def load_queue_state(
                     "open",
                     "--label",
                     "status:in-progress",
+                    "--limit",
+                    str(issue_limit),
+                    "--json",
+                    "number,title,body,labels,state",
+                ),
+                runner,
+            )
+        )
+    )
+    blocked_issues = tuple(
+        parse_issues(
+            run_json(
+                (
+                    "gh",
+                    "issue",
+                    "list",
+                    "--repo",
+                    repository,
+                    "--state",
+                    "open",
+                    "--label",
+                    "status:blocked",
                     "--limit",
                     str(issue_limit),
                     "--json",
@@ -344,6 +378,7 @@ def load_queue_state(
     return QueueState(
         ready_issues=ready_issues,
         in_progress_issues=in_progress_issues,
+        blocked_issues=blocked_issues,
         all_issues=all_issues,
         open_prs=open_prs,
         all_prs=all_prs,
@@ -1775,6 +1810,7 @@ def build_run_once_outcome(
             claim_result=None,
             lifecycle_outcome=None,
             review_outcome=None,
+            frontier_items=(),
             blockers=(
                 "Multiple status:in-progress issues exist; run-once requires at most one claimed task.",
             ),
@@ -1793,6 +1829,7 @@ def build_run_once_outcome(
             claim_result=None,
             lifecycle_outcome=lifecycle_outcome,
             review_outcome=review_outcome,
+            frontier_items=(),
             blockers=blockers,
             task_prs=(),
             human_action_needed=run_once_human_action(lifecycle_outcome, review_outcome),
@@ -1800,15 +1837,22 @@ def build_run_once_outcome(
 
     selection = select_handoff_package(state, repository=repository)
     if selection.blockers:
+        decision_status = run_once_blocked_status(selection.blockers)
+        frontier_items = (
+            build_dependency_frontier(state.blocked_issues, state.all_issues)
+            if decision_status == "blocked_no_ready_task"
+            else ()
+        )
         return RunOnceOutcome(
-            decision_status=run_once_blocked_status(selection.blockers),
+            decision_status=decision_status,
             selected_package=None,
             claim_result=None,
             lifecycle_outcome=None,
             review_outcome=None,
+            frontier_items=frontier_items,
             blockers=selection.blockers,
             task_prs=selection.task_prs,
-            human_action_needed="Resolve the reported blocker before claiming another task.",
+            human_action_needed=run_once_blocked_human_action(decision_status, frontier_items),
         )
 
     package = require_package(selection.package)
@@ -1819,6 +1863,7 @@ def build_run_once_outcome(
             claim_result=None,
             lifecycle_outcome=None,
             review_outcome=None,
+            frontier_items=(),
             blockers=(),
             task_prs=selection.task_prs,
             human_action_needed=(
@@ -1836,6 +1881,7 @@ def build_run_once_outcome(
             claim_result=None,
             lifecycle_outcome=None,
             review_outcome=None,
+            frontier_items=(),
             blockers=(str(exc),),
             task_prs=selection.task_prs,
             human_action_needed="Fix the claim failure before continuing.",
@@ -1847,6 +1893,7 @@ def build_run_once_outcome(
         claim_result=claim_result,
         lifecycle_outcome=None,
         review_outcome=None,
+        frontier_items=(),
         blockers=(),
         task_prs=selection.task_prs,
         human_action_needed="Use the generated prompt artifact for manual local Codex handoff.",
@@ -1881,12 +1928,136 @@ def run_once_human_action(
     return lifecycle_outcome.human_action_needed
 
 
+def build_dependency_frontier(
+    blocked_issues: Sequence[Issue],
+    all_issues: Sequence[Issue],
+) -> tuple[DependencyFrontierItem, ...]:
+    task_occurrences = build_task_occurrences(all_issues)
+    items = tuple(
+        dependency_frontier_item(issue, task_occurrences)
+        for issue in blocked_issues
+        if status_label(issue) == "blocked"
+    )
+    return tuple(sorted(items, key=dependency_frontier_sort_key))
+
+
+def build_task_occurrences(issues: Sequence[Issue]) -> dict[str, tuple[Issue, ...]]:
+    task_occurrences: dict[str, list[Issue]] = {}
+    for issue in issues:
+        task_id = parse_task_id(issue.body)
+        if not task_id:
+            continue
+        task_occurrences.setdefault(task_id, []).append(issue)
+    return {
+        task_id: tuple(sorted(matches, key=lambda issue: issue.number))
+        for task_id, matches in task_occurrences.items()
+    }
+
+
+def dependency_frontier_item(
+    issue: Issue,
+    task_occurrences: dict[str, tuple[Issue, ...]],
+) -> DependencyFrontierItem:
+    dependency_ids = parse_task_list(issue.body, "Depends on")
+    if not dependency_ids:
+        return DependencyFrontierItem(
+            category="no_dependency_metadata",
+            issue_number=issue.number,
+            task_id=parse_task_id(issue.body),
+            title=issue.title,
+            lane=lane_label(issue),
+            dependencies=(),
+        )
+
+    dependencies = tuple(
+        dependency_frontier_summary(task_id, task_occurrences)
+        for task_id in dependency_ids
+    )
+    category = categorize_dependency_frontier(dependencies)
+    return DependencyFrontierItem(
+        category=category,
+        issue_number=issue.number,
+        task_id=parse_task_id(issue.body),
+        title=issue.title,
+        lane=lane_label(issue),
+        dependencies=dependencies,
+    )
+
+
+def dependency_frontier_summary(
+    task_id: str,
+    task_occurrences: dict[str, tuple[Issue, ...]],
+) -> DependencySummary:
+    matches = task_occurrences.get(task_id, ())
+    if not matches:
+        return DependencySummary(task_id=task_id, issue_number=None, status=None, title=None)
+    if len(matches) > 1:
+        issue_numbers = ", ".join(f"#{issue.number}" for issue in matches)
+        return DependencySummary(
+            task_id=task_id,
+            issue_number=None,
+            status="ambiguous",
+            title=f"multiple matching issues: {issue_numbers}",
+        )
+    issue = matches[0]
+    return DependencySummary(
+        task_id=task_id,
+        issue_number=issue.number,
+        status=status_label(issue),
+        title=issue.title,
+    )
+
+
+def categorize_dependency_frontier(dependencies: Sequence[DependencySummary]) -> str:
+    if any(dependency.status == "ambiguous" for dependency in dependencies):
+        return "blocked_by_ambiguous_dependency_issue"
+    if any(dependency.issue_number is None for dependency in dependencies):
+        return "blocked_by_missing_dependency_issue"
+    if any(dependency.status != "merged" for dependency in dependencies):
+        return "blocked_by_unmerged_dependency"
+    return "ready_but_still_blocked"
+
+
+def dependency_frontier_sort_key(item: DependencyFrontierItem) -> tuple[int, int, int]:
+    category_order = {
+        "ready_but_still_blocked": 0,
+        "blocked_by_missing_dependency_issue": 1,
+        "blocked_by_ambiguous_dependency_issue": 2,
+        "blocked_by_unmerged_dependency": 3,
+        "no_dependency_metadata": 4,
+    }
+    lane = item.lane or ""
+    try:
+        lane_rank = LANE_PRIORITY.index(lane)
+    except ValueError:
+        lane_rank = len(LANE_PRIORITY)
+    return (category_order.get(item.category, 99), lane_rank, item.issue_number)
+
+
+def run_once_blocked_human_action(
+    decision_status: str,
+    frontier_items: Sequence[DependencyFrontierItem],
+) -> str:
+    if decision_status != "blocked_no_ready_task":
+        return "Resolve the reported blocker before claiming another task."
+    if not frontier_items:
+        return "No ready or blocked tasks were found; inspect the issue queue metadata."
+    if any(item.category == "ready_but_still_blocked" for item in frontier_items):
+        return "Review ready_but_still_blocked tasks and unblock the appropriate issue label."
+    if any(
+        item.category in {"blocked_by_missing_dependency_issue", "blocked_by_ambiguous_dependency_issue"}
+        for item in frontier_items
+    ):
+        return "Fix dependency metadata for missing or ambiguous dependency issues."
+    return "Wait for the listed dependency frontier tasks to merge, then rerun run-once."
+
+
 def run_once_blocked_status(blockers: Sequence[str]) -> str:
     blocker_text = "\n".join(blockers).lower()
-    if "no status:ready" in blocker_text:
-        return "blocked_no_ready_task"
     if "open task pr" in blocker_text:
         return "blocked_open_pr_ambiguity"
+    if "no status:ready" in blocker_text:
+        return "blocked_no_ready_task"
     if "no known prompt template" in blocker_text:
         return "blocked_unknown_template"
     if "dependency" in blocker_text:
@@ -1949,6 +2120,17 @@ def build_run_once_report(outcome: RunOnceOutcome) -> str:
         lines.extend(f"- {blocker}" for blocker in outcome.blockers)
         lines.append("")
 
+    if outcome.frontier_items:
+        append_dependency_frontier(lines, outcome.frontier_items)
+    elif outcome.decision_status == "blocked_no_ready_task":
+        lines.extend(
+            (
+                "## Dependency Frontier",
+                "- No status:blocked issues were found.",
+                "",
+            )
+        )
+
     if outcome.selected_package is not None:
         lines.extend(("## Selected Task",))
         append_run_once_package(lines, outcome.selected_package)
@@ -1999,6 +2181,51 @@ def append_run_once_package(lines: list[str], package: HandoffPackage) -> None:
             f"- Expected PR title pattern: `{package.expected_pr_title_pattern}`",
         )
     )
+
+
+def append_dependency_frontier(
+    lines: list[str],
+    frontier_items: Sequence[DependencyFrontierItem],
+) -> None:
+    lines.extend(("## Dependency Frontier",))
+    category_counts: dict[str, int] = {}
+    lane_counts: dict[str, int] = {}
+    for item in frontier_items:
+        category_counts[item.category] = category_counts.get(item.category, 0) + 1
+        lane = item.lane or "missing-lane"
+        lane_counts[lane] = lane_counts.get(lane, 0) + 1
+
+    category_summary = ", ".join(
+        f"{category}:{count}" for category, count in sorted(category_counts.items())
+    )
+    lane_summary = ", ".join(f"{lane}:{count}" for lane, count in sorted(lane_counts.items()))
+    lines.extend(
+        (
+            f"- Frontier categories: {category_summary}",
+            f"- Frontier lanes: {lane_summary}",
+            "",
+            "### Actionable Frontier",
+        )
+    )
+    for item in frontier_items[:10]:
+        task_id = item.task_id or "missing-task-id"
+        lane = item.lane or "missing-lane"
+        lines.append(f"- {item.category}: #{item.issue_number} {task_id} lane:{lane} {item.title}")
+        if item.dependencies:
+            for dependency in item.dependencies:
+                issue_text = (
+                    f"issue #{dependency.issue_number}"
+                    if dependency.issue_number is not None
+                    else "issue unresolved"
+                )
+                status_text = f"status:{dependency.status}" if dependency.status else "status:missing"
+                title_text = f", {dependency.title}" if dependency.title else ""
+                lines.append(f"  - depends on {dependency.task_id}: {issue_text}, {status_text}{title_text}")
+        else:
+            lines.append("  - depends on: missing or unparsable")
+    if len(frontier_items) > 10:
+        lines.append(f"- {len(frontier_items) - 10} additional blocked issue(s) omitted.")
+    lines.append("")
 
 
 def run_once_artifact_path_text(package: HandoffPackage) -> str:

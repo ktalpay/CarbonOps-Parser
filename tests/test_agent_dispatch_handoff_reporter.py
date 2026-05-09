@@ -122,6 +122,7 @@ def _check(
 def _state(
     ready_issues=(),
     in_progress_issues=(),
+    blocked_issues=(),
     all_issues=(),
     open_prs=(),
     all_prs=(),
@@ -129,6 +130,7 @@ def _state(
     return QueueState(
         ready_issues=tuple(ready_issues),
         in_progress_issues=tuple(in_progress_issues),
+        blocked_issues=tuple(blocked_issues),
         all_issues=tuple(all_issues),
         open_prs=tuple(open_prs),
         all_prs=tuple(all_prs),
@@ -165,6 +167,7 @@ def _queue_runner(
     *,
     ready_issues=(),
     in_progress_issues=(),
+    blocked_issues=(),
     all_issues=(),
     open_prs=(),
     all_prs=None,
@@ -179,6 +182,8 @@ def _queue_runner(
             return json.dumps([_issue_payload(issue) for issue in ready_issues])
         if command_tuple[1:3] == ("issue", "list") and "status:in-progress" in command_tuple:
             return json.dumps([_issue_payload(issue) for issue in in_progress_issues])
+        if command_tuple[1:3] == ("issue", "list") and "status:blocked" in command_tuple:
+            return json.dumps([_issue_payload(issue) for issue in blocked_issues])
         if command_tuple[1:3] == ("issue", "list"):
             return json.dumps([_issue_payload(issue) for issue in all_issues])
         if command_tuple[1:3] == ("pr", "list") and "all" in command_tuple:
@@ -362,6 +367,8 @@ def test_load_queue_state_uses_read_only_gh_commands() -> None:
         if command[1:3] == ("issue", "list") and "status:ready" in command:
             return '[{"number":405,"title":"[OPS-015] Ready","body":"Task ID: OPS-015","labels":[{"name":"status:ready"}],"state":"OPEN"}]'
         if command[1:3] == ("issue", "list") and "status:in-progress" in command:
+            return "[]"
+        if command[1:3] == ("issue", "list") and "status:blocked" in command:
             return "[]"
         if command[1:3] == ("issue", "list"):
             return "[]"
@@ -1270,6 +1277,116 @@ def test_run_once_blocks_when_no_in_progress_and_no_ready_task() -> None:
     assert "Mode: run-once" in report
     assert "blocked_no_ready_task" in report
     assert "Task selected: no" in report
+    assert "No status:blocked issues were found." in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_run_once_frontier_reports_ready_but_still_blocked() -> None:
+    blocked = _issue(417, "OPS-021", "ops", "blocked", depends_on="OPS-020")
+    dependency = _issue(415, "OPS-020", "ops", "merged")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--run-once"],
+        runner=_queue_runner(
+            blocked_issues=(blocked,),
+            all_issues=(blocked, dependency),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "blocked_no_ready_task" in report
+    assert "ready_but_still_blocked" in report
+    assert "#417 OPS-021 lane:ops" in report
+    assert "depends on OPS-020: issue #415, status:merged" in report
+    assert "Review ready_but_still_blocked tasks" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_run_once_frontier_reports_unmerged_dependency() -> None:
+    blocked = _issue(417, "OPS-021", "ops", "blocked", depends_on="OPS-020")
+    dependency = _issue(415, "OPS-020", "ops", "in-review")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--run-once"],
+        runner=_queue_runner(
+            blocked_issues=(blocked,),
+            all_issues=(blocked, dependency),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "blocked_by_unmerged_dependency" in report
+    assert "depends on OPS-020: issue #415, status:in-review" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_run_once_frontier_reports_missing_dependency_issue() -> None:
+    blocked = _issue(417, "OPS-021", "ops", "blocked", depends_on="OPS-020")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--run-once"],
+        runner=_queue_runner(
+            blocked_issues=(blocked,),
+            all_issues=(blocked,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "blocked_by_missing_dependency_issue" in report
+    assert "depends on OPS-020: issue unresolved, status:missing" in report
+    assert "Fix dependency metadata" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_run_once_frontier_reports_ambiguous_dependency_issue() -> None:
+    blocked = _issue(417, "OPS-021", "ops", "blocked", depends_on="OPS-020")
+    first_dependency = _issue(415, "OPS-020", "ops", "merged")
+    second_dependency = _issue(416, "OPS-020", "ops", "merged")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--run-once"],
+        runner=_queue_runner(
+            blocked_issues=(blocked,),
+            all_issues=(blocked, first_dependency, second_dependency),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "blocked_by_ambiguous_dependency_issue" in report
+    assert "depends on OPS-020: issue unresolved, status:ambiguous" in report
+    assert "multiple matching issues: #415, #416" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_run_once_frontier_reports_no_dependency_metadata() -> None:
+    blocked = _issue(417, "OPS-021", "ops", "blocked")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--run-once"],
+        runner=_queue_runner(
+            blocked_issues=(blocked,),
+            all_issues=(blocked,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "no_dependency_metadata" in report
+    assert "depends on: missing or unparsable" in report
     assert not any(call[1:3] == ("issue", "edit") for call in calls)
     _assert_no_forbidden_commands(calls)
 
