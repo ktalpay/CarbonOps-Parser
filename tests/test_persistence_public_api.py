@@ -109,6 +109,8 @@ from carbonfactor_parser.persistence import (
     PostgreSQLTransactionPolicyDescription,
     PostgreSQLTransactionPolicyIssue,
     PostgreSQLTransactionPolicyStatus,
+    PostgreSQLTransactionPolicyValidationResult,
+    PostgreSQLTransactionRuntimeBoundary,
     build_persistence_input_from_normalization_result,
     build_default_postgresql_transaction_policy,
     build_default_postgresql_idempotency_conflict_strategy,
@@ -128,6 +130,7 @@ from carbonfactor_parser.persistence import (
     create_postgresql_connection_session_runtime_contract,
     create_postgresql_integration_test_boundary,
     create_postgresql_persistence_options,
+    create_postgresql_transaction_runtime_boundary,
     describe_postgresql_connection_session_contract,
     describe_postgresql_disabled_runtime_execution,
     describe_postgresql_execution_adapter_boundary,
@@ -143,6 +146,8 @@ from carbonfactor_parser.persistence import (
     validate_postgresql_connection_session_runtime_contract,
     validate_postgresql_persistence_options,
     validate_postgresql_statement_execution_contract,
+    validate_postgresql_transaction_policy,
+    validate_postgresql_transaction_runtime_boundary,
 )
 
 
@@ -235,6 +240,8 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLTransactionPolicyDescription",
     "PostgreSQLTransactionPolicyIssue",
     "PostgreSQLTransactionPolicyStatus",
+    "PostgreSQLTransactionPolicyValidationResult",
+    "PostgreSQLTransactionRuntimeBoundary",
     "build_persistence_input_from_normalization_result",
     "build_default_postgresql_transaction_policy",
     "build_default_postgresql_idempotency_conflict_strategy",
@@ -254,6 +261,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "create_postgresql_connection_session_runtime_contract",
     "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",
+    "create_postgresql_transaction_runtime_boundary",
     "describe_postgresql_connection_session_contract",
     "describe_postgresql_disabled_runtime_execution",
     "describe_postgresql_execution_adapter_boundary",
@@ -269,6 +277,8 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "validate_postgresql_connection_session_runtime_contract",
     "validate_postgresql_persistence_options",
     "validate_postgresql_statement_execution_contract",
+    "validate_postgresql_transaction_policy",
+    "validate_postgresql_transaction_runtime_boundary",
 )
 
 EXPECTED_PUBLIC_EXPORTS = {
@@ -538,6 +548,12 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PostgreSQLTransactionPolicyStatus": (
         postgresql_transaction_policy.PostgreSQLTransactionPolicyStatus
     ),
+    "PostgreSQLTransactionPolicyValidationResult": (
+        postgresql_transaction_policy.PostgreSQLTransactionPolicyValidationResult
+    ),
+    "PostgreSQLTransactionRuntimeBoundary": (
+        postgresql_transaction_policy.PostgreSQLTransactionRuntimeBoundary
+    ),
     "build_persistence_input_from_normalization_result": (
         input.build_persistence_input_from_normalization_result
     ),
@@ -603,6 +619,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     "create_postgresql_persistence_options": (
         postgresql_options.create_postgresql_persistence_options
     ),
+    "create_postgresql_transaction_runtime_boundary": (
+        postgresql_transaction_policy
+        .create_postgresql_transaction_runtime_boundary
+    ),
     "describe_postgresql_connection_session_contract": (
         postgresql_connection_session_contract
         .describe_postgresql_connection_session_contract
@@ -656,6 +676,13 @@ EXPECTED_PUBLIC_EXPORTS = {
     "validate_postgresql_statement_execution_contract": (
         postgresql_connection_session_contract
         .validate_postgresql_statement_execution_contract
+    ),
+    "validate_postgresql_transaction_policy": (
+        postgresql_transaction_policy.validate_postgresql_transaction_policy
+    ),
+    "validate_postgresql_transaction_runtime_boundary": (
+        postgresql_transaction_policy
+        .validate_postgresql_transaction_runtime_boundary
     ),
 }
 
@@ -822,6 +849,12 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         ),
         "PostgreSQLTransactionPolicyIssue": PostgreSQLTransactionPolicyIssue,
         "PostgreSQLTransactionPolicyStatus": PostgreSQLTransactionPolicyStatus,
+        "PostgreSQLTransactionPolicyValidationResult": (
+            PostgreSQLTransactionPolicyValidationResult
+        ),
+        "PostgreSQLTransactionRuntimeBoundary": (
+            PostgreSQLTransactionRuntimeBoundary
+        ),
         "build_persistence_input_from_normalization_result": (
             build_persistence_input_from_normalization_result
         ),
@@ -871,6 +904,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "create_postgresql_persistence_options": (
             create_postgresql_persistence_options
         ),
+        "create_postgresql_transaction_runtime_boundary": (
+            create_postgresql_transaction_runtime_boundary
+        ),
         "describe_postgresql_connection_session_contract": (
             describe_postgresql_connection_session_contract
         ),
@@ -913,6 +949,12 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         ),
         "validate_postgresql_statement_execution_contract": (
             validate_postgresql_statement_execution_contract
+        ),
+        "validate_postgresql_transaction_policy": (
+            validate_postgresql_transaction_policy
+        ),
+        "validate_postgresql_transaction_runtime_boundary": (
+            validate_postgresql_transaction_runtime_boundary
         ),
     }
 

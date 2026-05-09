@@ -103,9 +103,14 @@ from carbonfactor_parser.persistence.postgresql_transaction_policy import (
     PostgreSQLTransactionPolicyDescription,
     PostgreSQLTransactionPolicyIssue,
     PostgreSQLTransactionPolicyStatus,
+    PostgreSQLTransactionPolicyValidationResult,
+    PostgreSQLTransactionRuntimeBoundary,
     build_default_postgresql_transaction_policy,
     build_postgresql_transaction_plan,
+    create_postgresql_transaction_runtime_boundary,
     describe_postgresql_transaction_policy_boundary,
+    validate_postgresql_transaction_policy,
+    validate_postgresql_transaction_runtime_boundary,
 )
 from carbonfactor_parser.persistence.postgresql_idempotency_conflict_strategy import (
     PostgreSQLConflictAction,
@@ -248,6 +253,8 @@ __all__ = (
     "PostgreSQLTransactionPolicyDescription",
     "PostgreSQLTransactionPolicyIssue",
     "PostgreSQLTransactionPolicyStatus",
+    "PostgreSQLTransactionPolicyValidationResult",
+    "PostgreSQLTransactionRuntimeBoundary",
     "build_persistence_input_from_normalization_result",
     "build_default_postgresql_transaction_policy",
     "build_default_postgresql_idempotency_conflict_strategy",
@@ -267,6 +274,7 @@ __all__ = (
     "create_postgresql_connection_session_runtime_contract",
     "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",
+    "create_postgresql_transaction_runtime_boundary",
     "describe_postgresql_connection_session_contract",
     "describe_postgresql_disabled_runtime_execution",
     "describe_postgresql_execution_adapter_boundary",
@@ -282,4 +290,6 @@ __all__ = (
     "validate_postgresql_connection_session_runtime_contract",
     "validate_postgresql_persistence_options",
     "validate_postgresql_statement_execution_contract",
+    "validate_postgresql_transaction_policy",
+    "validate_postgresql_transaction_runtime_boundary",
 )
