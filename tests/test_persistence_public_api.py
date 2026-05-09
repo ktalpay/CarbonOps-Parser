@@ -51,6 +51,10 @@ from carbonfactor_parser.persistence import (
     PostgreSQLConflictStrategyStatus,
     PostgreSQLConnectionSession,
     PostgreSQLConnectionSessionContractDescription,
+    PostgreSQLConnectionSessionContractIssue,
+    PostgreSQLConnectionSessionContractStatus,
+    PostgreSQLConnectionSessionContractValidationResult,
+    PostgreSQLConnectionSessionRuntimeContract,
     PostgreSQLDisabledRuntimeExecutionAdapter,
     PostgreSQLDisabledRuntimeExecutionDescription,
     PostgreSQLDisabledRuntimeExecutionMetadata,
@@ -121,6 +125,7 @@ from carbonfactor_parser.persistence import (
     build_postgresql_repository_disabled_execution_preview,
     build_postgresql_transaction_plan,
     create_persistence_result,
+    create_postgresql_connection_session_runtime_contract,
     create_postgresql_integration_test_boundary,
     create_postgresql_persistence_options,
     describe_postgresql_connection_session_contract,
@@ -135,7 +140,9 @@ from carbonfactor_parser.persistence import (
     render_postgresql_ddl_preview,
     should_skip_postgresql_integration_tests,
     validate_psycopg_session_adapter_boundary,
+    validate_postgresql_connection_session_runtime_contract,
     validate_postgresql_persistence_options,
+    validate_postgresql_statement_execution_contract,
 )
 
 
@@ -170,6 +177,10 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLConflictStrategyStatus",
     "PostgreSQLConnectionSession",
     "PostgreSQLConnectionSessionContractDescription",
+    "PostgreSQLConnectionSessionContractIssue",
+    "PostgreSQLConnectionSessionContractStatus",
+    "PostgreSQLConnectionSessionContractValidationResult",
+    "PostgreSQLConnectionSessionRuntimeContract",
     "PostgreSQLDisabledRuntimeExecutionAdapter",
     "PostgreSQLDisabledRuntimeExecutionDescription",
     "PostgreSQLDisabledRuntimeExecutionMetadata",
@@ -240,6 +251,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "build_postgresql_repository_disabled_execution_preview",
     "build_postgresql_transaction_plan",
     "create_persistence_result",
+    "create_postgresql_connection_session_runtime_contract",
     "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",
     "describe_postgresql_connection_session_contract",
@@ -254,7 +266,9 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "render_postgresql_ddl_preview",
     "should_skip_postgresql_integration_tests",
     "validate_psycopg_session_adapter_boundary",
+    "validate_postgresql_connection_session_runtime_contract",
     "validate_postgresql_persistence_options",
+    "validate_postgresql_statement_execution_contract",
 )
 
 EXPECTED_PUBLIC_EXPORTS = {
@@ -333,6 +347,22 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PostgreSQLConnectionSessionContractDescription": (
         postgresql_connection_session_contract
         .PostgreSQLConnectionSessionContractDescription
+    ),
+    "PostgreSQLConnectionSessionContractIssue": (
+        postgresql_connection_session_contract
+        .PostgreSQLConnectionSessionContractIssue
+    ),
+    "PostgreSQLConnectionSessionContractStatus": (
+        postgresql_connection_session_contract
+        .PostgreSQLConnectionSessionContractStatus
+    ),
+    "PostgreSQLConnectionSessionContractValidationResult": (
+        postgresql_connection_session_contract
+        .PostgreSQLConnectionSessionContractValidationResult
+    ),
+    "PostgreSQLConnectionSessionRuntimeContract": (
+        postgresql_connection_session_contract
+        .PostgreSQLConnectionSessionRuntimeContract
     ),
     "PostgreSQLDisabledRuntimeExecutionAdapter": (
         postgresql_disabled_runtime_execution_adapter
@@ -563,6 +593,10 @@ EXPECTED_PUBLIC_EXPORTS = {
         postgresql_transaction_policy.build_postgresql_transaction_plan
     ),
     "create_persistence_result": repository.create_persistence_result,
+    "create_postgresql_connection_session_runtime_contract": (
+        postgresql_connection_session_contract
+        .create_postgresql_connection_session_runtime_contract
+    ),
     "create_postgresql_integration_test_boundary": (
         integration_test_boundary.create_postgresql_integration_test_boundary
     ),
@@ -612,8 +646,16 @@ EXPECTED_PUBLIC_EXPORTS = {
         postgresql_psycopg_session_adapter
         .validate_psycopg_session_adapter_boundary
     ),
+    "validate_postgresql_connection_session_runtime_contract": (
+        postgresql_connection_session_contract
+        .validate_postgresql_connection_session_runtime_contract
+    ),
     "validate_postgresql_persistence_options": (
         postgresql_options.validate_postgresql_persistence_options
+    ),
+    "validate_postgresql_statement_execution_contract": (
+        postgresql_connection_session_contract
+        .validate_postgresql_statement_execution_contract
     ),
 }
 
@@ -665,6 +707,18 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLConnectionSession": PostgreSQLConnectionSession,
         "PostgreSQLConnectionSessionContractDescription": (
             PostgreSQLConnectionSessionContractDescription
+        ),
+        "PostgreSQLConnectionSessionContractIssue": (
+            PostgreSQLConnectionSessionContractIssue
+        ),
+        "PostgreSQLConnectionSessionContractStatus": (
+            PostgreSQLConnectionSessionContractStatus
+        ),
+        "PostgreSQLConnectionSessionContractValidationResult": (
+            PostgreSQLConnectionSessionContractValidationResult
+        ),
+        "PostgreSQLConnectionSessionRuntimeContract": (
+            PostgreSQLConnectionSessionRuntimeContract
         ),
         "PostgreSQLDisabledRuntimeExecutionAdapter": (
             PostgreSQLDisabledRuntimeExecutionAdapter
@@ -808,6 +862,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         ),
         "build_postgresql_transaction_plan": build_postgresql_transaction_plan,
         "create_persistence_result": create_persistence_result,
+        "create_postgresql_connection_session_runtime_contract": (
+            create_postgresql_connection_session_runtime_contract
+        ),
         "create_postgresql_integration_test_boundary": (
             create_postgresql_integration_test_boundary
         ),
@@ -848,8 +905,14 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "validate_psycopg_session_adapter_boundary": (
             validate_psycopg_session_adapter_boundary
         ),
+        "validate_postgresql_connection_session_runtime_contract": (
+            validate_postgresql_connection_session_runtime_contract
+        ),
         "validate_postgresql_persistence_options": (
             validate_postgresql_persistence_options
+        ),
+        "validate_postgresql_statement_execution_contract": (
+            validate_postgresql_statement_execution_contract
         ),
     }
 
