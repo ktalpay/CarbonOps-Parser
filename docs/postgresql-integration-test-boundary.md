@@ -38,6 +38,11 @@ wiring in a later task. That wiring must:
 This task does not add that runtime wiring. It provides only the marker name,
 skip reason, and default-disabled boundary helper that future tests can consume.
 
+Future container-backed PostgreSQL tests should follow the
+[PostgreSQL Integration Test Container Strategy](postgresql-integration-test-container-strategy.md),
+which keeps test databases ephemeral, local or CI-owned, and isolated from
+production or staging targets.
+
 ## Default Behavior
 
 `create_postgresql_integration_test_boundary()` returns:
@@ -72,6 +77,7 @@ This boundary does not add:
 ## Related Documents
 
 - [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
+- [PostgreSQL Integration Test Container Strategy](postgresql-integration-test-container-strategy.md)
 - [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
 - [PostgreSQL Repository Skeleton Boundary](postgresql-repository-skeleton-boundary.md)
 - [PostgreSQL Repository Implementation Planning Boundary](postgresql-repository-implementation-planning-boundary.md)

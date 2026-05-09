@@ -1,0 +1,64 @@
+name: "Ready Task Dispatch Discovery"
+
+"on":
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  run-once-discovery:
+    name: "Run read-only ready-task discovery"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Check out repository"
+        uses: actions/checkout@v4
+
+      - name: "Run read-only dispatcher report"
+        id: dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          REPORT_DIR="ready-dispatch-report"
+          REPORT_PATH="$REPORT_DIR/run-once-report.md"
+          mkdir -p "$REPORT_DIR"
+
+          set +e
+          python scripts/agent_dispatch_handoff_reporter.py \
+            --repo "$REPOSITORY" \
+            --run-once \
+            > "$REPORT_PATH"
+          REPORT_EXIT_CODE="$?"
+          set -e
+
+          {
+            echo "### Ready Task Dispatch Discovery"
+            echo
+            echo "- Reporter exit code: \`$REPORT_EXIT_CODE\`"
+            echo "- Mode: read-only \`--run-once\`"
+            echo "- Labels modified: no"
+            echo "- Codex invoked: no"
+            echo
+            cat "$REPORT_PATH"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "report_path=$REPORT_PATH" >> "$GITHUB_OUTPUT"
+          echo "report_exit_code=$REPORT_EXIT_CODE" >> "$GITHUB_OUTPUT"
+
+          if [ "$REPORT_EXIT_CODE" -ne 0 ] && [ "$REPORT_EXIT_CODE" -ne 2 ]; then
+            echo "Reporter failed unexpectedly with exit code $REPORT_EXIT_CODE." >&2
+            exit "$REPORT_EXIT_CODE"
+          fi
+
+      - name: "Upload dispatcher report"
+        uses: actions/upload-artifact@v4
+        with:
+          name: ready-task-dispatch-report
+          path: ${{ steps.dispatch.outputs.report_path }}
+          if-no-files-found: error

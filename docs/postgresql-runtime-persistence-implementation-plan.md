@@ -145,6 +145,10 @@ The [PostgreSQL Runtime Readiness Checklist](postgresql-runtime-readiness-checkl
 defines the go/no-go criteria that must be satisfied before the first real
 runtime execution task begins.
 
+The [PostgreSQL Runtime Integration Boundary](postgresql-runtime-integration-boundary.md)
+provides the top-level runtime integration contract that ties together gate,
+session, adapter, and diagnostics boundaries for future execution tasks.
+
 ## Transaction Strategy
 
 The first runtime implementation should use one transaction per
@@ -213,7 +217,10 @@ boundary helper and remain disabled by default. The
 [PostgreSQL Opt-In Integration Runbook](postgresql-opt-in-integration-runbook.md)
 documents the external test-runner controls, local test database guidance,
 secret-handling rules, cleanup expectations, and default-suite DB-free checks
-for that future work.
+for that future work. The
+[PostgreSQL Integration Test Container Strategy](postgresql-integration-test-container-strategy.md)
+defines the future ephemeral local or CI-owned PostgreSQL service model for
+those tests.
 
 Rules for the first runtime write task:
 

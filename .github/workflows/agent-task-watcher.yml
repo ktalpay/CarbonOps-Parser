@@ -1,6 +1,6 @@
 name: "Agent Task Watcher"
 
-on:
+"on":
   pull_request:
     types:
       - closed
@@ -39,7 +39,7 @@ jobs:
             PR_MERGED="$EVENT_PR_MERGED"
           else
             PR_NUMBER="$INPUT_PR_NUMBER"
-            PR_MERGED="$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json merged --jq '.merged')"
+            PR_MERGED="$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json mergedAt --jq '(.mergedAt // "") != ""')"
           fi
 
           echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
@@ -53,8 +53,8 @@ jobs:
 
           PR_BODY="$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json body --jq '.body // ""')"
 
-          TASK_ID="$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[[:space:]]*Task-ID:[[:space:]]*([A-Za-z]+-[0-9]+)[[:space:]]*$/\1/p' | head -n 1)"
-          ISSUE_NUMBER="$(printf '%s\n' "$PR_BODY" | sed -nE 's/.*(Closes|Fixes|Resolves)[[:space:]]+#([0-9]+).*/\2/ip' | head -n 1)"
+          TASK_ID="$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[[:space:]]*Task-ID:[[:space:]]*([A-Za-z]+-[0-9A-Za-z-]+)[[:space:]]*$/\1/p' | tail -n 1)"
+          ISSUE_NUMBER="$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[[:space:]]*Task-Issue:[[:space:]]*#?([0-9]+)[[:space:]]*$/\1/ip' | tail -n 1)"
 
           if [ -z "$TASK_ID" ]; then
             echo "Missing Task-ID in PR #$PR_NUMBER body. No label changes applied."
@@ -63,7 +63,7 @@ jobs:
           fi
 
           if [ -z "$ISSUE_NUMBER" ]; then
-            echo "Missing linked issue reference such as Closes #123 in PR #$PR_NUMBER body. No label changes applied."
+            echo "Missing Task-Issue metadata such as Task-Issue: #123 in PR #$PR_NUMBER body. No label changes applied."
             echo "should_process=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -92,12 +92,205 @@ jobs:
             "status:merged"
           )
 
+          ACTIVE_STATUS_LABELS=(
+            "status:blocked"
+            "status:ready"
+            "status:in-progress"
+            "status:in-review"
+            "status:needs-fix"
+          )
+
+          extract_field() {
+            local field_name="$1"
+            local body="$2"
+
+            printf '%s\n' "$body" | awk -v field="$field_name" '
+              {
+                line = $0
+                sub(/^[[:space:]]+/, "", line)
+                needle = field ":"
+
+                if (tolower(substr(line, 1, length(needle))) == tolower(needle)) {
+                  print substr(line, length(needle) + 1)
+                  exit
+                }
+              }
+            '
+          }
+
+          has_field() {
+            local field_name="$1"
+            local body="$2"
+
+            printf '%s\n' "$body" | awk -v field="$field_name" '
+              BEGIN {
+                found = 1
+              }
+
+              {
+                line = $0
+                sub(/^[[:space:]]+/, "", line)
+                needle = field ":"
+
+                if (tolower(substr(line, 1, length(needle))) == tolower(needle)) {
+                  found = 0
+                  exit
+                }
+              }
+
+              END {
+                exit found
+              }
+            '
+          }
+
+          parse_task_list() {
+            local raw_value="$1"
+
+            printf '%s\n' "$raw_value" |
+              tr ',' '\n' |
+              sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' |
+              awk '
+                {
+                  normalized = tolower($0)
+                }
+
+                $0 == "" {
+                  next
+                }
+
+                normalized == "none" || normalized == "n/a" || $0 == "-" {
+                  next
+                }
+
+                {
+                  print
+                }
+              '
+          }
+
+          find_issue_for_task() {
+            local task_id="$1"
+
+            gh issue list \
+              --repo "$REPOSITORY" \
+              --state all \
+              --search "$task_id in:title" \
+              --json number,title \
+              --limit 100 |
+              jq -r --arg prefix "[$task_id]" '
+                [.[] | select(.title | startswith($prefix))] |
+                if length == 1 then .[0].number else empty end
+              '
+          }
+
+          issue_has_label() {
+            local issue_number="$1"
+            local label="$2"
+
+            gh issue view "$issue_number" \
+              --repo "$REPOSITORY" \
+              --json labels |
+              jq -e --arg label "$label" 'any(.labels[].name; . == $label)' >/dev/null
+          }
+
           for LABEL in "${STATUS_LABELS[@]}"; do
             gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$LABEL" || true
           done
 
           gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --add-label "status:merged"
 
-          COMMENT_BODY="$(printf 'Agent Task Watcher marked this issue as `status:merged`.\n\nDetected task: `%s`\nMerged PR: #%s\n\nNo dependent tasks were updated by this workflow version.' "$TASK_ID" "$PR_NUMBER")"
+          ISSUE_BODY="$(gh issue view "$ISSUE_NUMBER" --repo "$REPOSITORY" --json body --jq '.body // ""')"
+          UNBLOCKS_RAW="$(extract_field "Unblocks" "$ISSUE_BODY")"
+          mapfile -t UNBLOCKED_TASK_IDS < <(parse_task_list "$UNBLOCKS_RAW")
+
+          UPDATED_DEPENDENTS=()
+          BLOCKED_DEPENDENTS=()
+          SKIPPED_DEPENDENTS=()
+
+          for DEPENDENT_TASK_ID in "${UNBLOCKED_TASK_IDS[@]}"; do
+            DEPENDENT_ISSUE_NUMBER="$(find_issue_for_task "$DEPENDENT_TASK_ID")"
+
+            if [ -z "$DEPENDENT_ISSUE_NUMBER" ]; then
+              SKIPPED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\`: no unique issue title beginning with \`[$DEPENDENT_TASK_ID]\` was found.")
+              continue
+            fi
+
+            DEPENDENT_BODY="$(gh issue view "$DEPENDENT_ISSUE_NUMBER" --repo "$REPOSITORY" --json body --jq '.body // ""')"
+
+            if ! has_field "Depends on" "$DEPENDENT_BODY"; then
+              BLOCKED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) remains blocked; missing \`Depends on:\` metadata.")
+              continue
+            fi
+
+            DEPENDS_ON_RAW="$(extract_field "Depends on" "$DEPENDENT_BODY")"
+            mapfile -t DEPENDENCY_TASK_IDS < <(parse_task_list "$DEPENDS_ON_RAW")
+            MISSING_DEPENDENCIES=()
+
+            for DEPENDENCY_TASK_ID in "${DEPENDENCY_TASK_IDS[@]}"; do
+              DEPENDENCY_ISSUE_NUMBER="$(find_issue_for_task "$DEPENDENCY_TASK_ID")"
+
+              if [ -z "$DEPENDENCY_ISSUE_NUMBER" ]; then
+                MISSING_DEPENDENCIES+=("$DEPENDENCY_TASK_ID")
+                continue
+              fi
+
+              if ! issue_has_label "$DEPENDENCY_ISSUE_NUMBER" "status:merged"; then
+                MISSING_DEPENDENCIES+=("$DEPENDENCY_TASK_ID")
+              fi
+            done
+
+            if [ "${#MISSING_DEPENDENCIES[@]}" -gt 0 ]; then
+              MISSING_LIST="$(printf '`%s`, ' "${MISSING_DEPENDENCIES[@]}")"
+              MISSING_LIST="${MISSING_LIST%, }"
+              BLOCKED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) remains blocked; missing merged dependencies: $MISSING_LIST.")
+              continue
+            fi
+
+            if issue_has_label "$DEPENDENT_ISSUE_NUMBER" "status:merged"; then
+              SKIPPED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) is already \`status:merged\`; labels were left unchanged.")
+              continue
+            fi
+
+            for LABEL in "${ACTIVE_STATUS_LABELS[@]}"; do
+              gh issue edit "$DEPENDENT_ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$LABEL" || true
+            done
+
+            gh issue edit "$DEPENDENT_ISSUE_NUMBER" --repo "$REPOSITORY" --add-label "status:ready"
+
+            DEPENDENT_COMMENT_BODY="$(printf 'Agent Task Watcher marked this issue as `status:ready` because `%s` merged in PR #%s and all declared dependencies are `status:merged`.' "$TASK_ID" "$PR_NUMBER")"
+            gh issue comment "$DEPENDENT_ISSUE_NUMBER" --repo "$REPOSITORY" --body "$DEPENDENT_COMMENT_BODY"
+
+            UPDATED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) marked \`status:ready\`.")
+          done
+
+          COMMENT_BODY="$(printf 'Agent Task Watcher marked this issue as `status:merged`.\n\nDetected task: `%s`\nMerged PR: #%s' "$TASK_ID" "$PR_NUMBER")"
+
+          if [ "${#UNBLOCKED_TASK_IDS[@]}" -eq 0 ]; then
+            COMMENT_BODY+=$'\n\nNo dependent tasks were declared in `Unblocks:`.'
+          else
+            COMMENT_BODY+=$'\n\nDependent task update summary:'
+
+            if [ "${#UPDATED_DEPENDENTS[@]}" -gt 0 ]; then
+              COMMENT_BODY+=$'\n\nMarked ready:\n'
+              for LINE in "${UPDATED_DEPENDENTS[@]}"; do
+                COMMENT_BODY+="$LINE"$'\n'
+              done
+            fi
+
+            if [ "${#BLOCKED_DEPENDENTS[@]}" -gt 0 ]; then
+              COMMENT_BODY+=$'\n\nStill blocked:\n'
+              for LINE in "${BLOCKED_DEPENDENTS[@]}"; do
+                COMMENT_BODY+="$LINE"$'\n'
+              done
+            fi
+
+            if [ "${#SKIPPED_DEPENDENTS[@]}" -gt 0 ]; then
+              COMMENT_BODY+=$'\n\nSkipped:\n'
+              for LINE in "${SKIPPED_DEPENDENTS[@]}"; do
+                COMMENT_BODY+="$LINE"$'\n'
+              done
+            fi
+          fi
 
           gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "$COMMENT_BODY"
