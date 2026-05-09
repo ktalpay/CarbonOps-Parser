@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
+from typing import Iterable, Sequence
 
 from carbonfactor_parser.persistence.postgresql_ddl_renderer import (
     render_postgresql_phase1_schema_ddl,
@@ -15,6 +17,10 @@ from carbonfactor_parser.persistence.postgresql_schema_catalog import (
 POSTGRESQL_SCHEMA_BOOTSTRAP_TARGET_ENGINE = "postgresql"
 POSTGRESQL_PHASE1_SCHEMA_MARKER = "phase1"
 POSTGRESQL_SCHEMA_BOOTSTRAP_EXECUTION_SCOPE = "planning_only_no_execution"
+_CREATE_INDEX_IDENTIFIER_PATTERN = re.compile(
+    r"\bCREATE (?:UNIQUE )?INDEX ([a-z][a-z0-9_]*)"
+)
+_CONSTRAINT_IDENTIFIER_PATTERN = re.compile(r"\bCONSTRAINT ([a-z][a-z0-9_]*)")
 
 
 @dataclass(frozen=True)
@@ -54,6 +60,38 @@ class PostgreSQLSchemaBootstrapPlan:
     @property
     def ordered_sql_statements(self) -> tuple[str, ...]:
         return tuple(statement.sql for statement in self.ordered_statements)
+
+
+@dataclass(frozen=True)
+class PostgreSQLSchemaBootstrapIdempotencyVerification:
+    """Offline verification result for repeated bootstrap plan rendering."""
+
+    repeated_plan_count: int
+    plans_equivalent: bool
+    ordered_sql_stable: bool
+    metadata_stable: bool
+    duplicate_table_names: tuple[str, ...]
+    duplicate_index_names: tuple[str, ...]
+    duplicate_constraint_names: tuple[str, ...]
+    duplicate_sql_statements: tuple[str, ...]
+    no_execution: bool
+    opens_connection: bool
+    runs_sql: bool
+
+    @property
+    def passed(self) -> bool:
+        return (
+            self.plans_equivalent
+            and self.ordered_sql_stable
+            and self.metadata_stable
+            and not self.duplicate_table_names
+            and not self.duplicate_index_names
+            and not self.duplicate_constraint_names
+            and not self.duplicate_sql_statements
+            and self.no_execution
+            and not self.opens_connection
+            and not self.runs_sql
+        )
 
 
 def build_postgresql_phase1_schema_bootstrap_plan(
@@ -114,3 +152,100 @@ def build_postgresql_phase1_schema_bootstrap_plan(
             "No SQL is executed and no migration is created.",
         ),
     )
+
+
+def verify_postgresql_phase1_schema_bootstrap_idempotency(
+    catalog: SchemaCatalog | None = None,
+    *,
+    repeat_count: int = 2,
+) -> PostgreSQLSchemaBootstrapIdempotencyVerification:
+    """Verify Phase 1 schema bootstrap planning is deterministic and duplicate-free.
+
+    The verification is runtime-passive: it only rebuilds in-memory planning metadata
+    and rendered SQL text, and it does not open a database connection or execute SQL.
+    """
+
+    if repeat_count < 2:
+        raise ValueError("repeat_count must be at least 2.")
+
+    plans = tuple(
+        build_postgresql_phase1_schema_bootstrap_plan(catalog)
+        for _ in range(repeat_count)
+    )
+    first_plan = plans[0]
+    ordered_sql_sequences = tuple(plan.ordered_sql_statements for plan in plans)
+    metadata_sequences = tuple(_bootstrap_metadata_signature(plan) for plan in plans)
+    sql_statements = first_plan.ordered_sql_statements
+
+    return PostgreSQLSchemaBootstrapIdempotencyVerification(
+        repeated_plan_count=repeat_count,
+        plans_equivalent=all(plan == first_plan for plan in plans),
+        ordered_sql_stable=all(
+            sql_sequence == ordered_sql_sequences[0]
+            for sql_sequence in ordered_sql_sequences
+        ),
+        metadata_stable=all(
+            metadata_sequence == metadata_sequences[0]
+            for metadata_sequence in metadata_sequences
+        ),
+        duplicate_table_names=_duplicates(
+            statement.table_name for statement in first_plan.create_table_statements
+        ),
+        duplicate_index_names=_duplicates(_index_names(sql_statements)),
+        duplicate_constraint_names=_duplicates(_constraint_names(sql_statements)),
+        duplicate_sql_statements=_duplicates(sql_statements),
+        no_execution=all(plan.execution_out_of_scope for plan in plans),
+        opens_connection=any(plan.opens_connection for plan in plans),
+        runs_sql=any(plan.runs_sql for plan in plans),
+    )
+
+
+def _bootstrap_metadata_signature(
+    plan: PostgreSQLSchemaBootstrapPlan,
+) -> tuple[object, ...]:
+    return (
+        plan.target_database_engine,
+        plan.schema_phase,
+        plan.required_table_names,
+        tuple(
+            (statement.ordinal, statement.statement_kind, statement.table_name)
+            for statement in plan.ordered_statements
+        ),
+        plan.execution_scope,
+        plan.execution_out_of_scope,
+        plan.opens_connection,
+        plan.runs_sql,
+        plan.creates_tables_now,
+        plan.runs_migrations,
+        plan.loads_environment,
+        plan.loads_config_files,
+        plan.performs_network_calls,
+        plan.notes,
+    )
+
+
+def _index_names(sql_statements: Sequence[str]) -> tuple[str, ...]:
+    return tuple(
+        match.group(1)
+        for statement in sql_statements
+        for match in _CREATE_INDEX_IDENTIFIER_PATTERN.finditer(statement)
+    )
+
+
+def _constraint_names(sql_statements: Sequence[str]) -> tuple[str, ...]:
+    return tuple(
+        match.group(1)
+        for statement in sql_statements
+        for match in _CONSTRAINT_IDENTIFIER_PATTERN.finditer(statement)
+    )
+
+
+def _duplicates(values: Iterable[str]) -> tuple[str, ...]:
+    seen: set[str] = set()
+    duplicates: set[str] = set()
+    for value in values:
+        if value in seen:
+            duplicates.add(value)
+            continue
+        seen.add(value)
+    return tuple(sorted(duplicates))
