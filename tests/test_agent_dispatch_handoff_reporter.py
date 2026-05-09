@@ -1256,3 +1256,238 @@ def test_review_status_blocks_duplicate_matching_prs() -> None:
     assert "PR #415: valid" in report
     assert not any(call[1:3] == ("issue", "edit") for call in calls)
     _assert_no_forbidden_commands(calls)
+
+
+def test_run_once_blocks_when_no_in_progress_and_no_ready_task() -> None:
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--run-once"],
+        runner=_queue_runner(calls=calls),
+    )
+
+    assert exit_code == 2
+    assert "Mode: run-once" in report
+    assert "blocked_no_ready_task" in report
+    assert "Task selected: no" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_run_once_reports_ready_task_without_mutation_by_default(tmp_path: Path) -> None:
+    ready = _issue(415, "OPS-020", "ops", "ready", depends_on="OPS-019")
+    dependency = _issue(413, "OPS-019", "ops", "merged")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--run-once", "--artifact-dir", str(tmp_path)],
+        runner=_queue_runner(
+            ready_issues=(ready,),
+            all_issues=(ready, dependency),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert "ready_task_available" in report
+    assert "Task selected: yes" in report
+    assert "Task claimed: no" in report
+    assert "Selected/claimed issue number: #415" in report
+    assert "Task-ID: OPS-020" in report
+    assert not list(tmp_path.iterdir())
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_run_once_claims_one_ready_task_only_with_explicit_opt_in(tmp_path: Path) -> None:
+    ready = _issue(415, "OPS-020", "ops", "ready", depends_on="OPS-019")
+    dependency = _issue(413, "OPS-019", "ops", "merged")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        [
+            "--repo",
+            "example/repo",
+            "--run-once",
+            "--run-once-claim",
+            "--artifact-dir",
+            str(tmp_path),
+        ],
+        runner=_queue_runner(
+            ready_issues=(ready,),
+            all_issues=(ready, dependency),
+            calls=calls,
+        ),
+    )
+
+    issue_edit_calls = [call for call in calls if call[1:3] == ("issue", "edit")]
+    assert exit_code == 0
+    assert "claimed_task_created" in report
+    assert "Task claimed: yes" in report
+    assert len(issue_edit_calls) == 1
+    assert issue_edit_calls[0] == (
+        "gh",
+        "issue",
+        "edit",
+        "415",
+        "--repo",
+        "example/repo",
+        "--remove-label",
+        "status:ready",
+        "--add-label",
+        "status:in-progress",
+    )
+    assert (tmp_path / "OPS-020-415-prompt.md").exists()
+    _assert_no_forbidden_commands(calls)
+
+
+def test_run_once_claim_flag_requires_run_once() -> None:
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--run-once-claim"],
+        runner=_queue_runner(calls=calls),
+    )
+
+    assert exit_code == 2
+    assert "--run-once-claim requires --run-once" in report
+    assert calls == []
+
+
+def test_run_once_monitors_one_in_progress_without_pr() -> None:
+    claimed = _issue(415, "OPS-020", "ops", "in-progress")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--run-once"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert "claimed_task_monitoring" in report
+    assert "Lifecycle status: waiting_for_pr" in report
+    assert "Review readiness status: waiting_for_pr" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_run_once_monitors_one_in_progress_with_draft_pr() -> None:
+    claimed = _issue(415, "OPS-020", "ops", "in-progress")
+    pull_request = _pr(416, "OPS-020", 415, is_draft=True)
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--run-once"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            open_prs=(pull_request,),
+            all_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert "claimed_task_monitoring" in report
+    assert "Lifecycle status: pr_draft_waiting" in report
+    assert "Review readiness status: pr_draft_waiting" in report
+    assert "PR draft: yes" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_run_once_reports_ready_for_human_merge_for_clean_approved_pr() -> None:
+    claimed = _issue(415, "OPS-020", "ops", "in-progress")
+    pull_request = _pr(
+        416,
+        "OPS-020",
+        415,
+        review_decision="APPROVED",
+        status_check_rollup=(_check("ci"),),
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+    )
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--run-once"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            open_prs=(pull_request,),
+            all_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert "ready_for_human_merge" in report
+    assert "Review readiness status: ready_for_human_merge" in report
+    assert "Check summary: passed - All reported checks passed (1)." in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_run_once_fails_closed_with_multiple_in_progress_issues() -> None:
+    first = _issue(415, "OPS-020", "ops", "in-progress")
+    second = _issue(416, "OPS-021", "ops", "in-progress")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--run-once"],
+        runner=_queue_runner(in_progress_issues=(first, second), calls=calls),
+    )
+
+    assert exit_code == 2
+    assert "blocked_multiple_claimed_tasks" in report
+    assert "Task selected: no" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_run_once_fails_closed_on_open_task_pr_ambiguity() -> None:
+    ready = _issue(415, "OPS-020", "ops", "ready", depends_on="OPS-019")
+    dependency = _issue(413, "OPS-019", "ops", "merged")
+    task_pr = _pr(414, "OPS-019", 413)
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--run-once"],
+        runner=_queue_runner(
+            ready_issues=(ready,),
+            all_issues=(ready, dependency),
+            open_prs=(task_pr,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "blocked_open_pr_ambiguity" in report
+    assert "Open task PR blocks dispatch" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_run_once_fails_closed_on_unresolved_dependencies() -> None:
+    ready = _issue(415, "OPS-020", "ops", "ready", depends_on="OPS-019")
+    dependency = _issue(413, "OPS-019", "ops", "in-review")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--run-once"],
+        runner=_queue_runner(
+            ready_issues=(ready,),
+            all_issues=(ready, dependency),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "blocked_unresolved_dependencies" in report
+    assert "Dependency OPS-019 is status:in-review, not status:merged." in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)

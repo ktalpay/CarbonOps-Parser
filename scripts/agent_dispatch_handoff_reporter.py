@@ -202,6 +202,18 @@ class ReviewReadinessOutcome:
     human_action_needed: str
 
 
+@dataclass(frozen=True)
+class RunOnceOutcome:
+    decision_status: str
+    selected_package: HandoffPackage | None
+    claim_result: ClaimResult | None
+    lifecycle_outcome: LifecycleOutcome | None
+    review_outcome: ReviewReadinessOutcome | None
+    blockers: tuple[str, ...]
+    task_prs: tuple[PullRequest, ...]
+    human_action_needed: str
+
+
 def subprocess_runner(command: Sequence[str]) -> str:
     completed = subprocess.run(
         list(command),
@@ -1743,6 +1755,303 @@ def append_review_footer_validation(
             lines.extend(f"  Error: {error}" for error in evaluation.footer_errors)
 
 
+def build_run_once_outcome(
+    state: QueueState,
+    repository: str,
+    artifact_dir: Path,
+    claim: bool = False,
+    runner: CommandRunner = subprocess_runner,
+) -> RunOnceOutcome:
+    claimed_issues = tuple(
+        sorted(
+            (issue for issue in state.in_progress_issues if status_label(issue) == "in-progress"),
+            key=issue_sort_key,
+        )
+    )
+    if len(claimed_issues) > 1:
+        return RunOnceOutcome(
+            decision_status="blocked_multiple_claimed_tasks",
+            selected_package=None,
+            claim_result=None,
+            lifecycle_outcome=None,
+            review_outcome=None,
+            blockers=(
+                "Multiple status:in-progress issues exist; run-once requires at most one claimed task.",
+            ),
+            task_prs=(),
+            human_action_needed="Resolve the queue so exactly one task is status:in-progress.",
+        )
+
+    if len(claimed_issues) == 1:
+        lifecycle_outcome = build_lifecycle_outcome(state)
+        review_outcome = build_review_readiness_outcome(state)
+        decision_status = run_once_status_for_claimed_task(lifecycle_outcome, review_outcome)
+        blockers = lifecycle_outcome.blockers or review_outcome.blockers
+        return RunOnceOutcome(
+            decision_status=decision_status,
+            selected_package=None,
+            claim_result=None,
+            lifecycle_outcome=lifecycle_outcome,
+            review_outcome=review_outcome,
+            blockers=blockers,
+            task_prs=(),
+            human_action_needed=run_once_human_action(lifecycle_outcome, review_outcome),
+        )
+
+    selection = select_handoff_package(state, repository=repository)
+    if selection.blockers:
+        return RunOnceOutcome(
+            decision_status=run_once_blocked_status(selection.blockers),
+            selected_package=None,
+            claim_result=None,
+            lifecycle_outcome=None,
+            review_outcome=None,
+            blockers=selection.blockers,
+            task_prs=selection.task_prs,
+            human_action_needed="Resolve the reported blocker before claiming another task.",
+        )
+
+    package = require_package(selection.package)
+    if not claim:
+        return RunOnceOutcome(
+            decision_status="ready_task_available",
+            selected_package=package,
+            claim_result=None,
+            lifecycle_outcome=None,
+            review_outcome=None,
+            blockers=(),
+            task_prs=selection.task_prs,
+            human_action_needed=(
+                "Review the selected task; rerun with --run-once --run-once-claim to claim it."
+            ),
+        )
+
+    package = write_prompt_artifact(package, artifact_dir)
+    try:
+        claim_result = claim_selected_issue(repository, package, runner=runner)
+    except ClaimFailedError as exc:
+        return RunOnceOutcome(
+            decision_status="blocked_unresolved_dependencies",
+            selected_package=None,
+            claim_result=None,
+            lifecycle_outcome=None,
+            review_outcome=None,
+            blockers=(str(exc),),
+            task_prs=selection.task_prs,
+            human_action_needed="Fix the claim failure before continuing.",
+        )
+
+    return RunOnceOutcome(
+        decision_status="claimed_task_created",
+        selected_package=package,
+        claim_result=claim_result,
+        lifecycle_outcome=None,
+        review_outcome=None,
+        blockers=(),
+        task_prs=selection.task_prs,
+        human_action_needed="Use the generated prompt artifact for manual local Codex handoff.",
+    )
+
+
+def run_once_status_for_claimed_task(
+    lifecycle_outcome: LifecycleOutcome,
+    review_outcome: ReviewReadinessOutcome,
+) -> str:
+    if review_outcome.readiness_status == "ready_for_human_merge":
+        return "ready_for_human_merge"
+    if review_outcome.readiness_status in {"ready_for_human_review", "review_required"}:
+        return "ready_for_human_review"
+    if review_outcome.readiness_status == "blocked_ambiguous_pr_match":
+        return "blocked_open_pr_ambiguity"
+    if review_outcome.blockers:
+        return review_outcome.readiness_status
+    if lifecycle_outcome.lifecycle_status == "waiting_for_pr":
+        return "claimed_task_monitoring"
+    if lifecycle_outcome.lifecycle_status == "pr_draft_waiting":
+        return "claimed_task_monitoring"
+    return "claimed_task_monitoring"
+
+
+def run_once_human_action(
+    lifecycle_outcome: LifecycleOutcome,
+    review_outcome: ReviewReadinessOutcome,
+) -> str:
+    if review_outcome.readiness_status != "waiting_for_pr":
+        return review_outcome.human_action_needed
+    return lifecycle_outcome.human_action_needed
+
+
+def run_once_blocked_status(blockers: Sequence[str]) -> str:
+    blocker_text = "\n".join(blockers).lower()
+    if "no status:ready" in blocker_text:
+        return "blocked_no_ready_task"
+    if "open task pr" in blocker_text:
+        return "blocked_open_pr_ambiguity"
+    if "no known prompt template" in blocker_text:
+        return "blocked_unknown_template"
+    if "dependency" in blocker_text:
+        return "blocked_unresolved_dependencies"
+    return "blocked_unresolved_dependencies"
+
+
+def build_run_once_report(outcome: RunOnceOutcome) -> str:
+    lines: list[str] = [
+        "# Run-Once Dispatcher Report",
+        "",
+        "Mode: run-once",
+        "",
+        "Run-once safety: stops after one decision/action cycle; no Codex invocation, "
+        "PR approval, PR merge, issue or PR comment, issue or PR close, branch deletion, "
+        "or worktree deletion was performed. GitHub mutation is limited to the existing "
+        "status:ready -> status:in-progress claim path when --run-once-claim is used.",
+        "",
+        "## Decision Status",
+        outcome.decision_status,
+        "",
+        "## Decision Summary",
+        f"- Task selected: {'yes' if outcome.selected_package is not None else 'no'}",
+        f"- Task claimed: {'yes' if outcome.claim_result is not None else 'no'}",
+    ]
+    if outcome.selected_package is not None:
+        package = outcome.selected_package
+        lines.extend(
+            (
+                f"- Selected/claimed issue number: #{package.selected_issue_number}",
+                f"- Task-ID: {package.task_id}",
+                f"- Lane: {package.lane}",
+                f"- Agent label: {package.agent_label}",
+                f"- Prompt artifact path: {run_once_artifact_path_text(package)}",
+            )
+        )
+    else:
+        lines.extend(
+            (
+                "- Selected/claimed issue number: none",
+                "- Task-ID: none",
+                "- Lane: none",
+                "- Agent label: none",
+                "- Prompt artifact path: none",
+            )
+        )
+
+    if outcome.lifecycle_outcome is not None:
+        lines.append(f"- Lifecycle status: {outcome.lifecycle_outcome.lifecycle_status}")
+    else:
+        lines.append("- Lifecycle status: not applicable")
+    if outcome.review_outcome is not None:
+        lines.append(f"- Review readiness status: {outcome.review_outcome.readiness_status}")
+    else:
+        lines.append("- Review readiness status: not applicable")
+    lines.append("")
+
+    if outcome.blockers:
+        lines.extend(("## Blockers",))
+        lines.extend(f"- {blocker}" for blocker in outcome.blockers)
+        lines.append("")
+
+    if outcome.selected_package is not None:
+        lines.extend(("## Selected Task",))
+        append_run_once_package(lines, outcome.selected_package)
+        lines.append("")
+
+    if outcome.lifecycle_outcome is not None:
+        append_run_once_claimed_task(lines, outcome.lifecycle_outcome)
+    if outcome.review_outcome is not None:
+        append_run_once_review(lines, outcome.review_outcome)
+
+    if outcome.claim_result is not None:
+        lines.extend(
+            (
+                "## Claim Mutation Performed",
+                f"- Selected issue: #{outcome.claim_result.issue_number}",
+                f"- Removed label: `{outcome.claim_result.removed_label}`",
+                f"- Added label: `{outcome.claim_result.added_label}`",
+                "- Lane, agent, and type labels were left unchanged.",
+                "",
+            )
+        )
+
+    if outcome.task_prs:
+        lines.extend(("## Open Task PRs",))
+        lines.extend(f"- #{pr.number} {pr.title}" for pr in outcome.task_prs)
+        lines.append("")
+
+    lines.extend(
+        (
+            "## Human Action Needed",
+            outcome.human_action_needed,
+            "",
+        )
+    )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def append_run_once_package(lines: list[str], package: HandoffPackage) -> None:
+    lines.extend(
+        (
+            f"- Selected issue number: #{package.selected_issue_number}",
+            f"- Task-ID: {package.task_id}",
+            f"- Issue title: {package.issue_title}",
+            f"- Lane: {package.lane}",
+            f"- Agent label: {package.agent_label}",
+            f"- Selected prompt template category: {package.selected_prompt_template}",
+            f"- Expected branch name pattern: `{package.expected_branch_name_pattern}`",
+            f"- Expected PR title pattern: `{package.expected_pr_title_pattern}`",
+        )
+    )
+
+
+def run_once_artifact_path_text(package: HandoffPackage) -> str:
+    if package.artifact_path is None:
+        return "not generated in default run-once mode"
+    return f"`{package.artifact_path.as_posix()}`"
+
+
+def append_run_once_claimed_task(
+    lines: list[str],
+    lifecycle_outcome: LifecycleOutcome,
+) -> None:
+    lines.extend(("## Claimed Task Monitoring",))
+    if lifecycle_outcome.claimed_issue is None:
+        lines.append("- None.")
+    else:
+        lines.extend(
+            (
+                f"- Claimed issue number: #{lifecycle_outcome.claimed_issue.number}",
+                f"- Task-ID: {lifecycle_outcome.task_id or 'missing-task-id'}",
+                f"- Issue title: {lifecycle_outcome.claimed_issue.title}",
+                f"- Lifecycle status: {lifecycle_outcome.lifecycle_status}",
+            )
+        )
+    lines.append("")
+
+
+def append_run_once_review(
+    lines: list[str],
+    review_outcome: ReviewReadinessOutcome,
+) -> None:
+    lines.extend(("## Review Readiness",))
+    lines.append(f"- Review readiness status: {review_outcome.readiness_status}")
+    if review_outcome.matching_prs:
+        pull_request = review_outcome.matching_prs[0].pull_request
+        check_summary = review_outcome.check_summary or summarize_status_checks(pull_request)
+        lines.extend(
+            (
+                f"- Matching PR number: #{pull_request.number}",
+                f"- PR title: {pull_request.title}",
+                f"- PR state: {pull_request.state or 'unknown'}",
+                f"- PR draft: {'yes' if pull_request.is_draft else 'no'}",
+                f"- Check summary: {check_summary.status} - {check_summary.summary}",
+                f"- Review decision: {pull_request.review_decision or 'unavailable'}",
+                f"- Mergeability: {pull_request.mergeable or 'unavailable'} / "
+                f"{pull_request.merge_state_status or 'unavailable'}",
+            )
+        )
+    else:
+        lines.append("- Matching PR number: none")
+    lines.append("")
+
+
 def append_pr_details(
     lines: list[str],
     evaluation: PullRequestFooterEvaluation,
@@ -1865,6 +2174,14 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
             "status:in-progress issue and its matching PR."
         ),
     )
+    mode_group.add_argument(
+        "--run-once",
+        action="store_true",
+        help=(
+            "Run one safe dispatcher decision cycle. Default run-once mode is read-only "
+            "and never claims unless --run-once-claim is also supplied."
+        ),
+    )
     parser.add_argument(
         "--issue",
         type=int,
@@ -1874,6 +2191,11 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         "--invoke",
         action="store_true",
         help="Explicit live invocation request. Currently fails closed as unsupported.",
+    )
+    parser.add_argument(
+        "--run-once-claim",
+        action="store_true",
+        help="Explicit opt-in allowing --run-once to claim one selected ready task.",
     )
     parser.add_argument(
         "--write-artifact",
@@ -1910,6 +2232,8 @@ def run_reporter(
         return 2, "Error: --dry-run and --claim cannot be used together.\n"
     if args.invoke and not args.handoff:
         return 2, "Error: --invoke requires --handoff and is unsupported by default.\n"
+    if args.run_once_claim and not args.run_once:
+        return 2, "Error: --run-once-claim requires --run-once.\n"
 
     if args.check_git_state:
         blockers = git_state_blockers(runner)
@@ -1929,6 +2253,19 @@ def run_reporter(
         return (
             2 if review_outcome.blockers else 0,
             build_review_readiness_report(review_outcome),
+        )
+
+    if args.run_once:
+        run_once_outcome = build_run_once_outcome(
+            state,
+            repository=args.repo,
+            artifact_dir=Path(args.artifact_dir),
+            claim=args.run_once_claim,
+            runner=runner,
+        )
+        return (
+            2 if run_once_outcome.blockers else 0,
+            build_run_once_report(run_once_outcome),
         )
 
     if args.handoff:
