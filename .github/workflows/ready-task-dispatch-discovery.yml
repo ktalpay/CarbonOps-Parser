@@ -55,9 +55,13 @@ jobs:
           set -e
 
           HANDOFF_PROMPTS_FOUND="false"
+          HANDOFF_PROMPTS_PACKAGED="false"
           HANDOFF_PROMPT_COUNT="0"
           if compgen -G ".agent-handoff/*.md" > /dev/null; then
             HANDOFF_PROMPTS_FOUND="true"
+            mkdir -p "$REPORT_DIR/.agent-handoff"
+            cp .agent-handoff/*.md "$REPORT_DIR/.agent-handoff/"
+            HANDOFF_PROMPTS_PACKAGED="true"
             HANDOFF_PROMPT_COUNT="$(find .agent-handoff -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' ')"
           fi
 
@@ -68,6 +72,7 @@ jobs:
             echo "- Mode: \`$MODE_DESCRIPTION\`"
             echo "- Claim mode enabled: \`$CLAIM_ENABLED\`"
             echo "- Handoff prompt artifacts found: \`$HANDOFF_PROMPTS_FOUND\`"
+            echo "- Handoff prompt artifacts packaged: \`$HANDOFF_PROMPTS_PACKAGED\`"
             echo "- Handoff prompt artifact count: \`$HANDOFF_PROMPT_COUNT\`"
             echo "- Codex invoked: no"
             echo
@@ -77,6 +82,7 @@ jobs:
           echo "report_path=$REPORT_PATH" >> "$GITHUB_OUTPUT"
           echo "report_exit_code=$REPORT_EXIT_CODE" >> "$GITHUB_OUTPUT"
           echo "handoff_prompts_found=$HANDOFF_PROMPTS_FOUND" >> "$GITHUB_OUTPUT"
+          echo "handoff_prompts_packaged=$HANDOFF_PROMPTS_PACKAGED" >> "$GITHUB_OUTPUT"
           echo "handoff_prompt_count=$HANDOFF_PROMPT_COUNT" >> "$GITHUB_OUTPUT"
 
           if [ "$REPORT_EXIT_CODE" -ne 0 ] && [ "$REPORT_EXIT_CODE" -ne 2 ]; then
@@ -90,5 +96,5 @@ jobs:
           name: ready-task-dispatch-report
           path: |
             ${{ steps.dispatch.outputs.report_path }}
-            .agent-handoff/*.md
+            ready-dispatch-report/.agent-handoff/*.md
           if-no-files-found: error
