@@ -4,8 +4,10 @@
 By default, the reporter inspects GitHub issue and PR state through read-only
 `gh` CLI queries, selects one safe ready task, and prints a deterministic
 handoff report. Explicit `--claim` mode may claim one selected issue by moving
-`status:ready` to `status:in-progress`. The reporter never starts Codex,
-approves PRs, merges PRs, closes issues, deletes branches, or deletes worktrees.
+`status:ready` to `status:in-progress`. Explicit `--lifecycle` mode inspects
+one claimed task and open PR footers without mutating GitHub. The reporter never
+starts Codex, approves PRs, merges PRs, closes issues, deletes branches, or
+deletes worktrees.
 """
 
 from __future__ import annotations
@@ -26,7 +28,7 @@ LANE_PRIORITY = ("ops", "python", "dotnet", "parity", "review")
 TASK_ID_PATTERN = re.compile(r"^Task[- ]ID:\s*([A-Za-z]+-\d+)\s*$", re.MULTILINE)
 FIELD_PATTERN_TEMPLATE = r"^{field}:\s*(.*)$"
 TASK_REFERENCE_PATTERN = re.compile(r"\b(?:OPS|PY|DN|PT|RV)-\d+\b", re.IGNORECASE)
-TASK_ISSUE_PATTERN = re.compile(r"^Task-Issue:\s*#?\d+\s*$", re.MULTILINE)
+TASK_ISSUE_PATTERN = re.compile(r"^Task-Issue:\s*#?(\d+)\s*$", re.MULTILINE)
 
 PROMPT_TEMPLATE_CATEGORIES = (
     "python source discovery boundary",
@@ -79,6 +81,8 @@ class PullRequest:
     title: str
     head_ref_name: str
     body: str
+    state: str = "OPEN"
+    is_draft: bool = False
 
 
 @dataclass(frozen=True)
@@ -152,6 +156,26 @@ class HandoffOutcome:
     in_progress_candidates: tuple[Issue, ...]
     invocation_support: InvocationSupport
     invoke_requested: bool = False
+
+
+@dataclass(frozen=True)
+class PullRequestFooterEvaluation:
+    pull_request: PullRequest
+    footer_task_id: str | None
+    footer_issue_number: int | None
+    footer_errors: tuple[str, ...]
+    matches_claimed_task: bool
+
+
+@dataclass(frozen=True)
+class LifecycleOutcome:
+    lifecycle_status: str
+    claimed_issue: Issue | None
+    task_id: str | None
+    pr_evaluations: tuple[PullRequestFooterEvaluation, ...]
+    matching_prs: tuple[PullRequestFooterEvaluation, ...]
+    blockers: tuple[str, ...]
+    human_action_needed: str
 
 
 def subprocess_runner(command: Sequence[str]) -> str:
@@ -252,7 +276,7 @@ def load_queue_state(
                     "--limit",
                     str(issue_limit),
                     "--json",
-                    "number,title,headRefName,body",
+                    "number,title,headRefName,body,state,isDraft",
                 ),
                 runner,
             )
@@ -291,6 +315,8 @@ def parse_pull_requests(raw_items: object) -> list[PullRequest]:
             title=str(item.get("title") or ""),
             head_ref_name=str(item.get("headRefName") or ""),
             body=str(item.get("body") or ""),
+            state=str(item.get("state") or "OPEN"),
+            is_draft=bool(item.get("isDraft", False)),
         )
         for item in raw_items
         if isinstance(item, dict)
@@ -317,6 +343,13 @@ def parse_task_id(body: str) -> str | None:
     if not match:
         return None
     return match.group(1).upper()
+
+
+def parse_task_issue_number(body: str) -> int | None:
+    match = TASK_ISSUE_PATTERN.search(body or "")
+    if not match:
+        return None
+    return int(match.group(1))
 
 
 def parse_field(body: str, field: str) -> str:
@@ -1089,6 +1122,255 @@ def build_local_handoff_outcome(
     )
 
 
+def build_lifecycle_outcome(state: QueueState) -> LifecycleOutcome:
+    claimed_issues = tuple(
+        sorted(
+            (issue for issue in state.in_progress_issues if status_label(issue) == "in-progress"),
+            key=issue_sort_key,
+        )
+    )
+    if not claimed_issues:
+        return LifecycleOutcome(
+            lifecycle_status="blocked_no_claimed_task",
+            claimed_issue=None,
+            task_id=None,
+            pr_evaluations=(),
+            matching_prs=(),
+            blockers=("No status:in-progress issue exists.",),
+            human_action_needed="Claim one ready task before expecting a task PR.",
+        )
+    if len(claimed_issues) > 1:
+        return LifecycleOutcome(
+            lifecycle_status="blocked_multiple_claimed_tasks",
+            claimed_issue=None,
+            task_id=None,
+            pr_evaluations=(),
+            matching_prs=(),
+            blockers=(
+                "Multiple status:in-progress issues exist; lifecycle monitoring requires exactly one claimed task.",
+            ),
+            human_action_needed="Resolve the queue so exactly one task is status:in-progress.",
+        )
+
+    claimed_issue = claimed_issues[0]
+    task_id = parse_task_id(claimed_issue.body)
+    if task_id is None:
+        return LifecycleOutcome(
+            lifecycle_status="pr_footer_invalid",
+            claimed_issue=claimed_issue,
+            task_id=None,
+            pr_evaluations=(),
+            matching_prs=(),
+            blockers=(f"Claimed issue #{claimed_issue.number} has no valid Task-ID.",),
+            human_action_needed="Fix the claimed issue metadata before matching PR lifecycle state.",
+        )
+
+    evaluations = tuple(
+        evaluate_pr_footer(pull_request, task_id=task_id, issue_number=claimed_issue.number)
+        for pull_request in sorted(state.open_prs, key=lambda pr: pr.number)
+        if pr_is_candidate_for_claimed_task(
+            pull_request,
+            task_id=task_id,
+            issue_number=claimed_issue.number,
+        )
+    )
+    valid_matches = tuple(
+        evaluation
+        for evaluation in evaluations
+        if evaluation.matches_claimed_task and not evaluation.footer_errors
+    )
+    invalid_candidates = tuple(evaluation for evaluation in evaluations if evaluation.footer_errors)
+
+    if not evaluations:
+        return LifecycleOutcome(
+            lifecycle_status="waiting_for_pr",
+            claimed_issue=claimed_issue,
+            task_id=task_id,
+            pr_evaluations=(),
+            matching_prs=(),
+            blockers=(),
+            human_action_needed="Wait for the claimed task agent to open a PR with the required footer.",
+        )
+    if len(valid_matches) > 1:
+        return LifecycleOutcome(
+            lifecycle_status="pr_match_ambiguous",
+            claimed_issue=claimed_issue,
+            task_id=task_id,
+            pr_evaluations=evaluations,
+            matching_prs=valid_matches,
+            blockers=("Multiple open PRs match the claimed task footer.",),
+            human_action_needed="Ask a human to resolve the duplicate PRs before continuing review.",
+        )
+    if not valid_matches:
+        return LifecycleOutcome(
+            lifecycle_status="pr_footer_invalid",
+            claimed_issue=claimed_issue,
+            task_id=task_id,
+            pr_evaluations=invalid_candidates,
+            matching_prs=(),
+            blockers=("Open PR candidate exists, but its required task footer is invalid.",),
+            human_action_needed="Fix the PR body footer so it ends with the claimed Task-ID and Task-Issue.",
+        )
+
+    matched = valid_matches[0]
+    if matched.pull_request.is_draft:
+        return LifecycleOutcome(
+            lifecycle_status="pr_draft_waiting",
+            claimed_issue=claimed_issue,
+            task_id=task_id,
+            pr_evaluations=evaluations,
+            matching_prs=valid_matches,
+            blockers=(),
+            human_action_needed="Wait for the task PR to be marked ready for review.",
+        )
+
+    return LifecycleOutcome(
+        lifecycle_status="ready_for_human_review",
+        claimed_issue=claimed_issue,
+        task_id=task_id,
+        pr_evaluations=evaluations,
+        matching_prs=valid_matches,
+        blockers=(),
+        human_action_needed="Human reviewer should review the open non-draft task PR.",
+    )
+
+
+def pr_is_candidate_for_claimed_task(
+    pull_request: PullRequest,
+    task_id: str,
+    issue_number: int,
+) -> bool:
+    footer_task_id = parse_task_id(pull_request.body)
+    footer_issue_number = parse_task_issue_number(pull_request.body)
+    if footer_task_id == task_id or footer_issue_number == issue_number:
+        return True
+
+    searchable = "\n".join((pull_request.title, pull_request.head_ref_name, pull_request.body))
+    return task_id.lower() in searchable.lower() or f"#{issue_number}" in searchable
+
+
+def evaluate_pr_footer(
+    pull_request: PullRequest,
+    task_id: str,
+    issue_number: int,
+) -> PullRequestFooterEvaluation:
+    footer_task_id = parse_task_id(pull_request.body)
+    footer_issue_number = parse_task_issue_number(pull_request.body)
+    errors: list[str] = []
+
+    if footer_task_id is None:
+        errors.append("missing Task-ID footer")
+    elif footer_task_id != task_id:
+        errors.append(f"Task-ID footer mismatch: expected {task_id}, found {footer_task_id}")
+
+    if footer_issue_number is None:
+        errors.append("missing Task-Issue footer")
+    elif footer_issue_number != issue_number:
+        errors.append(
+            f"Task-Issue footer mismatch: expected #{issue_number}, found #{footer_issue_number}"
+        )
+
+    expected_footer = f"Task-ID: {task_id}\nTask-Issue: #{issue_number}"
+    if footer_task_id == task_id and footer_issue_number == issue_number:
+        if not pull_request.body.strip().endswith(expected_footer):
+            errors.append("required PR footer is not the final body content")
+
+    return PullRequestFooterEvaluation(
+        pull_request=pull_request,
+        footer_task_id=footer_task_id,
+        footer_issue_number=footer_issue_number,
+        footer_errors=tuple(errors),
+        matches_claimed_task=footer_task_id == task_id and footer_issue_number == issue_number,
+    )
+
+
+def build_lifecycle_report(outcome: LifecycleOutcome) -> str:
+    lines: list[str] = [
+        "# In-Progress Task PR Lifecycle Report",
+        "",
+        "Lifecycle safety: read-only mode; no GitHub mutation, PR approval, PR merge, "
+        "issue or PR comment, issue or PR close, branch deletion, worktree deletion, "
+        "Codex invocation, or agent start was performed.",
+        "",
+        "## Lifecycle Status",
+        outcome.lifecycle_status,
+        "",
+    ]
+
+    if outcome.blockers:
+        lines.extend(("## Blockers",))
+        lines.extend(f"- {blocker}" for blocker in outcome.blockers)
+        lines.append("")
+
+    if outcome.claimed_issue is not None:
+        task_id = outcome.task_id or "missing-task-id"
+        lines.extend(
+            (
+                "## Claimed Task",
+                f"- Claimed issue number: #{outcome.claimed_issue.number}",
+                f"- Task-ID: {task_id}",
+                f"- Issue title: {outcome.claimed_issue.title}",
+                "",
+            )
+        )
+    else:
+        lines.extend(("## Claimed Task", "- None.", ""))
+
+    if outcome.matching_prs:
+        matched = outcome.matching_prs[0]
+        append_pr_details(lines, matched, heading="## Matching PR")
+    elif outcome.pr_evaluations:
+        lines.extend(("## Matching PR", "- None with a valid claimed-task footer.", ""))
+    else:
+        lines.extend(("## Matching PR", "- None.", ""))
+
+    lines.extend(("## Footer Validation",))
+    if outcome.pr_evaluations:
+        for evaluation in outcome.pr_evaluations:
+            result = "valid" if not evaluation.footer_errors else "invalid"
+            lines.append(f"- PR #{evaluation.pull_request.number}: {result}")
+            lines.append(f"  Task-ID footer: {evaluation.footer_task_id or 'missing'}")
+            issue_text = (
+                f"#{evaluation.footer_issue_number}"
+                if evaluation.footer_issue_number is not None
+                else "missing"
+            )
+            lines.append(f"  Task-Issue footer: {issue_text}")
+            if evaluation.footer_errors:
+                lines.extend(f"  Error: {error}" for error in evaluation.footer_errors)
+    else:
+        lines.append("- No candidate PR footer to validate.")
+
+    lines.extend(
+        (
+            "",
+            "## Human Action Needed",
+            outcome.human_action_needed,
+            "",
+        )
+    )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def append_pr_details(
+    lines: list[str],
+    evaluation: PullRequestFooterEvaluation,
+    heading: str,
+) -> None:
+    pull_request = evaluation.pull_request
+    lines.extend(
+        (
+            heading,
+            f"- Matching PR number: #{pull_request.number}",
+            f"- PR title: {pull_request.title}",
+            f"- PR head branch: {pull_request.head_ref_name}",
+            f"- PR state: {pull_request.state or 'OPEN'}",
+            f"- PR draft: {'yes' if pull_request.is_draft else 'no'}",
+            "",
+        )
+    )
+
+
 def require_issue(issue: Issue | None) -> Issue:
     if issue is None:
         raise ValueError("Missing issue")
@@ -1176,10 +1458,18 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
             "This mode does not invoke Codex."
         ),
     )
+    mode_group.add_argument(
+        "--lifecycle",
+        action="store_true",
+        help=(
+            "Read-only PR lifecycle monitor for one claimed status:in-progress issue. "
+            "Matches open PRs by Task-ID and Task-Issue footer."
+        ),
+    )
     parser.add_argument(
         "--issue",
         type=int,
-        help="Explicit issue number to use with --handoff when multiple tasks are in progress.",
+        help="Explicit issue number to verify with --handoff.",
     )
     parser.add_argument(
         "--invoke",
@@ -1228,6 +1518,13 @@ def run_reporter(
             return 2, build_report(build_blocked_outcome(blockers))
 
     state = load_queue_state(args.repo, runner=runner, issue_limit=args.issue_limit)
+    if args.lifecycle:
+        lifecycle_outcome = build_lifecycle_outcome(state)
+        return (
+            2 if lifecycle_outcome.blockers else 0,
+            build_lifecycle_report(lifecycle_outcome),
+        )
+
     if args.handoff:
         handoff_outcome = build_local_handoff_outcome(
             state,

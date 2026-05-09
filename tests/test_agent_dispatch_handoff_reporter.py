@@ -62,6 +62,38 @@ def _issue(
     )
 
 
+def _pr(
+    number: int,
+    task_id: str = "OPS-018",
+    issue_number: int = 411,
+    *,
+    title: str | None = None,
+    head_ref_name: str | None = None,
+    footer_task_id: str | None = None,
+    footer_issue_number: int | None = None,
+    omit_task_id_footer: bool = False,
+    omit_task_issue_footer: bool = False,
+    is_draft: bool = False,
+) -> PullRequest:
+    title = title or f"{task_id}: Example implementation"
+    head_ref_name = head_ref_name or f"feature/{task_id.lower()}-example"
+    footer_task_id = footer_task_id if footer_task_id is not None else task_id
+    footer_issue_number = footer_issue_number if footer_issue_number is not None else issue_number
+    body_lines = ["Summary", "- Implemented the task.", ""]
+    if not omit_task_id_footer:
+        body_lines.append(f"Task-ID: {footer_task_id}")
+    if not omit_task_issue_footer:
+        body_lines.append(f"Task-Issue: #{footer_issue_number}")
+    return PullRequest(
+        number=number,
+        title=title,
+        head_ref_name=head_ref_name,
+        body="\n".join(body_lines),
+        state="OPEN",
+        is_draft=is_draft,
+    )
+
+
 def _state(
     ready_issues=(),
     in_progress_issues=(),
@@ -92,6 +124,8 @@ def _pr_payload(pull_request: PullRequest) -> dict:
         "title": pull_request.title,
         "headRefName": pull_request.head_ref_name,
         "body": pull_request.body,
+        "state": pull_request.state,
+        "isDraft": pull_request.is_draft,
     }
 
 
@@ -687,3 +721,207 @@ def test_invoke_without_handoff_fails_before_commands() -> None:
     assert exit_code == 2
     assert "--invoke requires --handoff" in report
     assert calls == []
+
+
+def test_lifecycle_mode_blocks_without_in_progress_issue() -> None:
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--lifecycle"],
+        runner=_queue_runner(calls=calls),
+    )
+
+    assert exit_code == 2
+    assert "blocked_no_claimed_task" in report
+    assert "No status:in-progress issue exists." in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_lifecycle_mode_blocks_multiple_in_progress_issues() -> None:
+    first = _issue(409, "OPS-017", "ops", "in-progress")
+    second = _issue(411, "OPS-018", "ops", "in-progress")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--lifecycle"],
+        runner=_queue_runner(in_progress_issues=(first, second), calls=calls),
+    )
+
+    assert exit_code == 2
+    assert "blocked_multiple_claimed_tasks" in report
+    assert "requires exactly one claimed task" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_lifecycle_mode_reports_waiting_for_pr_when_no_matching_pr_exists() -> None:
+    claimed = _issue(411, "OPS-018", "ops", "in-progress")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--lifecycle"],
+        runner=_queue_runner(in_progress_issues=(claimed,), all_issues=(claimed,), calls=calls),
+    )
+
+    assert exit_code == 0
+    assert "waiting_for_pr" in report
+    assert "Claimed issue number: #411" in report
+    assert "Matching PR\n- None." in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_lifecycle_mode_reports_matching_draft_pr() -> None:
+    claimed = _issue(411, "OPS-018", "ops", "in-progress")
+    pull_request = _pr(412, "OPS-018", 411, is_draft=True)
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--lifecycle"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            open_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert "pr_draft_waiting" in report
+    assert "Matching PR number: #412" in report
+    assert "PR draft: yes" in report
+    assert "PR #412: valid" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_lifecycle_mode_reports_open_non_draft_pr_ready_for_review() -> None:
+    claimed = _issue(411, "OPS-018", "ops", "in-progress")
+    pull_request = _pr(412, "OPS-018", 411, is_draft=False)
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--lifecycle"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            open_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert "ready_for_human_review" in report
+    assert "PR state: OPEN" in report
+    assert "PR draft: no" in report
+    assert "Human reviewer should review" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_lifecycle_mode_reports_missing_task_id_footer() -> None:
+    claimed = _issue(411, "OPS-018", "ops", "in-progress")
+    pull_request = _pr(412, "OPS-018", 411, omit_task_id_footer=True)
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--lifecycle"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            open_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "pr_footer_invalid" in report
+    assert "missing Task-ID footer" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+
+
+def test_lifecycle_mode_reports_missing_task_issue_footer() -> None:
+    claimed = _issue(411, "OPS-018", "ops", "in-progress")
+    pull_request = _pr(412, "OPS-018", 411, omit_task_issue_footer=True)
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--lifecycle"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            open_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "pr_footer_invalid" in report
+    assert "missing Task-Issue footer" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+
+
+def test_lifecycle_mode_reports_task_id_footer_mismatch() -> None:
+    claimed = _issue(411, "OPS-018", "ops", "in-progress")
+    pull_request = _pr(412, "OPS-018", 411, footer_task_id="OPS-999")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--lifecycle"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            open_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "Task-ID footer mismatch: expected OPS-018, found OPS-999" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+
+
+def test_lifecycle_mode_reports_task_issue_footer_mismatch() -> None:
+    claimed = _issue(411, "OPS-018", "ops", "in-progress")
+    pull_request = _pr(412, "OPS-018", 411, footer_issue_number=999)
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--lifecycle"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            open_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "Task-Issue footer mismatch: expected #411, found #999" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+
+
+def test_lifecycle_mode_blocks_multiple_matching_prs() -> None:
+    claimed = _issue(411, "OPS-018", "ops", "in-progress")
+    first_pr = _pr(412, "OPS-018", 411)
+    second_pr = _pr(413, "OPS-018", 411)
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--lifecycle"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            open_prs=(first_pr, second_pr),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "pr_match_ambiguous" in report
+    assert "Multiple open PRs match the claimed task footer." in report
+    assert "PR #412: valid" in report
+    assert "PR #413: valid" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
