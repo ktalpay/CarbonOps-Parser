@@ -39,13 +39,7 @@ jobs:
             PR_MERGED="$EVENT_PR_MERGED"
           else
             PR_NUMBER="$INPUT_PR_NUMBER"
-            PR_STATE="$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json state --jq '.state')"
-
-            if [ "$PR_STATE" = "MERGED" ]; then
-              PR_MERGED="true"
-            else
-              PR_MERGED="false"
-            fi
+            PR_MERGED="$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json mergedAt --jq '(.mergedAt // "") != ""')"
           fi
 
           echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
