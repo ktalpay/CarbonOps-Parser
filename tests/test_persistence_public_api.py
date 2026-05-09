@@ -86,6 +86,11 @@ from carbonfactor_parser.persistence import (
     PostgreSQLRepositoryDisabledExecutionPreviewIssue,
     PostgreSQLRepositoryDisabledExecutionPreviewResult,
     PostgreSQLRepositoryDisabledExecutionPreviewStatus,
+    PostgreSQLRepositoryRuntimeSafetyGate,
+    PostgreSQLRepositoryRuntimeSafetyGateDecision,
+    PostgreSQLRepositoryRuntimeSafetyGateDescription,
+    PostgreSQLRepositoryRuntimeSafetyGateIssue,
+    PostgreSQLRepositoryRuntimeSafetyGateStatus,
     PostgreSQLRuntimeExecutionGate,
     PostgreSQLRuntimeExecutionGateDecision,
     PostgreSQLRuntimeExecutionGateDescription,
@@ -136,9 +141,11 @@ from carbonfactor_parser.persistence import (
     describe_postgresql_execution_adapter_boundary,
     describe_postgresql_idempotency_conflict_strategy_boundary,
     describe_postgresql_repository_disabled_execution_preview,
+    describe_postgresql_repository_runtime_safety_gate,
     describe_postgresql_runtime_execution_gate,
     describe_postgresql_transaction_policy_boundary,
     evaluate_postgresql_runtime_execution_gate,
+    evaluate_postgresql_repository_runtime_safety_gate,
     get_normalized_record_postgresql_schema,
     render_postgresql_ddl_preview,
     should_skip_postgresql_integration_tests,
@@ -217,6 +224,11 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLRepositoryDisabledExecutionPreviewIssue",
     "PostgreSQLRepositoryDisabledExecutionPreviewResult",
     "PostgreSQLRepositoryDisabledExecutionPreviewStatus",
+    "PostgreSQLRepositoryRuntimeSafetyGate",
+    "PostgreSQLRepositoryRuntimeSafetyGateDecision",
+    "PostgreSQLRepositoryRuntimeSafetyGateDescription",
+    "PostgreSQLRepositoryRuntimeSafetyGateIssue",
+    "PostgreSQLRepositoryRuntimeSafetyGateStatus",
     "PostgreSQLRuntimeExecutionGate",
     "PostgreSQLRuntimeExecutionGateDecision",
     "PostgreSQLRuntimeExecutionGateDescription",
@@ -267,9 +279,11 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "describe_postgresql_execution_adapter_boundary",
     "describe_postgresql_idempotency_conflict_strategy_boundary",
     "describe_postgresql_repository_disabled_execution_preview",
+    "describe_postgresql_repository_runtime_safety_gate",
     "describe_postgresql_runtime_execution_gate",
     "describe_postgresql_transaction_policy_boundary",
     "evaluate_postgresql_runtime_execution_gate",
+    "evaluate_postgresql_repository_runtime_safety_gate",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
     "should_skip_postgresql_integration_tests",
@@ -476,6 +490,21 @@ EXPECTED_PUBLIC_EXPORTS = {
         postgresql_repository_disabled_execution_preview
         .PostgreSQLRepositoryDisabledExecutionPreviewStatus
     ),
+    "PostgreSQLRepositoryRuntimeSafetyGate": (
+        postgresql_repository.PostgreSQLRepositoryRuntimeSafetyGate
+    ),
+    "PostgreSQLRepositoryRuntimeSafetyGateDecision": (
+        postgresql_repository.PostgreSQLRepositoryRuntimeSafetyGateDecision
+    ),
+    "PostgreSQLRepositoryRuntimeSafetyGateDescription": (
+        postgresql_repository.PostgreSQLRepositoryRuntimeSafetyGateDescription
+    ),
+    "PostgreSQLRepositoryRuntimeSafetyGateIssue": (
+        postgresql_repository.PostgreSQLRepositoryRuntimeSafetyGateIssue
+    ),
+    "PostgreSQLRepositoryRuntimeSafetyGateStatus": (
+        postgresql_repository.PostgreSQLRepositoryRuntimeSafetyGateStatus
+    ),
     "PostgreSQLRuntimeExecutionGate": (
         postgresql_runtime_execution_gate.PostgreSQLRuntimeExecutionGate
     ),
@@ -643,6 +672,9 @@ EXPECTED_PUBLIC_EXPORTS = {
         postgresql_repository_disabled_execution_preview
         .describe_postgresql_repository_disabled_execution_preview
     ),
+    "describe_postgresql_repository_runtime_safety_gate": (
+        postgresql_repository.describe_postgresql_repository_runtime_safety_gate
+    ),
     "describe_postgresql_runtime_execution_gate": (
         postgresql_runtime_execution_gate
         .describe_postgresql_runtime_execution_gate
@@ -654,6 +686,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     "evaluate_postgresql_runtime_execution_gate": (
         postgresql_runtime_execution_gate
         .evaluate_postgresql_runtime_execution_gate
+    ),
+    "evaluate_postgresql_repository_runtime_safety_gate": (
+        postgresql_repository.evaluate_postgresql_repository_runtime_safety_gate
     ),
     "get_normalized_record_postgresql_schema": (
         schema.get_normalized_record_postgresql_schema
@@ -808,6 +843,19 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLRepositoryDisabledExecutionPreviewStatus": (
             PostgreSQLRepositoryDisabledExecutionPreviewStatus
         ),
+        "PostgreSQLRepositoryRuntimeSafetyGate": PostgreSQLRepositoryRuntimeSafetyGate,
+        "PostgreSQLRepositoryRuntimeSafetyGateDecision": (
+            PostgreSQLRepositoryRuntimeSafetyGateDecision
+        ),
+        "PostgreSQLRepositoryRuntimeSafetyGateDescription": (
+            PostgreSQLRepositoryRuntimeSafetyGateDescription
+        ),
+        "PostgreSQLRepositoryRuntimeSafetyGateIssue": (
+            PostgreSQLRepositoryRuntimeSafetyGateIssue
+        ),
+        "PostgreSQLRepositoryRuntimeSafetyGateStatus": (
+            PostgreSQLRepositoryRuntimeSafetyGateStatus
+        ),
         "PostgreSQLRuntimeExecutionGate": PostgreSQLRuntimeExecutionGate,
         "PostgreSQLRuntimeExecutionGateDecision": (
             PostgreSQLRuntimeExecutionGateDecision
@@ -922,6 +970,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "describe_postgresql_repository_disabled_execution_preview": (
             describe_postgresql_repository_disabled_execution_preview
         ),
+        "describe_postgresql_repository_runtime_safety_gate": (
+            describe_postgresql_repository_runtime_safety_gate
+        ),
         "describe_postgresql_runtime_execution_gate": (
             describe_postgresql_runtime_execution_gate
         ),
@@ -930,6 +981,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         ),
         "evaluate_postgresql_runtime_execution_gate": (
             evaluate_postgresql_runtime_execution_gate
+        ),
+        "evaluate_postgresql_repository_runtime_safety_gate": (
+            evaluate_postgresql_repository_runtime_safety_gate
         ),
         "get_normalized_record_postgresql_schema": (
             get_normalized_record_postgresql_schema
