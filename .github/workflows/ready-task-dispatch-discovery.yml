@@ -34,11 +34,13 @@ jobs:
 
           REPORT_DIR="ready-dispatch-report"
           REPORT_PATH="$REPORT_DIR/run-once-report.md"
+          HANDOFF_ARTIFACT_DIR=".agent-handoff"
           mkdir -p "$REPORT_DIR"
 
           REPORT_ARGS=(
             --repo "$REPOSITORY"
             --run-once
+            --artifact-dir "$HANDOFF_ARTIFACT_DIR"
           )
           MODE_DESCRIPTION="read-only --run-once"
           CLAIM_ENABLED="false"
@@ -57,12 +59,23 @@ jobs:
           HANDOFF_PROMPTS_FOUND="false"
           HANDOFF_PROMPTS_PACKAGED="false"
           HANDOFF_PROMPT_COUNT="0"
-          if compgen -G ".agent-handoff/*.md" > /dev/null; then
+          if compgen -G "$HANDOFF_ARTIFACT_DIR/*-prompt.md" > /dev/null; then
             HANDOFF_PROMPTS_FOUND="true"
             mkdir -p "$REPORT_DIR/.agent-handoff"
-            cp .agent-handoff/*.md "$REPORT_DIR/.agent-handoff/"
+            cp "$HANDOFF_ARTIFACT_DIR"/*-prompt.md "$REPORT_DIR/.agent-handoff/"
             HANDOFF_PROMPTS_PACKAGED="true"
-            HANDOFF_PROMPT_COUNT="$(find .agent-handoff -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' ')"
+            HANDOFF_PROMPT_COUNT="$(find "$HANDOFF_ARTIFACT_DIR" -maxdepth 1 -type f -name '*-prompt.md' | wc -l | tr -d ' ')"
+          fi
+
+          echo "Workspace diagnostic tree before artifact upload:"
+          echo "Current directory: $(pwd)"
+          echo "Contents of $REPORT_DIR:"
+          find "$REPORT_DIR" -maxdepth 3 -print | sort
+          if [ -d "$HANDOFF_ARTIFACT_DIR" ]; then
+            echo "Contents of $HANDOFF_ARTIFACT_DIR:"
+            find "$HANDOFF_ARTIFACT_DIR" -maxdepth 2 -print | sort
+          else
+            echo "$HANDOFF_ARTIFACT_DIR does not exist."
           fi
 
           {
@@ -75,6 +88,12 @@ jobs:
             echo "- Handoff prompt artifacts packaged: \`$HANDOFF_PROMPTS_PACKAGED\`"
             echo "- Handoff prompt artifact count: \`$HANDOFF_PROMPT_COUNT\`"
             echo "- Codex invoked: no"
+            echo
+            echo "#### Artifact staging diagnostics"
+            echo
+            echo "- Current directory: \`$(pwd)\`"
+            echo "- Report staging directory: \`$REPORT_DIR\`"
+            echo "- Handoff artifact directory: \`$HANDOFF_ARTIFACT_DIR\`"
             echo
             cat "$REPORT_PATH"
           } >> "$GITHUB_STEP_SUMMARY"
@@ -94,7 +113,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ready-task-dispatch-report
-          path: |
-            ${{ steps.dispatch.outputs.report_path }}
-            ready-dispatch-report/.agent-handoff/*.md
+          path: ready-dispatch-report/**
+          include-hidden-files: true
           if-no-files-found: error
