@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from scripts.agent_dispatch_handoff_reporter import (
@@ -10,6 +11,7 @@ from scripts.agent_dispatch_handoff_reporter import (
     load_queue_state,
     parse_task_id,
     parse_task_list,
+    run_reporter,
     select_handoff_package,
     select_prompt_template,
     write_prompt_artifact,
@@ -70,6 +72,67 @@ def _state(
         all_issues=tuple(all_issues),
         open_prs=tuple(open_prs),
     )
+
+
+def _issue_payload(issue: Issue) -> dict:
+    return {
+        "number": issue.number,
+        "title": issue.title,
+        "body": issue.body,
+        "labels": [{"name": label} for label in issue.labels],
+        "state": issue.state,
+    }
+
+
+def _pr_payload(pull_request: PullRequest) -> dict:
+    return {
+        "number": pull_request.number,
+        "title": pull_request.title,
+        "headRefName": pull_request.head_ref_name,
+        "body": pull_request.body,
+    }
+
+
+def _queue_runner(
+    *,
+    ready_issues=(),
+    in_progress_issues=(),
+    all_issues=(),
+    open_prs=(),
+    calls: list[tuple[str, ...]] | None = None,
+):
+    command_calls = calls if calls is not None else []
+
+    def runner(command):
+        command_tuple = tuple(command)
+        command_calls.append(command_tuple)
+        if command_tuple[1:3] == ("issue", "list") and "status:ready" in command_tuple:
+            return json.dumps([_issue_payload(issue) for issue in ready_issues])
+        if command_tuple[1:3] == ("issue", "list") and "status:in-progress" in command_tuple:
+            return json.dumps([_issue_payload(issue) for issue in in_progress_issues])
+        if command_tuple[1:3] == ("issue", "list"):
+            return json.dumps([_issue_payload(issue) for issue in all_issues])
+        if command_tuple[1:3] == ("pr", "list"):
+            return json.dumps([_pr_payload(pr) for pr in open_prs])
+        if command_tuple[1:3] == ("issue", "edit"):
+            return ""
+        raise AssertionError(command)
+
+    return runner
+
+
+def _assert_no_forbidden_commands(calls: list[tuple[str, ...]]) -> None:
+    forbidden_words = {
+        "merge",
+        "review",
+        "close",
+        "delete",
+        "worktree",
+        "codex",
+    }
+    for call in calls:
+        joined = " ".join(call).lower()
+        assert not any(word in joined for word in forbidden_words), call
 
 
 def test_parse_task_id_and_dependency_list() -> None:
@@ -242,3 +305,189 @@ def test_expected_branch_name_is_deterministic() -> None:
     assert expected_branch_name("OPS-015", "[OPS-015] Read-only agent dispatch handoff reporter") == (
         "feature/ops-015-read-only-agent-dispatch-handoff-reporter"
     )
+
+
+def test_dry_run_performs_no_mutation_commands(tmp_path: Path) -> None:
+    ready = _issue(407, "OPS-016", "ops", "ready", depends_on="OPS-015")
+    dependency = _issue(405, "OPS-015", "ops", "merged")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--dry-run", "--artifact-dir", str(tmp_path)],
+        runner=_queue_runner(
+            ready_issues=(ready,),
+            all_issues=(ready, dependency),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert "Read-only safety" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    assert not list(tmp_path.iterdir())
+    _assert_no_forbidden_commands(calls)
+
+
+def test_claim_mode_emits_expected_issue_edit_command(tmp_path: Path) -> None:
+    ready = _issue(
+        407,
+        "OPS-016",
+        "ops",
+        "ready",
+        title="[OPS-016] Agent dispatch claim-and-prompt mode",
+        depends_on="OPS-015",
+    )
+    dependency = _issue(405, "OPS-015", "ops", "merged")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--claim", "--artifact-dir", str(tmp_path / ".agent-handoff")],
+        runner=_queue_runner(
+            ready_issues=(ready,),
+            all_issues=(ready, dependency),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert (
+        "gh",
+        "issue",
+        "edit",
+        "407",
+        "--repo",
+        "example/repo",
+        "--remove-label",
+        "status:ready",
+        "--add-label",
+        "status:in-progress",
+    ) in calls
+    assert "## Label Mutation Performed" in report
+    assert "- Removed label: `status:ready`" in report
+    assert "- Added label: `status:in-progress`" in report
+    assert "Prompt artifact:" in report
+    assert (tmp_path / ".agent-handoff" / "OPS-016-407-prompt.md").exists()
+    _assert_no_forbidden_commands(calls)
+
+
+def test_claim_mode_refuses_when_open_pr_exists(tmp_path: Path) -> None:
+    ready = _issue(407, "OPS-016", "ops", "ready", depends_on="OPS-015")
+    dependency = _issue(405, "OPS-015", "ops", "merged")
+    task_pr = PullRequest(
+        number=406,
+        title="OPS-015: Read-only agent dispatch handoff reporter",
+        head_ref_name="feature/ops-015-dispatch-handoff-reporter",
+        body="Task-ID: OPS-015\nTask-Issue: #405",
+    )
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--claim", "--artifact-dir", str(tmp_path)],
+        runner=_queue_runner(
+            ready_issues=(ready,),
+            all_issues=(ready, dependency),
+            open_prs=(task_pr,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "Open task PR blocks dispatch" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+
+
+def test_claim_mode_refuses_when_in_progress_exists(tmp_path: Path) -> None:
+    ready = _issue(407, "OPS-016", "ops", "ready", depends_on="OPS-015")
+    dependency = _issue(405, "OPS-015", "ops", "merged")
+    active = _issue(408, "OPS-017", "ops", "in-progress")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--claim", "--artifact-dir", str(tmp_path)],
+        runner=_queue_runner(
+            ready_issues=(ready,),
+            in_progress_issues=(active,),
+            all_issues=(ready, dependency, active),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "status:in-progress issue blocks dispatch" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+
+
+def test_claim_mode_refuses_when_dependency_missing_or_not_merged(tmp_path: Path) -> None:
+    missing_dependency_ready = _issue(407, "OPS-016", "ops", "ready", depends_on="OPS-015")
+    calls_missing: list[tuple[str, ...]] = []
+
+    missing_exit_code, missing_report = run_reporter(
+        ["--repo", "example/repo", "--claim", "--artifact-dir", str(tmp_path / "missing")],
+        runner=_queue_runner(
+            ready_issues=(missing_dependency_ready,),
+            all_issues=(missing_dependency_ready,),
+            calls=calls_missing,
+        ),
+    )
+
+    assert missing_exit_code == 2
+    assert "Dependency issue not found for OPS-015." in missing_report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls_missing)
+
+    not_merged_ready = _issue(407, "OPS-016", "ops", "ready", depends_on="OPS-015")
+    not_merged_dependency = _issue(405, "OPS-015", "ops", "in-review")
+    calls_not_merged: list[tuple[str, ...]] = []
+
+    not_merged_exit_code, not_merged_report = run_reporter(
+        ["--repo", "example/repo", "--claim", "--artifact-dir", str(tmp_path / "not-merged")],
+        runner=_queue_runner(
+            ready_issues=(not_merged_ready,),
+            all_issues=(not_merged_ready, not_merged_dependency),
+            calls=calls_not_merged,
+        ),
+    )
+
+    assert not_merged_exit_code == 2
+    assert "Dependency OPS-015 is status:in-review, not status:merged." in not_merged_report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls_not_merged)
+
+
+def test_claim_mode_claims_exactly_one_issue_by_lane_priority_and_number(tmp_path: Path) -> None:
+    ops_ready = _issue(407, "OPS-016", "ops", "ready", depends_on="OPS-015")
+    later_ops_ready = _issue(409, "OPS-018", "ops", "ready", depends_on="OPS-015")
+    python_ready = _issue(300, "PY-020", "python", "ready", depends_on="OPS-015")
+    dependency = _issue(405, "OPS-015", "ops", "merged")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--claim", "--artifact-dir", str(tmp_path)],
+        runner=_queue_runner(
+            ready_issues=(python_ready, later_ops_ready, ops_ready),
+            all_issues=(python_ready, later_ops_ready, ops_ready, dependency),
+            calls=calls,
+        ),
+    )
+
+    issue_edit_calls = [call for call in calls if call[1:3] == ("issue", "edit")]
+    assert exit_code == 0
+    assert len(issue_edit_calls) == 1
+    assert issue_edit_calls[0][3] == "407"
+    assert "Selected issue number: #407" in report
+
+
+def test_claim_mode_generated_prompt_includes_required_footer(tmp_path: Path) -> None:
+    ready = _issue(407, "OPS-016", "ops", "ready", depends_on="OPS-015")
+    dependency = _issue(405, "OPS-015", "ops", "merged")
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--claim", "--artifact-dir", str(tmp_path)],
+        runner=_queue_runner(ready_issues=(ready,), all_issues=(ready, dependency)),
+    )
+
+    prompt_path = tmp_path / "OPS-016-407-prompt.md"
+    prompt = prompt_path.read_text(encoding="utf-8")
+    assert exit_code == 0
+    assert "Task-ID: OPS-016" in report
+    assert "Task-Issue: #407" in report
+    assert "Task-ID: OPS-016" in prompt
+    assert "Task-Issue: #407" in prompt

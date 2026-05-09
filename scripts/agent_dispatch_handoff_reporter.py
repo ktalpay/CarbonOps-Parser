@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Read-only agent dispatch handoff reporter.
+"""Agent dispatch handoff reporter.
 
-The reporter inspects GitHub issue and PR state through read-only `gh` CLI
-queries, selects one safe ready task, and prints a deterministic handoff report.
-It does not start Codex, mutate GitHub labels, approve PRs, merge PRs, delete
-branches, or delete worktrees.
+By default, the reporter inspects GitHub issue and PR state through read-only
+`gh` CLI queries, selects one safe ready task, and prints a deterministic
+handoff report. Explicit `--claim` mode may claim one selected issue by moving
+`status:ready` to `status:in-progress`. The reporter never starts Codex,
+approves PRs, merges PRs, closes issues, deletes branches, or deletes worktrees.
 """
 
 from __future__ import annotations
@@ -41,7 +42,8 @@ VALIDATION_CHECKLIST = (
     "Run python -m pytest if practical.",
     "Run python scripts/check_public_safety.py if applicable.",
     "Run git diff --check.",
-    "Confirm no GitHub labels/issues/PRs were modified by the reporter.",
+    "Confirm dry-run did not modify GitHub labels/issues/PRs.",
+    "In claim mode, confirm only the selected issue changed from status:ready to status:in-progress.",
 )
 
 SAFETY_CONSTRAINTS = (
@@ -116,11 +118,24 @@ class HandoffPackage:
 
 
 @dataclass(frozen=True)
+class ClaimResult:
+    issue_number: int
+    removed_label: str
+    added_label: str
+    command: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class SelectionOutcome:
     package: HandoffPackage | None
     blockers: tuple[str, ...]
     ready_candidates: tuple[Issue, ...]
     task_prs: tuple[PullRequest, ...]
+    claim_result: ClaimResult | None = None
+
+
+class ClaimFailedError(RuntimeError):
+    """Raised when explicit claim mode fails after preflight succeeds."""
 
 
 def subprocess_runner(command: Sequence[str]) -> str:
@@ -634,9 +649,9 @@ def generate_prompt(
             "- Any GitHub/API error message observed",
             "",
             "## Final Report Requirement",
-            "Return summary, branch, files changed, validation performed, read-only safety "
-            "confirmation when relevant, remaining risks, PR URL if available, and a "
-            "merge-ready or commit-ready verdict.",
+            "Return summary, branch, files changed, validation performed, read-only or "
+            "claim-mode safety confirmation, remaining risks, PR URL if available, and "
+            "a merge-ready or commit-ready verdict.",
         )
     )
 
@@ -655,11 +670,22 @@ def bullet_list(items: Sequence[str]) -> str:
 
 
 def build_report(outcome: SelectionOutcome) -> str:
+    if outcome.claim_result is None:
+        safety_line = (
+            "Read-only safety: no Codex invocation, GitHub mutation, PR approval, "
+            "PR merge, branch deletion, or worktree deletion was performed."
+        )
+    else:
+        safety_line = (
+            "Claim-mode safety: exactly one issue label mutation was performed; no Codex "
+            "invocation, PR approval, PR merge, issue close, branch deletion, or worktree "
+            "deletion was performed."
+        )
+
     lines: list[str] = [
         "# Agent Dispatch Handoff Report",
         "",
-        "Read-only safety: no Codex invocation, GitHub mutation, PR approval, PR merge, "
-        "branch deletion, or worktree deletion was performed.",
+        safety_line,
         "",
     ]
 
@@ -674,7 +700,7 @@ def build_report(outcome: SelectionOutcome) -> str:
     lines.extend(
         (
             "## Dispatch Status",
-            "ready",
+            "claimed" if outcome.claim_result is not None else "ready",
             "",
             "## Selected Task",
             f"- Selected issue number: #{package.selected_issue_number}",
@@ -731,6 +757,17 @@ def build_report(outcome: SelectionOutcome) -> str:
             "",
         )
     )
+    if outcome.claim_result is not None:
+        lines.extend(
+            (
+                "## Label Mutation Performed",
+                f"- Selected issue: #{outcome.claim_result.issue_number}",
+                f"- Removed label: `{outcome.claim_result.removed_label}`",
+                f"- Added label: `{outcome.claim_result.added_label}`",
+                "- Lane, agent, and type labels were left unchanged.",
+                "",
+            )
+        )
     append_ready_candidates(lines, outcome.ready_candidates)
     return "\n".join(lines).rstrip() + "\n"
 
@@ -777,6 +814,44 @@ def write_prompt_artifact(package: HandoffPackage, artifact_dir: Path) -> Handof
     )
 
 
+def claim_selected_issue(
+    repository: str,
+    package: HandoffPackage,
+    runner: CommandRunner = subprocess_runner,
+) -> ClaimResult:
+    command = (
+        "gh",
+        "issue",
+        "edit",
+        str(package.selected_issue_number),
+        "--repo",
+        repository,
+        "--remove-label",
+        "status:ready",
+        "--add-label",
+        "status:in-progress",
+    )
+    try:
+        runner(command)
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.strip() if exc.stderr else ""
+        detail = stderr or str(exc)
+        raise ClaimFailedError(
+            f"Failed to claim issue #{package.selected_issue_number}: {detail}"
+        ) from exc
+    except Exception as exc:  # pragma: no cover - defensive CLI boundary
+        raise ClaimFailedError(
+            f"Failed to claim issue #{package.selected_issue_number}: {exc}"
+        ) from exc
+
+    return ClaimResult(
+        issue_number=package.selected_issue_number,
+        removed_label="status:ready",
+        added_label="status:in-progress",
+        command=command,
+    )
+
+
 def git_state_blockers(runner: CommandRunner = subprocess_runner) -> tuple[str, ...]:
     status = runner(("git", "status", "--porcelain"))
     if status.strip():
@@ -795,13 +870,21 @@ def build_blocked_outcome(blockers: Sequence[str]) -> SelectionOutcome:
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Read-only agent dispatch handoff reporter."
+        description="Agent dispatch handoff reporter."
     )
     parser.add_argument("--repo", default=DEFAULT_REPOSITORY, help="GitHub repository.")
     parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Read-only mode. This is the default and never mutates GitHub.",
+    )
+    parser.add_argument(
+        "--claim",
+        action="store_true",
+        help=(
+            "Explicit opt-in claim-and-prompt mode. After all safety checks pass, "
+            "move exactly one selected issue from status:ready to status:in-progress."
+        ),
     )
     parser.add_argument(
         "--write-artifact",
@@ -827,28 +910,55 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    args = parse_args(list(argv or sys.argv[1:]))
+def run_reporter(
+    argv: Sequence[str] | None = None,
+    runner: CommandRunner = subprocess_runner,
+) -> tuple[int, str]:
+    args = parse_args(list(argv or []))
 
     if args.check_git_state:
-        blockers = git_state_blockers()
+        blockers = git_state_blockers(runner)
         if blockers:
-            print(build_report(build_blocked_outcome(blockers)))
-            return 2
+            return 2, build_report(build_blocked_outcome(blockers))
 
-    state = load_queue_state(args.repo, issue_limit=args.issue_limit)
+    state = load_queue_state(args.repo, runner=runner, issue_limit=args.issue_limit)
     outcome = select_handoff_package(state, repository=args.repo)
-    if outcome.package is not None and args.write_artifact:
+    if outcome.package is not None and (args.write_artifact or args.claim):
         package = write_prompt_artifact(outcome.package, Path(args.artifact_dir))
         outcome = SelectionOutcome(
             package=package,
             blockers=outcome.blockers,
             ready_candidates=outcome.ready_candidates,
             task_prs=outcome.task_prs,
+            claim_result=outcome.claim_result,
         )
 
-    print(build_report(outcome))
-    return 0 if not outcome.blockers else 2
+    if outcome.package is not None and args.claim:
+        try:
+            claim_result = claim_selected_issue(args.repo, outcome.package, runner=runner)
+        except ClaimFailedError as exc:
+            failed_outcome = SelectionOutcome(
+                package=None,
+                blockers=(str(exc),),
+                ready_candidates=outcome.ready_candidates,
+                task_prs=outcome.task_prs,
+            )
+            return 2, build_report(failed_outcome)
+        outcome = SelectionOutcome(
+            package=outcome.package,
+            blockers=outcome.blockers,
+            ready_candidates=outcome.ready_candidates,
+            task_prs=outcome.task_prs,
+            claim_result=claim_result,
+        )
+
+    return (0 if not outcome.blockers else 2), build_report(outcome)
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    exit_code, report = run_reporter(list(argv or sys.argv[1:]))
+    print(report)
+    return exit_code
 
 
 if __name__ == "__main__":
