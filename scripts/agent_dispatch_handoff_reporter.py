@@ -4,10 +4,10 @@
 By default, the reporter inspects GitHub issue and PR state through read-only
 `gh` CLI queries, selects one safe ready task, and prints a deterministic
 handoff report. Explicit `--claim` mode may claim one selected issue by moving
-`status:ready` to `status:in-progress`. Explicit `--lifecycle` mode inspects
-one claimed task and open PR footers without mutating GitHub. The reporter never
-starts Codex, approves PRs, merges PRs, closes issues, deletes branches, or
-deletes worktrees.
+`status:ready` to `status:in-progress`. Explicit `--lifecycle` and
+`--review-status` modes inspect one claimed task and PR metadata without
+mutating GitHub. The reporter never starts Codex, approves PRs, merges PRs,
+closes issues, deletes branches, or deletes worktrees.
 """
 
 from __future__ import annotations
@@ -83,6 +83,11 @@ class PullRequest:
     body: str
     state: str = "OPEN"
     is_draft: bool = False
+    base_ref_name: str = ""
+    review_decision: str = ""
+    status_check_rollup: tuple[dict[str, object], ...] = ()
+    mergeable: str = ""
+    merge_state_status: str = ""
 
 
 @dataclass(frozen=True)
@@ -99,6 +104,7 @@ class QueueState:
     in_progress_issues: tuple[Issue, ...]
     all_issues: tuple[Issue, ...]
     open_prs: tuple[PullRequest, ...]
+    all_prs: tuple[PullRequest, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -174,6 +180,24 @@ class LifecycleOutcome:
     task_id: str | None
     pr_evaluations: tuple[PullRequestFooterEvaluation, ...]
     matching_prs: tuple[PullRequestFooterEvaluation, ...]
+    blockers: tuple[str, ...]
+    human_action_needed: str
+
+
+@dataclass(frozen=True)
+class CheckSummary:
+    status: str
+    summary: str
+
+
+@dataclass(frozen=True)
+class ReviewReadinessOutcome:
+    readiness_status: str
+    claimed_issue: Issue | None
+    task_id: str | None
+    pr_evaluations: tuple[PullRequestFooterEvaluation, ...]
+    matching_prs: tuple[PullRequestFooterEvaluation, ...]
+    check_summary: CheckSummary | None
     blockers: tuple[str, ...]
     human_action_needed: str
 
@@ -282,11 +306,35 @@ def load_queue_state(
             )
         )
     )
+    all_prs = tuple(
+        parse_pull_requests(
+            run_json(
+                (
+                    "gh",
+                    "pr",
+                    "list",
+                    "--repo",
+                    repository,
+                    "--state",
+                    "all",
+                    "--limit",
+                    str(issue_limit),
+                    "--json",
+                    (
+                        "number,title,headRefName,baseRefName,body,state,isDraft,"
+                        "reviewDecision,statusCheckRollup,mergeable,mergeStateStatus"
+                    ),
+                ),
+                runner,
+            )
+        )
+    )
     return QueueState(
         ready_issues=ready_issues,
         in_progress_issues=in_progress_issues,
         all_issues=all_issues,
         open_prs=open_prs,
+        all_prs=all_prs,
     )
 
 
@@ -317,10 +365,21 @@ def parse_pull_requests(raw_items: object) -> list[PullRequest]:
             body=str(item.get("body") or ""),
             state=str(item.get("state") or "OPEN"),
             is_draft=bool(item.get("isDraft", False)),
+            base_ref_name=str(item.get("baseRefName") or ""),
+            review_decision=str(item.get("reviewDecision") or ""),
+            status_check_rollup=extract_status_check_rollup(item.get("statusCheckRollup")),
+            mergeable=str(item.get("mergeable") or ""),
+            merge_state_status=str(item.get("mergeStateStatus") or ""),
         )
         for item in raw_items
         if isinstance(item, dict)
     ]
+
+
+def extract_status_check_rollup(raw_items: object) -> tuple[dict[str, object], ...]:
+    if not isinstance(raw_items, list):
+        return ()
+    return tuple(dict(item) for item in raw_items if isinstance(item, dict))
 
 
 def extract_label_names(raw_labels: object) -> tuple[str, ...]:
@@ -1352,6 +1411,338 @@ def build_lifecycle_report(outcome: LifecycleOutcome) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def build_review_readiness_outcome(state: QueueState) -> ReviewReadinessOutcome:
+    claimed_issues = tuple(
+        sorted(
+            (issue for issue in state.in_progress_issues if status_label(issue) == "in-progress"),
+            key=issue_sort_key,
+        )
+    )
+    if not claimed_issues:
+        return ReviewReadinessOutcome(
+            readiness_status="blocked_no_claimed_task",
+            claimed_issue=None,
+            task_id=None,
+            pr_evaluations=(),
+            matching_prs=(),
+            check_summary=None,
+            blockers=("No status:in-progress issue exists.",),
+            human_action_needed="Claim one ready task before checking PR review readiness.",
+        )
+    if len(claimed_issues) > 1:
+        return ReviewReadinessOutcome(
+            readiness_status="blocked_multiple_claimed_tasks",
+            claimed_issue=None,
+            task_id=None,
+            pr_evaluations=(),
+            matching_prs=(),
+            check_summary=None,
+            blockers=(
+                "Multiple status:in-progress issues exist; review readiness requires exactly one claimed task.",
+            ),
+            human_action_needed="Resolve the queue so exactly one task is status:in-progress.",
+        )
+
+    claimed_issue = claimed_issues[0]
+    task_id = parse_task_id(claimed_issue.body)
+    if task_id is None:
+        return ReviewReadinessOutcome(
+            readiness_status="pr_footer_invalid",
+            claimed_issue=claimed_issue,
+            task_id=None,
+            pr_evaluations=(),
+            matching_prs=(),
+            check_summary=None,
+            blockers=(f"Claimed issue #{claimed_issue.number} has no valid Task-ID.",),
+            human_action_needed="Fix the claimed issue metadata before checking PR review readiness.",
+        )
+
+    pr_pool = state.all_prs or state.open_prs
+    evaluations = tuple(
+        evaluate_pr_footer(pull_request, task_id=task_id, issue_number=claimed_issue.number)
+        for pull_request in sorted(pr_pool, key=lambda pr: pr.number)
+        if pr_is_candidate_for_claimed_task(
+            pull_request,
+            task_id=task_id,
+            issue_number=claimed_issue.number,
+        )
+    )
+    valid_matches = tuple(
+        evaluation
+        for evaluation in evaluations
+        if evaluation.matches_claimed_task and not evaluation.footer_errors
+    )
+    invalid_candidates = tuple(evaluation for evaluation in evaluations if evaluation.footer_errors)
+
+    if not evaluations:
+        return ReviewReadinessOutcome(
+            readiness_status="waiting_for_pr",
+            claimed_issue=claimed_issue,
+            task_id=task_id,
+            pr_evaluations=(),
+            matching_prs=(),
+            check_summary=None,
+            blockers=(),
+            human_action_needed="Wait for the claimed task agent to open a PR with the required footer.",
+        )
+    if len(valid_matches) > 1:
+        return ReviewReadinessOutcome(
+            readiness_status="blocked_ambiguous_pr_match",
+            claimed_issue=claimed_issue,
+            task_id=task_id,
+            pr_evaluations=evaluations,
+            matching_prs=valid_matches,
+            check_summary=None,
+            blockers=("Multiple PRs match the claimed task footer.",),
+            human_action_needed="Ask a human to resolve the duplicate matching PRs before review or merge.",
+        )
+    if not valid_matches:
+        return ReviewReadinessOutcome(
+            readiness_status="pr_footer_invalid",
+            claimed_issue=claimed_issue,
+            task_id=task_id,
+            pr_evaluations=invalid_candidates,
+            matching_prs=(),
+            check_summary=None,
+            blockers=("PR candidate exists, but its required task footer is invalid.",),
+            human_action_needed="Fix the PR body footer so it ends with the claimed Task-ID and Task-Issue.",
+        )
+
+    match = valid_matches[0]
+    pull_request = match.pull_request
+    check_summary = summarize_status_checks(pull_request)
+    readiness_status, blockers, action = determine_review_readiness_status(
+        pull_request,
+        check_summary,
+    )
+    return ReviewReadinessOutcome(
+        readiness_status=readiness_status,
+        claimed_issue=claimed_issue,
+        task_id=task_id,
+        pr_evaluations=evaluations,
+        matching_prs=valid_matches,
+        check_summary=check_summary,
+        blockers=blockers,
+        human_action_needed=action,
+    )
+
+
+def summarize_status_checks(pull_request: PullRequest) -> CheckSummary:
+    if not pull_request.status_check_rollup:
+        return CheckSummary(
+            status="unknown",
+            summary="statusCheckRollup unavailable or empty.",
+        )
+
+    pending: list[str] = []
+    failed: list[str] = []
+    passed: list[str] = []
+    for item in pull_request.status_check_rollup:
+        name = str(item.get("name") or item.get("workflowName") or "unnamed check")
+        status = str(item.get("status") or "").upper()
+        conclusion = str(item.get("conclusion") or "").upper()
+        if status and status != "COMPLETED":
+            pending.append(name)
+        elif not conclusion:
+            pending.append(name)
+        elif conclusion in {"FAILURE", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED", "STARTUP_FAILURE"}:
+            failed.append(name)
+        else:
+            passed.append(name)
+
+    if failed:
+        return CheckSummary(
+            status="failed",
+            summary="Failed checks: " + ", ".join(failed),
+        )
+    if pending:
+        return CheckSummary(
+            status="pending",
+            summary="Pending checks: " + ", ".join(pending),
+        )
+    return CheckSummary(
+        status="passed",
+        summary=f"All reported checks passed ({len(passed)}).",
+    )
+
+
+def determine_review_readiness_status(
+    pull_request: PullRequest,
+    check_summary: CheckSummary,
+) -> tuple[str, tuple[str, ...], str]:
+    state = pull_request.state.upper()
+    review_decision = pull_request.review_decision.upper()
+
+    if state != "OPEN":
+        return (
+            "waiting_for_pr",
+            (f"Matching PR is {state or 'not open'}, not OPEN.",),
+            "Wait for or open an active task PR before review readiness can proceed.",
+        )
+    if pull_request.is_draft:
+        return (
+            "pr_draft_waiting",
+            (),
+            "Wait for the task PR to be marked ready for review.",
+        )
+    if check_summary.status == "pending":
+        return (
+            "checks_pending",
+            (),
+            "Wait for required checks to finish before review or merge decisions.",
+        )
+    if check_summary.status == "failed":
+        return (
+            "checks_failed",
+            (),
+            "Ask the task author to fix failing checks before human review or merge.",
+        )
+    if review_decision == "CHANGES_REQUESTED":
+        return (
+            "changes_requested",
+            (),
+            "Ask the task author to address requested changes.",
+        )
+    if review_decision == "REVIEW_REQUIRED":
+        return (
+            "review_required",
+            (),
+            "A human reviewer should review the PR.",
+        )
+    if review_decision == "APPROVED":
+        if check_summary.status == "passed" and has_clean_merge_metadata(pull_request):
+            return (
+                "ready_for_human_merge",
+                (),
+                "Human may review final context and decide whether to merge.",
+            )
+        return (
+            "ready_for_human_review",
+            (),
+            "Human should review mergeability details before deciding whether to merge.",
+        )
+
+    return (
+        "ready_for_human_review",
+        (),
+        "Human reviewer should inspect the PR; review decision metadata is not approved yet.",
+    )
+
+
+def has_clean_merge_metadata(pull_request: PullRequest) -> bool:
+    mergeable = pull_request.mergeable.upper()
+    merge_state = pull_request.merge_state_status.upper()
+    if mergeable and mergeable != "MERGEABLE":
+        return False
+    if merge_state and merge_state not in {"CLEAN", "HAS_HOOKS"}:
+        return False
+    return bool(mergeable or merge_state)
+
+
+def build_review_readiness_report(outcome: ReviewReadinessOutcome) -> str:
+    lines: list[str] = [
+        "# PR Review Readiness Report",
+        "",
+        "Review readiness safety: read-only advisory mode; no GitHub mutation, PR approval, "
+        "PR merge, issue or PR comment, issue or PR close, branch deletion, worktree deletion, "
+        "Codex invocation, or agent start was performed.",
+        "",
+        "## Readiness Status",
+        outcome.readiness_status,
+        "",
+    ]
+
+    if outcome.blockers:
+        lines.extend(("## Blockers",))
+        lines.extend(f"- {blocker}" for blocker in outcome.blockers)
+        lines.append("")
+
+    if outcome.claimed_issue is not None:
+        lines.extend(
+            (
+                "## Claimed Task",
+                f"- Claimed issue number: #{outcome.claimed_issue.number}",
+                f"- Task-ID: {outcome.task_id or 'missing-task-id'}",
+                f"- Issue title: {outcome.claimed_issue.title}",
+                "",
+            )
+        )
+    else:
+        lines.extend(("## Claimed Task", "- None.", ""))
+
+    if outcome.matching_prs:
+        append_review_pr_details(lines, outcome.matching_prs[0])
+    elif outcome.pr_evaluations:
+        lines.extend(("## Matching PR", "- None with a valid claimed-task footer.", ""))
+    else:
+        lines.extend(("## Matching PR", "- None.", ""))
+
+    append_review_footer_validation(lines, outcome.pr_evaluations)
+    lines.extend(
+        (
+            "",
+            "## Human Action Needed",
+            outcome.human_action_needed,
+            "",
+        )
+    )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def append_review_pr_details(
+    lines: list[str],
+    evaluation: PullRequestFooterEvaluation,
+) -> None:
+    pull_request = evaluation.pull_request
+    check_summary = summarize_status_checks(pull_request)
+    lines.extend(
+        (
+            "## Matching PR",
+            f"- Matching PR number: #{pull_request.number}",
+            f"- PR title: {pull_request.title}",
+            f"- PR head branch: {pull_request.head_ref_name}",
+            f"- PR base branch: {pull_request.base_ref_name or 'unknown'}",
+            f"- PR state: {pull_request.state or 'unknown'}",
+            f"- PR draft: {'yes' if pull_request.is_draft else 'no'}",
+            "",
+            "## Check Summary",
+            f"- Status: {check_summary.status}",
+            f"- {check_summary.summary}",
+            "",
+            "## Review Decision Summary",
+            f"- reviewDecision: {pull_request.review_decision or 'unavailable'}",
+            "",
+            "## Mergeability Summary",
+            f"- mergeable: {pull_request.mergeable or 'unavailable'}",
+            f"- mergeStateStatus: {pull_request.merge_state_status or 'unavailable'}",
+            "",
+        )
+    )
+
+
+def append_review_footer_validation(
+    lines: list[str],
+    evaluations: Sequence[PullRequestFooterEvaluation],
+) -> None:
+    lines.extend(("## Footer Validation",))
+    if not evaluations:
+        lines.append("- No candidate PR footer to validate.")
+        return
+
+    for evaluation in evaluations:
+        result = "valid" if not evaluation.footer_errors else "invalid"
+        lines.append(f"- PR #{evaluation.pull_request.number}: {result}")
+        lines.append(f"  Task-ID footer: {evaluation.footer_task_id or 'missing'}")
+        issue_text = (
+            f"#{evaluation.footer_issue_number}"
+            if evaluation.footer_issue_number is not None
+            else "missing"
+        )
+        lines.append(f"  Task-Issue footer: {issue_text}")
+        if evaluation.footer_errors:
+            lines.extend(f"  Error: {error}" for error in evaluation.footer_errors)
+
+
 def append_pr_details(
     lines: list[str],
     evaluation: PullRequestFooterEvaluation,
@@ -1466,6 +1857,14 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
             "Matches open PRs by Task-ID and Task-Issue footer."
         ),
     )
+    mode_group.add_argument(
+        "--review-status",
+        action="store_true",
+        help=(
+            "Read-only review readiness and merge-candidate monitor for one claimed "
+            "status:in-progress issue and its matching PR."
+        ),
+    )
     parser.add_argument(
         "--issue",
         type=int,
@@ -1523,6 +1922,13 @@ def run_reporter(
         return (
             2 if lifecycle_outcome.blockers else 0,
             build_lifecycle_report(lifecycle_outcome),
+        )
+
+    if args.review_status:
+        review_outcome = build_review_readiness_outcome(state)
+        return (
+            2 if review_outcome.blockers else 0,
+            build_review_readiness_report(review_outcome),
         )
 
     if args.handoff:
