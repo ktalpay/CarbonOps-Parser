@@ -873,12 +873,13 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         description="Agent dispatch handoff reporter."
     )
     parser.add_argument("--repo", default=DEFAULT_REPOSITORY, help="GitHub repository.")
-    parser.add_argument(
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument(
         "--dry-run",
         action="store_true",
         help="Read-only mode. This is the default and never mutates GitHub.",
     )
-    parser.add_argument(
+    mode_group.add_argument(
         "--claim",
         action="store_true",
         help=(
@@ -907,6 +908,8 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         default=500,
         help="Maximum issues or PRs to read from GitHub.",
     )
+    if "--dry-run" in argv and "--claim" in argv:
+        parser.error("--dry-run and --claim cannot be used together.")
     return parser.parse_args(argv)
 
 
@@ -915,6 +918,8 @@ def run_reporter(
     runner: CommandRunner = subprocess_runner,
 ) -> tuple[int, str]:
     args = parse_args(list(argv or []))
+    if args.dry_run and args.claim:
+        return 2, "Error: --dry-run and --claim cannot be used together.\n"
 
     if args.check_git_state:
         blockers = git_state_blockers(runner)

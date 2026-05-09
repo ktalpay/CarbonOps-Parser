@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from scripts.agent_dispatch_handoff_reporter import (
     Issue,
     PullRequest,
@@ -326,6 +328,33 @@ def test_dry_run_performs_no_mutation_commands(tmp_path: Path) -> None:
     assert not any(call[1:3] == ("issue", "edit") for call in calls)
     assert not list(tmp_path.iterdir())
     _assert_no_forbidden_commands(calls)
+
+
+def test_dry_run_and_claim_conflict_fails_before_mutation(tmp_path: Path, capsys) -> None:
+    ready = _issue(407, "OPS-016", "ops", "ready", depends_on="OPS-015")
+    dependency = _issue(405, "OPS-015", "ops", "merged")
+    calls: list[tuple[str, ...]] = []
+
+    with pytest.raises(SystemExit) as exc_info:
+        run_reporter(
+            [
+                "--repo",
+                "example/repo",
+                "--dry-run",
+                "--claim",
+                "--artifact-dir",
+                str(tmp_path),
+            ],
+            runner=_queue_runner(
+                ready_issues=(ready,),
+                all_issues=(ready, dependency),
+                calls=calls,
+            ),
+        )
+
+    assert exc_info.value.code == 2
+    assert "--dry-run and --claim cannot be used together." in capsys.readouterr().err
+    assert calls == []
 
 
 def test_claim_mode_emits_expected_issue_edit_command(tmp_path: Path) -> None:
