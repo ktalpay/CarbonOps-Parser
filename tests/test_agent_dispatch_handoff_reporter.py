@@ -671,7 +671,7 @@ def test_handoff_invoke_fails_closed_as_unsupported(tmp_path: Path) -> None:
 
     assert exit_code == 2
     assert "local Codex invocation unsupported; use generated prompt artifact manually." in report
-    assert (tmp_path / "OPS-017-409-prompt.md").exists()
+    assert not list(tmp_path.iterdir())
     assert not any(call[1:3] == ("issue", "edit") for call in calls)
     _assert_no_forbidden_commands(calls)
 

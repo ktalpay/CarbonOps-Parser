@@ -1069,15 +1069,16 @@ def build_local_handoff_outcome(
             invoke_requested=invoke_requested,
         )
 
-    package = locate_or_generate_prompt_artifact(require_package(package), artifact_dir)
-    if invoke_requested:
+    if invoke_requested and not invocation_support.supported:
         return HandoffOutcome(
-            package=package,
+            package=None,
             blockers=(invocation_support.message,),
             in_progress_candidates=candidates,
             invocation_support=invocation_support,
             invoke_requested=invoke_requested,
         )
+
+    package = locate_or_generate_prompt_artifact(require_package(package), artifact_dir)
 
     return HandoffOutcome(
         package=package,
