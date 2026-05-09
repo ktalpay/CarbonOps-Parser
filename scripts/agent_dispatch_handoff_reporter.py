@@ -138,6 +138,22 @@ class ClaimFailedError(RuntimeError):
     """Raised when explicit claim mode fails after preflight succeeds."""
 
 
+@dataclass(frozen=True)
+class InvocationSupport:
+    supported: bool
+    message: str
+    command: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class HandoffOutcome:
+    package: HandoffPackage | None
+    blockers: tuple[str, ...]
+    in_progress_candidates: tuple[Issue, ...]
+    invocation_support: InvocationSupport
+    invoke_requested: bool = False
+
+
 def subprocess_runner(command: Sequence[str]) -> str:
     completed = subprocess.run(
         list(command),
@@ -543,6 +559,24 @@ def build_handoff_package(
     )
 
 
+def build_handoff_package_for_issue(
+    issue: Issue,
+    all_issues: Sequence[Issue],
+    repository: str = DEFAULT_REPOSITORY,
+) -> tuple[HandoffPackage | None, tuple[str, ...]]:
+    task_index, duplicate_task_ids = build_task_index(all_issues)
+    blockers: list[str] = []
+    if duplicate_task_ids:
+        blockers.append(
+            "Dependency graph inconsistency: duplicate Task-ID entries: "
+            + ", ".join(sorted(duplicate_task_ids))
+        )
+    blockers.extend(validate_selected_issue(issue, task_index))
+    if blockers:
+        return None, tuple(blockers)
+    return build_handoff_package(issue, task_index, repository=repository), ()
+
+
 def require_value(value: str | None, name: str) -> str:
     if not value:
         raise ValueError(f"Missing {name}")
@@ -649,9 +683,9 @@ def generate_prompt(
             "- Any GitHub/API error message observed",
             "",
             "## Final Report Requirement",
-            "Return summary, branch, files changed, validation performed, read-only or "
-            "claim-mode safety confirmation, remaining risks, PR URL if available, and "
-            "a merge-ready or commit-ready verdict.",
+            "Return summary, branch, files changed, validation performed, read-only, "
+            "claim-mode, or invocation safety confirmation, remaining risks, PR URL if "
+            "available, and a merge-ready or commit-ready verdict.",
         )
     )
 
@@ -772,6 +806,101 @@ def build_report(outcome: SelectionOutcome) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def build_handoff_report(outcome: HandoffOutcome) -> str:
+    lines: list[str] = [
+        "# Local Codex Handoff Report",
+        "",
+        "Invocation safety: no Codex invocation, GitHub mutation, PR approval, PR merge, "
+        "issue close, branch deletion, or worktree deletion was performed.",
+        "",
+    ]
+
+    if outcome.blockers:
+        lines.extend(("## Handoff Status", "blocked", "", "## Blockers"))
+        lines.extend(f"- {blocker}" for blocker in outcome.blockers)
+        lines.append("")
+        if outcome.package is not None:
+            append_handoff_task_details(lines, outcome.package)
+            lines.extend(
+                (
+                    "",
+                    "## Invocation Support",
+                    f"- Live invocation supported: {'yes' if outcome.invocation_support.supported else 'no'}",
+                    f"- {outcome.invocation_support.message}",
+                    "",
+                    "## Recommended Human Action",
+                    "- Open the prompt artifact.",
+                    "- Start the correct local Codex lane task manually.",
+                    "- Use the prompt artifact content as the task prompt.",
+                    "",
+                )
+            )
+        append_in_progress_candidates(lines, outcome.in_progress_candidates)
+        return "\n".join(lines).rstrip() + "\n"
+
+    package = require_package(outcome.package)
+    prompt_summary = first_nonempty_line(package.generated_prompt)
+    lines.extend(
+        (
+            "## Handoff Status",
+            "ready-for-manual-handoff",
+            "",
+        )
+    )
+    append_handoff_task_details(lines, package)
+    lines.extend(
+        (
+            f"- Generated prompt summary: {prompt_summary}",
+            "",
+            "## Invocation Support",
+            f"- Live invocation supported: {'yes' if outcome.invocation_support.supported else 'no'}",
+            f"- {outcome.invocation_support.message}",
+        )
+    )
+    if outcome.invocation_support.command:
+        lines.append(
+            "- Proposed local Codex command: `"
+            + " ".join(outcome.invocation_support.command)
+            + "`"
+        )
+    lines.extend(
+        (
+            "",
+            "## Recommended Human Action",
+            "- Open the prompt artifact.",
+            "- Start the correct local Codex lane task manually.",
+            "- Use the prompt artifact content as the task prompt.",
+            "- Do not merge, approve, close issues, delete branches, or delete worktrees from this handoff.",
+            "",
+            "## Manual Handoff Steps",
+            f"1. Review `{artifact_path_text(package)}`.",
+            f"2. Start the local Codex session for `{package.agent_label}`.",
+            "3. Paste or attach the generated prompt artifact.",
+            "4. Let the agent create the implementation PR through the normal review flow.",
+            "",
+            "## Safety Statement",
+            "local Codex invocation unsupported; use generated prompt artifact manually.",
+            "",
+        )
+    )
+    append_in_progress_candidates(lines, outcome.in_progress_candidates)
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def append_handoff_task_details(lines: list[str], package: HandoffPackage) -> None:
+    lines.extend(
+        (
+            "## Claimed Task",
+            f"- Selected issue number: #{package.selected_issue_number}",
+            f"- Task-ID: {package.task_id}",
+            f"- Issue title: {package.issue_title}",
+            f"- Lane: {package.lane}",
+            f"- Agent label: {package.agent_label}",
+            f"- Prompt artifact path: `{artifact_path_text(package)}`",
+        )
+    )
+
+
 def append_ready_candidates(lines: list[str], ready_candidates: Sequence[Issue]) -> None:
     lines.extend(("## Ready Candidates",))
     if ready_candidates:
@@ -782,6 +911,31 @@ def append_ready_candidates(lines: list[str], ready_candidates: Sequence[Issue])
     else:
         lines.append("- None.")
     lines.append("")
+
+
+def append_in_progress_candidates(lines: list[str], candidates: Sequence[Issue]) -> None:
+    lines.extend(("## In-Progress Candidates",))
+    if candidates:
+        for issue in candidates:
+            task_id = parse_task_id(issue.body) or "missing-task-id"
+            lane = lane_label(issue) or "missing-lane"
+            lines.append(f"- #{issue.number} {task_id} lane:{lane} {issue.title}")
+    else:
+        lines.append("- None.")
+    lines.append("")
+
+
+def first_nonempty_line(text: str) -> str:
+    for line in text.splitlines():
+        if line.strip():
+            return line.strip()
+    return "Generated prompt artifact."
+
+
+def artifact_path_text(package: HandoffPackage) -> str:
+    if package.artifact_path is None:
+        return ".agent-handoff/<missing-prompt-artifact>"
+    return package.artifact_path.as_posix()
 
 
 def require_package(package: HandoffPackage | None) -> HandoffPackage:
@@ -812,6 +966,134 @@ def write_prompt_artifact(package: HandoffPackage, artifact_dir: Path) -> Handof
         human_action_needed=package.human_action_needed,
         artifact_path=artifact_path,
     )
+
+
+def locate_or_generate_prompt_artifact(
+    package: HandoffPackage,
+    artifact_dir: Path,
+) -> HandoffPackage:
+    artifact_path = artifact_dir / f"{package.task_id}-{package.selected_issue_number}-prompt.md"
+    if artifact_path.exists():
+        return HandoffPackage(
+            selected_issue_number=package.selected_issue_number,
+            task_id=package.task_id,
+            issue_title=package.issue_title,
+            issue_body=package.issue_body,
+            lane=package.lane,
+            agent_label=package.agent_label,
+            dependency_summary=package.dependency_summary,
+            selected_prompt_template=package.selected_prompt_template,
+            generated_prompt=package.generated_prompt,
+            expected_branch_name_pattern=package.expected_branch_name_pattern,
+            expected_pr_title_pattern=package.expected_pr_title_pattern,
+            required_pr_footer=package.required_pr_footer,
+            validation_checklist=package.validation_checklist,
+            safety_constraints=package.safety_constraints,
+            human_action_needed=package.human_action_needed,
+            artifact_path=artifact_path,
+        )
+    return write_prompt_artifact(package, artifact_dir)
+
+
+def detect_invocation_support() -> InvocationSupport:
+    return InvocationSupport(
+        supported=False,
+        message="local Codex invocation unsupported; use generated prompt artifact manually.",
+    )
+
+
+def select_handoff_issue(
+    state: QueueState,
+    issue_number: int | None = None,
+) -> tuple[Issue | None, tuple[str, ...], tuple[Issue, ...]]:
+    candidates = tuple(
+        sorted(
+            (issue for issue in state.in_progress_issues if status_label(issue) == "in-progress"),
+            key=issue_sort_key,
+        )
+    )
+
+    if issue_number is not None:
+        indexed = {issue.number: issue for issue in state.all_issues}
+        issue = indexed.get(issue_number)
+        if issue is None:
+            return None, (f"Explicit issue #{issue_number} was not found.",), candidates
+        if status_label(issue) != "in-progress":
+            return (
+                None,
+                (f"Explicit issue #{issue_number} is not status:in-progress.",),
+                candidates,
+            )
+        return issue, (), candidates
+
+    if not candidates:
+        return None, ("No status:in-progress issue is available for handoff.",), candidates
+    if len(candidates) > 1:
+        return (
+            None,
+            (
+                "Multiple status:in-progress issues exist; pass --issue to select one explicitly.",
+            ),
+            candidates,
+        )
+    return candidates[0], (), candidates
+
+
+def build_local_handoff_outcome(
+    state: QueueState,
+    repository: str,
+    artifact_dir: Path,
+    issue_number: int | None = None,
+    invoke_requested: bool = False,
+) -> HandoffOutcome:
+    selected_issue, blockers, candidates = select_handoff_issue(state, issue_number=issue_number)
+    invocation_support = detect_invocation_support()
+    if blockers:
+        return HandoffOutcome(
+            package=None,
+            blockers=blockers,
+            in_progress_candidates=candidates,
+            invocation_support=invocation_support,
+            invoke_requested=invoke_requested,
+        )
+
+    package, package_blockers = build_handoff_package_for_issue(
+        require_issue(selected_issue),
+        state.all_issues,
+        repository=repository,
+    )
+    if package_blockers:
+        return HandoffOutcome(
+            package=None,
+            blockers=package_blockers,
+            in_progress_candidates=candidates,
+            invocation_support=invocation_support,
+            invoke_requested=invoke_requested,
+        )
+
+    package = locate_or_generate_prompt_artifact(require_package(package), artifact_dir)
+    if invoke_requested:
+        return HandoffOutcome(
+            package=package,
+            blockers=(invocation_support.message,),
+            in_progress_candidates=candidates,
+            invocation_support=invocation_support,
+            invoke_requested=invoke_requested,
+        )
+
+    return HandoffOutcome(
+        package=package,
+        blockers=(),
+        in_progress_candidates=candidates,
+        invocation_support=invocation_support,
+        invoke_requested=invoke_requested,
+    )
+
+
+def require_issue(issue: Issue | None) -> Issue:
+    if issue is None:
+        raise ValueError("Missing issue")
+    return issue
 
 
 def claim_selected_issue(
@@ -887,6 +1169,24 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
             "move exactly one selected issue from status:ready to status:in-progress."
         ),
     )
+    mode_group.add_argument(
+        "--handoff",
+        action="store_true",
+        help=(
+            "Prepare local handoff instructions for one claimed status:in-progress issue. "
+            "This mode does not invoke Codex."
+        ),
+    )
+    parser.add_argument(
+        "--issue",
+        type=int,
+        help="Explicit issue number to use with --handoff when multiple tasks are in progress.",
+    )
+    parser.add_argument(
+        "--invoke",
+        action="store_true",
+        help="Explicit live invocation request. Currently fails closed as unsupported.",
+    )
     parser.add_argument(
         "--write-artifact",
         action="store_true",
@@ -920,6 +1220,8 @@ def run_reporter(
     args = parse_args(list(argv or []))
     if args.dry_run and args.claim:
         return 2, "Error: --dry-run and --claim cannot be used together.\n"
+    if args.invoke and not args.handoff:
+        return 2, "Error: --invoke requires --handoff and is unsupported by default.\n"
 
     if args.check_git_state:
         blockers = git_state_blockers(runner)
@@ -927,6 +1229,16 @@ def run_reporter(
             return 2, build_report(build_blocked_outcome(blockers))
 
     state = load_queue_state(args.repo, runner=runner, issue_limit=args.issue_limit)
+    if args.handoff:
+        handoff_outcome = build_local_handoff_outcome(
+            state,
+            repository=args.repo,
+            artifact_dir=Path(args.artifact_dir),
+            issue_number=args.issue,
+            invoke_requested=args.invoke,
+        )
+        return (0 if not handoff_outcome.blockers else 2), build_handoff_report(handoff_outcome)
+
     outcome = select_handoff_package(state, repository=args.repo)
     if outcome.package is not None and (args.write_artifact or args.claim):
         package = write_prompt_artifact(outcome.package, Path(args.artifact_dir))

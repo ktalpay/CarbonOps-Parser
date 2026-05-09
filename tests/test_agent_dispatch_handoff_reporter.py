@@ -520,3 +520,147 @@ def test_claim_mode_generated_prompt_includes_required_footer(tmp_path: Path) ->
     assert "Task-Issue: #407" in report
     assert "Task-ID: OPS-016" in prompt
     assert "Task-Issue: #407" in prompt
+
+
+def test_handoff_mode_reports_prompt_artifact_for_one_in_progress_issue(tmp_path: Path) -> None:
+    claimed = _issue(
+        409,
+        "OPS-017",
+        "ops",
+        "in-progress",
+        title="[OPS-017] Local Codex handoff invocation adapter",
+        depends_on="OPS-016",
+    )
+    dependency = _issue(407, "OPS-016", "ops", "merged")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--handoff", "--artifact-dir", str(tmp_path)],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed, dependency),
+            calls=calls,
+        ),
+    )
+
+    prompt_path = tmp_path / "OPS-017-409-prompt.md"
+    assert exit_code == 0
+    assert prompt_path.exists()
+    assert "## Handoff Status\nready-for-manual-handoff" in report
+    assert "Selected issue number: #409" in report
+    assert "Task-ID: OPS-017" in report
+    assert "Prompt artifact path:" in report
+    assert "local Codex invocation unsupported; use generated prompt artifact manually." in report
+    assert "Start the local Codex session" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_handoff_mode_refuses_without_in_progress_issue(tmp_path: Path) -> None:
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--handoff", "--artifact-dir", str(tmp_path)],
+        runner=_queue_runner(calls=calls),
+    )
+
+    assert exit_code == 2
+    assert "No status:in-progress issue is available for handoff." in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+
+
+def test_handoff_mode_refuses_multiple_in_progress_without_explicit_issue(tmp_path: Path) -> None:
+    first = _issue(409, "OPS-017", "ops", "in-progress", depends_on="OPS-016")
+    second = _issue(410, "OPS-018", "ops", "in-progress", depends_on="OPS-016")
+    dependency = _issue(407, "OPS-016", "ops", "merged")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--handoff", "--artifact-dir", str(tmp_path)],
+        runner=_queue_runner(
+            in_progress_issues=(second, first),
+            all_issues=(first, second, dependency),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "Multiple status:in-progress issues exist" in report
+    assert "#409 OPS-017" in report
+    assert "#410 OPS-018" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+
+
+def test_handoff_mode_accepts_explicit_issue_when_multiple_in_progress_exist(tmp_path: Path) -> None:
+    first = _issue(409, "OPS-017", "ops", "in-progress", depends_on="OPS-016")
+    second = _issue(410, "OPS-018", "ops", "in-progress", depends_on="OPS-016")
+    dependency = _issue(407, "OPS-016", "ops", "merged")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--handoff", "--issue", "410", "--artifact-dir", str(tmp_path)],
+        runner=_queue_runner(
+            in_progress_issues=(first, second),
+            all_issues=(first, second, dependency),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert "Selected issue number: #410" in report
+    assert (tmp_path / "OPS-018-410-prompt.md").exists()
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_handoff_mode_refuses_explicit_issue_that_is_not_in_progress(tmp_path: Path) -> None:
+    ready = _issue(409, "OPS-017", "ops", "ready", depends_on="OPS-016")
+    dependency = _issue(407, "OPS-016", "ops", "merged")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--handoff", "--issue", "409", "--artifact-dir", str(tmp_path)],
+        runner=_queue_runner(
+            ready_issues=(ready,),
+            all_issues=(ready, dependency),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "Explicit issue #409 is not status:in-progress." in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+
+
+def test_handoff_invoke_fails_closed_as_unsupported(tmp_path: Path) -> None:
+    claimed = _issue(409, "OPS-017", "ops", "in-progress", depends_on="OPS-016")
+    dependency = _issue(407, "OPS-016", "ops", "merged")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--handoff", "--invoke", "--artifact-dir", str(tmp_path)],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed, dependency),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "local Codex invocation unsupported; use generated prompt artifact manually." in report
+    assert (tmp_path / "OPS-017-409-prompt.md").exists()
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_invoke_without_handoff_fails_before_commands() -> None:
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--invoke"],
+        runner=_queue_runner(calls=calls),
+    )
+
+    assert exit_code == 2
+    assert "--invoke requires --handoff" in report
+    assert calls == []
