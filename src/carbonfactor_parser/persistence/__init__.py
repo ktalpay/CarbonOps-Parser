@@ -11,11 +11,16 @@ from carbonfactor_parser.persistence.input import (
 )
 from carbonfactor_parser.persistence.integration_test_boundary import (
     POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR,
+    POSTGRESQL_INTEGRATION_TEST_OPT_IN_FALSE_VALUES,
     POSTGRESQL_INTEGRATION_TEST_MARKER,
     POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR,
+    POSTGRESQL_INTEGRATION_TEST_OPT_IN_TRUE_VALUES,
     POSTGRESQL_INTEGRATION_TEST_SKIP_REASON,
+    PostgreSQLIntegrationTestConfigIssue,
+    PostgreSQLIntegrationTestOptInConfig,
     PostgreSQLIntegrationTestBoundary,
     create_postgresql_integration_test_boundary,
+    evaluate_postgresql_integration_test_opt_in_config,
     should_skip_postgresql_integration_tests,
 )
 from carbonfactor_parser.persistence.postgresql_insert_builder import (
@@ -180,6 +185,8 @@ __all__ = (
     "POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR",
     "POSTGRESQL_INTEGRATION_TEST_MARKER",
     "POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR",
+    "POSTGRESQL_INTEGRATION_TEST_OPT_IN_FALSE_VALUES",
+    "POSTGRESQL_INTEGRATION_TEST_OPT_IN_TRUE_VALUES",
     "POSTGRESQL_INTEGRATION_TEST_SKIP_REASON",
     "PersistenceIssue",
     "PersistenceIssueSeverity",
@@ -191,6 +198,8 @@ __all__ = (
     "PsycopgPostgreSQLSessionAdapterMetadata",
     "PsycopgPostgreSQLSessionAdapterStatus",
     "PostgreSQLIntegrationTestBoundary",
+    "PostgreSQLIntegrationTestConfigIssue",
+    "PostgreSQLIntegrationTestOptInConfig",
     "PostgreSQLInsertBuildIssue",
     "PostgreSQLInsertBuildResult",
     "PostgreSQLInsertBuildStatus",
@@ -297,6 +306,7 @@ __all__ = (
     "describe_postgresql_transaction_policy_boundary",
     "evaluate_postgresql_runtime_execution_gate",
     "evaluate_postgresql_repository_runtime_safety_gate",
+    "evaluate_postgresql_integration_test_opt_in_config",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
     "should_skip_postgresql_integration_tests",
