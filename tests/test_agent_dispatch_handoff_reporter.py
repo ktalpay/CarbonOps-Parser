@@ -69,11 +69,17 @@ def _pr(
     *,
     title: str | None = None,
     head_ref_name: str | None = None,
+    base_ref_name: str = "develop",
+    state: str = "OPEN",
     footer_task_id: str | None = None,
     footer_issue_number: int | None = None,
     omit_task_id_footer: bool = False,
     omit_task_issue_footer: bool = False,
     is_draft: bool = False,
+    review_decision: str = "",
+    status_check_rollup: tuple[dict[str, object], ...] = (),
+    mergeable: str = "",
+    merge_state_status: str = "",
 ) -> PullRequest:
     title = title or f"{task_id}: Example implementation"
     head_ref_name = head_ref_name or f"feature/{task_id.lower()}-example"
@@ -89,9 +95,28 @@ def _pr(
         title=title,
         head_ref_name=head_ref_name,
         body="\n".join(body_lines),
-        state="OPEN",
+        state=state,
         is_draft=is_draft,
+        base_ref_name=base_ref_name,
+        review_decision=review_decision,
+        status_check_rollup=status_check_rollup,
+        mergeable=mergeable,
+        merge_state_status=merge_state_status,
     )
+
+
+def _check(
+    name: str,
+    *,
+    status: str = "COMPLETED",
+    conclusion: str = "SUCCESS",
+) -> dict[str, object]:
+    return {
+        "__typename": "CheckRun",
+        "name": name,
+        "status": status,
+        "conclusion": conclusion,
+    }
 
 
 def _state(
@@ -99,12 +124,14 @@ def _state(
     in_progress_issues=(),
     all_issues=(),
     open_prs=(),
+    all_prs=(),
 ) -> QueueState:
     return QueueState(
         ready_issues=tuple(ready_issues),
         in_progress_issues=tuple(in_progress_issues),
         all_issues=tuple(all_issues),
         open_prs=tuple(open_prs),
+        all_prs=tuple(all_prs),
     )
 
 
@@ -126,6 +153,11 @@ def _pr_payload(pull_request: PullRequest) -> dict:
         "body": pull_request.body,
         "state": pull_request.state,
         "isDraft": pull_request.is_draft,
+        "baseRefName": pull_request.base_ref_name,
+        "reviewDecision": pull_request.review_decision,
+        "statusCheckRollup": list(pull_request.status_check_rollup),
+        "mergeable": pull_request.mergeable,
+        "mergeStateStatus": pull_request.merge_state_status,
     }
 
 
@@ -135,6 +167,7 @@ def _queue_runner(
     in_progress_issues=(),
     all_issues=(),
     open_prs=(),
+    all_prs=None,
     calls: list[tuple[str, ...]] | None = None,
 ):
     command_calls = calls if calls is not None else []
@@ -148,6 +181,9 @@ def _queue_runner(
             return json.dumps([_issue_payload(issue) for issue in in_progress_issues])
         if command_tuple[1:3] == ("issue", "list"):
             return json.dumps([_issue_payload(issue) for issue in all_issues])
+        if command_tuple[1:3] == ("pr", "list") and "all" in command_tuple:
+            pull_requests = open_prs if all_prs is None else all_prs
+            return json.dumps([_pr_payload(pr) for pr in pull_requests])
         if command_tuple[1:3] == ("pr", "list"):
             return json.dumps([_pr_payload(pr) for pr in open_prs])
         if command_tuple[1:3] == ("issue", "edit"):
@@ -158,17 +194,19 @@ def _queue_runner(
 
 
 def _assert_no_forbidden_commands(calls: list[tuple[str, ...]]) -> None:
-    forbidden_words = {
-        "merge",
-        "review",
-        "close",
-        "delete",
-        "worktree",
-        "codex",
-    }
     for call in calls:
         joined = " ".join(call).lower()
-        assert not any(word in joined for word in forbidden_words), call
+        assert call[1:3] not in {
+            ("pr", "merge"),
+            ("pr", "review"),
+            ("pr", "close"),
+            ("issue", "close"),
+            ("issue", "comment"),
+            ("pr", "comment"),
+        }, call
+        assert "delete" not in joined, call
+        assert "worktree" not in joined, call
+        assert "codex" not in joined, call
 
 
 def test_parse_task_id_and_dependency_list() -> None:
@@ -923,5 +961,298 @@ def test_lifecycle_mode_blocks_multiple_matching_prs() -> None:
     assert "Multiple open PRs match the claimed task footer." in report
     assert "PR #412: valid" in report
     assert "PR #413: valid" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_review_status_blocks_without_claimed_task() -> None:
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--review-status"],
+        runner=_queue_runner(calls=calls),
+    )
+
+    assert exit_code == 2
+    assert "blocked_no_claimed_task" in report
+    assert "No status:in-progress issue exists." in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_review_status_blocks_multiple_claimed_tasks() -> None:
+    first = _issue(411, "OPS-018", "ops", "in-progress")
+    second = _issue(413, "OPS-019", "ops", "in-progress")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--review-status"],
+        runner=_queue_runner(in_progress_issues=(first, second), calls=calls),
+    )
+
+    assert exit_code == 2
+    assert "blocked_multiple_claimed_tasks" in report
+    assert "review readiness requires exactly one claimed task" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_review_status_waits_when_claimed_task_has_no_pr() -> None:
+    claimed = _issue(413, "OPS-019", "ops", "in-progress")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--review-status"],
+        runner=_queue_runner(in_progress_issues=(claimed,), all_issues=(claimed,), calls=calls),
+    )
+
+    assert exit_code == 0
+    assert "waiting_for_pr" in report
+    assert "Claimed issue number: #413" in report
+    assert "Matching PR\n- None." in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_review_status_reports_draft_pr_waiting() -> None:
+    claimed = _issue(413, "OPS-019", "ops", "in-progress")
+    pull_request = _pr(414, "OPS-019", 413, is_draft=True)
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--review-status"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            all_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert "pr_draft_waiting" in report
+    assert "Matching PR number: #414" in report
+    assert "PR draft: yes" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_review_status_reports_missing_task_id_footer() -> None:
+    claimed = _issue(413, "OPS-019", "ops", "in-progress")
+    pull_request = _pr(414, "OPS-019", 413, omit_task_id_footer=True)
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--review-status"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            all_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "pr_footer_invalid" in report
+    assert "missing Task-ID footer" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+
+
+def test_review_status_reports_missing_task_issue_footer() -> None:
+    claimed = _issue(413, "OPS-019", "ops", "in-progress")
+    pull_request = _pr(414, "OPS-019", 413, omit_task_issue_footer=True)
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--review-status"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            all_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "pr_footer_invalid" in report
+    assert "missing Task-Issue footer" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+
+
+def test_review_status_reports_task_id_mismatch() -> None:
+    claimed = _issue(413, "OPS-019", "ops", "in-progress")
+    pull_request = _pr(414, "OPS-019", 413, footer_task_id="OPS-999")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--review-status"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            all_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "Task-ID footer mismatch: expected OPS-019, found OPS-999" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+
+
+def test_review_status_reports_task_issue_mismatch() -> None:
+    claimed = _issue(413, "OPS-019", "ops", "in-progress")
+    pull_request = _pr(414, "OPS-019", 413, footer_issue_number=999)
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--review-status"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            all_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "Task-Issue footer mismatch: expected #413, found #999" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+
+
+def test_review_status_reports_pending_checks() -> None:
+    claimed = _issue(413, "OPS-019", "ops", "in-progress")
+    pull_request = _pr(
+        414,
+        "OPS-019",
+        413,
+        status_check_rollup=(_check("ci", status="IN_PROGRESS", conclusion=""),),
+    )
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--review-status"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            all_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert "checks_pending" in report
+    assert "Pending checks: ci" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_review_status_reports_failed_checks() -> None:
+    claimed = _issue(413, "OPS-019", "ops", "in-progress")
+    pull_request = _pr(
+        414,
+        "OPS-019",
+        413,
+        status_check_rollup=(_check("ci", conclusion="FAILURE"),),
+    )
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--review-status"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            all_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert "checks_failed" in report
+    assert "Failed checks: ci" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_review_status_reports_changes_requested() -> None:
+    claimed = _issue(413, "OPS-019", "ops", "in-progress")
+    pull_request = _pr(
+        414,
+        "OPS-019",
+        413,
+        review_decision="CHANGES_REQUESTED",
+        status_check_rollup=(_check("ci"),),
+    )
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--review-status"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            all_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert "changes_requested" in report
+    assert "reviewDecision: CHANGES_REQUESTED" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_review_status_reports_ready_for_human_merge_with_approved_clean_metadata() -> None:
+    claimed = _issue(413, "OPS-019", "ops", "in-progress")
+    pull_request = _pr(
+        414,
+        "OPS-019",
+        413,
+        review_decision="APPROVED",
+        status_check_rollup=(_check("ci"),),
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+    )
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--review-status"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            all_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert "ready_for_human_merge" in report
+    assert "All reported checks passed (1)." in report
+    assert "reviewDecision: APPROVED" in report
+    assert "mergeStateStatus: CLEAN" in report
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_review_status_blocks_duplicate_matching_prs() -> None:
+    claimed = _issue(413, "OPS-019", "ops", "in-progress")
+    first_pr = _pr(414, "OPS-019", 413)
+    second_pr = _pr(415, "OPS-019", 413)
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--review-status"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            all_prs=(first_pr, second_pr),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 2
+    assert "blocked_ambiguous_pr_match" in report
+    assert "Multiple PRs match the claimed task footer." in report
+    assert "PR #414: valid" in report
+    assert "PR #415: valid" in report
     assert not any(call[1:3] == ("issue", "edit") for call in calls)
     _assert_no_forbidden_commands(calls)
