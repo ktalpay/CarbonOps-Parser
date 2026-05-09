@@ -566,6 +566,7 @@ def test_handoff_mode_refuses_without_in_progress_issue(tmp_path: Path) -> None:
 
     assert exit_code == 2
     assert "No status:in-progress issue is available for handoff." in report
+    assert not list(tmp_path.iterdir())
     assert not any(call[1:3] == ("issue", "edit") for call in calls)
 
 
@@ -588,10 +589,11 @@ def test_handoff_mode_refuses_multiple_in_progress_without_explicit_issue(tmp_pa
     assert "Multiple status:in-progress issues exist" in report
     assert "#409 OPS-017" in report
     assert "#410 OPS-018" in report
+    assert not list(tmp_path.iterdir())
     assert not any(call[1:3] == ("issue", "edit") for call in calls)
 
 
-def test_handoff_mode_accepts_explicit_issue_when_multiple_in_progress_exist(tmp_path: Path) -> None:
+def test_handoff_mode_refuses_explicit_issue_when_multiple_in_progress_exist(tmp_path: Path) -> None:
     first = _issue(409, "OPS-017", "ops", "in-progress", depends_on="OPS-016")
     second = _issue(410, "OPS-018", "ops", "in-progress", depends_on="OPS-016")
     dependency = _issue(407, "OPS-016", "ops", "merged")
@@ -606,29 +608,50 @@ def test_handoff_mode_accepts_explicit_issue_when_multiple_in_progress_exist(tmp
         ),
     )
 
-    assert exit_code == 0
-    assert "Selected issue number: #410" in report
-    assert (tmp_path / "OPS-018-410-prompt.md").exists()
+    assert exit_code == 2
+    assert "Multiple status:in-progress issues exist" in report
+    assert not (tmp_path / "OPS-018-410-prompt.md").exists()
     assert not any(call[1:3] == ("issue", "edit") for call in calls)
-    _assert_no_forbidden_commands(calls)
 
 
-def test_handoff_mode_refuses_explicit_issue_that_is_not_in_progress(tmp_path: Path) -> None:
-    ready = _issue(409, "OPS-017", "ops", "ready", depends_on="OPS-016")
+def test_handoff_mode_accepts_explicit_issue_when_single_claimed_issue_matches(tmp_path: Path) -> None:
+    claimed = _issue(409, "OPS-017", "ops", "in-progress", depends_on="OPS-016")
     dependency = _issue(407, "OPS-016", "ops", "merged")
     calls: list[tuple[str, ...]] = []
 
     exit_code, report = run_reporter(
         ["--repo", "example/repo", "--handoff", "--issue", "409", "--artifact-dir", str(tmp_path)],
         runner=_queue_runner(
-            ready_issues=(ready,),
-            all_issues=(ready, dependency),
+            in_progress_issues=(claimed,),
+            all_issues=(claimed, dependency),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert "Selected issue number: #409" in report
+    assert (tmp_path / "OPS-017-409-prompt.md").exists()
+    assert not any(call[1:3] == ("issue", "edit") for call in calls)
+    _assert_no_forbidden_commands(calls)
+
+
+def test_handoff_mode_refuses_explicit_issue_when_single_claimed_issue_differs(tmp_path: Path) -> None:
+    claimed = _issue(409, "OPS-017", "ops", "in-progress", depends_on="OPS-016")
+    dependency = _issue(407, "OPS-016", "ops", "merged")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--handoff", "--issue", "410", "--artifact-dir", str(tmp_path)],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed, dependency),
             calls=calls,
         ),
     )
 
     assert exit_code == 2
-    assert "Explicit issue #409 is not status:in-progress." in report
+    assert "Explicit issue #410 does not match the single claimed status:in-progress issue #409." in report
+    assert not list(tmp_path.iterdir())
     assert not any(call[1:3] == ("issue", "edit") for call in calls)
 
 

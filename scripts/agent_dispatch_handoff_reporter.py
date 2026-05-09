@@ -1013,30 +1013,28 @@ def select_handoff_issue(
         )
     )
 
-    if issue_number is not None:
-        indexed = {issue.number: issue for issue in state.all_issues}
-        issue = indexed.get(issue_number)
-        if issue is None:
-            return None, (f"Explicit issue #{issue_number} was not found.",), candidates
-        if status_label(issue) != "in-progress":
-            return (
-                None,
-                (f"Explicit issue #{issue_number} is not status:in-progress.",),
-                candidates,
-            )
-        return issue, (), candidates
-
     if not candidates:
         return None, ("No status:in-progress issue is available for handoff.",), candidates
     if len(candidates) > 1:
         return (
             None,
             (
-                "Multiple status:in-progress issues exist; pass --issue to select one explicitly.",
+                "Multiple status:in-progress issues exist; handoff requires exactly one claimed issue.",
             ),
             candidates,
         )
-    return candidates[0], (), candidates
+
+    selected = candidates[0]
+    if issue_number is not None and selected.number != issue_number:
+        return (
+            None,
+            (
+                f"Explicit issue #{issue_number} does not match the single claimed "
+                f"status:in-progress issue #{selected.number}.",
+            ),
+            candidates,
+        )
+    return selected, (), candidates
 
 
 def build_local_handoff_outcome(
