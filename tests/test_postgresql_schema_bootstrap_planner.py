@@ -14,8 +14,15 @@ from carbonfactor_parser.persistence.postgresql_schema_bootstrap_planner import 
     POSTGRESQL_SCHEMA_BOOTSTRAP_EXECUTION_SCOPE,
     POSTGRESQL_SCHEMA_BOOTSTRAP_TARGET_ENGINE,
     build_postgresql_phase1_schema_bootstrap_plan,
+    verify_postgresql_phase1_schema_bootstrap_idempotency,
 )
 from carbonfactor_parser.persistence.postgresql_schema_catalog import (
+    ColumnDefinition,
+    IndexDefinition,
+    PostgreSQLDataType,
+    SchemaCatalog,
+    TableDefinition,
+    UniqueConstraintDefinition,
     get_required_table_names,
 )
 
@@ -140,6 +147,83 @@ def test_schema_bootstrap_plan_repeated_calls_are_equal() -> None:
     assert first == second
 
 
+def test_schema_bootstrap_idempotency_verification_passes_for_phase1_catalog() -> None:
+    verification = verify_postgresql_phase1_schema_bootstrap_idempotency(
+        repeat_count=3,
+    )
+
+    assert verification.passed is True
+    assert verification.repeated_plan_count == 3
+    assert verification.plans_equivalent is True
+    assert verification.ordered_sql_stable is True
+    assert verification.metadata_stable is True
+    assert verification.duplicate_table_names == ()
+    assert verification.duplicate_index_names == ()
+    assert verification.duplicate_constraint_names == ()
+    assert verification.duplicate_sql_statements == ()
+    assert verification.no_execution is True
+    assert verification.opens_connection is False
+    assert verification.runs_sql is False
+
+
+def test_schema_bootstrap_idempotency_verification_detects_duplicate_definitions() -> None:
+    duplicate_table = TableDefinition(
+        name="duplicate_table",
+        columns=(
+            ColumnDefinition(
+                "duplicate_table_id",
+                PostgreSQLDataType.UUID,
+                nullable=False,
+                is_primary_key=True,
+            ),
+            ColumnDefinition("business_key", PostgreSQLDataType.TEXT, nullable=False),
+        ),
+        unique_constraints=(
+            UniqueConstraintDefinition(
+                name="uq_duplicate_business_key",
+                column_names=("business_key",),
+            ),
+        ),
+        indexes=(
+            IndexDefinition(
+                name="idx_duplicate_business_key",
+                column_names=("business_key",),
+            ),
+        ),
+    )
+    catalog = SchemaCatalog(
+        tables=(duplicate_table, duplicate_table),
+        source_family_tables={},
+    )
+
+    verification = verify_postgresql_phase1_schema_bootstrap_idempotency(
+        catalog,
+        repeat_count=2,
+    )
+
+    assert verification.passed is False
+    assert verification.plans_equivalent is True
+    assert verification.ordered_sql_stable is True
+    assert verification.metadata_stable is True
+    assert verification.duplicate_table_names == ("duplicate_table",)
+    assert verification.duplicate_index_names == ("idx_duplicate_business_key",)
+    assert verification.duplicate_constraint_names == (
+        "pk_duplicate_table",
+        "uq_duplicate_business_key",
+    )
+    assert verification.duplicate_sql_statements == tuple(
+        sorted(
+            (
+                duplicate_table_sql(duplicate_table),
+                "CREATE INDEX idx_duplicate_business_key ON duplicate_table (business_key);",
+            )
+        )
+    )
+    assert verification.no_execution is True
+    assert verification.opens_connection is False
+    assert verification.runs_sql is False
+
+
 def test_schema_bootstrap_plan_is_immutable() -> None:
     plan = build_postgresql_phase1_schema_bootstrap_plan()
     with pytest.raises(FrozenInstanceError):
@@ -157,3 +241,10 @@ def test_schema_bootstrap_plan_declares_no_execution_or_connection_behavior() ->
     assert plan.loads_environment is False
     assert plan.loads_config_files is False
     assert plan.performs_network_calls is False
+
+
+def duplicate_table_sql(table: TableDefinition) -> str:
+    plan = build_postgresql_phase1_schema_bootstrap_plan(
+        SchemaCatalog(tables=(table,), source_family_tables={})
+    )
+    return plan.create_table_statements[0].sql
