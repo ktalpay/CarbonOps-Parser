@@ -13,6 +13,7 @@ from carbonfactor_parser.persistence import (
     postgresql_psycopg_session_adapter,
     postgresql_repository,
     postgresql_repository_disabled_execution_preview,
+    postgresql_runtime_config_gate,
     postgresql_runtime_execution_gate,
     postgresql_schema_bootstrap,
     postgresql_schema_bootstrap_planner,
@@ -98,6 +99,11 @@ from carbonfactor_parser.persistence import (
     PostgreSQLRepositoryRuntimeSafetyGateDescription,
     PostgreSQLRepositoryRuntimeSafetyGateIssue,
     PostgreSQLRepositoryRuntimeSafetyGateStatus,
+    PostgreSQLRuntimeConfigGate,
+    PostgreSQLRuntimeConfigGateDecision,
+    PostgreSQLRuntimeConfigGateDescription,
+    PostgreSQLRuntimeConfigGateIssue,
+    PostgreSQLRuntimeConfigGateStatus,
     PostgreSQLRuntimeExecutionGate,
     PostgreSQLRuntimeExecutionGateDecision,
     PostgreSQLRuntimeExecutionGateDescription,
@@ -157,10 +163,12 @@ from carbonfactor_parser.persistence import (
     describe_postgresql_idempotency_conflict_strategy_boundary,
     describe_postgresql_repository_disabled_execution_preview,
     describe_postgresql_repository_runtime_safety_gate,
+    describe_postgresql_runtime_config_gate,
     describe_postgresql_runtime_execution_gate,
     describe_postgresql_schema_isolation_strategy,
     describe_postgresql_transaction_policy_boundary,
     evaluate_postgresql_integration_test_opt_in_config,
+    evaluate_postgresql_runtime_config_gate,
     evaluate_postgresql_runtime_execution_gate,
     evaluate_postgresql_repository_runtime_safety_gate,
     get_normalized_record_postgresql_schema,
@@ -253,6 +261,11 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLRepositoryRuntimeSafetyGateDescription",
     "PostgreSQLRepositoryRuntimeSafetyGateIssue",
     "PostgreSQLRepositoryRuntimeSafetyGateStatus",
+    "PostgreSQLRuntimeConfigGate",
+    "PostgreSQLRuntimeConfigGateDecision",
+    "PostgreSQLRuntimeConfigGateDescription",
+    "PostgreSQLRuntimeConfigGateIssue",
+    "PostgreSQLRuntimeConfigGateStatus",
     "PostgreSQLRuntimeExecutionGate",
     "PostgreSQLRuntimeExecutionGateDecision",
     "PostgreSQLRuntimeExecutionGateDescription",
@@ -312,9 +325,11 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "describe_postgresql_idempotency_conflict_strategy_boundary",
     "describe_postgresql_repository_disabled_execution_preview",
     "describe_postgresql_repository_runtime_safety_gate",
+    "describe_postgresql_runtime_config_gate",
     "describe_postgresql_runtime_execution_gate",
     "describe_postgresql_schema_isolation_strategy",
     "describe_postgresql_transaction_policy_boundary",
+    "evaluate_postgresql_runtime_config_gate",
     "evaluate_postgresql_runtime_execution_gate",
     "evaluate_postgresql_repository_runtime_safety_gate",
     "evaluate_postgresql_integration_test_opt_in_config",
@@ -558,6 +573,21 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PostgreSQLRepositoryRuntimeSafetyGateStatus": (
         postgresql_repository.PostgreSQLRepositoryRuntimeSafetyGateStatus
     ),
+    "PostgreSQLRuntimeConfigGate": (
+        postgresql_runtime_config_gate.PostgreSQLRuntimeConfigGate
+    ),
+    "PostgreSQLRuntimeConfigGateDecision": (
+        postgresql_runtime_config_gate.PostgreSQLRuntimeConfigGateDecision
+    ),
+    "PostgreSQLRuntimeConfigGateDescription": (
+        postgresql_runtime_config_gate.PostgreSQLRuntimeConfigGateDescription
+    ),
+    "PostgreSQLRuntimeConfigGateIssue": (
+        postgresql_runtime_config_gate.PostgreSQLRuntimeConfigGateIssue
+    ),
+    "PostgreSQLRuntimeConfigGateStatus": (
+        postgresql_runtime_config_gate.PostgreSQLRuntimeConfigGateStatus
+    ),
     "PostgreSQLRuntimeExecutionGate": (
         postgresql_runtime_execution_gate.PostgreSQLRuntimeExecutionGate
     ),
@@ -755,6 +785,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     "describe_postgresql_repository_runtime_safety_gate": (
         postgresql_repository.describe_postgresql_repository_runtime_safety_gate
     ),
+    "describe_postgresql_runtime_config_gate": (
+        postgresql_runtime_config_gate
+        .describe_postgresql_runtime_config_gate
+    ),
     "describe_postgresql_runtime_execution_gate": (
         postgresql_runtime_execution_gate
         .describe_postgresql_runtime_execution_gate
@@ -769,6 +803,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     ),
     "evaluate_postgresql_integration_test_opt_in_config": (
         integration_test_boundary.evaluate_postgresql_integration_test_opt_in_config
+    ),
+    "evaluate_postgresql_runtime_config_gate": (
+        postgresql_runtime_config_gate
+        .evaluate_postgresql_runtime_config_gate
     ),
     "evaluate_postgresql_runtime_execution_gate": (
         postgresql_runtime_execution_gate
@@ -957,6 +995,11 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLRepositoryRuntimeSafetyGateStatus": (
             PostgreSQLRepositoryRuntimeSafetyGateStatus
         ),
+        "PostgreSQLRuntimeConfigGate": PostgreSQLRuntimeConfigGate,
+        "PostgreSQLRuntimeConfigGateDecision": PostgreSQLRuntimeConfigGateDecision,
+        "PostgreSQLRuntimeConfigGateDescription": PostgreSQLRuntimeConfigGateDescription,
+        "PostgreSQLRuntimeConfigGateIssue": PostgreSQLRuntimeConfigGateIssue,
+        "PostgreSQLRuntimeConfigGateStatus": PostgreSQLRuntimeConfigGateStatus,
         "PostgreSQLRuntimeExecutionGate": PostgreSQLRuntimeExecutionGate,
         "PostgreSQLRuntimeExecutionGateDecision": (
             PostgreSQLRuntimeExecutionGateDecision
@@ -1096,7 +1139,11 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "describe_postgresql_repository_runtime_safety_gate": (
             describe_postgresql_repository_runtime_safety_gate
         ),
-        "describe_postgresql_runtime_execution_gate": (
+        "describe_postgresql_runtime_config_gate": (
+        postgresql_runtime_config_gate
+        .describe_postgresql_runtime_config_gate
+    ),
+    "describe_postgresql_runtime_execution_gate": (
             describe_postgresql_runtime_execution_gate
         ),
         "describe_postgresql_schema_isolation_strategy": (
@@ -1105,7 +1152,11 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "describe_postgresql_transaction_policy_boundary": (
             describe_postgresql_transaction_policy_boundary
         ),
-        "evaluate_postgresql_runtime_execution_gate": (
+        "evaluate_postgresql_runtime_config_gate": (
+        postgresql_runtime_config_gate
+        .evaluate_postgresql_runtime_config_gate
+    ),
+    "evaluate_postgresql_runtime_execution_gate": (
             evaluate_postgresql_runtime_execution_gate
         ),
         "evaluate_postgresql_repository_runtime_safety_gate": (
