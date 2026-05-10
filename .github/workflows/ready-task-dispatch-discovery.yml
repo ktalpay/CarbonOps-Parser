@@ -179,9 +179,9 @@ jobs:
 
           COMMENT_BODY_PATH="ready-dispatch-report/codex-cloud-trigger-comment.md"
           {
-            echo "@codex"
+            echo "@codex implement the claimed task below. Create a branch, make the required code changes, run validation, and open a PR against develop. Do not merge the PR."
             echo
-            echo "Start this claimed task from the generated handoff prompt below."
+            echo "Use the full generated handoff prompt below as the implementation task prompt. This is not a PR review request."
             echo
             echo "Task-ID: $TASK_ID"
             echo "Task-Issue: #$ISSUE_NUMBER"
