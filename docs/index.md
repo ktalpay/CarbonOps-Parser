@@ -101,6 +101,7 @@
 - [PostgreSQL Schema Bootstrap Execution Adapter Boundary](postgresql-schema-bootstrap-execution-adapter.md)
 - [PostgreSQL DDL Strategy Contract (Phase 1 Planning)](postgresql-ddl-strategy-contract.md)
 - [PostgreSQL Runtime Readiness Checklist](postgresql-runtime-readiness-checklist.md)
+- [PostgreSQL Runtime Readiness Checkpoint](postgresql-runtime-readiness-checkpoint.md)
 - [Parser To Normalization Handoff Boundary](parser-to-normalization-handoff-boundary.md)
 - [Parser To Normalization Integration Recap](parser-to-normalization-integration-recap.md)
 - [Source To Normalization Pipeline Recap](source-to-normalization-pipeline-recap.md)
