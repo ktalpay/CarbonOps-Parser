@@ -1140,10 +1140,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
             describe_postgresql_repository_runtime_safety_gate
         ),
         "describe_postgresql_runtime_config_gate": (
-        postgresql_runtime_config_gate
-        .describe_postgresql_runtime_config_gate
-    ),
-    "describe_postgresql_runtime_execution_gate": (
+            describe_postgresql_runtime_config_gate
+        ),
+        "describe_postgresql_runtime_execution_gate": (
             describe_postgresql_runtime_execution_gate
         ),
         "describe_postgresql_schema_isolation_strategy": (
@@ -1153,10 +1152,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
             describe_postgresql_transaction_policy_boundary
         ),
         "evaluate_postgresql_runtime_config_gate": (
-        postgresql_runtime_config_gate
-        .evaluate_postgresql_runtime_config_gate
-    ),
-    "evaluate_postgresql_runtime_execution_gate": (
+            evaluate_postgresql_runtime_config_gate
+        ),
+        "evaluate_postgresql_runtime_execution_gate": (
             evaluate_postgresql_runtime_execution_gate
         ),
         "evaluate_postgresql_repository_runtime_safety_gate": (
