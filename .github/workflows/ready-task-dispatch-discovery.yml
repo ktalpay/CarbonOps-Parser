@@ -8,6 +8,11 @@ name: "Ready Task Dispatch Discovery"
         required: false
         default: false
         type: boolean
+      start_codex_cloud:
+        description: "After a successful claim, start Codex Cloud by posting the generated handoff prompt with @codex"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -29,6 +34,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           CLAIM_MODE: ${{ inputs.claim }}
+          START_CODEX_CLOUD: ${{ inputs.start_codex_cloud }}
         run: |
           set -euo pipefail
 
@@ -59,12 +65,18 @@ jobs:
           HANDOFF_PROMPTS_FOUND="false"
           HANDOFF_PROMPTS_PACKAGED="false"
           HANDOFF_PROMPT_COUNT="0"
+          HANDOFF_PROMPT_PATH=""
           if compgen -G "$HANDOFF_ARTIFACT_DIR/*-prompt.md" > /dev/null; then
             HANDOFF_PROMPTS_FOUND="true"
+            mapfile -t HANDOFF_PROMPT_PATHS < <(find "$HANDOFF_ARTIFACT_DIR" -maxdepth 1 -type f -name '*-prompt.md' | sort)
+            HANDOFF_PROMPT_COUNT="${#HANDOFF_PROMPT_PATHS[@]}"
             mkdir -p "$REPORT_DIR/.agent-handoff"
-            cp "$HANDOFF_ARTIFACT_DIR"/*-prompt.md "$REPORT_DIR/.agent-handoff/"
+            cp "${HANDOFF_PROMPT_PATHS[@]}" "$REPORT_DIR/.agent-handoff/"
             HANDOFF_PROMPTS_PACKAGED="true"
-            HANDOFF_PROMPT_COUNT="$(find "$HANDOFF_ARTIFACT_DIR" -maxdepth 1 -type f -name '*-prompt.md' | wc -l | tr -d ' ')"
+
+            if [ "$HANDOFF_PROMPT_COUNT" = "1" ]; then
+              HANDOFF_PROMPT_PATH="${HANDOFF_PROMPT_PATHS[0]}"
+            fi
           fi
 
           echo "Workspace diagnostic tree before artifact upload:"
@@ -87,7 +99,9 @@ jobs:
             echo "- Handoff prompt artifacts found: \`$HANDOFF_PROMPTS_FOUND\`"
             echo "- Handoff prompt artifacts packaged: \`$HANDOFF_PROMPTS_PACKAGED\`"
             echo "- Handoff prompt artifact count: \`$HANDOFF_PROMPT_COUNT\`"
-            echo "- Codex invoked: no"
+            echo "- Handoff prompt path: \`${HANDOFF_PROMPT_PATH:-none}\`"
+            echo "- Codex Cloud auto-start requested: \`$START_CODEX_CLOUD\`"
+            echo "- Local Codex invoked: no"
             echo
             echo "#### Artifact staging diagnostics"
             echo
@@ -103,11 +117,111 @@ jobs:
           echo "handoff_prompts_found=$HANDOFF_PROMPTS_FOUND" >> "$GITHUB_OUTPUT"
           echo "handoff_prompts_packaged=$HANDOFF_PROMPTS_PACKAGED" >> "$GITHUB_OUTPUT"
           echo "handoff_prompt_count=$HANDOFF_PROMPT_COUNT" >> "$GITHUB_OUTPUT"
+          echo "handoff_prompt_path=$HANDOFF_PROMPT_PATH" >> "$GITHUB_OUTPUT"
 
           if [ "$REPORT_EXIT_CODE" -ne 0 ] && [ "$REPORT_EXIT_CODE" -ne 2 ]; then
             echo "Reporter failed unexpectedly with exit code $REPORT_EXIT_CODE." >&2
             exit "$REPORT_EXIT_CODE"
           fi
+
+      - name: "Prepare Codex Cloud trigger"
+        id: codex_cloud_prepare
+        if: ${{ inputs.start_codex_cloud == true || inputs.start_codex_cloud == 'true' }}
+        env:
+          CLAIM_MODE: ${{ inputs.claim }}
+          REPORT_EXIT_CODE: ${{ steps.dispatch.outputs.report_exit_code }}
+          HANDOFF_PROMPT_COUNT: ${{ steps.dispatch.outputs.handoff_prompt_count }}
+          HANDOFF_PROMPT_PATH: ${{ steps.dispatch.outputs.handoff_prompt_path }}
+        run: |
+          set -euo pipefail
+
+          if [ "$CLAIM_MODE" != "true" ]; then
+            echo "Codex Cloud auto-start requires claim=true so the task is explicitly claimed first." >&2
+            exit 1
+          fi
+
+          if [ "$REPORT_EXIT_CODE" != "0" ]; then
+            echo "Codex Cloud auto-start requested, but dispatcher did not complete successfully." >&2
+            exit 1
+          fi
+
+          if [ "$HANDOFF_PROMPT_COUNT" != "1" ]; then
+            echo "Codex Cloud auto-start requires exactly one generated handoff prompt; found $HANDOFF_PROMPT_COUNT." >&2
+            exit 1
+          fi
+
+          if [ -z "$HANDOFF_PROMPT_PATH" ] || [ ! -f "$HANDOFF_PROMPT_PATH" ]; then
+            echo "Codex Cloud auto-start requested, but the handoff prompt file is missing: ${HANDOFF_PROMPT_PATH:-<empty>}." >&2
+            exit 1
+          fi
+
+          PROMPT_FILE_NAME="$(basename "$HANDOFF_PROMPT_PATH")"
+          PROMPT_STEM="${PROMPT_FILE_NAME%-prompt.md}"
+          ISSUE_NUMBER="${PROMPT_STEM##*-}"
+          TASK_ID="${PROMPT_STEM%-${ISSUE_NUMBER}}"
+
+          if ! printf '%s' "$ISSUE_NUMBER" | grep -Eq '^[0-9]+$'; then
+            echo "Could not parse issue number from handoff prompt file name: $PROMPT_FILE_NAME." >&2
+            exit 1
+          fi
+
+          if [ -z "$TASK_ID" ] || [ "$TASK_ID" = "$PROMPT_STEM" ]; then
+            echo "Could not parse Task-ID from handoff prompt file name: $PROMPT_FILE_NAME." >&2
+            exit 1
+          fi
+
+          PROMPT_SIZE_BYTES="$(wc -c < "$HANDOFF_PROMPT_PATH" | tr -d ' ')"
+          MAX_COMMENT_BYTES="60000"
+          if [ "$PROMPT_SIZE_BYTES" -gt "$MAX_COMMENT_BYTES" ]; then
+            echo "Generated prompt is $PROMPT_SIZE_BYTES bytes; refusing to post an oversized @codex trigger comment." >&2
+            exit 1
+          fi
+
+          COMMENT_BODY_PATH="ready-dispatch-report/codex-cloud-trigger-comment.md"
+          {
+            echo "@codex"
+            echo
+            echo "Start this claimed task from the generated handoff prompt below."
+            echo
+            echo "Task-ID: $TASK_ID"
+            echo "Task-Issue: #$ISSUE_NUMBER"
+            echo
+            echo "Safety constraints: follow the prompt exactly; do not merge PRs, approve PRs, close issues, delete branches, or delete worktrees."
+            echo
+            echo "---"
+            echo
+            cat "$HANDOFF_PROMPT_PATH"
+          } > "$COMMENT_BODY_PATH"
+
+          echo "issue_number=$ISSUE_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "task_id=$TASK_ID" >> "$GITHUB_OUTPUT"
+          echo "comment_body_path=$COMMENT_BODY_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: "Trigger Codex Cloud task"
+        if: ${{ inputs.start_codex_cloud == true || inputs.start_codex_cloud == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ steps.codex_cloud_prepare.outputs.issue_number }}
+          TASK_ID: ${{ steps.codex_cloud_prepare.outputs.task_id }}
+          COMMENT_BODY_PATH: ${{ steps.codex_cloud_prepare.outputs.comment_body_path }}
+        run: |
+          set -euo pipefail
+
+          gh issue comment "$ISSUE_NUMBER" \
+            --repo "$REPOSITORY" \
+            --body-file "$COMMENT_BODY_PATH"
+
+          {
+            echo
+            echo "### Codex Cloud Auto-Start"
+            echo
+            echo "- Trigger mechanism: \`@codex\` issue comment"
+            echo "- Task-ID: \`$TASK_ID\`"
+            echo "- Task-Issue: \`#$ISSUE_NUMBER\`"
+            echo "- Handoff prompt comment posted: yes"
+            echo "- Required repository setup: Codex Cloud GitHub integration enabled for this repository"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: "Upload dispatcher report"
         uses: actions/upload-artifact@v4

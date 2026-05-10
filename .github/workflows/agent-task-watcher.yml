@@ -325,11 +325,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           READY_COUNT: ${{ steps.mark_issue.outputs.ready_count }}
+          CODEX_CLOUD_AUTO_START: ${{ vars.CODEX_CLOUD_AUTO_START }}
         run: |
           set -euo pipefail
+
+          CODEX_CLOUD_AUTO_START="${CODEX_CLOUD_AUTO_START:-false}"
+          if [ "$CODEX_CLOUD_AUTO_START" != "true" ]; then
+            CODEX_CLOUD_AUTO_START="false"
+          fi
 
           echo "Triggering Ready Task Dispatch Discovery for $READY_COUNT newly ready dependent task(s)."
           gh workflow run ready-task-dispatch-discovery.yml \
             --repo "$REPOSITORY" \
             --ref develop \
-            -f claim=true
+            -f claim=true \
+            -f start_codex_cloud="$CODEX_CLOUD_AUTO_START"
