@@ -142,6 +142,15 @@ from carbonfactor_parser.source_acquisition.run_contract import (
     validate_source_acquisition_run_request,
     validate_source_acquisition_run_result,
 )
+from carbonfactor_parser.source_acquisition.run_repository_contract import (
+    SourceAcquisitionRunRepository,
+    SourceAcquisitionRunRepositoryIssue,
+    SourceAcquisitionRunRepositoryPersistResult,
+    SourceAcquisitionRunRepositoryPersistStatus,
+    SourceAcquisitionRunRepositoryValidationResult,
+    create_source_acquisition_run_repository_persist_result,
+    validate_source_acquisition_run_repository_inputs,
+)
 from carbonfactor_parser.source_acquisition.source_artifact_parser_input_bridge_contract import (
     SourceArtifactParserInputBridgeEntry,
     SourceArtifactParserInputBridgeResult,
@@ -210,6 +219,11 @@ __all__ = (
     "IPCCSourceDiscoveryValidationResult",
     "IPCCSourceDocumentCandidate",
     "SourceAcquisitionRunIssue",
+    "SourceAcquisitionRunRepository",
+    "SourceAcquisitionRunRepositoryIssue",
+    "SourceAcquisitionRunRepositoryPersistResult",
+    "SourceAcquisitionRunRepositoryPersistStatus",
+    "SourceAcquisitionRunRepositoryValidationResult",
     "SourceAcquisitionRunRequest",
     "SourceAcquisitionRunResult",
     "SourceAcquisitionRunStatus",
@@ -249,6 +263,7 @@ __all__ = (
     "create_source_artifact_parser_input_bridge_entry",
     "create_source_acquisition_run_request",
     "create_source_acquisition_run_result",
+    "create_source_acquisition_run_repository_persist_result",
     "create_source_download_artifact_from_candidate",
     "validate_acquisition_to_parser_plan",
     "validate_acquisition_to_parser_plans",
@@ -277,6 +292,7 @@ __all__ = (
     "validate_source_artifact_parser_input_bridge_result",
     "validate_source_acquisition_run_request",
     "validate_source_acquisition_run_result",
+    "validate_source_acquisition_run_repository_inputs",
     "validate_source_discovery_candidate",
     "validate_source_discovery_candidate_result",
     "validate_source_download_artifact",
