@@ -183,6 +183,8 @@ class LifecycleOutcome:
     matching_prs: tuple[PullRequestFooterEvaluation, ...]
     blockers: tuple[str, ...]
     human_action_needed: str
+    materialization_status: str = "not_applicable"
+    materialization_notes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -1244,6 +1246,8 @@ def build_lifecycle_outcome(state: QueueState) -> LifecycleOutcome:
             matching_prs=(),
             blockers=("No status:in-progress issue exists.",),
             human_action_needed="Claim one ready task before expecting a task PR.",
+            materialization_status="not_applicable",
+            materialization_notes=(),
         )
     if len(claimed_issues) > 1:
         return LifecycleOutcome(
@@ -1256,6 +1260,8 @@ def build_lifecycle_outcome(state: QueueState) -> LifecycleOutcome:
                 "Multiple status:in-progress issues exist; lifecycle monitoring requires exactly one claimed task.",
             ),
             human_action_needed="Resolve the queue so exactly one task is status:in-progress.",
+            materialization_status="ambiguous_multiple_claimed_tasks",
+            materialization_notes=("Multiple claimed tasks prevent deterministic PR materialization checks.",),
         )
 
     claimed_issue = claimed_issues[0]
@@ -1269,6 +1275,8 @@ def build_lifecycle_outcome(state: QueueState) -> LifecycleOutcome:
             matching_prs=(),
             blockers=(f"Claimed issue #{claimed_issue.number} has no valid Task-ID.",),
             human_action_needed="Fix the claimed issue metadata before matching PR lifecycle state.",
+            materialization_status="invalid_claimed_issue_metadata",
+            materialization_notes=("Task-ID missing on claimed issue; cannot verify materialized PR.",),
         )
 
     evaluations = tuple(
@@ -1287,6 +1295,13 @@ def build_lifecycle_outcome(state: QueueState) -> LifecycleOutcome:
     )
     invalid_candidates = tuple(evaluation for evaluation in evaluations if evaluation.footer_errors)
 
+    materialization_status, materialization_notes = evaluate_pr_materialization(
+        claimed_issue=claimed_issue,
+        task_id=task_id,
+        evaluations=evaluations,
+        valid_matches=valid_matches,
+    )
+
     if not evaluations:
         return LifecycleOutcome(
             lifecycle_status="waiting_for_pr",
@@ -1296,6 +1311,8 @@ def build_lifecycle_outcome(state: QueueState) -> LifecycleOutcome:
             matching_prs=(),
             blockers=(),
             human_action_needed="Wait for the claimed task agent to open a PR with the required footer.",
+            materialization_status=materialization_status,
+            materialization_notes=materialization_notes,
         )
     if len(valid_matches) > 1:
         return LifecycleOutcome(
@@ -1306,6 +1323,8 @@ def build_lifecycle_outcome(state: QueueState) -> LifecycleOutcome:
             matching_prs=valid_matches,
             blockers=("Multiple open PRs match the claimed task footer.",),
             human_action_needed="Ask a human to resolve the duplicate PRs before continuing review.",
+            materialization_status=materialization_status,
+            materialization_notes=materialization_notes,
         )
     if not valid_matches:
         return LifecycleOutcome(
@@ -1316,6 +1335,8 @@ def build_lifecycle_outcome(state: QueueState) -> LifecycleOutcome:
             matching_prs=(),
             blockers=("Open PR candidate exists, but its required task footer is invalid.",),
             human_action_needed="Fix the PR body footer so it ends with the claimed Task-ID and Task-Issue.",
+            materialization_status=materialization_status,
+            materialization_notes=materialization_notes,
         )
 
     matched = valid_matches[0]
@@ -1328,6 +1349,8 @@ def build_lifecycle_outcome(state: QueueState) -> LifecycleOutcome:
             matching_prs=valid_matches,
             blockers=(),
             human_action_needed="Wait for the task PR to be marked ready for review.",
+            materialization_status=materialization_status,
+            materialization_notes=materialization_notes,
         )
 
     return LifecycleOutcome(
@@ -1338,6 +1361,41 @@ def build_lifecycle_outcome(state: QueueState) -> LifecycleOutcome:
         matching_prs=valid_matches,
         blockers=(),
         human_action_needed="Human reviewer should review the open non-draft task PR.",
+        materialization_status=materialization_status,
+        materialization_notes=materialization_notes,
+    )
+
+
+def evaluate_pr_materialization(
+    claimed_issue: Issue,
+    task_id: str,
+    evaluations: Sequence[PullRequestFooterEvaluation],
+    valid_matches: Sequence[PullRequestFooterEvaluation],
+) -> tuple[str, tuple[str, ...]]:
+    trigger_comment_posted = status_label(claimed_issue) == "in-progress"
+    if not trigger_comment_posted:
+        return "trigger_comment_not_posted", ("@codex trigger comment is not verified yet.",)
+    if not evaluations:
+        return "no_connector_result_yet", ("Trigger comment posted; no Codex connector result detected yet.",)
+    if len(valid_matches) > 1:
+        return "ambiguous_multiple_prs", ("Multiple PRs match Task-ID / Task-Issue; resolve ambiguity.",)
+    if not valid_matches:
+        return (
+            "connector_result_without_real_pr",
+            (
+                "Connector output may exist, but no verifiable GitHub PR with required footer was found.",
+                "Human Create PR action may still be required in Codex Cloud UI.",
+            ),
+        )
+    matched_pr = valid_matches[0].pull_request
+    if matched_pr.base_ref_name != BASE_BRANCH:
+        return (
+            "real_pr_wrong_base_branch",
+            (f"Real PR exists but base branch is {matched_pr.base_ref_name or 'unknown'}, expected {BASE_BRANCH}.",),
+        )
+    return (
+        "real_pr_verified",
+        (f"Verified real PR #{matched_pr.number} with expected Task-ID/Task-Issue footer.",),
     )
 
 
@@ -1447,6 +1505,17 @@ def build_lifecycle_report(outcome: LifecycleOutcome) -> str:
     else:
         lines.append("- No candidate PR footer to validate.")
 
+    lines.extend(
+        (
+            "",
+            "## PR Materialization Verification",
+            f"- Materialization status: {outcome.materialization_status}",
+        )
+    )
+    if outcome.materialization_notes:
+        lines.extend(f"- {note}" for note in outcome.materialization_notes)
+    else:
+        lines.append("- No materialization notes.")
     lines.extend(
         (
             "",
