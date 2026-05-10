@@ -811,6 +811,7 @@ def test_lifecycle_mode_reports_waiting_for_pr_when_no_matching_pr_exists() -> N
 
     assert exit_code == 0
     assert "waiting_for_pr" in report
+    assert "Materialization status: no_connector_result_yet" in report
     assert "Claimed issue number: #411" in report
     assert "Matching PR\n- None." in report
     assert not any(call[1:3] == ("issue", "edit") for call in calls)
@@ -858,6 +859,7 @@ def test_lifecycle_mode_reports_open_non_draft_pr_ready_for_review() -> None:
 
     assert exit_code == 0
     assert "ready_for_human_review" in report
+    assert "Materialization status: real_pr_verified" in report
     assert "PR state: OPEN" in report
     assert "PR draft: no" in report
     assert "Human reviewer should review" in report
@@ -965,11 +967,32 @@ def test_lifecycle_mode_blocks_multiple_matching_prs() -> None:
 
     assert exit_code == 2
     assert "pr_match_ambiguous" in report
+    assert "Materialization status: ambiguous_multiple_prs" in report
     assert "Multiple open PRs match the claimed task footer." in report
     assert "PR #412: valid" in report
     assert "PR #413: valid" in report
     assert not any(call[1:3] == ("issue", "edit") for call in calls)
     _assert_no_forbidden_commands(calls)
+
+
+def test_lifecycle_mode_reports_wrong_base_branch_materialization_state() -> None:
+    claimed = _issue(411, "OPS-018", "ops", "in-progress")
+    pull_request = _pr(412, "OPS-018", 411, base_ref_name="main")
+    calls: list[tuple[str, ...]] = []
+
+    exit_code, report = run_reporter(
+        ["--repo", "example/repo", "--lifecycle"],
+        runner=_queue_runner(
+            in_progress_issues=(claimed,),
+            all_issues=(claimed,),
+            open_prs=(pull_request,),
+            calls=calls,
+        ),
+    )
+
+    assert exit_code == 0
+    assert "Materialization status: real_pr_wrong_base_branch" in report
+    assert "expected develop" in report
 
 
 def test_review_status_blocks_without_claimed_task() -> None:

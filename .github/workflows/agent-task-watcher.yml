@@ -12,6 +12,7 @@ name: "Agent Task Watcher"
         type: string
 
 permissions:
+  actions: write
   issues: write
   pull-requests: read
   contents: read
@@ -73,6 +74,7 @@ jobs:
           echo "should_process=true" >> "$GITHUB_OUTPUT"
 
       - name: "Mark issue as status merged"
+        id: mark_issue
         if: steps.pr.outputs.should_process == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -252,6 +254,26 @@ jobs:
               continue
             fi
 
+            if issue_has_label "$DEPENDENT_ISSUE_NUMBER" "status:ready"; then
+              SKIPPED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) is already \`status:ready\`; labels were left unchanged.")
+              continue
+            fi
+
+            if issue_has_label "$DEPENDENT_ISSUE_NUMBER" "status:in-progress"; then
+              SKIPPED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) is already \`status:in-progress\`; labels were left unchanged.")
+              continue
+            fi
+
+            if issue_has_label "$DEPENDENT_ISSUE_NUMBER" "status:in-review"; then
+              SKIPPED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) is already \`status:in-review\`; labels were left unchanged.")
+              continue
+            fi
+
+            if issue_has_label "$DEPENDENT_ISSUE_NUMBER" "status:needs-fix"; then
+              SKIPPED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) is already \`status:needs-fix\`; labels were left unchanged.")
+              continue
+            fi
+
             for LABEL in "${ACTIVE_STATUS_LABELS[@]}"; do
               gh issue edit "$DEPENDENT_ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$LABEL" || true
             done
@@ -294,3 +316,27 @@ jobs:
           fi
 
           gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "$COMMENT_BODY"
+
+          echo "ready_count=${#UPDATED_DEPENDENTS[@]}" >> "$GITHUB_OUTPUT"
+
+      - name: "Trigger ready task dispatch claim"
+        if: steps.pr.outputs.should_process == 'true' && steps.mark_issue.outputs.ready_count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          READY_COUNT: ${{ steps.mark_issue.outputs.ready_count }}
+          CODEX_CLOUD_AUTO_START: ${{ vars.CODEX_CLOUD_AUTO_START }}
+        run: |
+          set -euo pipefail
+
+          CODEX_CLOUD_AUTO_START="${CODEX_CLOUD_AUTO_START:-false}"
+          if [ "$CODEX_CLOUD_AUTO_START" != "true" ]; then
+            CODEX_CLOUD_AUTO_START="false"
+          fi
+
+          echo "Triggering Ready Task Dispatch Discovery for $READY_COUNT newly ready dependent task(s)."
+          gh workflow run ready-task-dispatch-discovery.yml \
+            --repo "$REPOSITORY" \
+            --ref develop \
+            -f claim=true \
+            -f start_codex_cloud="$CODEX_CLOUD_AUTO_START"
