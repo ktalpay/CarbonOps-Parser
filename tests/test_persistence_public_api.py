@@ -28,7 +28,9 @@ from carbonfactor_parser.persistence import (
     PersistenceInputRecord,
     POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR,
     POSTGRESQL_INTEGRATION_TEST_MARKER,
+    POSTGRESQL_INTEGRATION_TEST_OPT_IN_FALSE_VALUES,
     POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR,
+    POSTGRESQL_INTEGRATION_TEST_OPT_IN_TRUE_VALUES,
     POSTGRESQL_INTEGRATION_TEST_SKIP_REASON,
     PersistenceIssue,
     PersistenceIssueSeverity,
@@ -40,6 +42,8 @@ from carbonfactor_parser.persistence import (
     PsycopgPostgreSQLSessionAdapterMetadata,
     PsycopgPostgreSQLSessionAdapterStatus,
     PostgreSQLIntegrationTestBoundary,
+    PostgreSQLIntegrationTestConfigIssue,
+    PostgreSQLIntegrationTestOptInConfig,
     PostgreSQLInsertBuildIssue,
     PostgreSQLInsertBuildResult,
     PostgreSQLInsertBuildStatus,
@@ -144,6 +148,7 @@ from carbonfactor_parser.persistence import (
     describe_postgresql_repository_runtime_safety_gate,
     describe_postgresql_runtime_execution_gate,
     describe_postgresql_transaction_policy_boundary,
+    evaluate_postgresql_integration_test_opt_in_config,
     evaluate_postgresql_runtime_execution_gate,
     evaluate_postgresql_repository_runtime_safety_gate,
     get_normalized_record_postgresql_schema,
@@ -167,6 +172,8 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR",
     "POSTGRESQL_INTEGRATION_TEST_MARKER",
     "POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR",
+    "POSTGRESQL_INTEGRATION_TEST_OPT_IN_FALSE_VALUES",
+    "POSTGRESQL_INTEGRATION_TEST_OPT_IN_TRUE_VALUES",
     "POSTGRESQL_INTEGRATION_TEST_SKIP_REASON",
     "PersistenceIssue",
     "PersistenceIssueSeverity",
@@ -178,6 +185,8 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PsycopgPostgreSQLSessionAdapterMetadata",
     "PsycopgPostgreSQLSessionAdapterStatus",
     "PostgreSQLIntegrationTestBoundary",
+    "PostgreSQLIntegrationTestConfigIssue",
+    "PostgreSQLIntegrationTestOptInConfig",
     "PostgreSQLInsertBuildIssue",
     "PostgreSQLInsertBuildResult",
     "PostgreSQLInsertBuildStatus",
@@ -284,6 +293,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "describe_postgresql_transaction_policy_boundary",
     "evaluate_postgresql_runtime_execution_gate",
     "evaluate_postgresql_repository_runtime_safety_gate",
+    "evaluate_postgresql_integration_test_opt_in_config",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
     "should_skip_postgresql_integration_tests",
@@ -310,6 +320,12 @@ EXPECTED_PUBLIC_EXPORTS = {
     "POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR": (
         integration_test_boundary.POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR
     ),
+    "POSTGRESQL_INTEGRATION_TEST_OPT_IN_FALSE_VALUES": (
+        integration_test_boundary.POSTGRESQL_INTEGRATION_TEST_OPT_IN_FALSE_VALUES
+    ),
+    "POSTGRESQL_INTEGRATION_TEST_OPT_IN_TRUE_VALUES": (
+        integration_test_boundary.POSTGRESQL_INTEGRATION_TEST_OPT_IN_TRUE_VALUES
+    ),
     "POSTGRESQL_INTEGRATION_TEST_SKIP_REASON": (
         integration_test_boundary.POSTGRESQL_INTEGRATION_TEST_SKIP_REASON
     ),
@@ -335,6 +351,12 @@ EXPECTED_PUBLIC_EXPORTS = {
     ),
     "PostgreSQLIntegrationTestBoundary": (
         integration_test_boundary.PostgreSQLIntegrationTestBoundary
+    ),
+    "PostgreSQLIntegrationTestConfigIssue": (
+        integration_test_boundary.PostgreSQLIntegrationTestConfigIssue
+    ),
+    "PostgreSQLIntegrationTestOptInConfig": (
+        integration_test_boundary.PostgreSQLIntegrationTestOptInConfig
     ),
     "PostgreSQLInsertBuildIssue": (
         postgresql_insert_builder.PostgreSQLInsertBuildIssue
@@ -683,6 +705,9 @@ EXPECTED_PUBLIC_EXPORTS = {
         postgresql_transaction_policy
         .describe_postgresql_transaction_policy_boundary
     ),
+    "evaluate_postgresql_integration_test_opt_in_config": (
+        integration_test_boundary.evaluate_postgresql_integration_test_opt_in_config
+    ),
     "evaluate_postgresql_runtime_execution_gate": (
         postgresql_runtime_execution_gate
         .evaluate_postgresql_runtime_execution_gate
@@ -736,6 +761,12 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR": (
             POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR
         ),
+        "POSTGRESQL_INTEGRATION_TEST_OPT_IN_FALSE_VALUES": (
+            POSTGRESQL_INTEGRATION_TEST_OPT_IN_FALSE_VALUES
+        ),
+        "POSTGRESQL_INTEGRATION_TEST_OPT_IN_TRUE_VALUES": (
+            POSTGRESQL_INTEGRATION_TEST_OPT_IN_TRUE_VALUES
+        ),
         "POSTGRESQL_INTEGRATION_TEST_SKIP_REASON": (
             POSTGRESQL_INTEGRATION_TEST_SKIP_REASON
         ),
@@ -755,6 +786,8 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
             PsycopgPostgreSQLSessionAdapterStatus
         ),
         "PostgreSQLIntegrationTestBoundary": PostgreSQLIntegrationTestBoundary,
+        "PostgreSQLIntegrationTestConfigIssue": PostgreSQLIntegrationTestConfigIssue,
+        "PostgreSQLIntegrationTestOptInConfig": PostgreSQLIntegrationTestOptInConfig,
         "PostgreSQLInsertBuildIssue": PostgreSQLInsertBuildIssue,
         "PostgreSQLInsertBuildResult": PostgreSQLInsertBuildResult,
         "PostgreSQLInsertBuildStatus": PostgreSQLInsertBuildStatus,
@@ -984,6 +1017,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         ),
         "evaluate_postgresql_repository_runtime_safety_gate": (
             evaluate_postgresql_repository_runtime_safety_gate
+        ),
+        "evaluate_postgresql_integration_test_opt_in_config": (
+            evaluate_postgresql_integration_test_opt_in_config
         ),
         "get_normalized_record_postgresql_schema": (
             get_normalized_record_postgresql_schema

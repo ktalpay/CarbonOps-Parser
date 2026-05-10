@@ -14,9 +14,14 @@ from carbonfactor_parser.persistence import (
     POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR,
     POSTGRESQL_INTEGRATION_TEST_MARKER,
     POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR,
+    POSTGRESQL_INTEGRATION_TEST_OPT_IN_FALSE_VALUES,
+    POSTGRESQL_INTEGRATION_TEST_OPT_IN_TRUE_VALUES,
     POSTGRESQL_INTEGRATION_TEST_SKIP_REASON,
+    PostgreSQLIntegrationTestConfigIssue,
+    PostgreSQLIntegrationTestOptInConfig,
     PostgreSQLIntegrationTestBoundary,
     create_postgresql_integration_test_boundary,
+    evaluate_postgresql_integration_test_opt_in_config,
     should_skip_postgresql_integration_tests,
 )
 
@@ -45,6 +50,19 @@ def test_integration_test_marker_and_opt_in_controls_are_deterministic() -> None
     )
     assert POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR == "CARBONOPS_POSTGRESQL_TEST_DSN"
     assert "disabled by default" in POSTGRESQL_INTEGRATION_TEST_SKIP_REASON
+    assert POSTGRESQL_INTEGRATION_TEST_OPT_IN_TRUE_VALUES == (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+    assert POSTGRESQL_INTEGRATION_TEST_OPT_IN_FALSE_VALUES == (
+        "",
+        "0",
+        "false",
+        "no",
+        "off",
+    )
 
 
 def test_explicit_opt_in_boundary_can_be_represented_without_db_behavior() -> None:
@@ -64,6 +82,108 @@ def test_explicit_opt_in_boundary_can_be_represented_without_db_behavior() -> No
 
 def test_skip_helper_defaults_to_skip_without_boundary() -> None:
     assert should_skip_postgresql_integration_tests()
+
+
+def test_opt_in_config_defaults_to_disabled_without_external_reads() -> None:
+    config = evaluate_postgresql_integration_test_opt_in_config()
+
+    assert isinstance(config, PostgreSQLIntegrationTestOptInConfig)
+    assert config.enabled is False
+    assert config.opt_in_requested is False
+    assert config.test_dsn_configured is False
+    assert config.marker_name == POSTGRESQL_INTEGRATION_TEST_MARKER
+    assert config.opt_in_control_name == POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR
+    assert config.test_dsn_input_name == POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR
+    assert config.enable_source is None
+    assert config.skip_reason == POSTGRESQL_INTEGRATION_TEST_SKIP_REASON
+    assert config.issues == ()
+    assert config.loads_environment is False
+    assert config.loads_config_files is False
+    assert config.loads_credentials is False
+    assert config.stores_test_dsn_value is False
+    assert config.opens_connection is False
+    assert config.runs_sql is False
+
+
+def test_opt_in_config_requires_dsn_when_enabled() -> None:
+    config = evaluate_postgresql_integration_test_opt_in_config(
+        {POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR: "true"},
+    )
+
+    assert config.enabled is False
+    assert config.opt_in_requested is True
+    assert config.test_dsn_configured is False
+    assert config.issues == (
+        PostgreSQLIntegrationTestConfigIssue(
+            code="POSTGRESQL_INTEGRATION_TEST_DSN_MISSING",
+            message=(
+                "PostgreSQL integration test opt-in requires a caller-"
+                "provided test DSN input name, but the DSN value is not "
+                "stored by this boundary."
+            ),
+            field_name=POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR,
+        ),
+    )
+    assert config.skip_reason == config.issues[0].message
+
+
+def test_opt_in_config_enables_only_with_truthy_opt_in_and_dsn_presence() -> None:
+    secret_dsn = "postgresql://carbonops:secret@example.invalid:5432/test"
+    config = evaluate_postgresql_integration_test_opt_in_config(
+        {
+            POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR: "YES",
+            POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR: secret_dsn,
+        },
+    )
+
+    assert config.enabled is True
+    assert config.opt_in_requested is True
+    assert config.test_dsn_configured is True
+    assert config.enable_source == "caller-provided-opt-in-config"
+    assert config.skip_reason is None
+    assert config.issues == ()
+    assert config.stores_test_dsn_value is False
+    assert secret_dsn not in repr(config)
+
+
+def test_opt_in_config_disabled_for_false_values_even_with_dsn() -> None:
+    for false_value in POSTGRESQL_INTEGRATION_TEST_OPT_IN_FALSE_VALUES:
+        config = evaluate_postgresql_integration_test_opt_in_config(
+            {
+                POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR: false_value,
+                POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR: "postgresql://example",
+            },
+        )
+
+        assert config.enabled is False
+        assert config.opt_in_requested is False
+        assert config.test_dsn_configured is True
+        assert config.issues == ()
+        assert config.skip_reason == POSTGRESQL_INTEGRATION_TEST_SKIP_REASON
+
+
+def test_opt_in_config_reports_invalid_opt_in_values() -> None:
+    config = evaluate_postgresql_integration_test_opt_in_config(
+        {
+            POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR: "maybe",
+            POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR: "postgresql://example",
+        },
+    )
+
+    assert config.enabled is False
+    assert config.opt_in_requested is False
+    assert config.test_dsn_configured is True
+    assert config.issues == (
+        PostgreSQLIntegrationTestConfigIssue(
+            code="POSTGRESQL_INTEGRATION_TEST_OPT_IN_INVALID",
+            message=(
+                "PostgreSQL integration test opt-in must be one of: "
+                "1, true, yes, on."
+            ),
+            field_name=POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR,
+        ),
+    )
+    assert config.skip_reason == config.issues[0].message
 
 
 def test_pytest_marker_registry_declares_postgresql_integration_only() -> None:
@@ -110,6 +230,30 @@ def test_boundary_does_not_read_opt_in_or_dsn_values(monkeypatch) -> None:
     assert boundary.opt_in_control_name == POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR
     assert boundary.test_dsn_input_name == POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR
     assert not should_skip_postgresql_integration_tests(boundary)
+
+
+def test_config_evaluation_has_no_env_config_db_file_or_network_side_effects(
+    monkeypatch,
+) -> None:
+    def fail_side_effect(*args, **kwargs):
+        raise AssertionError("integration config must not touch external state")
+
+    monkeypatch.setattr(builtins, "open", fail_side_effect)
+    monkeypatch.setattr(os, "getenv", fail_side_effect)
+    monkeypatch.setattr(socket, "create_connection", fail_side_effect)
+    monkeypatch.setattr(urllib.request, "urlopen", fail_side_effect)
+    monkeypatch.setattr(sqlite3, "connect", fail_side_effect)
+
+    config = evaluate_postgresql_integration_test_opt_in_config(
+        {
+            POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR: "on",
+            POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR: "postgresql://example",
+        },
+    )
+
+    assert config.enabled is True
+    assert config.opens_connection is False
+    assert config.runs_sql is False
 
 
 def test_repository_persist_remains_unsupported_no_execution() -> None:
