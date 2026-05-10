@@ -16,6 +16,7 @@ from carbonfactor_parser.persistence import (
     postgresql_runtime_execution_gate,
     postgresql_schema_bootstrap,
     postgresql_schema_bootstrap_planner,
+    postgresql_schema_isolation_strategy,
     postgresql_transaction_policy,
     repository,
     schema,
@@ -26,12 +27,14 @@ from carbonfactor_parser.persistence import (
     PersistenceInputBuildStatus,
     PersistenceInputIssue,
     PersistenceInputRecord,
+    POSTGRESQL_ISOLATED_SCHEMA_PREFIX,
     POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR,
     POSTGRESQL_INTEGRATION_TEST_MARKER,
     POSTGRESQL_INTEGRATION_TEST_OPT_IN_FALSE_VALUES,
     POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR,
     POSTGRESQL_INTEGRATION_TEST_OPT_IN_TRUE_VALUES,
     POSTGRESQL_INTEGRATION_TEST_SKIP_REASON,
+    POSTGRESQL_RESERVED_SCHEMA_NAMES,
     PersistenceIssue,
     PersistenceIssueSeverity,
     PersistenceRepository,
@@ -107,6 +110,13 @@ from carbonfactor_parser.persistence import (
     PostgreSQLSchemaBootstrapRequest,
     PostgreSQLSchemaBootstrapTableResult,
     PostgreSQLSchemaBootstrapTableStatus,
+    PostgreSQLSchemaIsolationCleanupMode,
+    PostgreSQLSchemaIsolationCleanupScope,
+    PostgreSQLSchemaIsolationStrategy,
+    PostgreSQLSchemaIsolationStrategyDescription,
+    PostgreSQLSchemaIsolationStrategyIssue,
+    PostgreSQLSchemaIsolationStrategyStatus,
+    PostgreSQLSchemaIsolationStrategyValidationResult,
     PostgreSQLStatementExecutionContract,
     PostgreSQLTransactionBoundary,
     PostgreSQLTransactionFailurePolicy,
@@ -135,6 +145,7 @@ from carbonfactor_parser.persistence import (
     build_postgresql_phase1_schema_bootstrap_request,
     build_postgresql_repository_disabled_execution_preview,
     build_postgresql_transaction_plan,
+    build_default_postgresql_schema_isolation_strategy,
     create_persistence_result,
     create_postgresql_connection_session_runtime_contract,
     create_postgresql_integration_test_boundary,
@@ -147,6 +158,7 @@ from carbonfactor_parser.persistence import (
     describe_postgresql_repository_disabled_execution_preview,
     describe_postgresql_repository_runtime_safety_gate,
     describe_postgresql_runtime_execution_gate,
+    describe_postgresql_schema_isolation_strategy,
     describe_postgresql_transaction_policy_boundary,
     evaluate_postgresql_integration_test_opt_in_config,
     evaluate_postgresql_runtime_execution_gate,
@@ -157,6 +169,7 @@ from carbonfactor_parser.persistence import (
     validate_psycopg_session_adapter_boundary,
     validate_postgresql_connection_session_runtime_contract,
     validate_postgresql_persistence_options,
+    validate_postgresql_schema_isolation_strategy,
     validate_postgresql_statement_execution_contract,
     validate_postgresql_transaction_policy,
     validate_postgresql_transaction_runtime_boundary,
@@ -169,12 +182,14 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PersistenceInputBuildStatus",
     "PersistenceInputIssue",
     "PersistenceInputRecord",
+    "POSTGRESQL_ISOLATED_SCHEMA_PREFIX",
     "POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR",
     "POSTGRESQL_INTEGRATION_TEST_MARKER",
     "POSTGRESQL_INTEGRATION_TEST_OPT_IN_ENV_VAR",
     "POSTGRESQL_INTEGRATION_TEST_OPT_IN_FALSE_VALUES",
     "POSTGRESQL_INTEGRATION_TEST_OPT_IN_TRUE_VALUES",
     "POSTGRESQL_INTEGRATION_TEST_SKIP_REASON",
+    "POSTGRESQL_RESERVED_SCHEMA_NAMES",
     "PersistenceIssue",
     "PersistenceIssueSeverity",
     "PersistenceRepository",
@@ -250,6 +265,13 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLSchemaBootstrapRequest",
     "PostgreSQLSchemaBootstrapTableResult",
     "PostgreSQLSchemaBootstrapTableStatus",
+    "PostgreSQLSchemaIsolationCleanupMode",
+    "PostgreSQLSchemaIsolationCleanupScope",
+    "PostgreSQLSchemaIsolationStrategy",
+    "PostgreSQLSchemaIsolationStrategyDescription",
+    "PostgreSQLSchemaIsolationStrategyIssue",
+    "PostgreSQLSchemaIsolationStrategyStatus",
+    "PostgreSQLSchemaIsolationStrategyValidationResult",
     "PostgreSQLStatementExecutionContract",
     "PostgreSQLTransactionBoundary",
     "PostgreSQLTransactionFailurePolicy",
@@ -278,6 +300,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "build_postgresql_phase1_schema_bootstrap_request",
     "build_postgresql_repository_disabled_execution_preview",
     "build_postgresql_transaction_plan",
+    "build_default_postgresql_schema_isolation_strategy",
     "create_persistence_result",
     "create_postgresql_connection_session_runtime_contract",
     "create_postgresql_integration_test_boundary",
@@ -290,6 +313,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "describe_postgresql_repository_disabled_execution_preview",
     "describe_postgresql_repository_runtime_safety_gate",
     "describe_postgresql_runtime_execution_gate",
+    "describe_postgresql_schema_isolation_strategy",
     "describe_postgresql_transaction_policy_boundary",
     "evaluate_postgresql_runtime_execution_gate",
     "evaluate_postgresql_repository_runtime_safety_gate",
@@ -300,6 +324,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "validate_psycopg_session_adapter_boundary",
     "validate_postgresql_connection_session_runtime_contract",
     "validate_postgresql_persistence_options",
+    "validate_postgresql_schema_isolation_strategy",
     "validate_postgresql_statement_execution_contract",
     "validate_postgresql_transaction_policy",
     "validate_postgresql_transaction_runtime_boundary",
@@ -311,6 +336,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PersistenceInputBuildStatus": input.PersistenceInputBuildStatus,
     "PersistenceInputIssue": input.PersistenceInputIssue,
     "PersistenceInputRecord": input.PersistenceInputRecord,
+    "POSTGRESQL_ISOLATED_SCHEMA_PREFIX": (
+        postgresql_schema_isolation_strategy.POSTGRESQL_ISOLATED_SCHEMA_PREFIX
+    ),
     "POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR": (
         integration_test_boundary.POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR
     ),
@@ -328,6 +356,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     ),
     "POSTGRESQL_INTEGRATION_TEST_SKIP_REASON": (
         integration_test_boundary.POSTGRESQL_INTEGRATION_TEST_SKIP_REASON
+    ),
+    "POSTGRESQL_RESERVED_SCHEMA_NAMES": (
+        postgresql_schema_isolation_strategy.POSTGRESQL_RESERVED_SCHEMA_NAMES
     ),
     "PersistenceIssue": repository.PersistenceIssue,
     "PersistenceIssueSeverity": repository.PersistenceIssueSeverity,
@@ -566,6 +597,29 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PostgreSQLSchemaBootstrapTableStatus": (
         postgresql_schema_bootstrap.PostgreSQLSchemaBootstrapTableStatus
     ),
+    "PostgreSQLSchemaIsolationCleanupMode": (
+        postgresql_schema_isolation_strategy.PostgreSQLSchemaIsolationCleanupMode
+    ),
+    "PostgreSQLSchemaIsolationCleanupScope": (
+        postgresql_schema_isolation_strategy.PostgreSQLSchemaIsolationCleanupScope
+    ),
+    "PostgreSQLSchemaIsolationStrategy": (
+        postgresql_schema_isolation_strategy.PostgreSQLSchemaIsolationStrategy
+    ),
+    "PostgreSQLSchemaIsolationStrategyDescription": (
+        postgresql_schema_isolation_strategy
+        .PostgreSQLSchemaIsolationStrategyDescription
+    ),
+    "PostgreSQLSchemaIsolationStrategyIssue": (
+        postgresql_schema_isolation_strategy.PostgreSQLSchemaIsolationStrategyIssue
+    ),
+    "PostgreSQLSchemaIsolationStrategyStatus": (
+        postgresql_schema_isolation_strategy.PostgreSQLSchemaIsolationStrategyStatus
+    ),
+    "PostgreSQLSchemaIsolationStrategyValidationResult": (
+        postgresql_schema_isolation_strategy
+        .PostgreSQLSchemaIsolationStrategyValidationResult
+    ),
     "PostgreSQLStatementExecutionContract": (
         postgresql_connection_session_contract.PostgreSQLStatementExecutionContract
     ),
@@ -659,6 +713,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     "build_postgresql_transaction_plan": (
         postgresql_transaction_policy.build_postgresql_transaction_plan
     ),
+    "build_default_postgresql_schema_isolation_strategy": (
+        postgresql_schema_isolation_strategy
+        .build_default_postgresql_schema_isolation_strategy
+    ),
     "create_persistence_result": repository.create_persistence_result,
     "create_postgresql_connection_session_runtime_contract": (
         postgresql_connection_session_contract
@@ -701,6 +759,10 @@ EXPECTED_PUBLIC_EXPORTS = {
         postgresql_runtime_execution_gate
         .describe_postgresql_runtime_execution_gate
     ),
+    "describe_postgresql_schema_isolation_strategy": (
+        postgresql_schema_isolation_strategy
+        .describe_postgresql_schema_isolation_strategy
+    ),
     "describe_postgresql_transaction_policy_boundary": (
         postgresql_transaction_policy
         .describe_postgresql_transaction_policy_boundary
@@ -733,6 +795,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     "validate_postgresql_persistence_options": (
         postgresql_options.validate_postgresql_persistence_options
     ),
+    "validate_postgresql_schema_isolation_strategy": (
+        postgresql_schema_isolation_strategy
+        .validate_postgresql_schema_isolation_strategy
+    ),
     "validate_postgresql_statement_execution_contract": (
         postgresql_connection_session_contract
         .validate_postgresql_statement_execution_contract
@@ -754,6 +820,7 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PersistenceInputBuildStatus": PersistenceInputBuildStatus,
         "PersistenceInputIssue": PersistenceInputIssue,
         "PersistenceInputRecord": PersistenceInputRecord,
+        "POSTGRESQL_ISOLATED_SCHEMA_PREFIX": POSTGRESQL_ISOLATED_SCHEMA_PREFIX,
         "POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR": (
             POSTGRESQL_INTEGRATION_TEST_DSN_ENV_VAR
         ),
@@ -770,6 +837,7 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "POSTGRESQL_INTEGRATION_TEST_SKIP_REASON": (
             POSTGRESQL_INTEGRATION_TEST_SKIP_REASON
         ),
+        "POSTGRESQL_RESERVED_SCHEMA_NAMES": POSTGRESQL_RESERVED_SCHEMA_NAMES,
         "PersistenceIssue": PersistenceIssue,
         "PersistenceIssueSeverity": PersistenceIssueSeverity,
         "PersistenceRepository": PersistenceRepository,
@@ -915,6 +983,25 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLSchemaBootstrapTableStatus": (
             PostgreSQLSchemaBootstrapTableStatus
         ),
+        "PostgreSQLSchemaIsolationCleanupMode": (
+            PostgreSQLSchemaIsolationCleanupMode
+        ),
+        "PostgreSQLSchemaIsolationCleanupScope": (
+            PostgreSQLSchemaIsolationCleanupScope
+        ),
+        "PostgreSQLSchemaIsolationStrategy": PostgreSQLSchemaIsolationStrategy,
+        "PostgreSQLSchemaIsolationStrategyDescription": (
+            PostgreSQLSchemaIsolationStrategyDescription
+        ),
+        "PostgreSQLSchemaIsolationStrategyIssue": (
+            PostgreSQLSchemaIsolationStrategyIssue
+        ),
+        "PostgreSQLSchemaIsolationStrategyStatus": (
+            PostgreSQLSchemaIsolationStrategyStatus
+        ),
+        "PostgreSQLSchemaIsolationStrategyValidationResult": (
+            PostgreSQLSchemaIsolationStrategyValidationResult
+        ),
         "PostgreSQLStatementExecutionContract": PostgreSQLStatementExecutionContract,
         "PostgreSQLTransactionBoundary": PostgreSQLTransactionBoundary,
         "PostgreSQLTransactionFailurePolicy": (
@@ -975,6 +1062,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
             build_postgresql_repository_disabled_execution_preview
         ),
         "build_postgresql_transaction_plan": build_postgresql_transaction_plan,
+        "build_default_postgresql_schema_isolation_strategy": (
+            build_default_postgresql_schema_isolation_strategy
+        ),
         "create_persistence_result": create_persistence_result,
         "create_postgresql_connection_session_runtime_contract": (
             create_postgresql_connection_session_runtime_contract
@@ -1009,6 +1099,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "describe_postgresql_runtime_execution_gate": (
             describe_postgresql_runtime_execution_gate
         ),
+        "describe_postgresql_schema_isolation_strategy": (
+            describe_postgresql_schema_isolation_strategy
+        ),
         "describe_postgresql_transaction_policy_boundary": (
             describe_postgresql_transaction_policy_boundary
         ),
@@ -1036,6 +1129,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         ),
         "validate_postgresql_persistence_options": (
             validate_postgresql_persistence_options
+        ),
+        "validate_postgresql_schema_isolation_strategy": (
+            validate_postgresql_schema_isolation_strategy
         ),
         "validate_postgresql_statement_execution_contract": (
             validate_postgresql_statement_execution_contract
