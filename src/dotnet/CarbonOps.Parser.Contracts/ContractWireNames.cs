@@ -79,6 +79,21 @@ public static class ContractWireNames
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown DEFRA source discovery status."),
         };
 
+    public static string ToWireName(this IpccSourceDiscoveryMode value) =>
+        value switch
+        {
+            IpccSourceDiscoveryMode.RuntimePassive => "runtime_passive",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown IPCC source discovery mode."),
+        };
+
+    public static string ToWireName(this IpccSourceDiscoveryStatus value) =>
+        value switch
+        {
+            IpccSourceDiscoveryStatus.Declared => "declared",
+            IpccSourceDiscoveryStatus.Invalid => "invalid",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown IPCC source discovery status."),
+        };
+
     public static string ToWireName(this GhgSourceDownloadExecutionStatus value) =>
         value switch
         {
@@ -258,6 +273,33 @@ public static class ContractWireNames
         {
             "declared" => DefraSourceDiscoveryStatus.Declared,
             "invalid" => DefraSourceDiscoveryStatus.Invalid,
+            _ => default,
+        };
+
+        return wireName is "declared" or "invalid";
+    }
+
+    public static bool TryParseIpccSourceDiscoveryModeWireName(
+        string? wireName,
+        out IpccSourceDiscoveryMode value)
+    {
+        value = wireName switch
+        {
+            "runtime_passive" => IpccSourceDiscoveryMode.RuntimePassive,
+            _ => default,
+        };
+
+        return wireName is "runtime_passive";
+    }
+
+    public static bool TryParseIpccSourceDiscoveryStatusWireName(
+        string? wireName,
+        out IpccSourceDiscoveryStatus value)
+    {
+        value = wireName switch
+        {
+            "declared" => IpccSourceDiscoveryStatus.Declared,
+            "invalid" => IpccSourceDiscoveryStatus.Invalid,
             _ => default,
         };
 
