@@ -29,13 +29,17 @@ class FakeRunner:
         *,
         ready: Sequence[Issue] = (),
         in_progress: Sequence[Issue] = (),
+        open_issues: Sequence[Issue] = (),
         branch_exists: bool = False,
         changes: bool = True,
+        fail_commands: Sequence[tuple[str, ...]] = (),
     ) -> None:
         self.ready = tuple(ready)
         self.in_progress = tuple(in_progress)
+        self.open_issues = tuple(open_issues) or tuple(ready) + tuple(in_progress)
         self.branch_exists = branch_exists
         self.changes = changes
+        self.fail_commands = tuple(fail_commands)
         self.calls: list[tuple[tuple[str, ...], str | None, Path | None]] = []
 
     def __call__(
@@ -46,10 +50,15 @@ class FakeRunner:
     ) -> str:
         command_tuple = tuple(command)
         self.calls.append((command_tuple, stdin, cwd))
+        if command_tuple in self.fail_commands:
+            raise RunnerError(f"forced failure: {' '.join(command_tuple)}")
 
         if command_tuple[:3] == ("gh", "issue", "list"):
-            label = command_tuple[command_tuple.index("--label") + 1]
-            issues = self.in_progress if label == "status:in-progress" else self.ready
+            if "--label" in command_tuple:
+                label = command_tuple[command_tuple.index("--label") + 1]
+                issues = self.in_progress if label == "status:in-progress" else self.ready
+            else:
+                issues = self.open_issues
             return json.dumps(
                 [
                     {
@@ -57,9 +66,26 @@ class FakeRunner:
                         "title": issue.title,
                         "body": issue.body,
                         "labels": [{"name": label} for label in issue.labels],
+                        "state": issue.state,
                     }
                     for issue in issues
                 ]
+            )
+
+        if command_tuple[:3] == ("gh", "issue", "view"):
+            issue_number = int(command_tuple[3])
+            matches = [issue for issue in self.open_issues if issue.number == issue_number]
+            if not matches:
+                raise RunnerError(f"issue #{issue_number} not found")
+            issue = matches[0]
+            return json.dumps(
+                {
+                    "number": issue.number,
+                    "title": issue.title,
+                    "body": issue.body,
+                    "labels": [{"name": label} for label in issue.labels],
+                    "state": issue.state,
+                }
             )
 
         if "rev-parse" in command_tuple and "--verify" in command_tuple:
@@ -100,6 +126,10 @@ def make_args(tmp_path: Path, **overrides: object) -> argparse.Namespace:
         "run_once": True,
         "dry_run": False,
         "override_in_progress": False,
+        "issue_number": None,
+        "task_id": None,
+        "validation_mode": "minimal",
+        "python_bin": "python",
     }
     values.update(overrides)
     return argparse.Namespace(**values)
@@ -136,6 +166,46 @@ def test_override_allows_ready_issue_selection(tmp_path: Path) -> None:
         "--add-label",
         "status:in-progress",
     ) in commands(fake)
+
+
+def test_issue_number_selector_selects_exact_ready_issue(tmp_path: Path) -> None:
+    issue_444 = make_issue(number=444, title="[OPS-024] Earlier task")
+    issue_447 = make_issue(number=447, title="[OPS-025] Harden local runner")
+    fake = FakeRunner(ready=(issue_444, issue_447), open_issues=(issue_444, issue_447))
+
+    result = runner_module.execute(make_args(tmp_path, issue_number=447), fake)
+
+    assert result == 0
+    assert any(command[:4] == ("gh", "issue", "view", "447") for command in commands(fake))
+    assert any(
+        command[:4] == ("git", "-C", str(tmp_path / "agents" / "OPS-025"), "push")
+        for command in commands(fake)
+    )
+
+
+def test_task_id_selector_selects_matching_open_ready_issue(tmp_path: Path) -> None:
+    issue_444 = make_issue(number=444, title="[OPS-024] Earlier task")
+    issue_447 = make_issue(number=447, title="[OPS-025] Harden local runner")
+    fake = FakeRunner(ready=(issue_444, issue_447), open_issues=(issue_444, issue_447))
+
+    result = runner_module.execute(make_args(tmp_path, task_id="ops-025"), fake)
+
+    assert result == 0
+    assert any(command[:3] == ("gh", "issue", "list") and "--label" not in command for command in commands(fake))
+    assert any(
+        command[:4] == ("git", "-C", str(tmp_path / "agents" / "OPS-025"), "push")
+        for command in commands(fake)
+    )
+
+
+def test_selected_issue_must_be_ready(tmp_path: Path) -> None:
+    issue = make_issue(number=447, title="[OPS-025] Harden local runner", labels=("priority:high",))
+    fake = FakeRunner(open_issues=(issue,))
+
+    with pytest.raises(RunnerError, match="not labeled status:ready"):
+        runner_module.execute(make_args(tmp_path, issue_number=447), fake)
+
+    assert not any(command[:3] == ("gh", "issue", "edit") for command in commands(fake))
 
 
 def test_dry_run_does_not_mutate_or_write_files(tmp_path: Path) -> None:
@@ -187,8 +257,8 @@ def test_command_planning_uses_expected_codex_validation_push_and_pr_commands(tm
     command_list = commands(fake)
     assert any(command[:4] == ("git", "-C", str(tmp_path / "source"), "worktree") for command in command_list)
     assert ("codex", "exec", "--sandbox", "workspace-write") in command_list
-    assert ("python", "-m", "pytest") in command_list
     assert any(command[-2:] == ("diff", "--check") for command in command_list)
+    assert ("python", "-m", "pytest") not in command_list
     assert any(
         command[:4] == ("git", "-C", str(tmp_path / "agents" / "OPS-024"), "push")
         for command in command_list
@@ -198,3 +268,90 @@ def test_command_planning_uses_expected_codex_validation_push_and_pr_commands(tm
         call for call in fake.calls if call[0] == ("codex", "exec", "--sandbox", "workspace-write")
     )
     assert "Issue: #444" in (codex_call[1] or "")
+
+
+def test_validation_mode_minimal_runs_only_git_diff_check(tmp_path: Path) -> None:
+    fake = FakeRunner(ready=(make_issue(),))
+
+    result = runner_module.execute(make_args(tmp_path, validation_mode="minimal"), fake)
+
+    assert result == 0
+    validation_commands = [
+        command
+        for command in commands(fake)
+        if command == ("python", "-m", "pytest")
+        or command == ("python", "scripts/check_public_safety.py")
+        or command[:2] == ("dotnet", "test")
+        or command[-2:] == ("diff", "--check")
+    ]
+    assert validation_commands == [("git", "-C", str(tmp_path / "agents" / "OPS-024"), "diff", "--check")]
+
+
+def test_python_bin_is_used_by_python_validation_mode(tmp_path: Path) -> None:
+    fake = FakeRunner(ready=(make_issue(),))
+    worktree = tmp_path / "agents" / "OPS-024"
+    (worktree / "scripts").mkdir(parents=True)
+    (worktree / "scripts" / "check_public_safety.py").write_text("print('ok')\n", encoding="utf-8")
+
+    result = runner_module.execute(
+        make_args(tmp_path, validation_mode="python", python_bin="/opt/custom/python"),
+        fake,
+    )
+
+    assert result == 0
+    assert ("/opt/custom/python", "-m", "pytest") in commands(fake)
+    assert ("/opt/custom/python", "scripts/check_public_safety.py") in commands(fake)
+
+
+def test_python_bin_is_used_by_ops_validation_mode(tmp_path: Path) -> None:
+    fake = FakeRunner(ready=(make_issue(),))
+    worktree = tmp_path / "agents" / "OPS-024"
+    (worktree / "tests").mkdir(parents=True)
+    (worktree / "tests" / "test_local_codex_task_runner.py").write_text("def test_ok(): pass\n", encoding="utf-8")
+
+    result = runner_module.execute(
+        make_args(tmp_path, validation_mode="ops", python_bin="/opt/custom/python"),
+        fake,
+    )
+
+    assert result == 0
+    assert (
+        "/opt/custom/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_local_codex_task_runner.py",
+    ) in commands(fake)
+
+
+def test_pr_body_footer_is_present_and_exact(tmp_path: Path) -> None:
+    fake = FakeRunner(ready=(make_issue(number=447, title="[OPS-025] Harden local runner"),))
+
+    result = runner_module.execute(make_args(tmp_path), fake)
+
+    assert result == 0
+    pr_call = next(call for call in fake.calls if call[0][:3] == ("gh", "pr", "create"))
+    body = pr_call[0][pr_call[0].index("--body") + 1]
+    assert body.endswith("Task-ID: OPS-025\nTask-Issue: #447")
+    assert body.splitlines()[-2:] == ["Task-ID: OPS-025", "Task-Issue: #447"]
+
+
+def test_validation_failure_does_not_commit_push_or_create_pr(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    issue = make_issue(number=447, title="[OPS-025] Harden local runner")
+    worktree = tmp_path / "agents" / "OPS-025"
+    failed_command = ("git", "-C", str(worktree), "diff", "--check")
+    fake = FakeRunner(ready=(issue,), fail_commands=(failed_command,))
+
+    with pytest.raises(runner_module.ValidationError):
+        runner_module.execute(make_args(tmp_path), fake)
+
+    command_list = commands(fake)
+    assert not any(command[:4] == ("git", "-C", str(worktree), "commit") for command in command_list)
+    assert not any(command[:4] == ("git", "-C", str(worktree), "push") for command in command_list)
+    assert not any(command[:3] == ("gh", "pr", "create") for command in command_list)
+    captured = capsys.readouterr()
+    assert "Issue number: #447" in captured.err
+    assert "Task ID: OPS-025" in captured.err
+    assert f"Branch: feature/ops-025-harden-local-runner" in captured.err
+    assert f"Worktree path: {worktree}" in captured.err
+    assert f"Failed command: {' '.join(failed_command)}" in captured.err

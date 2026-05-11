@@ -28,6 +28,7 @@ SAFE_SEGMENT_PATTERN = re.compile(r"[^a-z0-9]+")
 
 
 CommandRunner = Callable[[Sequence[str], str | None, Path | None], str]
+VALIDATION_MODES = ("minimal", "python", "dotnet", "ops", "full")
 
 
 @dataclass(frozen=True)
@@ -36,6 +37,7 @@ class Issue:
     title: str
     body: str
     labels: tuple[str, ...]
+    state: str = "OPEN"
 
 
 @dataclass(frozen=True)
@@ -51,6 +53,24 @@ class TaskPlan:
 
 class RunnerError(RuntimeError):
     """Raised for expected runner failures with clear user-facing messages."""
+
+
+class CommandError(RunnerError):
+    """Raised when a subprocess command fails."""
+
+    def __init__(self, command: Sequence[str], returncode: int, message: str) -> None:
+        self.command = tuple(command)
+        self.returncode = returncode
+        joined = " ".join(command)
+        super().__init__(f"Command failed ({returncode}): {joined}\n{message}")
+
+
+class ValidationError(RunnerError):
+    """Raised when validation fails after task claim."""
+
+    def __init__(self, command: Sequence[str], cause: RunnerError) -> None:
+        self.command = tuple(command)
+        super().__init__(str(cause))
 
 
 def run_command(
@@ -70,8 +90,7 @@ def run_command(
     )
     if completed.returncode != 0:
         message = completed.stderr.strip() or completed.stdout.strip()
-        joined = " ".join(command)
-        raise RunnerError(f"Command failed ({completed.returncode}): {joined}\n{message}")
+        raise CommandError(command, completed.returncode, message)
     return completed.stdout
 
 
@@ -87,6 +106,19 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--override-in-progress",
         action="store_true",
         help="Allow running when another open issue is status:in-progress.",
+    )
+    parser.add_argument("--issue-number", type=int, help="Select one exact open issue number.")
+    parser.add_argument("--task-id", help="Select the open issue whose extracted task id matches this value.")
+    parser.add_argument(
+        "--validation-mode",
+        choices=VALIDATION_MODES,
+        default="minimal",
+        help="Validation profile to run after Codex completes. Defaults to minimal.",
+    )
+    parser.add_argument(
+        "--python-bin",
+        default="python",
+        help="Python executable used by Python validation commands.",
     )
     return parser.parse_args(argv)
 
@@ -109,36 +141,97 @@ def parse_issue(raw_issue: dict[str, object]) -> Issue:
         title=str(raw_issue.get("title") or ""),
         body=str(raw_issue.get("body") or ""),
         labels=labels_from_gh(raw_issue.get("labels")),
+        state=str(raw_issue.get("state") or "OPEN"),
     )
 
 
-def list_issues(repo: str, label: str, runner: CommandRunner) -> tuple[Issue, ...]:
+def issue_list_command(repo: str, label: str | None = None) -> tuple[str, ...]:
+    command = [
+        "gh",
+        "issue",
+        "list",
+        "--repo",
+        repo,
+        "--state",
+        "open",
+    ]
+    if label is not None:
+        command.extend(("--label", label))
+    command.extend(("--json", "number,title,body,labels,state", "--limit", "200"))
+    return tuple(command)
+
+
+def list_issues(repo: str, label: str | None, runner: CommandRunner) -> tuple[Issue, ...]:
+    output = runner(issue_list_command(repo, label), None, None)
+    try:
+        raw_issues = json.loads(output)
+    except json.JSONDecodeError as exc:
+        selector = f" for label {label!r}" if label is not None else ""
+        raise RunnerError(f"gh issue list returned invalid JSON{selector}.") from exc
+    if not isinstance(raw_issues, list):
+        selector = f" for label {label!r}" if label is not None else ""
+        raise RunnerError(f"gh issue list returned unexpected JSON{selector}.")
+    return tuple(sorted((parse_issue(issue) for issue in raw_issues), key=lambda issue: issue.number))
+
+
+def get_issue(repo: str, issue_number: int, runner: CommandRunner) -> Issue:
     output = runner(
         (
             "gh",
             "issue",
-            "list",
+            "view",
+            str(issue_number),
             "--repo",
             repo,
-            "--state",
-            "open",
-            "--label",
-            label,
             "--json",
-            "number,title,body,labels",
-            "--limit",
-            "100",
+            "number,title,body,labels,state",
         ),
         None,
         None,
     )
     try:
-        raw_issues = json.loads(output)
+        raw_issue = json.loads(output)
     except json.JSONDecodeError as exc:
-        raise RunnerError(f"gh issue list returned invalid JSON for label {label!r}.") from exc
-    if not isinstance(raw_issues, list):
-        raise RunnerError(f"gh issue list returned unexpected JSON for label {label!r}.")
-    return tuple(sorted((parse_issue(issue) for issue in raw_issues), key=lambda issue: issue.number))
+        raise RunnerError(f"gh issue view returned invalid JSON for issue #{issue_number}.") from exc
+    if not isinstance(raw_issue, dict):
+        raise RunnerError(f"gh issue view returned unexpected JSON for issue #{issue_number}.")
+    issue = parse_issue(raw_issue)
+    if issue.state.upper() != "OPEN":
+        raise RunnerError(f"Selected issue #{issue.number} is not open.")
+    return issue
+
+
+def select_issue(args: argparse.Namespace, runner: CommandRunner) -> Issue:
+    if args.issue_number is not None and args.task_id:
+        raise RunnerError("Use only one explicit selector: --issue-number or --task-id.")
+
+    if args.issue_number is not None:
+        issue = get_issue(args.repo, args.issue_number, runner)
+    elif args.task_id:
+        requested_task_id = sanitize_task_id(args.task_id)
+        matches = [
+            issue
+            for issue in list_issues(args.repo, None, runner)
+            if extract_task_id(issue) == requested_task_id
+        ]
+        if not matches:
+            raise RunnerError(f"No open issue found for task id {requested_task_id}.")
+        if len(matches) > 1:
+            issue_list = ", ".join(f"#{issue.number}" for issue in matches)
+            raise RunnerError(f"Multiple open issues match task id {requested_task_id}: {issue_list}.")
+        issue = matches[0]
+    else:
+        ready = list_issues(args.repo, READY_LABEL, runner)
+        if not ready:
+            raise RunnerError(f"No open issues labeled {READY_LABEL} were found.")
+        issue = ready[0]
+
+    if READY_LABEL not in issue.labels:
+        raise RunnerError(
+            f"Selected issue #{issue.number} ({extract_task_id(issue)}) is not labeled {READY_LABEL}; "
+            "refusing to claim a non-ready task."
+        )
+    return issue
 
 
 def extract_task_id(issue: Issue) -> str:
@@ -283,11 +376,50 @@ def run_codex(plan: TaskPlan, prompt: str, runner: CommandRunner) -> None:
     runner(("codex", "exec", "--sandbox", "workspace-write"), prompt, plan.worktree_path)
 
 
-def run_validation(plan: TaskPlan, runner: CommandRunner) -> None:
-    print("Running validation: python -m pytest")
-    runner(("python", "-m", "pytest"), None, plan.worktree_path)
-    print("Running validation: git diff --check")
-    runner(("git", "-C", str(plan.worktree_path), "diff", "--check"), None, None)
+def validation_commands(plan: TaskPlan, mode: str, python_bin: str) -> tuple[tuple[str, ...], ...]:
+    diff_check = ("git", "-C", str(plan.worktree_path), "diff", "--check")
+    commands: list[tuple[str, ...]] = []
+
+    if mode in ("python", "full"):
+        commands.append((python_bin, "-m", "pytest"))
+        if (plan.worktree_path / "scripts" / "check_public_safety.py").exists():
+            commands.append((python_bin, "scripts/check_public_safety.py"))
+
+    if mode in ("dotnet", "full"):
+        sln_path = plan.worktree_path / "src" / "dotnet" / "CarbonOps.Parser.sln"
+        if sln_path.exists():
+            commands.append(("dotnet", "test", "src/dotnet/CarbonOps.Parser.sln", "--no-restore"))
+
+    if mode in ("ops", "full"):
+        test_path = plan.worktree_path / "tests" / "test_local_codex_task_runner.py"
+        if test_path.exists():
+            commands.append((python_bin, "-m", "pytest", "-q", "tests/test_local_codex_task_runner.py"))
+
+    commands.append(diff_check)
+    return tuple(commands)
+
+
+def run_validation(plan: TaskPlan, mode: str, python_bin: str, runner: CommandRunner) -> None:
+    for command in validation_commands(plan, mode, python_bin):
+        print(f"Running validation: {' '.join(command)}")
+        try:
+            runner(command, None, plan.worktree_path if command[0] != "git" else None)
+        except RunnerError as exc:
+            raise ValidationError(command, exc) from exc
+
+
+def print_validation_recovery(plan: TaskPlan, failed_command: Sequence[str]) -> None:
+    print("Validation failed after issue claim; leaving issue status unchanged.", file=sys.stderr)
+    print(f"Issue number: #{plan.issue.number}", file=sys.stderr)
+    print(f"Task ID: {plan.task_id}", file=sys.stderr)
+    print(f"Branch: {plan.branch}", file=sys.stderr)
+    print(f"Worktree path: {plan.worktree_path}", file=sys.stderr)
+    print(f"Failed command: {' '.join(failed_command)}", file=sys.stderr)
+    print("Suggested manual commands:", file=sys.stderr)
+    print(f"- cd {plan.worktree_path}", file=sys.stderr)
+    print(f"- {' '.join(failed_command)}", file=sys.stderr)
+    print("- fix validation failures", file=sys.stderr)
+    print("- git diff --check", file=sys.stderr)
 
 
 def has_changes(plan: TaskPlan, runner: CommandRunner) -> bool:
@@ -319,16 +451,17 @@ def push_branch(plan: TaskPlan, runner: CommandRunner) -> None:
     runner(("git", "-C", str(plan.worktree_path), "push", "-u", "origin", plan.branch), None, None)
 
 
-def create_pr(repo: str, plan: TaskPlan, runner: CommandRunner) -> str:
+def create_pr(repo: str, plan: TaskPlan, validation_mode: str, runner: CommandRunner) -> str:
+    validation_lines = [f"- validation-mode: {validation_mode}"]
+    footer = f"Task-ID: {plan.task_id}\nTask-Issue: #{plan.issue.number}"
     pr_body = "\n".join(
         (
             f"Implements {plan.task_id}.",
             "",
             "Validation:",
-            "- python -m pytest",
-            "- git diff --check",
+            *validation_lines,
             "",
-            f"Task-Issue: #{plan.issue.number}",
+            footer,
         )
     )
     output = runner(
@@ -368,11 +501,8 @@ def execute(args: argparse.Namespace, runner: CommandRunner = run_command) -> in
             "Use --override-in-progress to run anyway."
         )
 
-    ready = list_issues(args.repo, READY_LABEL, runner)
-    if not ready:
-        raise RunnerError(f"No open issues labeled {READY_LABEL} were found.")
-
-    plan = build_plan(ready[0], agents_root, args.base)
+    issue = select_issue(args, runner)
+    plan = build_plan(issue, agents_root, args.base)
     prompt = generate_prompt(plan, args.repo)
     print_plan(plan, args.repo)
 
@@ -382,8 +512,8 @@ def execute(args: argparse.Namespace, runner: CommandRunner = run_command) -> in
         print(f"- gh issue edit {plan.issue.number} --remove-label {READY_LABEL} --add-label {IN_PROGRESS_LABEL}")
         print(f"- git worktree add ... {plan.worktree_path} {plan.base}")
         print("- codex exec --sandbox workspace-write < prompt.md")
-        print("- python -m pytest")
-        print("- git diff --check")
+        for command in validation_commands(plan, args.validation_mode, args.python_bin):
+            print(f"- {' '.join(command)}")
         print(f"- git push -u origin {plan.branch}")
         print(f"- gh pr create --base {plan.base} --head {plan.branch}")
         return 0
@@ -392,12 +522,16 @@ def execute(args: argparse.Namespace, runner: CommandRunner = run_command) -> in
     prepare_worktree(source_root, plan, runner)
     write_prompt(plan, prompt)
     run_codex(plan, prompt, runner)
-    run_validation(plan, runner)
+    try:
+        run_validation(plan, args.validation_mode, args.python_bin, runner)
+    except ValidationError as exc:
+        print_validation_recovery(plan, exc.command)
+        raise
     commit_hash = commit_changes(plan, runner)
     if commit_hash is None:
         raise RunnerError("Codex completed but produced no changes to commit; stopping before push and PR creation.")
     push_branch(plan, runner)
-    pr_url = create_pr(args.repo, plan, runner)
+    pr_url = create_pr(args.repo, plan, args.validation_mode, runner)
     print(f"Committed: {commit_hash}")
     print(f"Pull request: {pr_url}")
     return 0
