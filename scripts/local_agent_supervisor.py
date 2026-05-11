@@ -424,6 +424,7 @@ def run_runner(command: Sequence[str], config: SupervisorConfig) -> Path:
             check=False,
         )
     if completed.returncode != 0:
+        print(f"Supervisor: {runner_name} failed with exit code {completed.returncode}; log: {log_path}")
         raise SupervisorError(f"{runner_name} failed with exit code {completed.returncode}; log: {log_path}")
     return log_path
 
@@ -439,15 +440,16 @@ def execute(args: argparse.Namespace, runner: CommandRunner = run_command) -> in
             print(f"Supervisor: lock already held at {lock_path}; exiting.")
             return 0
 
-        print(f"Supervisor: scanning {config.repo}.")
+        print(f"Supervisor: cycle start; scanning {config.repo}.")
         if source_root_is_dirty(config.source_root.expanduser(), runner):
+            print(f"Supervisor: source root is dirty; no dispatch: {config.source_root.expanduser()}")
             raise SupervisorError(f"Source root has uncommitted changes: {config.source_root.expanduser()}")
 
         fast_forward_base_if_possible(config.source_root.expanduser(), config.base, runner)
 
         pr = select_pr_for_fix(config.repo, runner)
         if pr is not None:
-            print(f"Supervisor: selected PR #{pr.number} {pr.title}")
+            print(f"Supervisor: selected PR fix dispatch: #{pr.number} {pr.title}")
             command = pr_fix_runner_command(config, pr.number)
             if args.dry_run:
                 print("Supervisor: dry run; runner was not invoked.")
@@ -459,18 +461,20 @@ def execute(args: argparse.Namespace, runner: CommandRunner = run_command) -> in
             return 0
 
         in_progress = list_issues(config.repo, IN_PROGRESS_LABEL, runner)
+        print(f"Supervisor: in-progress issue count: {len(in_progress)}")
         if in_progress:
             issue_list = ", ".join(f"#{issue.number} {issue.title}" for issue in in_progress)
             print(f"Supervisor: found in-progress issue(s); no dispatch: {issue_list}")
             return 0
 
         ready = list_issues(config.repo, READY_LABEL, runner)
+        print(f"Supervisor: ready issue count: {len(ready)}")
         if not ready:
-            print("Supervisor: no ready issues found; no dispatch.")
+            print("Supervisor: no-op; no ready issues found.")
             return 0
 
         selected = ready[0]
-        print(f"Supervisor: selected issue #{selected.number} {selected.title}")
+        print(f"Supervisor: selected issue dispatch: #{selected.number} {selected.title}")
         command = runner_command(config, selected.number)
         if args.dry_run:
             print("Supervisor: dry run; runner was not invoked.")

@@ -4,6 +4,7 @@ set -euo pipefail
 DEFAULT_LABEL="local.carbonops.agent.supervisor"
 DEFAULT_INTERVAL_SECONDS="600"
 DEFAULT_SAFE_LOG_DIR="${HOME}/FutureOps/Agents/CarbonOps-Parser/.logs"
+DEFAULT_LAUNCHD_PATH="/Users/oxygen/.npm-global/bin:/usr/local/bin:/usr/local/opt/python@3.12/libexec/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 PLIST_PYTHON="${PLIST_PYTHON:-/usr/bin/python3}"
 
 usage() {
@@ -168,15 +169,19 @@ render_plist() {
     "$config_path" \
     "$interval_seconds" \
     "$stdout_path" \
-    "$stderr_path" <<'PY'
+    "$stderr_path" \
+    "$DEFAULT_LAUNCHD_PATH" <<'PY'
 from __future__ import annotations
 
 import plistlib
 import sys
 
-label, python_bin, supervisor_path, config_path, interval, stdout_path, stderr_path = sys.argv[1:]
+label, python_bin, supervisor_path, config_path, interval, stdout_path, stderr_path, launchd_path = sys.argv[1:]
 plist = {
     "Label": label,
+    "EnvironmentVariables": {
+        "PATH": launchd_path,
+    },
     "ProgramArguments": [
         python_bin,
         supervisor_path,

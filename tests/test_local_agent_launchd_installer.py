@@ -77,6 +77,9 @@ def test_install_dry_run_renders_default_launchd_plist(tmp_path: Path) -> None:
     ]
     assert plist["StandardOutPath"] == str(tmp_path / "agent-logs" / "local-agent-supervisor.launchd.out.log")
     assert plist["StandardErrorPath"] == str(tmp_path / "agent-logs" / "local-agent-supervisor.launchd.err.log")
+    assert plist["EnvironmentVariables"] == {
+        "PATH": "/Users/oxygen/.npm-global/bin:/usr/local/bin:/usr/local/opt/python@3.12/libexec/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    }
     assert "Would run: launchctl bootstrap" in result.stdout
     assert not (tmp_path / "Library" / "LaunchAgents").exists()
 
