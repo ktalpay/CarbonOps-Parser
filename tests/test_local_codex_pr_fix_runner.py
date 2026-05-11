@@ -256,3 +256,22 @@ def test_no_changes_comments_without_push(tmp_path: Path) -> None:
     assert result == 0
     assert not any(command[:4] == ("git", "-C", str(tmp_path / "agents" / "PR-33"), "push") for command in commands(fake))
     assert "no commit or push was needed" in comments(fake)[0]
+
+def test_explicit_pr_number_without_fix_request_is_refused(tmp_path: Path) -> None:
+    fake = FakeRunner(prs=(make_pr(34, labels=(), comments=()),))
+
+    with pytest.raises(RunnerError, match="does not have label"):
+        runner_module.execute(make_args(tmp_path, pr_number=34), fake)
+
+    assert not any(
+        command == ("codex", "exec", "--sandbox", "workspace-write")
+        for command in commands(fake)
+    )
+    assert not any(
+        command[:4] == ("git", "-C", str(tmp_path / "agents" / "PR-34"), "push")
+        for command in commands(fake)
+    )
+    assert not any(
+        command[:3] == ("gh", "pr", "comment")
+        for command in commands(fake)
+    )

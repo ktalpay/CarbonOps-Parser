@@ -217,7 +217,13 @@ def ensure_open_unmerged(pr: PullRequest) -> None:
 
 def select_pr(args: argparse.Namespace, runner: CommandRunner) -> PullRequest:
     if args.pr_number is not None:
-        return get_pr(args.repo, args.pr_number, runner)
+        pr = get_pr(args.repo, args.pr_number, runner)
+        if not is_fix_requested(pr):
+            raise RunnerError(
+                f"PR #{pr.number} does not have label {CHANGES_REQUESTED_LABEL!r} "
+                f"or comment token {FIX_REQUEST_TOKEN!r}; refusing to apply local-agent fixes."
+            )
+        return pr
 
     candidates = []
     for pr in list_open_prs(args.repo, runner):
