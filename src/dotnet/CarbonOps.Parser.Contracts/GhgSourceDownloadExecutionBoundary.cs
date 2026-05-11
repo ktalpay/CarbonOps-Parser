@@ -363,6 +363,14 @@ public static class GhgSourceDownloadExecutionBoundary
                 "artifact"));
         }
 
+        if (result.Status != GhgSourceDownloadExecutionStatus.Downloaded && result.Issues.Count == 0)
+        {
+            issues.Add(new GhgSourceDownloadExecutionIssue(
+                "GHG_SOURCE_DOWNLOAD_RESULT_MISSING_ISSUES",
+                "blocked or failed results require issue metadata.",
+                "issues"));
+        }
+
         return new GhgSourceDownloadExecutionValidationResult(issues);
     }
 
@@ -560,10 +568,33 @@ public static class GhgSourceDownloadExecutionBoundary
 
         if (!Uri.TryCreate(request.SourceReferenceUri, UriKind.Absolute, out var uri))
         {
+            issues.Add(new GhgSourceDownloadExecutionIssue(
+                request.SourceReferenceUri.Contains("://", StringComparison.Ordinal)
+                    ? "GHG_SOURCE_DOWNLOAD_MALFORMED_SOURCE_REFERENCE_URI"
+                    : "GHG_SOURCE_DOWNLOAD_SOURCE_REFERENCE_URI_MISSING_SCHEME",
+                request.SourceReferenceUri.Contains("://", StringComparison.Ordinal)
+                    ? "source_reference_uri must be a well-formed URI."
+                    : "source_reference_uri must include a URI scheme.",
+                "source_reference_uri"));
             return;
         }
 
-        if (uri.Scheme == Uri.UriSchemeHttps && !request.AllowNetwork)
+        if ((uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
+            && string.IsNullOrWhiteSpace(uri.Host))
+        {
+            issues.Add(new GhgSourceDownloadExecutionIssue(
+                "GHG_SOURCE_DOWNLOAD_MALFORMED_SOURCE_REFERENCE_URI",
+                "source_reference_uri must be a well-formed URI.",
+                "source_reference_uri"));
+        }
+        else if (uri.Scheme == "discovery")
+        {
+            issues.Add(new GhgSourceDownloadExecutionIssue(
+                "GHG_SOURCE_DOWNLOAD_DISCOVERY_REFERENCE_NOT_DOWNLOADABLE",
+                "discovery references are not direct download references.",
+                "source_reference_uri"));
+        }
+        else if (uri.Scheme == Uri.UriSchemeHttps && !request.AllowNetwork)
         {
             issues.Add(new GhgSourceDownloadExecutionIssue(
                 "GHG_SOURCE_DOWNLOAD_NETWORK_NOT_ALLOWED",

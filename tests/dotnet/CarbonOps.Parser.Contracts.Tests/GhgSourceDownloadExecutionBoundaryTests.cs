@@ -61,7 +61,7 @@ public sealed class GhgSourceDownloadExecutionBoundaryTests
         Assert.Equal(
             [
                 "GHG_SOURCE_DOWNLOAD_CANDIDATE_NOT_DOWNLOADABLE",
-                "GHG_SOURCE_DOWNLOAD_UNSAFE_SOURCE_REFERENCE_URI",
+                "GHG_SOURCE_DOWNLOAD_DISCOVERY_REFERENCE_NOT_DOWNLOADABLE",
             ],
             result.Issues.Select(issue => issue.Code));
         Assert.False(File.Exists(Path.Combine(temp.Path, "ghg/source.discovery")));
@@ -105,6 +105,9 @@ public sealed class GhgSourceDownloadExecutionBoundaryTests
     [InlineData("source_reference_uri", "http://example.invalid/ghg.pdf", "GHG_SOURCE_DOWNLOAD_INSECURE_HTTP_NOT_ALLOWED")]
     [InlineData("source_reference_uri", "file:///tmp/ghg.pdf", "GHG_SOURCE_DOWNLOAD_UNSAFE_SOURCE_REFERENCE_URI")]
     [InlineData("source_reference_uri", "s3://bucket/ghg.pdf", "GHG_SOURCE_DOWNLOAD_UNSAFE_SOURCE_REFERENCE_URI")]
+    [InlineData("source_reference_uri", "ghg/corporate-standard.pdf", "GHG_SOURCE_DOWNLOAD_SOURCE_REFERENCE_URI_MISSING_SCHEME")]
+    [InlineData("source_reference_uri", "://ghg/corporate-standard.pdf", "GHG_SOURCE_DOWNLOAD_MALFORMED_SOURCE_REFERENCE_URI")]
+    [InlineData("source_reference_uri", "https:///ghg.pdf", "GHG_SOURCE_DOWNLOAD_MALFORMED_SOURCE_REFERENCE_URI")]
     [InlineData("target_root", "relative/root", "GHG_SOURCE_DOWNLOAD_TARGET_ROOT_NOT_ABSOLUTE")]
     [InlineData("target_relative_path", "../outside.pdf", "GHG_SOURCE_DOWNLOAD_TARGET_RELATIVE_PATH_UNSAFE")]
     [InlineData("target_relative_path", "/absolute.pdf", "GHG_SOURCE_DOWNLOAD_TARGET_RELATIVE_PATH_ABSOLUTE")]
@@ -213,6 +216,38 @@ public sealed class GhgSourceDownloadExecutionBoundaryTests
     }
 
     [Fact]
+    public void ParentSymlinkSwapDuringTransportCannotEscapeTargetRoot()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        using var temp = new TemporaryDirectory();
+        var targetRoot = Path.Combine(temp.Path, "target-root");
+        var outside = Path.Combine(temp.Path, "outside");
+        var targetParent = Path.Combine(targetRoot, "ghg");
+        Directory.CreateDirectory(targetParent);
+        Directory.CreateDirectory(outside);
+        var request = ValidRequest(targetRoot) with { TargetRelativePath = "ghg/escape.pdf" };
+
+        var result = GhgSourceDownloadExecutionBoundary.Execute(
+            request,
+            _ =>
+            {
+                Directory.Delete(targetParent, recursive: true);
+                Directory.CreateSymbolicLink(targetParent, outside);
+                return new GhgSourceDownloadTransportResponse("escape"u8.ToArray());
+            });
+
+        Assert.NotEqual(GhgSourceDownloadExecutionStatus.Downloaded, result.Status);
+        Assert.False(result.Downloaded);
+        Assert.Null(result.Artifact);
+        Assert.False(File.Exists(Path.Combine(outside, "escape.pdf")));
+        Assert.True(Directory.Exists(targetParent));
+    }
+
+    [Fact]
     public void ChecksumMismatchFailsWithoutWritingFile()
     {
         using var temp = new TemporaryDirectory();
@@ -248,6 +283,38 @@ public sealed class GhgSourceDownloadExecutionBoundaryTests
     }
 
     [Fact]
+    public void TransportResponseValidationFailsClosed()
+    {
+        using var missing = new TemporaryDirectory();
+        using var missingContent = new TemporaryDirectory();
+        using var blankMetadata = new TemporaryDirectory();
+
+        var missingResponse = GhgSourceDownloadExecutionBoundary.Execute(
+            ValidRequest(missing.Path),
+            _ => null!);
+        var missingContentResponse = GhgSourceDownloadExecutionBoundary.Execute(
+            ValidRequest(missingContent.Path),
+            _ => new GhgSourceDownloadTransportResponse(null!));
+        var blankMetadataResponse = GhgSourceDownloadExecutionBoundary.Execute(
+            ValidRequest(blankMetadata.Path),
+            _ => new GhgSourceDownloadTransportResponse("content"u8.ToArray(), " ", " "));
+
+        Assert.Equal(GhgSourceDownloadExecutionStatus.Failed, missingResponse.Status);
+        Assert.Equal(["GHG_SOURCE_DOWNLOAD_RESPONSE_MISSING"], missingResponse.Issues.Select(issue => issue.Code));
+        Assert.Equal(GhgSourceDownloadExecutionStatus.Failed, missingContentResponse.Status);
+        Assert.Equal(
+            ["GHG_SOURCE_DOWNLOAD_RESPONSE_MISSING_CONTENT"],
+            missingContentResponse.Issues.Select(issue => issue.Code));
+        Assert.Equal(GhgSourceDownloadExecutionStatus.Failed, blankMetadataResponse.Status);
+        Assert.Equal(
+            [
+                "GHG_SOURCE_DOWNLOAD_RESPONSE_BLANK_CONTENT_TYPE",
+                "GHG_SOURCE_DOWNLOAD_RESPONSE_BLANK_FINAL_URI",
+            ],
+            blankMetadataResponse.Issues.Select(issue => issue.Code));
+    }
+
+    [Fact]
     public void ResultValidationRejectsSideEffectFlags()
     {
         using var temp = new TemporaryDirectory();
@@ -269,6 +336,20 @@ public sealed class GhgSourceDownloadExecutionBoundaryTests
             ],
             validation.Issues.Select(issue => issue.Code));
         Assert.Equal(["no_database_writes", "no_sql"], validation.Issues.Select(issue => issue.FieldName));
+    }
+
+    [Theory]
+    [InlineData(GhgSourceDownloadExecutionStatus.Blocked)]
+    [InlineData(GhgSourceDownloadExecutionStatus.Failed)]
+    public void ResultValidationRejectsBlockedOrFailedResultsWithoutIssues(GhgSourceDownloadExecutionStatus status)
+    {
+        using var temp = new TemporaryDirectory();
+        var result = new GhgSourceDownloadExecutionResult(status, ValidRequest(temp.Path));
+
+        var validation = GhgSourceDownloadExecutionBoundary.Validate(result);
+
+        Assert.False(validation.IsValid);
+        Assert.Equal(["GHG_SOURCE_DOWNLOAD_RESULT_MISSING_ISSUES"], validation.Issues.Select(issue => issue.Code));
     }
 
     [Fact]

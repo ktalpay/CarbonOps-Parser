@@ -542,9 +542,23 @@ def _validate_source_reference_uri(
     request: GHGSourceDownloadExecutionRequest,
     issues: list[GHGSourceDownloadExecutionIssue],
 ) -> None:
-    parsed = urlparse(request.source_reference_uri)
+    if not isinstance(request.source_reference_uri, str) or not (
+        source_reference_uri := request.source_reference_uri.strip()
+    ):
+        return
+
+    parsed = urlparse(source_reference_uri)
     scheme = parsed.scheme
     if not scheme:
+        if "://" in source_reference_uri:
+            issues.append(
+                GHGSourceDownloadExecutionIssue(
+                    code="GHG_SOURCE_DOWNLOAD_MALFORMED_SOURCE_REFERENCE_URI",
+                    message="source_reference_uri must be a well-formed URI.",
+                    field_name="source_reference_uri",
+                )
+            )
+            return
         issues.append(
             GHGSourceDownloadExecutionIssue(
                 code="GHG_SOURCE_DOWNLOAD_SOURCE_REFERENCE_URI_MISSING_SCHEME",
@@ -558,6 +572,15 @@ def _validate_source_reference_uri(
             GHGSourceDownloadExecutionIssue(
                 code="GHG_SOURCE_DOWNLOAD_DISCOVERY_REFERENCE_NOT_DOWNLOADABLE",
                 message="discovery references are not direct download references.",
+                field_name="source_reference_uri",
+            )
+        )
+        return
+    if scheme in {"http", "https"} and not parsed.netloc:
+        issues.append(
+            GHGSourceDownloadExecutionIssue(
+                code="GHG_SOURCE_DOWNLOAD_MALFORMED_SOURCE_REFERENCE_URI",
+                message="source_reference_uri must be a well-formed URI.",
                 field_name="source_reference_uri",
             )
         )
@@ -871,11 +894,30 @@ def _is_relative_to(path: Path, parent: Path) -> bool:
 
 
 def _validate_transport_response(
-    response: GHGSourceDownloadTransportResponse,
+    response: GHGSourceDownloadTransportResponse | object,
 ) -> GHGSourceDownloadExecutionValidationResult:
     issues: list[GHGSourceDownloadExecutionIssue] = []
+    if response is None:
+        return GHGSourceDownloadExecutionValidationResult(
+            issues=(
+                GHGSourceDownloadExecutionIssue(
+                    code="GHG_SOURCE_DOWNLOAD_RESPONSE_MISSING",
+                    message="transport response is required.",
+                    field_name="transport",
+                ),
+            )
+        )
+
     content = getattr(response, "content", None)
-    if not isinstance(content, bytes):
+    if content is None:
+        issues.append(
+            GHGSourceDownloadExecutionIssue(
+                code="GHG_SOURCE_DOWNLOAD_RESPONSE_MISSING_CONTENT",
+                message="transport response content is required.",
+                field_name="transport.content",
+            )
+        )
+    elif not isinstance(content, bytes):
         issues.append(
             GHGSourceDownloadExecutionIssue(
                 code="GHG_SOURCE_DOWNLOAD_RESPONSE_CONTENT_NOT_BYTES",
@@ -891,6 +933,21 @@ def _validate_transport_response(
                 field_name="transport.content",
             )
         )
+
+    _validate_optional_text(
+        getattr(response, "content_type", None),
+        "transport.content_type",
+        "GHG_SOURCE_DOWNLOAD_RESPONSE_BLANK_CONTENT_TYPE",
+        "response content_type must be non-empty when provided.",
+        issues,
+    )
+    _validate_optional_text(
+        getattr(response, "final_uri", None),
+        "transport.final_uri",
+        "GHG_SOURCE_DOWNLOAD_RESPONSE_BLANK_FINAL_URI",
+        "response final_uri must be non-empty when provided.",
+        issues,
+    )
 
     return GHGSourceDownloadExecutionValidationResult(issues=tuple(issues))
 
