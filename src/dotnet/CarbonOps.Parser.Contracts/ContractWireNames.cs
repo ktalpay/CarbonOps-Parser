@@ -64,6 +64,21 @@ public static class ContractWireNames
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown GHG source discovery status."),
         };
 
+    public static string ToWireName(this DefraSourceDiscoveryMode value) =>
+        value switch
+        {
+            DefraSourceDiscoveryMode.RuntimePassive => "runtime_passive",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown DEFRA source discovery mode."),
+        };
+
+    public static string ToWireName(this DefraSourceDiscoveryStatus value) =>
+        value switch
+        {
+            DefraSourceDiscoveryStatus.Declared => "declared",
+            DefraSourceDiscoveryStatus.Invalid => "invalid",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown DEFRA source discovery status."),
+        };
+
     public static string ToWireName(this GhgSourceDownloadExecutionStatus value) =>
         value switch
         {
@@ -204,6 +219,33 @@ public static class ContractWireNames
         {
             "declared" => GhgSourceDiscoveryStatus.Declared,
             "invalid" => GhgSourceDiscoveryStatus.Invalid,
+            _ => default,
+        };
+
+        return wireName is "declared" or "invalid";
+    }
+
+    public static bool TryParseDefraSourceDiscoveryModeWireName(
+        string? wireName,
+        out DefraSourceDiscoveryMode value)
+    {
+        value = wireName switch
+        {
+            "runtime_passive" => DefraSourceDiscoveryMode.RuntimePassive,
+            _ => default,
+        };
+
+        return wireName is "runtime_passive";
+    }
+
+    public static bool TryParseDefraSourceDiscoveryStatusWireName(
+        string? wireName,
+        out DefraSourceDiscoveryStatus value)
+    {
+        value = wireName switch
+        {
+            "declared" => DefraSourceDiscoveryStatus.Declared,
+            "invalid" => DefraSourceDiscoveryStatus.Invalid,
             _ => default,
         };
 
