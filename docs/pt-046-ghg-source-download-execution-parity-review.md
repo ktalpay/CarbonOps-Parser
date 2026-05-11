@@ -27,11 +27,19 @@ Reviewed files:
 
 This review did not add runtime database execution, production credentials,
 source-specific ingestion outside the existing GHG boundary, parser coupling,
-scheduler behavior, destructive database operations, or source/test changes.
+scheduler behavior, destructive database operations, or new source acquisition
+runtime behavior.
+
+## Post-OPS-032 Status
+
+The original PT-046 review found blocking parity drift. OPS-032 / PR #512 was
+merged to address that drift in the Python and .NET GHG source download
+execution boundaries and focused tests.
+
+After OPS-032, no remaining blocking parity mismatch was found for the current
+runtime-passive GHG source download execution contract.
 
 ## Parity Findings
-
-Blocking parity mismatches were found.
 
 ### Behavior And Contracts
 
@@ -73,7 +81,7 @@ The request fields align by intent:
 | Forbidden side-effect flags | `allow_parse`, `allow_database_writes`, `allow_scheduler` | `AllowParse`, `AllowDatabaseWrites`, `AllowScheduler` |
 | Optional metadata | `content_type`, `extension`, `expected_checksum_sha256`, `document_year`, `reporting_year`, `version_label` | `ContentType`, `Extension`, `ExpectedChecksumSha256`, `DocumentYear`, `ReportingYear`, `VersionLabel` |
 
-The result and artifact fields also align by intent:
+The result and artifact fields align by intent:
 
 | Concept | Python | .NET |
 | --- | --- | --- |
@@ -100,9 +108,15 @@ The primary transition model is aligned:
 - invalid requests return `blocked` without invoking transport
 - unsafe target paths return `blocked`
 - transport exceptions return `failed`
+- missing transport responses return `failed`
+- missing transport content returns `failed`
+- non-byte transport content is rejected in Python and unrepresentable through
+  the .NET `byte[]` contract except through null-content validation
+- blank transport metadata is rejected consistently
 - empty transport content returns `failed`
 - checksum mismatch returns `failed` before writing a file
 - successful writes return `downloaded` with artifact metadata
+- blocked and failed result validation requires diagnostic issue metadata
 - successful results expose no issues and preserve side-effect guard flags
 
 Both implementations block existing targets when overwrite is not explicitly
@@ -112,7 +126,8 @@ stay under an absolute target root.
 
 ### Error Semantics
 
-Most validation issue codes are aligned:
+Validation issue codes are aligned for the shared observable contract,
+including:
 
 - `GHG_SOURCE_DOWNLOAD_MISSING_SOURCE_KEY`
 - `GHG_SOURCE_DOWNLOAD_MISSING_CANDIDATE_ID`
@@ -124,6 +139,7 @@ Most validation issue codes are aligned:
 - `GHG_SOURCE_DOWNLOAD_SOURCE_FAMILY_MISMATCH`
 - `GHG_SOURCE_DOWNLOAD_SOURCE_KEY_MISMATCH`
 - `GHG_SOURCE_DOWNLOAD_CANDIDATE_NOT_DOWNLOADABLE`
+- `GHG_SOURCE_DOWNLOAD_DISCOVERY_REFERENCE_NOT_DOWNLOADABLE`
 - `GHG_SOURCE_DOWNLOAD_EXECUTION_NOT_ALLOWED`
 - `GHG_SOURCE_DOWNLOAD_FILE_WRITE_NOT_ALLOWED`
 - `GHG_SOURCE_DOWNLOAD_PARSE_NOT_ALLOWED`
@@ -132,6 +148,8 @@ Most validation issue codes are aligned:
 - `GHG_SOURCE_DOWNLOAD_NETWORK_NOT_ALLOWED`
 - `GHG_SOURCE_DOWNLOAD_INSECURE_HTTP_NOT_ALLOWED`
 - `GHG_SOURCE_DOWNLOAD_UNSAFE_SOURCE_REFERENCE_URI`
+- `GHG_SOURCE_DOWNLOAD_SOURCE_REFERENCE_URI_MISSING_SCHEME`
+- `GHG_SOURCE_DOWNLOAD_MALFORMED_SOURCE_REFERENCE_URI`
 - `GHG_SOURCE_DOWNLOAD_TARGET_ROOT_NOT_ABSOLUTE`
 - `GHG_SOURCE_DOWNLOAD_TARGET_RELATIVE_PATH_ABSOLUTE`
 - `GHG_SOURCE_DOWNLOAD_TARGET_RELATIVE_PATH_URI`
@@ -139,23 +157,21 @@ Most validation issue codes are aligned:
 - `GHG_SOURCE_DOWNLOAD_TARGET_SYMLINK_UNSAFE`
 - `GHG_SOURCE_DOWNLOAD_TARGET_EXISTS`
 - `GHG_SOURCE_DOWNLOAD_TRANSPORT_FAILED`
+- `GHG_SOURCE_DOWNLOAD_RESPONSE_MISSING`
+- `GHG_SOURCE_DOWNLOAD_RESPONSE_MISSING_CONTENT`
 - `GHG_SOURCE_DOWNLOAD_RESPONSE_EMPTY_CONTENT`
+- `GHG_SOURCE_DOWNLOAD_RESPONSE_BLANK_CONTENT_TYPE`
+- `GHG_SOURCE_DOWNLOAD_RESPONSE_BLANK_FINAL_URI`
 - `GHG_SOURCE_DOWNLOAD_CHECKSUM_MISMATCH`
 - `GHG_SOURCE_DOWNLOAD_WRITE_FAILED`
 - `GHG_SOURCE_DOWNLOAD_RESULT_SIDE_EFFECT_FLAG_ENABLED`
 - `GHG_SOURCE_DOWNLOAD_RESULT_MISSING_ARTIFACT`
 - `GHG_SOURCE_DOWNLOAD_RESULT_UNEXPECTED_ARTIFACT`
+- `GHG_SOURCE_DOWNLOAD_RESULT_MISSING_ISSUES`
 
-However, the following differences are blocking for strict parity:
-
-| Area | Python behavior | .NET behavior | Risk |
-| --- | --- | --- | --- |
-| Discovery references | `discovery://` references receive `GHG_SOURCE_DOWNLOAD_DISCOVERY_REFERENCE_NOT_DOWNLOADABLE`. | `discovery://` references receive `GHG_SOURCE_DOWNLOAD_UNSAFE_SOURCE_REFERENCE_URI`. | Error handling and tests cannot assert the same reason code for the same default discovery candidate path. |
-| Result validation for blocked or failed results without issues | Rejects non-downloaded results with no issues using `GHG_SOURCE_DOWNLOAD_RESULT_MISSING_ISSUES`. | Does not require issues for blocked or failed results. | A .NET caller can construct a failed or blocked result with no diagnostic issue and still pass validation. |
-| Transport response content type | Rejects non-`bytes` content with `GHG_SOURCE_DOWNLOAD_RESPONSE_CONTENT_NOT_BYTES`. | Uses `byte[]`; null content is reported as `GHG_SOURCE_DOWNLOAD_RESPONSE_MISSING_CONTENT`. | The invalid transport-response path is not code-aligned for null or wrong-typed content. |
-| Transport response metadata | Does not validate blank response `content_type` or `final_uri`. | Rejects blank response metadata with `GHG_SOURCE_DOWNLOAD_RESPONSE_BLANK_CONTENT_TYPE` and `GHG_SOURCE_DOWNLOAD_RESPONSE_BLANK_FINAL_URI`. | Response metadata validation can diverge between runtimes. |
-| Source reference missing scheme | Reports `GHG_SOURCE_DOWNLOAD_SOURCE_REFERENCE_URI_MISSING_SCHEME`. | Leaves unparseable absolute URI strings to the generic required-text checks and does not emit a matching missing-scheme code. | Malformed but non-empty URI inputs can produce different diagnostics. |
-| Result status validation | Python enum typing does not include an explicit invalid-status result issue. | Emits `GHG_SOURCE_DOWNLOAD_RESULT_INVALID_STATUS` for undefined enum values. | Language-specific type-system handling differs; acceptable if documented, but not fully symmetric. |
+OPS-032 specifically addressed the prior blocking drift around discovery
+reference diagnostics, blocked/failed result diagnostics, transport response
+validation, blank response metadata validation, and malformed URI diagnostics.
 
 ### Target-Path Safety Semantics
 
@@ -163,18 +179,11 @@ Both implementations reject parent traversal, absolute relative paths, URI-like
 target paths, existing final symlinks, and existing target files unless
 overwrite is allowed.
 
-Python has stronger directory-relative write hardening:
-
-- opens the resolved parent directory with `O_NOFOLLOW`
-- writes using a directory file descriptor
-- rechecks the parent path against the open directory descriptor before writing
-- rejects platforms without the required safe directory flags
-
-.NET performs path containment and symlink checks before writing and repeats
-safe-target preparation after transport, but it does not use an equivalent
-directory descriptor mechanism. This is a runtime-hardening difference rather
-than a public shape mismatch, but it matters for behavior parity under
-concurrent path mutation.
+Python continues to use directory-relative write hardening with `O_NOFOLLOW`
+where platform support allows it. .NET performs containment and symlink checks
+before and after transport and now has focused coverage for parent symlink swap
+during transport. The runtime hardening mechanisms are language-specific, but
+the observable contract remains fail-closed for the covered escape scenarios.
 
 ## Validation Performed
 
@@ -187,29 +196,28 @@ concurrent path mutation.
 - Compared behavior, contracts, naming, schema alignment, state transitions,
   error semantics, side-effect guard flags, source identity, URI handling,
   target path safety, checksum failure behavior, overwrite behavior, and public
-  test coverage.
+  test coverage after OPS-032.
 
 ## Remaining Risks
 
-- The review identifies blocking parity drift but does not correct it because
-  PT-046 is a parity review and the issue does not authorize source/test
-  implementation changes.
-- The directory-relative write hardening difference may require a dedicated
-  implementation task if strict runtime behavior parity is required across
-  concurrent path mutation scenarios.
+- This review confirms parity for the current GHG source download execution
+  boundary only. It does not validate future source-specific ingestion,
+  parser execution, scheduler behavior, or runtime database writes.
+- Python and .NET use different platform mechanisms for target-path hardening;
+  the covered observable contract is aligned, but absolute implementation
+  equivalence is not expected across runtimes.
 - Cross-language drift remains possible if future GHG download execution
-  changes update one runtime without synchronized parity tests and review.
+  changes update one runtime without synchronized tests and parity review.
 
 ## Verdict
 
-Not merge-ready for parity-review acceptance if strict Python/.NET behavior and
-error-semantics parity is required.
+Merge-ready for parity-review scope.
 
-The Python and .NET GHG source download execution surfaces are aligned in
-overall contract shape, naming intent, status vocabulary, explicit opt-in flow,
-state transitions, and side-effect boundaries. They are not fully aligned for
-diagnostic issue codes, result validation requirements, transport-response
-metadata validation, malformed URI diagnostics, and target-path race hardening.
+The Python and .NET GHG source download execution surfaces are aligned for the
+current runtime-passive contract shape, naming intent, status vocabulary,
+explicit opt-in flow, state transitions, diagnostic issue semantics,
+transport-response validation, malformed URI diagnostics, and side-effect
+boundaries after OPS-032.
 
 Task-ID: PT-046
 
