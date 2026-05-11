@@ -172,6 +172,21 @@ def test_invalid_download_requests_fail_closed_before_transport(
             "DEFRA_SOURCE_DOWNLOAD_UNSAFE_SOURCE_REFERENCE_URI",
         ),
         (
+            "source_reference_uri",
+            "defra/conversion-factors.xlsx",
+            "DEFRA_SOURCE_DOWNLOAD_SOURCE_REFERENCE_URI_MISSING_SCHEME",
+        ),
+        (
+            "source_reference_uri",
+            "://defra/conversion-factors.xlsx",
+            "DEFRA_SOURCE_DOWNLOAD_MALFORMED_SOURCE_REFERENCE_URI",
+        ),
+        (
+            "source_reference_uri",
+            "https:///defra.xlsx",
+            "DEFRA_SOURCE_DOWNLOAD_MALFORMED_SOURCE_REFERENCE_URI",
+        ),
+        (
             "target_root",
             "relative/root",
             "DEFRA_SOURCE_DOWNLOAD_TARGET_ROOT_NOT_ABSOLUTE",
@@ -439,6 +454,43 @@ def test_transport_errors_and_empty_content_are_failed_results(
     )
 
 
+def test_transport_response_validation_fails_closed(tmp_path: Path) -> None:
+    missing_response = execute_defra_source_download(
+        _valid_request(tmp_path / "missing"),
+        lambda _: None,  # type: ignore[return-value]
+    )
+    missing_content_response = execute_defra_source_download(
+        _valid_request(tmp_path / "missing-content"),
+        lambda _: DEFRASourceDownloadTransportResponse(
+            content=None,  # type: ignore[arg-type]
+        ),
+    )
+    blank_metadata_response = execute_defra_source_download(
+        _valid_request(tmp_path / "blank-metadata"),
+        lambda _: DEFRASourceDownloadTransportResponse(
+            content=b"content",
+            content_type=" ",
+            final_uri=" ",
+        ),
+    )
+
+    assert missing_response.status is DEFRASourceDownloadExecutionStatus.FAILED
+    assert _issue_codes(missing_response.issues) == (
+        "DEFRA_SOURCE_DOWNLOAD_RESPONSE_MISSING",
+    )
+    assert (
+        missing_content_response.status is DEFRASourceDownloadExecutionStatus.FAILED
+    )
+    assert _issue_codes(missing_content_response.issues) == (
+        "DEFRA_SOURCE_DOWNLOAD_RESPONSE_MISSING_CONTENT",
+    )
+    assert blank_metadata_response.status is DEFRASourceDownloadExecutionStatus.FAILED
+    assert _issue_codes(blank_metadata_response.issues) == (
+        "DEFRA_SOURCE_DOWNLOAD_RESPONSE_BLANK_CONTENT_TYPE",
+        "DEFRA_SOURCE_DOWNLOAD_RESPONSE_BLANK_FINAL_URI",
+    )
+
+
 def test_download_execution_dataclasses_are_immutable(tmp_path: Path) -> None:
     request = _valid_request(tmp_path)
     result = execute_defra_source_download(
@@ -491,6 +543,27 @@ def test_result_validation_rejects_side_effect_flags(tmp_path: Path) -> None:
     assert tuple(issue.field_name for issue in validation.issues) == (
         "no_database_writes",
         "no_sql",
+    )
+
+
+def test_result_validation_rejects_invalid_status(tmp_path: Path) -> None:
+    result = DEFRASourceDownloadExecutionResult(
+        status="unknown",  # type: ignore[arg-type]
+        request=_valid_request(tmp_path),
+        issues=(
+            DEFRASourceDownloadExecutionIssue(
+                code="DEFRA_SOURCE_DOWNLOAD_TEST_ISSUE",
+                message="test issue.",
+                field_name="status",
+            ),
+        ),
+    )
+
+    validation = validate_defra_source_download_execution_result(result)
+
+    assert validation.is_valid is False
+    assert "DEFRA_SOURCE_DOWNLOAD_RESULT_INVALID_STATUS" in _issue_codes(
+        validation.issues
     )
 
 
