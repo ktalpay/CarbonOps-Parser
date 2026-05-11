@@ -392,3 +392,24 @@ def test_supervisor_invokes_runner_with_expected_args(
     assert command[command.index("--issue-number") + 1] == "451"
     assert command[command.index("--validation-mode") + 1] == "minimal"
     assert command[command.index("--python-bin") + 1] == "/custom/python"
+
+def test_pr_fix_runner_failure_stops_cycle_without_issue_dispatch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = write_config(tmp_path)
+    fake = FakeRunner(ready=(make_issue(451),), prs=(make_pr(12),))
+
+    def fail_run_runner(command: Sequence[str], config: object) -> Path:
+        assert "--pr-number" in command
+        raise SupervisorError("fix runner failed")
+
+    monkeypatch.setattr(supervisor, "run_runner", fail_run_runner)
+
+    with pytest.raises(SupervisorError, match="fix runner failed"):
+        supervisor.execute(make_args(config_path), fake)
+
+    assert not any(
+        command[:3] == ("gh", "issue", "list")
+        for command in commands(fake)
+    )
