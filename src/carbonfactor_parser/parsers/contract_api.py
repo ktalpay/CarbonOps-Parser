@@ -74,6 +74,15 @@ from carbonfactor_parser.parsers.parser_run_contract import (
     validate_parser_run_request,
     validate_parser_run_result,
 )
+from carbonfactor_parser.parsers.run_repository_contract import (
+    ParserRunRepository,
+    ParserRunRepositoryIssue,
+    ParserRunRepositoryPersistResult,
+    ParserRunRepositoryPersistStatus,
+    ParserRunRepositoryValidationResult,
+    create_parser_run_repository_persist_result,
+    validate_parser_run_repository_inputs,
+)
 from carbonfactor_parser.parsers.validation_issue_contract import (
     ParserValidationIssue,
     ParserValidationIssueCollection,
@@ -117,6 +126,11 @@ __all__ = (
     "ParserRunContractValidationIssue",
     "ParserRunContractValidationResult",
     "ParserRunRequest",
+    "ParserRunRepository",
+    "ParserRunRepositoryIssue",
+    "ParserRunRepositoryPersistResult",
+    "ParserRunRepositoryPersistStatus",
+    "ParserRunRepositoryValidationResult",
     "ParserRunResult",
     "ParserRunStatus",
     "ParserRunSummary",
@@ -130,6 +144,7 @@ __all__ = (
     "build_phase1_parser_adapter_readiness_report",
     "create_parser_normalized_output_batch",
     "create_parser_normalized_output_row",
+    "create_parser_run_repository_persist_result",
     "create_parser_run_request",
     "create_parser_run_result",
     "create_parser_validation_issue",
@@ -147,6 +162,7 @@ __all__ = (
     "validate_parser_input_artifact",
     "validate_parser_normalized_output_batch",
     "validate_parser_normalized_output_row",
+    "validate_parser_run_repository_inputs",
     "validate_parser_run_request",
     "validate_parser_run_result",
     "validate_parser_validation_issue",

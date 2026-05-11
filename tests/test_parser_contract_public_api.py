@@ -36,6 +36,11 @@ EXPECTED_CONTRACT_API_SYMBOLS = (
     "ParserRunContractValidationIssue",
     "ParserRunContractValidationResult",
     "ParserRunRequest",
+    "ParserRunRepository",
+    "ParserRunRepositoryIssue",
+    "ParserRunRepositoryPersistResult",
+    "ParserRunRepositoryPersistStatus",
+    "ParserRunRepositoryValidationResult",
     "ParserRunResult",
     "ParserRunStatus",
     "ParserRunSummary",
@@ -49,6 +54,7 @@ EXPECTED_CONTRACT_API_SYMBOLS = (
     "build_phase1_parser_adapter_readiness_report",
     "create_parser_normalized_output_batch",
     "create_parser_normalized_output_row",
+    "create_parser_run_repository_persist_result",
     "create_parser_run_request",
     "create_parser_run_result",
     "create_parser_validation_issue",
@@ -66,6 +72,7 @@ EXPECTED_CONTRACT_API_SYMBOLS = (
     "validate_parser_input_artifact",
     "validate_parser_normalized_output_batch",
     "validate_parser_normalized_output_row",
+    "validate_parser_run_repository_inputs",
     "validate_parser_run_request",
     "validate_parser_run_result",
     "validate_parser_validation_issue",
@@ -182,6 +189,7 @@ def test_parser_contract_api_does_not_export_internal_module_names() -> None:
     assert "normalized_output_row_contract" not in contract_api.__all__
     assert "validation_issue_contract" not in contract_api.__all__
     assert "parser_run_contract" not in contract_api.__all__
+    assert "run_repository_contract" not in contract_api.__all__
     assert "dry_run_boundary_contract" not in contract_api.__all__
     assert all(not name.startswith("_") for name in contract_api.__all__)
 
