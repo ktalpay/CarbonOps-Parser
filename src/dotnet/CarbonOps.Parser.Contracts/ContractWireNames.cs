@@ -91,6 +91,18 @@ public static class ContractWireNames
                 "Unknown GHG source download execution status."),
         };
 
+    public static string ToWireName(this DefraSourceDownloadExecutionStatus value) =>
+        value switch
+        {
+            DefraSourceDownloadExecutionStatus.Blocked => "blocked",
+            DefraSourceDownloadExecutionStatus.Downloaded => "downloaded",
+            DefraSourceDownloadExecutionStatus.Failed => "failed",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(value),
+                value,
+                "Unknown DEFRA source download execution status."),
+        };
+
     public static string ToWireName(this ParserSourceFormat value) =>
         value switch
         {
@@ -261,6 +273,21 @@ public static class ContractWireNames
             "blocked" => GhgSourceDownloadExecutionStatus.Blocked,
             "downloaded" => GhgSourceDownloadExecutionStatus.Downloaded,
             "failed" => GhgSourceDownloadExecutionStatus.Failed,
+            _ => default,
+        };
+
+        return wireName is "blocked" or "downloaded" or "failed";
+    }
+
+    public static bool TryParseDefraSourceDownloadExecutionStatusWireName(
+        string? wireName,
+        out DefraSourceDownloadExecutionStatus value)
+    {
+        value = wireName switch
+        {
+            "blocked" => DefraSourceDownloadExecutionStatus.Blocked,
+            "downloaded" => DefraSourceDownloadExecutionStatus.Downloaded,
+            "failed" => DefraSourceDownloadExecutionStatus.Failed,
             _ => default,
         };
 
