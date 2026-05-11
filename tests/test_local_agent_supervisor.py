@@ -200,6 +200,7 @@ def test_dry_run_does_not_invoke_runner(tmp_path: Path, monkeypatch: pytest.Monk
 def test_pr_fix_dispatch_runs_before_ready_issue_dispatch(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     config_path = write_config(tmp_path)
     fake = FakeRunner(ready=(make_issue(451),), prs=(make_pr(12),))
@@ -218,6 +219,9 @@ def test_pr_fix_dispatch_runs_before_ready_issue_dispatch(
     assert "--pr-number" in invoked[0]
     assert "--issue-number" not in invoked[0]
     assert not any(command[:3] == ("gh", "issue", "list") for command in commands(fake))
+    captured = capsys.readouterr()
+    assert "Supervisor: cycle start; scanning ktalpay/CarbonOps-Parser." in captured.out
+    assert "Supervisor: selected PR fix dispatch: #12 [OPS-12] PR 12" in captured.out
 
 
 def test_pr_fix_dry_run_does_not_invoke_runner(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -322,6 +326,7 @@ def test_dirty_source_root_refuses_dispatch(tmp_path: Path, monkeypatch: pytest.
 def test_in_progress_issue_guard_exits_without_dispatch(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     config_path = write_config(tmp_path)
     fake = FakeRunner(
@@ -334,9 +339,16 @@ def test_in_progress_issue_guard_exits_without_dispatch(
 
     assert result == 0
     assert not any(command[-2:] == ("--label", "status:ready") for command in commands(fake))
+    captured = capsys.readouterr()
+    assert "Supervisor: in-progress issue count: 1" in captured.out
+    assert "Supervisor: found in-progress issue(s); no dispatch:" in captured.out
 
 
-def test_no_ready_queue_exits_without_dispatch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_no_ready_queue_exits_without_dispatch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     config_path = write_config(tmp_path)
     fake = FakeRunner()
     monkeypatch.setattr(supervisor, "run_runner", lambda command, config: pytest.fail("runner should not run"))
@@ -344,9 +356,17 @@ def test_no_ready_queue_exits_without_dispatch(tmp_path: Path, monkeypatch: pyte
     result = supervisor.execute(make_args(config_path), fake)
 
     assert result == 0
+    captured = capsys.readouterr()
+    assert "Supervisor: in-progress issue count: 0" in captured.out
+    assert "Supervisor: ready issue count: 0" in captured.out
+    assert "Supervisor: no-op; no ready issues found." in captured.out
 
 
-def test_deterministic_ready_issue_selection(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_deterministic_ready_issue_selection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     config_path = write_config(tmp_path)
     fake = FakeRunner(ready=(make_issue(455), make_issue(451), make_issue(453)))
     invoked: list[tuple[str, ...]] = []
@@ -363,6 +383,9 @@ def test_deterministic_ready_issue_selection(tmp_path: Path, monkeypatch: pytest
     assert invoked
     command = invoked[0]
     assert command[command.index("--issue-number") + 1] == "451"
+    captured = capsys.readouterr()
+    assert "Supervisor: ready issue count: 3" in captured.out
+    assert "Supervisor: selected issue dispatch: #451 [OPS-451] Task 451" in captured.out
 
 
 def test_supervisor_invokes_runner_with_expected_args(

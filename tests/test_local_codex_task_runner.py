@@ -33,6 +33,8 @@ class FakeRunner:
         branch_exists: bool = False,
         changes: bool = True,
         fail_commands: Sequence[tuple[str, ...]] = (),
+        pr_create_errors: Sequence[str] = (),
+        existing_pr_url: str | None = None,
     ) -> None:
         self.ready = tuple(ready)
         self.in_progress = tuple(in_progress)
@@ -40,6 +42,8 @@ class FakeRunner:
         self.branch_exists = branch_exists
         self.changes = changes
         self.fail_commands = tuple(fail_commands)
+        self.pr_create_errors = list(pr_create_errors)
+        self.existing_pr_url = existing_pr_url
         self.calls: list[tuple[tuple[str, ...], str | None, Path | None]] = []
 
     def __call__(
@@ -103,7 +107,14 @@ class FakeRunner:
             return "deadbeef1234567890\n"
 
         if command_tuple[:3] == ("gh", "pr", "create"):
+            if self.pr_create_errors:
+                raise RunnerError(self.pr_create_errors.pop(0))
             return "https://github.com/ktalpay/CarbonOps-Parser/pull/445\n"
+
+        if command_tuple[:3] == ("gh", "pr", "list"):
+            if self.existing_pr_url is None:
+                return "[]"
+            return json.dumps([{"url": self.existing_pr_url}])
 
         return ""
 
@@ -334,6 +345,81 @@ def test_pr_body_footer_is_present_and_exact(tmp_path: Path) -> None:
     body = pr_call[0][pr_call[0].index("--body") + 1]
     assert body.endswith("Task-ID: OPS-025\nTask-Issue: #447")
     assert body.splitlines()[-2:] == ["Task-ID: OPS-025", "Task-Issue: #447"]
+
+
+def test_pr_creation_retries_transient_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake = FakeRunner(ready=(make_issue(),), pr_create_errors=("GraphQL: HTTP 504 Gateway Timeout",))
+    sleeps: list[float] = []
+    monkeypatch.setattr(runner_module.time, "sleep", sleeps.append)
+
+    result = runner_module.execute(make_args(tmp_path), fake)
+
+    assert result == 0
+    pr_create_calls = [command for command in commands(fake) if command[:3] == ("gh", "pr", "create")]
+    assert len(pr_create_calls) == 2
+    assert sleeps == [0.1]
+
+
+def test_existing_pr_detection_after_pr_create_timeout(tmp_path: Path) -> None:
+    existing_url = "https://github.com/ktalpay/CarbonOps-Parser/pull/487"
+    fake = FakeRunner(
+        ready=(make_issue(),),
+        pr_create_errors=("GraphQL: HTTP 504 Gateway Timeout",),
+        existing_pr_url=existing_url,
+    )
+
+    result = runner_module.execute(make_args(tmp_path), fake)
+
+    assert result == 0
+    pr_list_call = next(command for command in commands(fake) if command[:3] == ("gh", "pr", "list"))
+    assert "--head" in pr_list_call
+    assert pr_list_call[pr_list_call.index("--head") + 1] == "feature/ops-024-add-local-codex-one-shot-task-runner"
+    assert len([command for command in commands(fake) if command[:3] == ("gh", "pr", "create")]) == 1
+
+
+def test_recovery_report_after_repeated_pr_creation_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake = FakeRunner(
+        ready=(make_issue(number=487, title="[OPS-030] Add PR creation retry"),),
+        pr_create_errors=(
+            "GraphQL: HTTP 504 Gateway Timeout",
+            "temporary network failure",
+            "API Gateway timeout",
+        ),
+    )
+    monkeypatch.setattr(runner_module.time, "sleep", lambda seconds: None)
+
+    with pytest.raises(runner_module.PrCreationError):
+        runner_module.execute(make_args(tmp_path), fake)
+
+    captured = capsys.readouterr()
+    assert "PR creation failed after branch push" in captured.err
+    assert "Task ID: OPS-030" in captured.err
+    assert "Issue number: #487" in captured.err
+    assert "Branch: feature/ops-030-add-pr-creation-retry" in captured.err
+    assert "Commit hash: deadbeef1234567890" in captured.err
+    assert "Base branch: develop" in captured.err
+    assert "gh pr create" in captured.err
+    assert "--head feature/ops-030-add-pr-creation-retry" in captured.err
+    assert "GraphQL: HTTP 504 Gateway Timeout" in captured.err
+    assert len([command for command in commands(fake) if command[:3] == ("gh", "pr", "create")]) == 3
+
+
+def test_non_retryable_pr_creation_failure_remains_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake = FakeRunner(ready=(make_issue(),), pr_create_errors=("GraphQL: head ref must be a branch",))
+    monkeypatch.setattr(runner_module.time, "sleep", lambda seconds: pytest.fail("should not sleep"))
+
+    with pytest.raises(RunnerError, match="head ref must be a branch"):
+        runner_module.execute(make_args(tmp_path), fake)
+
+    assert len([command for command in commands(fake) if command[:3] == ("gh", "pr", "create")]) == 1
+    assert len([command for command in commands(fake) if command[:3] == ("gh", "pr", "list")]) == 1
 
 
 def test_validation_failure_does_not_commit_push_or_create_pr(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

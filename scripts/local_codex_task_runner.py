@@ -13,8 +13,10 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shlex
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Sequence
@@ -25,9 +27,18 @@ IN_PROGRESS_LABEL = "status:in-progress"
 TASK_ID_PATTERN = re.compile(r"\b([A-Za-z]+-\d+)\b")
 BRACKETED_TASK_PATTERN = re.compile(r"\[([A-Za-z]+-\d+)\]")
 SAFE_SEGMENT_PATTERN = re.compile(r"[^a-z0-9]+")
+PR_CREATE_MAX_ATTEMPTS = 3
+PR_CREATE_BACKOFF_SECONDS = (0.1, 0.2)
+RETRYABLE_PR_ERROR_PATTERN = re.compile(
+    r"\b(502|503|504|timeout|timed out|temporar(?:y|ily)|network|api gateway|bad gateway|"
+    r"gateway timeout|service unavailable|connection reset|connection refused|connection aborted|"
+    r"tls handshake timeout|i/o timeout)\b",
+    re.IGNORECASE,
+)
 
 
 CommandRunner = Callable[[Sequence[str], str | None, Path | None], str]
+SleepFn = Callable[[float], None]
 VALIDATION_MODES = ("minimal", "python", "dotnet", "ops", "full")
 
 
@@ -71,6 +82,10 @@ class ValidationError(RunnerError):
     def __init__(self, command: Sequence[str], cause: RunnerError) -> None:
         self.command = tuple(command)
         super().__init__(str(cause))
+
+
+class PrCreationError(RunnerError):
+    """Raised when PR creation fails after the branch was pushed."""
 
 
 def run_command(
@@ -451,10 +466,10 @@ def push_branch(plan: TaskPlan, runner: CommandRunner) -> None:
     runner(("git", "-C", str(plan.worktree_path), "push", "-u", "origin", plan.branch), None, None)
 
 
-def create_pr(repo: str, plan: TaskPlan, validation_mode: str, runner: CommandRunner) -> str:
+def build_pr_body(plan: TaskPlan, validation_mode: str) -> str:
     validation_lines = [f"- validation-mode: {validation_mode}"]
     footer = f"Task-ID: {plan.task_id}\nTask-Issue: #{plan.issue.number}"
-    pr_body = "\n".join(
+    return "\n".join(
         (
             f"Implements {plan.task_id}.",
             "",
@@ -464,26 +479,128 @@ def create_pr(repo: str, plan: TaskPlan, validation_mode: str, runner: CommandRu
             footer,
         )
     )
+
+
+def pr_create_command(repo: str, plan: TaskPlan, validation_mode: str) -> tuple[str, ...]:
+    return (
+        "gh",
+        "pr",
+        "create",
+        "--repo",
+        repo,
+        "--base",
+        plan.base,
+        "--head",
+        plan.branch,
+        "--title",
+        f"[{plan.task_id}] {plan.issue.title}",
+        "--body",
+        build_pr_body(plan, validation_mode),
+    )
+
+
+def manual_pr_create_command(repo: str, plan: TaskPlan, validation_mode: str) -> str:
+    return " ".join(shlex.quote(part) for part in pr_create_command(repo, plan, validation_mode))
+
+
+def existing_pr_url_for_branch(repo: str, branch: str, runner: CommandRunner) -> str | None:
     output = runner(
         (
             "gh",
             "pr",
-            "create",
+            "list",
             "--repo",
             repo,
-            "--base",
-            plan.base,
             "--head",
-            plan.branch,
-            "--title",
-            f"[{plan.task_id}] {plan.issue.title}",
-            "--body",
-            pr_body,
+            branch,
+            "--state",
+            "open",
+            "--json",
+            "url",
+            "--limit",
+            "1",
         ),
         None,
-        plan.worktree_path,
+        None,
     )
+    try:
+        raw_prs = json.loads(output)
+    except json.JSONDecodeError as exc:
+        raise RunnerError(f"gh pr list returned invalid JSON for head branch {branch!r}.") from exc
+    if not isinstance(raw_prs, list):
+        raise RunnerError(f"gh pr list returned unexpected JSON for head branch {branch!r}.")
+    for raw_pr in raw_prs:
+        if isinstance(raw_pr, dict) and isinstance(raw_pr.get("url"), str) and raw_pr["url"].strip():
+            return raw_pr["url"].strip()
+    return None
+
+
+def is_retryable_pr_create_error(error_text: str) -> bool:
+    return bool(RETRYABLE_PR_ERROR_PATTERN.search(error_text))
+
+
+def create_pr(repo: str, plan: TaskPlan, validation_mode: str, runner: CommandRunner) -> str:
+    output = runner(pr_create_command(repo, plan, validation_mode), None, plan.worktree_path)
     return output.strip()
+
+
+def create_pr_with_retry(
+    repo: str,
+    plan: TaskPlan,
+    validation_mode: str,
+    runner: CommandRunner,
+    *,
+    sleep: SleepFn | None = None,
+) -> str:
+    sleep_fn = sleep or time.sleep
+    original_error_text: str | None = None
+    attempts = 0
+    while attempts < PR_CREATE_MAX_ATTEMPTS:
+        attempts += 1
+        try:
+            return create_pr(repo, plan, validation_mode, runner)
+        except RunnerError as exc:
+            error_text = str(exc)
+            if original_error_text is None:
+                original_error_text = error_text
+
+            existing_url = existing_pr_url_for_branch(repo, plan.branch, runner)
+            if existing_url is not None:
+                print(f"PR already exists for branch {plan.branch}: {existing_url}")
+                return existing_url
+
+            if not is_retryable_pr_create_error(error_text):
+                raise
+            if attempts >= PR_CREATE_MAX_ATTEMPTS:
+                raise PrCreationError(original_error_text) from exc
+
+            backoff = PR_CREATE_BACKOFF_SECONDS[min(attempts - 1, len(PR_CREATE_BACKOFF_SECONDS) - 1)]
+            print(
+                f"PR creation failed with a retryable error; retrying "
+                f"({attempts + 1}/{PR_CREATE_MAX_ATTEMPTS}) after {backoff:.1f}s."
+            )
+            sleep_fn(backoff)
+
+    raise PrCreationError(original_error_text or "PR creation failed.")
+
+
+def print_pr_creation_recovery(
+    repo: str,
+    plan: TaskPlan,
+    validation_mode: str,
+    commit_hash: str | None,
+    original_error_text: str,
+) -> None:
+    print("PR creation failed after branch push; manual recovery is required.", file=sys.stderr)
+    print(f"Task ID: {plan.task_id}", file=sys.stderr)
+    print(f"Issue number: #{plan.issue.number}", file=sys.stderr)
+    print(f"Branch: {plan.branch}", file=sys.stderr)
+    print(f"Commit hash: {commit_hash or 'unknown'}", file=sys.stderr)
+    print(f"Base branch: {plan.base}", file=sys.stderr)
+    print("Manual gh pr create command:", file=sys.stderr)
+    print(manual_pr_create_command(repo, plan, validation_mode), file=sys.stderr)
+    print("Original error text:", file=sys.stderr)
+    print(original_error_text, file=sys.stderr)
 
 
 def execute(args: argparse.Namespace, runner: CommandRunner = run_command) -> int:
@@ -531,7 +648,11 @@ def execute(args: argparse.Namespace, runner: CommandRunner = run_command) -> in
     if commit_hash is None:
         raise RunnerError("Codex completed but produced no changes to commit; stopping before push and PR creation.")
     push_branch(plan, runner)
-    pr_url = create_pr(args.repo, plan, args.validation_mode, runner)
+    try:
+        pr_url = create_pr_with_retry(args.repo, plan, args.validation_mode, runner)
+    except PrCreationError as exc:
+        print_pr_creation_recovery(args.repo, plan, args.validation_mode, commit_hash, str(exc))
+        raise
     print(f"Committed: {commit_hash}")
     print(f"Pull request: {pr_url}")
     return 0
