@@ -22,6 +22,7 @@ from carbonfactor_parser.persistence import (
     repository,
     schema,
     source_document_repository,
+    source_family_repository,
 )
 from carbonfactor_parser.persistence import (
     PersistenceInput,
@@ -47,6 +48,13 @@ from carbonfactor_parser.persistence import (
     SourceDocumentRepositoryPersistResult,
     SourceDocumentRepositoryPersistStatus,
     SourceDocumentRepositoryValidationResult,
+    SourceFamilyDetailRecord,
+    SourceFamilyMasterRecord,
+    SourceFamilyRepository,
+    SourceFamilyRepositoryIssue,
+    SourceFamilyRepositoryPersistResult,
+    SourceFamilyRepositoryPersistStatus,
+    SourceFamilyRepositoryValidationResult,
     PsycopgPostgreSQLSessionAdapter,
     PsycopgPostgreSQLSessionAdapterBoundaryResult,
     PsycopgPostgreSQLSessionAdapterMetadata,
@@ -160,6 +168,7 @@ from carbonfactor_parser.persistence import (
     build_default_postgresql_schema_isolation_strategy,
     create_persistence_result,
     create_source_document_repository_persist_result,
+    create_source_family_repository_persist_result,
     create_postgresql_connection_session_runtime_contract,
     create_postgresql_integration_test_boundary,
     create_postgresql_persistence_options,
@@ -181,7 +190,9 @@ from carbonfactor_parser.persistence import (
     get_normalized_record_postgresql_schema,
     render_postgresql_ddl_preview,
     should_skip_postgresql_integration_tests,
+    source_family_repository_table_names,
     validate_source_document_repository_inputs,
+    validate_source_family_repository_inputs,
     validate_psycopg_session_adapter_boundary,
     validate_postgresql_connection_session_runtime_contract,
     validate_postgresql_persistence_options,
@@ -216,6 +227,13 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "SourceDocumentRepositoryPersistResult",
     "SourceDocumentRepositoryPersistStatus",
     "SourceDocumentRepositoryValidationResult",
+    "SourceFamilyDetailRecord",
+    "SourceFamilyMasterRecord",
+    "SourceFamilyRepository",
+    "SourceFamilyRepositoryIssue",
+    "SourceFamilyRepositoryPersistResult",
+    "SourceFamilyRepositoryPersistStatus",
+    "SourceFamilyRepositoryValidationResult",
     "PsycopgPostgreSQLSessionAdapter",
     "PsycopgPostgreSQLSessionAdapterBoundaryResult",
     "PsycopgPostgreSQLSessionAdapterMetadata",
@@ -329,6 +347,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "build_default_postgresql_schema_isolation_strategy",
     "create_persistence_result",
     "create_source_document_repository_persist_result",
+    "create_source_family_repository_persist_result",
     "create_postgresql_connection_session_runtime_contract",
     "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",
@@ -350,7 +369,9 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
     "should_skip_postgresql_integration_tests",
+    "source_family_repository_table_names",
     "validate_source_document_repository_inputs",
+    "validate_source_family_repository_inputs",
     "validate_psycopg_session_adapter_boundary",
     "validate_postgresql_connection_session_runtime_contract",
     "validate_postgresql_persistence_options",
@@ -407,6 +428,21 @@ EXPECTED_PUBLIC_EXPORTS = {
     ),
     "SourceDocumentRepositoryValidationResult": (
         source_document_repository.SourceDocumentRepositoryValidationResult
+    ),
+    "SourceFamilyDetailRecord": source_family_repository.SourceFamilyDetailRecord,
+    "SourceFamilyMasterRecord": source_family_repository.SourceFamilyMasterRecord,
+    "SourceFamilyRepository": source_family_repository.SourceFamilyRepository,
+    "SourceFamilyRepositoryIssue": (
+        source_family_repository.SourceFamilyRepositoryIssue
+    ),
+    "SourceFamilyRepositoryPersistResult": (
+        source_family_repository.SourceFamilyRepositoryPersistResult
+    ),
+    "SourceFamilyRepositoryPersistStatus": (
+        source_family_repository.SourceFamilyRepositoryPersistStatus
+    ),
+    "SourceFamilyRepositoryValidationResult": (
+        source_family_repository.SourceFamilyRepositoryValidationResult
     ),
     "PsycopgPostgreSQLSessionAdapter": (
         postgresql_psycopg_session_adapter.PsycopgPostgreSQLSessionAdapter
@@ -779,6 +815,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     "create_source_document_repository_persist_result": (
         source_document_repository.create_source_document_repository_persist_result
     ),
+    "create_source_family_repository_persist_result": (
+        source_family_repository.create_source_family_repository_persist_result
+    ),
     "create_postgresql_connection_session_runtime_contract": (
         postgresql_connection_session_contract
         .create_postgresql_connection_session_runtime_contract
@@ -853,8 +892,14 @@ EXPECTED_PUBLIC_EXPORTS = {
     "should_skip_postgresql_integration_tests": (
         integration_test_boundary.should_skip_postgresql_integration_tests
     ),
+    "source_family_repository_table_names": (
+        source_family_repository.source_family_repository_table_names
+    ),
     "validate_source_document_repository_inputs": (
         source_document_repository.validate_source_document_repository_inputs
+    ),
+    "validate_source_family_repository_inputs": (
+        source_family_repository.validate_source_family_repository_inputs
     ),
     "validate_psycopg_session_adapter_boundary": (
         postgresql_psycopg_session_adapter
@@ -925,6 +970,19 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         ),
         "SourceDocumentRepositoryValidationResult": (
             SourceDocumentRepositoryValidationResult
+        ),
+        "SourceFamilyDetailRecord": SourceFamilyDetailRecord,
+        "SourceFamilyMasterRecord": SourceFamilyMasterRecord,
+        "SourceFamilyRepository": SourceFamilyRepository,
+        "SourceFamilyRepositoryIssue": SourceFamilyRepositoryIssue,
+        "SourceFamilyRepositoryPersistResult": (
+            SourceFamilyRepositoryPersistResult
+        ),
+        "SourceFamilyRepositoryPersistStatus": (
+            SourceFamilyRepositoryPersistStatus
+        ),
+        "SourceFamilyRepositoryValidationResult": (
+            SourceFamilyRepositoryValidationResult
         ),
         "PsycopgPostgreSQLSessionAdapter": PsycopgPostgreSQLSessionAdapter,
         "PsycopgPostgreSQLSessionAdapterBoundaryResult": (
@@ -1157,6 +1215,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "create_source_document_repository_persist_result": (
             create_source_document_repository_persist_result
         ),
+        "create_source_family_repository_persist_result": (
+            create_source_family_repository_persist_result
+        ),
         "create_postgresql_connection_session_runtime_contract": (
             create_postgresql_connection_session_runtime_contract
         ),
@@ -1218,8 +1279,12 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "should_skip_postgresql_integration_tests": (
             should_skip_postgresql_integration_tests
         ),
+        "source_family_repository_table_names": source_family_repository_table_names,
         "validate_source_document_repository_inputs": (
             validate_source_document_repository_inputs
+        ),
+        "validate_source_family_repository_inputs": (
+            validate_source_family_repository_inputs
         ),
         "validate_psycopg_session_adapter_boundary": (
             validate_psycopg_session_adapter_boundary
