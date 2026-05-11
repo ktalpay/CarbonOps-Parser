@@ -23,304 +23,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: "Resolve PR metadata"
+      - name: "Check out repository"
+        uses: actions/checkout@v4
+
+      - name: "Resolve PR number"
         id: pr
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
           EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
-          EVENT_PR_MERGED: ${{ github.event.pull_request.merged }}
           INPUT_PR_NUMBER: ${{ inputs.pr_number }}
         run: |
           set -euo pipefail
 
           if [ "$EVENT_NAME" = "pull_request" ]; then
             PR_NUMBER="$EVENT_PR_NUMBER"
-            PR_MERGED="$EVENT_PR_MERGED"
           else
             PR_NUMBER="$INPUT_PR_NUMBER"
-            PR_MERGED="$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json mergedAt --jq '(.mergedAt // "") != ""')"
           fi
 
           echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
-          echo "pr_merged=$PR_MERGED" >> "$GITHUB_OUTPUT"
 
-          if [ "$PR_MERGED" != "true" ]; then
-            echo "PR #$PR_NUMBER is not merged. No action taken."
-            echo "should_process=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          PR_BODY="$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json body --jq '.body // ""')"
-
-          TASK_ID="$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[[:space:]]*Task-ID:[[:space:]]*([A-Za-z]+-[0-9A-Za-z-]+)[[:space:]]*$/\1/p' | tail -n 1)"
-          ISSUE_NUMBER="$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[[:space:]]*Task-Issue:[[:space:]]*#?([0-9]+)[[:space:]]*$/\1/ip' | tail -n 1)"
-
-          if [ -z "$TASK_ID" ]; then
-            echo "Missing Task-ID in PR #$PR_NUMBER body. No label changes applied."
-            echo "should_process=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if [ -z "$ISSUE_NUMBER" ]; then
-            echo "Missing Task-Issue metadata such as Task-Issue: #123 in PR #$PR_NUMBER body. No label changes applied."
-            echo "should_process=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "task_id=$TASK_ID" >> "$GITHUB_OUTPUT"
-          echo "issue_number=$ISSUE_NUMBER" >> "$GITHUB_OUTPUT"
-          echo "should_process=true" >> "$GITHUB_OUTPUT"
-
-      - name: "Mark issue as status merged"
+      - name: "Process merged task PR"
         id: mark_issue
-        if: steps.pr.outputs.should_process == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
-          TASK_ID: ${{ steps.pr.outputs.task_id }}
-          ISSUE_NUMBER: ${{ steps.pr.outputs.issue_number }}
         run: |
           set -euo pipefail
 
-          STATUS_LABELS=(
-            "status:blocked"
-            "status:ready"
-            "status:in-progress"
-            "status:in-review"
-            "status:needs-fix"
-            "status:merged"
-          )
-
-          ACTIVE_STATUS_LABELS=(
-            "status:blocked"
-            "status:ready"
-            "status:in-progress"
-            "status:in-review"
-            "status:needs-fix"
-          )
-
-          extract_field() {
-            local field_name="$1"
-            local body="$2"
-
-            printf '%s\n' "$body" | awk -v field="$field_name" '
-              {
-                line = $0
-                sub(/^[[:space:]]+/, "", line)
-                needle = field ":"
-
-                if (tolower(substr(line, 1, length(needle))) == tolower(needle)) {
-                  print substr(line, length(needle) + 1)
-                  exit
-                }
-              }
-            '
-          }
-
-          has_field() {
-            local field_name="$1"
-            local body="$2"
-
-            printf '%s\n' "$body" | awk -v field="$field_name" '
-              BEGIN {
-                found = 1
-              }
-
-              {
-                line = $0
-                sub(/^[[:space:]]+/, "", line)
-                needle = field ":"
-
-                if (tolower(substr(line, 1, length(needle))) == tolower(needle)) {
-                  found = 0
-                  exit
-                }
-              }
-
-              END {
-                exit found
-              }
-            '
-          }
-
-          parse_task_list() {
-            local raw_value="$1"
-
-            printf '%s\n' "$raw_value" |
-              tr ',' '\n' |
-              sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' |
-              awk '
-                {
-                  normalized = tolower($0)
-                }
-
-                $0 == "" {
-                  next
-                }
-
-                normalized == "none" || normalized == "n/a" || $0 == "-" {
-                  next
-                }
-
-                {
-                  print
-                }
-              '
-          }
-
-          find_issue_for_task() {
-            local task_id="$1"
-
-            gh issue list \
-              --repo "$REPOSITORY" \
-              --state all \
-              --search "$task_id in:title" \
-              --json number,title \
-              --limit 100 |
-              jq -r --arg prefix "[$task_id]" '
-                [.[] | select(.title | startswith($prefix))] |
-                if length == 1 then .[0].number else empty end
-              '
-          }
-
-          issue_has_label() {
-            local issue_number="$1"
-            local label="$2"
-
-            gh issue view "$issue_number" \
-              --repo "$REPOSITORY" \
-              --json labels |
-              jq -e --arg label "$label" 'any(.labels[].name; . == $label)' >/dev/null
-          }
-
-          for LABEL in "${STATUS_LABELS[@]}"; do
-            gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$LABEL" || true
-          done
-
-          gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --add-label "status:merged"
-
-          ISSUE_BODY="$(gh issue view "$ISSUE_NUMBER" --repo "$REPOSITORY" --json body --jq '.body // ""')"
-          UNBLOCKS_RAW="$(extract_field "Unblocks" "$ISSUE_BODY")"
-          mapfile -t UNBLOCKED_TASK_IDS < <(parse_task_list "$UNBLOCKS_RAW")
-
-          UPDATED_DEPENDENTS=()
-          BLOCKED_DEPENDENTS=()
-          SKIPPED_DEPENDENTS=()
-
-          for DEPENDENT_TASK_ID in "${UNBLOCKED_TASK_IDS[@]}"; do
-            DEPENDENT_ISSUE_NUMBER="$(find_issue_for_task "$DEPENDENT_TASK_ID")"
-
-            if [ -z "$DEPENDENT_ISSUE_NUMBER" ]; then
-              SKIPPED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\`: no unique issue title beginning with \`[$DEPENDENT_TASK_ID]\` was found.")
-              continue
-            fi
-
-            DEPENDENT_BODY="$(gh issue view "$DEPENDENT_ISSUE_NUMBER" --repo "$REPOSITORY" --json body --jq '.body // ""')"
-
-            if ! has_field "Depends on" "$DEPENDENT_BODY"; then
-              BLOCKED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) remains blocked; missing \`Depends on:\` metadata.")
-              continue
-            fi
-
-            DEPENDS_ON_RAW="$(extract_field "Depends on" "$DEPENDENT_BODY")"
-            mapfile -t DEPENDENCY_TASK_IDS < <(parse_task_list "$DEPENDS_ON_RAW")
-            MISSING_DEPENDENCIES=()
-
-            for DEPENDENCY_TASK_ID in "${DEPENDENCY_TASK_IDS[@]}"; do
-              DEPENDENCY_ISSUE_NUMBER="$(find_issue_for_task "$DEPENDENCY_TASK_ID")"
-
-              if [ -z "$DEPENDENCY_ISSUE_NUMBER" ]; then
-                MISSING_DEPENDENCIES+=("$DEPENDENCY_TASK_ID")
-                continue
-              fi
-
-              if ! issue_has_label "$DEPENDENCY_ISSUE_NUMBER" "status:merged"; then
-                MISSING_DEPENDENCIES+=("$DEPENDENCY_TASK_ID")
-              fi
-            done
-
-            if [ "${#MISSING_DEPENDENCIES[@]}" -gt 0 ]; then
-              MISSING_LIST="$(printf '`%s`, ' "${MISSING_DEPENDENCIES[@]}")"
-              MISSING_LIST="${MISSING_LIST%, }"
-              BLOCKED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) remains blocked; missing merged dependencies: $MISSING_LIST.")
-              continue
-            fi
-
-            if issue_has_label "$DEPENDENT_ISSUE_NUMBER" "status:merged"; then
-              SKIPPED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) is already \`status:merged\`; labels were left unchanged.")
-              continue
-            fi
-
-            if issue_has_label "$DEPENDENT_ISSUE_NUMBER" "status:ready"; then
-              SKIPPED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) is already \`status:ready\`; labels were left unchanged.")
-              continue
-            fi
-
-            if issue_has_label "$DEPENDENT_ISSUE_NUMBER" "status:in-progress"; then
-              SKIPPED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) is already \`status:in-progress\`; labels were left unchanged.")
-              continue
-            fi
-
-            if issue_has_label "$DEPENDENT_ISSUE_NUMBER" "status:in-review"; then
-              SKIPPED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) is already \`status:in-review\`; labels were left unchanged.")
-              continue
-            fi
-
-            if issue_has_label "$DEPENDENT_ISSUE_NUMBER" "status:needs-fix"; then
-              SKIPPED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) is already \`status:needs-fix\`; labels were left unchanged.")
-              continue
-            fi
-
-            for LABEL in "${ACTIVE_STATUS_LABELS[@]}"; do
-              gh issue edit "$DEPENDENT_ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$LABEL" || true
-            done
-
-            gh issue edit "$DEPENDENT_ISSUE_NUMBER" --repo "$REPOSITORY" --add-label "status:ready"
-
-            DEPENDENT_COMMENT_BODY="$(printf 'Agent Task Watcher marked this issue as `status:ready` because `%s` merged in PR #%s and all declared dependencies are `status:merged`.' "$TASK_ID" "$PR_NUMBER")"
-            gh issue comment "$DEPENDENT_ISSUE_NUMBER" --repo "$REPOSITORY" --body "$DEPENDENT_COMMENT_BODY"
-
-            UPDATED_DEPENDENTS+=("- \`$DEPENDENT_TASK_ID\` (#$DEPENDENT_ISSUE_NUMBER) marked \`status:ready\`.")
-          done
-
-          COMMENT_BODY="$(printf 'Agent Task Watcher marked this issue as `status:merged`.\n\nDetected task: `%s`\nMerged PR: #%s' "$TASK_ID" "$PR_NUMBER")"
-
-          if [ "${#UNBLOCKED_TASK_IDS[@]}" -eq 0 ]; then
-            COMMENT_BODY+=$'\n\nNo dependent tasks were declared in `Unblocks:`.'
-          else
-            COMMENT_BODY+=$'\n\nDependent task update summary:'
-
-            if [ "${#UPDATED_DEPENDENTS[@]}" -gt 0 ]; then
-              COMMENT_BODY+=$'\n\nMarked ready:\n'
-              for LINE in "${UPDATED_DEPENDENTS[@]}"; do
-                COMMENT_BODY+="$LINE"$'\n'
-              done
-            fi
-
-            if [ "${#BLOCKED_DEPENDENTS[@]}" -gt 0 ]; then
-              COMMENT_BODY+=$'\n\nStill blocked:\n'
-              for LINE in "${BLOCKED_DEPENDENTS[@]}"; do
-                COMMENT_BODY+="$LINE"$'\n'
-              done
-            fi
-
-            if [ "${#SKIPPED_DEPENDENTS[@]}" -gt 0 ]; then
-              COMMENT_BODY+=$'\n\nSkipped:\n'
-              for LINE in "${SKIPPED_DEPENDENTS[@]}"; do
-                COMMENT_BODY+="$LINE"$'\n'
-              done
-            fi
-          fi
-
-          gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "$COMMENT_BODY"
-
-          echo "ready_count=${#UPDATED_DEPENDENTS[@]}" >> "$GITHUB_OUTPUT"
+          OUTPUT="$(python scripts/agent_task_watcher.py --repo "$REPOSITORY" --pr-number "$PR_NUMBER")"
+          printf '%s\n' "$OUTPUT"
+          READY_COUNT="$(printf '%s\n' "$OUTPUT" | sed -nE 's/^.*; ([0-9]+) ready downstream update\(s\)\.$/\1/p' | tail -n 1)"
+          echo "ready_count=${READY_COUNT:-0}" >> "$GITHUB_OUTPUT"
 
       - name: "Trigger ready task dispatch claim"
-        if: steps.pr.outputs.should_process == 'true' && steps.mark_issue.outputs.ready_count != '0'
+        if: steps.mark_issue.outputs.ready_count != '0'
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
