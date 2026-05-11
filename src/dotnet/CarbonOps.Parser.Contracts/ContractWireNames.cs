@@ -49,6 +49,21 @@ public static class ContractWireNames
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown source discovery status."),
         };
 
+    public static string ToWireName(this GhgSourceDiscoveryMode value) =>
+        value switch
+        {
+            GhgSourceDiscoveryMode.RuntimePassive => "runtime_passive",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown GHG source discovery mode."),
+        };
+
+    public static string ToWireName(this GhgSourceDiscoveryStatus value) =>
+        value switch
+        {
+            GhgSourceDiscoveryStatus.Declared => "declared",
+            GhgSourceDiscoveryStatus.Invalid => "invalid",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown GHG source discovery status."),
+        };
+
     public static string ToWireName(this ParserSourceFormat value) =>
         value switch
         {
@@ -158,6 +173,29 @@ public static class ContractWireNames
         };
 
         return wireName is "declared";
+    }
+
+    public static bool TryParseGhgSourceDiscoveryModeWireName(string? wireName, out GhgSourceDiscoveryMode value)
+    {
+        value = wireName switch
+        {
+            "runtime_passive" => GhgSourceDiscoveryMode.RuntimePassive,
+            _ => default,
+        };
+
+        return wireName is "runtime_passive";
+    }
+
+    public static bool TryParseGhgSourceDiscoveryStatusWireName(string? wireName, out GhgSourceDiscoveryStatus value)
+    {
+        value = wireName switch
+        {
+            "declared" => GhgSourceDiscoveryStatus.Declared,
+            "invalid" => GhgSourceDiscoveryStatus.Invalid,
+            _ => default,
+        };
+
+        return wireName is "declared" or "invalid";
     }
 
     public static bool TryParseParserSourceFormatWireName(string? wireName, out ParserSourceFormat value)
