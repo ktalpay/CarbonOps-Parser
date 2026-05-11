@@ -20,6 +20,7 @@ SPEC.loader.exec_module(supervisor)
 
 
 Issue = supervisor.Issue
+PullRequest = supervisor.PullRequest
 SupervisorError = supervisor.SupervisorError
 
 
@@ -29,11 +30,13 @@ class FakeRunner:
         *,
         ready: Sequence[Issue] = (),
         in_progress: Sequence[Issue] = (),
+        prs: Sequence[PullRequest] = (),
         dirty: bool = False,
         fail_ff: bool = False,
     ) -> None:
         self.ready = tuple(ready)
         self.in_progress = tuple(in_progress)
+        self.prs = tuple(prs)
         self.dirty = dirty
         self.fail_ff = fail_ff
         self.calls: list[tuple[tuple[str, ...], str | None, Path | None]] = []
@@ -71,11 +74,40 @@ class FakeRunner:
                 ]
             )
 
+        if command_tuple[:3] == ("gh", "pr", "list"):
+            return json.dumps(
+                [
+                    {
+                        "number": pr.number,
+                        "title": pr.title,
+                        "labels": [{"name": label} for label in pr.labels],
+                        "state": pr.state,
+                        "merged": pr.merged,
+                        "comments": [{"body": comment} for comment in pr.comments],
+                    }
+                    for pr in self.prs
+                ]
+            )
+
         return ""
 
 
 def make_issue(number: int, title: str | None = None, label: str = "status:ready") -> Issue:
     return Issue(number=number, title=title or f"[OPS-{number}] Task {number}", labels=(label,))
+
+
+def make_pr(
+    number: int,
+    title: str | None = None,
+    labels: tuple[str, ...] = ("pr:changes-requested",),
+    comments: tuple[str, ...] = (),
+) -> PullRequest:
+    return PullRequest(
+        number=number,
+        title=title or f"[OPS-{number}] PR {number}",
+        labels=labels,
+        comments=comments,
+    )
 
 
 def write_config(tmp_path: Path, **overrides: object) -> Path:
@@ -106,6 +138,40 @@ def commands(fake: FakeRunner) -> list[tuple[str, ...]]:
     return [call[0] for call in fake.calls]
 
 
+def expected_pr_list_command() -> tuple[str, ...]:
+    return (
+        "gh",
+        "pr",
+        "list",
+        "--repo",
+        "ktalpay/CarbonOps-Parser",
+        "--state",
+        "open",
+        "--json",
+        "number,title,labels,state,mergedAt,comments",
+        "--limit",
+        "100",
+    )
+
+
+def expected_in_progress_issue_list_command() -> tuple[str, ...]:
+    return (
+        "gh",
+        "issue",
+        "list",
+        "--repo",
+        "ktalpay/CarbonOps-Parser",
+        "--state",
+        "open",
+        "--label",
+        "status:in-progress",
+        "--json",
+        "number,title,labels,state",
+        "--limit",
+        "200",
+    )
+
+
 def test_config_loading_reads_expected_values(tmp_path: Path) -> None:
     config_path = write_config(tmp_path, base_branch="main", validation_mode="python")
 
@@ -129,6 +195,99 @@ def test_dry_run_does_not_invoke_runner(tmp_path: Path, monkeypatch: pytest.Monk
 
     assert result == 0
     assert invoked == []
+
+
+def test_pr_fix_dispatch_runs_before_ready_issue_dispatch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = write_config(tmp_path)
+    fake = FakeRunner(ready=(make_issue(451),), prs=(make_pr(12),))
+    invoked: list[tuple[str, ...]] = []
+
+    def fake_run_runner(command: Sequence[str], config: object) -> Path:
+        invoked.append(tuple(command))
+        return tmp_path / "runner.log"
+
+    monkeypatch.setattr(supervisor, "run_runner", fake_run_runner)
+
+    result = supervisor.execute(make_args(config_path), fake)
+
+    assert result == 0
+    assert len(invoked) == 1
+    assert "--pr-number" in invoked[0]
+    assert "--issue-number" not in invoked[0]
+    assert not any(command[:3] == ("gh", "issue", "list") for command in commands(fake))
+
+
+def test_pr_fix_dry_run_does_not_invoke_runner(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    config_path = write_config(tmp_path)
+    fake = FakeRunner(ready=(make_issue(451),), prs=(make_pr(12),))
+    invoked: list[tuple[str, ...]] = []
+    monkeypatch.setattr(supervisor, "run_runner", lambda command, config: invoked.append(tuple(command)))
+
+    result = supervisor.execute(make_args(config_path, dry_run=True), fake)
+
+    assert result == 0
+    assert invoked == []
+    assert not any(command[:3] == ("gh", "issue", "list") for command in commands(fake))
+
+
+def test_supervisor_invokes_pr_fix_runner_with_expected_args(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = write_config(tmp_path, python_bin="/custom/python", validation_mode="ops")
+    fake = FakeRunner(ready=(make_issue(451),), prs=(make_pr(12),))
+    invoked: list[tuple[str, ...]] = []
+
+    def fake_run_runner(command: Sequence[str], config: object) -> Path:
+        invoked.append(tuple(command))
+        return tmp_path / "runner.log"
+
+    monkeypatch.setattr(supervisor, "run_runner", fake_run_runner)
+
+    result = supervisor.execute(make_args(config_path), fake)
+
+    assert result == 0
+    command = invoked[0]
+    assert command[:2] == (
+        sys.executable,
+        str(tmp_path / "source" / "scripts" / "local_codex_pr_fix_runner.py"),
+    )
+    assert ("--repo", "ktalpay/CarbonOps-Parser") == command[2:4]
+    assert command[command.index("--agents-root") + 1] == str(tmp_path / "agents")
+    assert "--once" in command
+    assert command[command.index("--pr-number") + 1] == "12"
+    assert command[command.index("--validation-mode") + 1] == "ops"
+    assert command[command.index("--python-bin") + 1] == "/custom/python"
+
+
+def test_no_pr_fix_continues_ready_issue_dispatch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = write_config(tmp_path)
+    fake = FakeRunner(
+        ready=(make_issue(451),),
+        prs=(make_pr(12, labels=("docs",)),),
+    )
+    invoked: list[tuple[str, ...]] = []
+
+    def fake_run_runner(command: Sequence[str], config: object) -> Path:
+        invoked.append(tuple(command))
+        return tmp_path / "runner.log"
+
+    monkeypatch.setattr(supervisor, "run_runner", fake_run_runner)
+
+    result = supervisor.execute(make_args(config_path), fake)
+
+    assert result == 0
+    assert len(invoked) == 1
+    assert "--issue-number" in invoked[0]
+    assert commands(fake).index(expected_pr_list_command()) < commands(fake).index(
+        expected_in_progress_issue_list_command()
+    )
 
 
 def test_lock_prevents_concurrent_run(

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Local agent supervisor for one-shot unattended task dispatch.
 
-The supervisor scans GitHub issue labels, selects at most one ready issue, and
-delegates execution to scripts/local_codex_task_runner.py. It intentionally does
+The supervisor first looks for one pull request that needs local-agent fixes.
+If none exists, it scans GitHub issue labels, selects at most one ready issue,
+and delegates execution to the appropriate local runner. It intentionally does
 not run Codex directly and has no merge, approval, issue-closing, scheduler, or
 watch behavior.
 """
@@ -23,6 +24,8 @@ from typing import Callable, Sequence
 
 READY_LABEL = "status:ready"
 IN_PROGRESS_LABEL = "status:in-progress"
+PR_CHANGES_REQUESTED_LABEL = "pr:changes-requested"
+PR_FIX_REQUEST_TOKEN = "@local-agent fix"
 VALIDATION_MODES = ("minimal", "python", "dotnet", "ops", "full")
 
 
@@ -62,6 +65,16 @@ class Issue:
     title: str
     labels: tuple[str, ...]
     state: str = "OPEN"
+
+
+@dataclass(frozen=True)
+class PullRequest:
+    number: int
+    title: str
+    labels: tuple[str, ...]
+    state: str = "OPEN"
+    merged: bool = False
+    comments: tuple[str, ...] = ()
 
 
 class FileLock:
@@ -194,12 +207,35 @@ def labels_from_gh(raw_labels: object) -> tuple[str, ...]:
     return tuple(labels)
 
 
+def comments_from_gh(raw_comments: object) -> tuple[str, ...]:
+    comments: list[str] = []
+    if not isinstance(raw_comments, list):
+        return ()
+    for comment in raw_comments:
+        if isinstance(comment, dict) and isinstance(comment.get("body"), str):
+            comments.append(comment["body"])
+        elif isinstance(comment, str):
+            comments.append(comment)
+    return tuple(comments)
+
+
 def parse_issue(raw_issue: dict[str, object]) -> Issue:
     return Issue(
         number=int(raw_issue["number"]),
         title=str(raw_issue.get("title") or ""),
         labels=labels_from_gh(raw_issue.get("labels")),
         state=str(raw_issue.get("state") or "OPEN"),
+    )
+
+
+def parse_pull_request(raw_pr: dict[str, object]) -> PullRequest:
+    return PullRequest(
+        number=int(raw_pr["number"]),
+        title=str(raw_pr.get("title") or ""),
+        labels=labels_from_gh(raw_pr.get("labels")),
+        state=str(raw_pr.get("state") or "OPEN"),
+        merged=bool(raw_pr.get("merged") or raw_pr.get("mergedAt")),
+        comments=comments_from_gh(raw_pr.get("comments")),
     )
 
 
@@ -221,6 +257,22 @@ def issue_list_command(repo: str, label: str) -> tuple[str, ...]:
     )
 
 
+def pr_list_command(repo: str) -> tuple[str, ...]:
+    return (
+        "gh",
+        "pr",
+        "list",
+        "--repo",
+        repo,
+        "--state",
+        "open",
+        "--json",
+        "number,title,labels,state,mergedAt,comments",
+        "--limit",
+        "100",
+    )
+
+
 def list_issues(repo: str, label: str, runner: CommandRunner) -> tuple[Issue, ...]:
     output = runner(issue_list_command(repo, label), None, None)
     try:
@@ -230,6 +282,32 @@ def list_issues(repo: str, label: str, runner: CommandRunner) -> tuple[Issue, ..
     if not isinstance(raw_issues, list):
         raise SupervisorError(f"gh issue list returned unexpected JSON for label {label!r}.")
     return tuple(sorted((parse_issue(issue) for issue in raw_issues), key=lambda issue: issue.number))
+
+
+def list_pull_requests(repo: str, runner: CommandRunner) -> tuple[PullRequest, ...]:
+    output = runner(pr_list_command(repo), None, None)
+    try:
+        raw_prs = json.loads(output)
+    except json.JSONDecodeError as exc:
+        raise SupervisorError("gh pr list returned invalid JSON.") from exc
+    if not isinstance(raw_prs, list):
+        raise SupervisorError("gh pr list returned unexpected JSON.")
+    return tuple(sorted((parse_pull_request(pr) for pr in raw_prs), key=lambda pr: pr.number))
+
+
+def pr_fix_requested(pr: PullRequest) -> bool:
+    if PR_CHANGES_REQUESTED_LABEL in pr.labels:
+        return True
+    return any(PR_FIX_REQUEST_TOKEN in comment.lower() for comment in pr.comments)
+
+
+def select_pr_for_fix(repo: str, runner: CommandRunner) -> PullRequest | None:
+    for pr in list_pull_requests(repo, runner):
+        if pr.state.upper() != "OPEN" or pr.merged:
+            continue
+        if pr_fix_requested(pr):
+            return pr
+    return None
 
 
 def source_root_is_dirty(source_root: Path, runner: CommandRunner) -> bool:
@@ -266,6 +344,10 @@ def runner_script_path(config: SupervisorConfig) -> Path:
     return config.source_root.expanduser() / "scripts" / "local_codex_task_runner.py"
 
 
+def pr_fix_runner_script_path(config: SupervisorConfig) -> Path:
+    return config.source_root.expanduser() / "scripts" / "local_codex_pr_fix_runner.py"
+
+
 def log_directory(config: SupervisorConfig) -> Path:
     if config.log_directory is not None:
         return config.log_directory.expanduser()
@@ -295,12 +377,42 @@ def runner_command(config: SupervisorConfig, issue_number: int) -> tuple[str, ..
     return tuple(command)
 
 
+def pr_fix_runner_command(config: SupervisorConfig, pr_number: int) -> tuple[str, ...]:
+    command = [
+        sys.executable,
+        str(pr_fix_runner_script_path(config)),
+        "--repo",
+        config.repo,
+        "--agents-root",
+        str(config.agents_root.expanduser()),
+        "--once",
+        "--pr-number",
+        str(pr_number),
+        "--validation-mode",
+        config.validation_mode,
+    ]
+    if config.python_bin:
+        command.extend(("--python-bin", config.python_bin))
+    return tuple(command)
+
+
 def run_runner(command: Sequence[str], config: SupervisorConfig) -> Path:
     logs = log_directory(config)
     logs.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    issue = command[command.index("--issue-number") + 1]
-    log_path = logs / f"local-agent-supervisor-issue-{issue}-{timestamp}.log"
+    if "--issue-number" in command:
+        target_kind = "issue"
+        target_number = command[command.index("--issue-number") + 1]
+        runner_name = "local_codex_task_runner.py"
+    elif "--pr-number" in command:
+        target_kind = "pr"
+        target_number = command[command.index("--pr-number") + 1]
+        runner_name = "local_codex_pr_fix_runner.py"
+    else:
+        target_kind = "runner"
+        target_number = "unknown"
+        runner_name = Path(command[1]).name if len(command) > 1 else "runner"
+    log_path = logs / f"local-agent-supervisor-{target_kind}-{target_number}-{timestamp}.log"
     with log_path.open("w", encoding="utf-8") as log_file:
         log_file.write(f"$ {' '.join(command)}\n\n")
         completed = subprocess.run(
@@ -312,9 +424,7 @@ def run_runner(command: Sequence[str], config: SupervisorConfig) -> Path:
             check=False,
         )
     if completed.returncode != 0:
-        raise SupervisorError(
-            f"local_codex_task_runner.py failed with exit code {completed.returncode}; log: {log_path}"
-        )
+        raise SupervisorError(f"{runner_name} failed with exit code {completed.returncode}; log: {log_path}")
     return log_path
 
 
@@ -334,6 +444,19 @@ def execute(args: argparse.Namespace, runner: CommandRunner = run_command) -> in
             raise SupervisorError(f"Source root has uncommitted changes: {config.source_root.expanduser()}")
 
         fast_forward_base_if_possible(config.source_root.expanduser(), config.base, runner)
+
+        pr = select_pr_for_fix(config.repo, runner)
+        if pr is not None:
+            print(f"Supervisor: selected PR #{pr.number} {pr.title}")
+            command = pr_fix_runner_command(config, pr.number)
+            if args.dry_run:
+                print("Supervisor: dry run; runner was not invoked.")
+                print(f"Supervisor: planned command: {' '.join(command)}")
+                return 0
+
+            log_path = run_runner(command, config)
+            print(f"Supervisor: PR fix runner completed; log: {log_path}")
+            return 0
 
         in_progress = list_issues(config.repo, IN_PROGRESS_LABEL, runner)
         if in_progress:
