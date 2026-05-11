@@ -176,6 +176,15 @@ from carbonfactor_parser.persistence.repository import (
     PersistenceResultStatus,
     create_persistence_result,
 )
+from carbonfactor_parser.persistence.source_document_repository import (
+    SourceDocumentRepository,
+    SourceDocumentRepositoryIssue,
+    SourceDocumentRepositoryPersistResult,
+    SourceDocumentRepositoryPersistStatus,
+    SourceDocumentRepositoryValidationResult,
+    create_source_document_repository_persist_result,
+    validate_source_document_repository_inputs,
+)
 from carbonfactor_parser.persistence.postgresql_repository import (
     PostgreSQLPersistenceRepository,
     PostgreSQLRepositoryRuntimeSafetyGate,
@@ -218,6 +227,11 @@ __all__ = (
     "PersistenceRepository",
     "PersistenceResult",
     "PersistenceResultStatus",
+    "SourceDocumentRepository",
+    "SourceDocumentRepositoryIssue",
+    "SourceDocumentRepositoryPersistResult",
+    "SourceDocumentRepositoryPersistStatus",
+    "SourceDocumentRepositoryValidationResult",
     "PsycopgPostgreSQLSessionAdapter",
     "PsycopgPostgreSQLSessionAdapterBoundaryResult",
     "PsycopgPostgreSQLSessionAdapterMetadata",
@@ -330,6 +344,7 @@ __all__ = (
     "build_postgresql_transaction_plan",
     "build_default_postgresql_schema_isolation_strategy",
     "create_persistence_result",
+    "create_source_document_repository_persist_result",
     "create_postgresql_connection_session_runtime_contract",
     "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",
@@ -351,6 +366,7 @@ __all__ = (
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
     "should_skip_postgresql_integration_tests",
+    "validate_source_document_repository_inputs",
     "validate_psycopg_session_adapter_boundary",
     "validate_postgresql_connection_session_runtime_contract",
     "validate_postgresql_persistence_options",
