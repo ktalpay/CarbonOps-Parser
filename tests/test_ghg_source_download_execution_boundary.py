@@ -165,6 +165,21 @@ def test_invalid_download_requests_fail_closed_before_transport(
             "GHG_SOURCE_DOWNLOAD_UNSAFE_SOURCE_REFERENCE_URI",
         ),
         (
+            "source_reference_uri",
+            "ghg/corporate-standard.pdf",
+            "GHG_SOURCE_DOWNLOAD_SOURCE_REFERENCE_URI_MISSING_SCHEME",
+        ),
+        (
+            "source_reference_uri",
+            "://ghg/corporate-standard.pdf",
+            "GHG_SOURCE_DOWNLOAD_MALFORMED_SOURCE_REFERENCE_URI",
+        ),
+        (
+            "source_reference_uri",
+            "https:///ghg.pdf",
+            "GHG_SOURCE_DOWNLOAD_MALFORMED_SOURCE_REFERENCE_URI",
+        ),
+        (
             "target_root",
             "relative/root",
             "GHG_SOURCE_DOWNLOAD_TARGET_ROOT_NOT_ABSOLUTE",
@@ -378,6 +393,53 @@ def test_transport_errors_and_empty_content_are_failed_results(
     )
 
 
+@pytest.mark.parametrize(
+    ("response", "expected_codes"),
+    (
+        (
+            None,
+            ("GHG_SOURCE_DOWNLOAD_RESPONSE_MISSING",),
+        ),
+        (
+            object(),
+            ("GHG_SOURCE_DOWNLOAD_RESPONSE_MISSING_CONTENT",),
+        ),
+        (
+            GHGSourceDownloadTransportResponse(content=None),  # type: ignore[arg-type]
+            ("GHG_SOURCE_DOWNLOAD_RESPONSE_MISSING_CONTENT",),
+        ),
+        (
+            GHGSourceDownloadTransportResponse(content="content"),  # type: ignore[arg-type]
+            ("GHG_SOURCE_DOWNLOAD_RESPONSE_CONTENT_NOT_BYTES",),
+        ),
+        (
+            GHGSourceDownloadTransportResponse(
+                content=b"content",
+                content_type=" ",
+                final_uri=" ",
+            ),
+            (
+                "GHG_SOURCE_DOWNLOAD_RESPONSE_BLANK_CONTENT_TYPE",
+                "GHG_SOURCE_DOWNLOAD_RESPONSE_BLANK_FINAL_URI",
+            ),
+        ),
+    ),
+)
+def test_transport_response_validation_fails_closed(
+    tmp_path: Path,
+    response: object,
+    expected_codes: tuple[str, ...],
+) -> None:
+    result = execute_ghg_source_download(
+        _valid_request(tmp_path),
+        lambda _: response,  # type: ignore[return-value]
+    )
+
+    assert result.status is GHGSourceDownloadExecutionStatus.FAILED
+    assert _issue_codes(result.issues) == expected_codes
+    assert not (tmp_path / "ghg/corporate-standard.pdf").exists()
+
+
 def test_download_execution_dataclasses_are_immutable(tmp_path: Path) -> None:
     request = _valid_request(tmp_path)
     result = execute_ghg_source_download(
@@ -427,6 +489,30 @@ def test_result_validation_rejects_side_effect_flags(tmp_path: Path) -> None:
     assert tuple(issue.field_name for issue in validation.issues) == (
         "no_database_writes",
         "no_sql",
+    )
+
+
+@pytest.mark.parametrize(
+    "status",
+    (
+        GHGSourceDownloadExecutionStatus.BLOCKED,
+        GHGSourceDownloadExecutionStatus.FAILED,
+    ),
+)
+def test_result_validation_rejects_blocked_or_failed_results_without_issues(
+    tmp_path: Path,
+    status: GHGSourceDownloadExecutionStatus,
+) -> None:
+    result = GHGSourceDownloadExecutionResult(
+        status=status,
+        request=_valid_request(tmp_path),
+    )
+
+    validation = validate_ghg_source_download_execution_result(result)
+
+    assert validation.is_valid is False
+    assert _issue_codes(validation.issues) == (
+        "GHG_SOURCE_DOWNLOAD_RESULT_MISSING_ISSUES",
     )
 
 
