@@ -81,6 +81,18 @@ public static class ContractWireNames
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown parser dry-run status."),
         };
 
+    public static string ToWireName(this PostgreSQLRuntimeConfigGateStatus value) =>
+        value switch
+        {
+            PostgreSQLRuntimeConfigGateStatus.Disabled => "disabled",
+            PostgreSQLRuntimeConfigGateStatus.Blocked => "blocked",
+            PostgreSQLRuntimeConfigGateStatus.NotEnabled => "not_enabled",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(value),
+                value,
+                "Unknown PostgreSQL runtime config gate status."),
+        };
+
     public static bool TryParseSourceFamilyWireName(string? wireName, out SourceFamily value)
     {
         value = wireName switch
@@ -196,5 +208,20 @@ public static class ContractWireNames
         };
 
         return wireName is "planned" or "invalid_request" or "execution_not_implemented";
+    }
+
+    public static bool TryParsePostgreSQLRuntimeConfigGateStatusWireName(
+        string? wireName,
+        out PostgreSQLRuntimeConfigGateStatus value)
+    {
+        value = wireName switch
+        {
+            "disabled" => PostgreSQLRuntimeConfigGateStatus.Disabled,
+            "blocked" => PostgreSQLRuntimeConfigGateStatus.Blocked,
+            "not_enabled" => PostgreSQLRuntimeConfigGateStatus.NotEnabled,
+            _ => default,
+        };
+
+        return wireName is "disabled" or "blocked" or "not_enabled";
     }
 }
