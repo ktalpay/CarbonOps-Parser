@@ -64,6 +64,18 @@ public static class ContractWireNames
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown GHG source discovery status."),
         };
 
+    public static string ToWireName(this GhgSourceDownloadExecutionStatus value) =>
+        value switch
+        {
+            GhgSourceDownloadExecutionStatus.Blocked => "blocked",
+            GhgSourceDownloadExecutionStatus.Downloaded => "downloaded",
+            GhgSourceDownloadExecutionStatus.Failed => "failed",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(value),
+                value,
+                "Unknown GHG source download execution status."),
+        };
+
     public static string ToWireName(this ParserSourceFormat value) =>
         value switch
         {
@@ -196,6 +208,21 @@ public static class ContractWireNames
         };
 
         return wireName is "declared" or "invalid";
+    }
+
+    public static bool TryParseGhgSourceDownloadExecutionStatusWireName(
+        string? wireName,
+        out GhgSourceDownloadExecutionStatus value)
+    {
+        value = wireName switch
+        {
+            "blocked" => GhgSourceDownloadExecutionStatus.Blocked,
+            "downloaded" => GhgSourceDownloadExecutionStatus.Downloaded,
+            "failed" => GhgSourceDownloadExecutionStatus.Failed,
+            _ => default,
+        };
+
+        return wireName is "blocked" or "downloaded" or "failed";
     }
 
     public static bool TryParseParserSourceFormatWireName(string? wireName, out ParserSourceFormat value)
