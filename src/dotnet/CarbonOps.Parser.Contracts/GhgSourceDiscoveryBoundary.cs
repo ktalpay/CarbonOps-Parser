@@ -287,6 +287,14 @@ public static class GhgSourceDiscoveryBoundary
 
         issues.AddRange(Validate(result.Request).Issues);
 
+        if (!Enum.IsDefined(result.Status))
+        {
+            issues.Add(new GhgSourceDiscoveryIssue(
+                "GHG_SOURCE_DISCOVERY_RESULT_INVALID_STATUS",
+                "status must be a defined GHG source discovery status.",
+                "status"));
+        }
+
         foreach (var (fieldName, value) in new[]
         {
             ("no_network", result.NoNetwork),
@@ -312,6 +320,14 @@ public static class GhgSourceDiscoveryBoundary
             {
                 issues.Add(issue with { FieldName = $"candidates[{index + 1}].{issue.FieldName}" });
             }
+        }
+
+        if (result.Status == GhgSourceDiscoveryStatus.Declared && result.Issues.Count > 0)
+        {
+            issues.Add(new GhgSourceDiscoveryIssue(
+                "GHG_SOURCE_DISCOVERY_RESULT_DECLARED_WITH_ISSUES",
+                "declared result status must not include issue metadata.",
+                "issues"));
         }
 
         if (result.Status == GhgSourceDiscoveryStatus.Declared && issues.Count > 0)

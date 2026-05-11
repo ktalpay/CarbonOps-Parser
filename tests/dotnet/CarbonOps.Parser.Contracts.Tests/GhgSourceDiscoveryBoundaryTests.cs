@@ -146,6 +146,31 @@ public sealed class GhgSourceDiscoveryBoundaryTests
     }
 
     [Fact]
+    public void ValidationDoesNotRequireNetworkFileDatabaseParserDownloaderOrSchedulerRuntime()
+    {
+        var candidate = new GhgSourceDocumentCandidate(
+            SourceFamily.GhgProtocol,
+            "ghg_protocol",
+            "ghg-source-local-reference-candidate",
+            "GHG Protocol local metadata",
+            "/definitely/not-present/ghg-protocol-factors.csv",
+            "discovery");
+        var result = new GhgSourceDiscoveryResult(
+            GhgSourceDiscoveryStatus.Declared,
+            GhgSourceDiscoveryBoundary.CreateRequest(),
+            [candidate]);
+
+        Assert.True(GhgSourceDiscoveryBoundary.Validate(candidate).IsValid);
+        Assert.True(GhgSourceDiscoveryBoundary.Validate(result).IsValid);
+        Assert.True(result.NoNetwork);
+        Assert.True(result.NoDownload);
+        Assert.True(result.NoParse);
+        Assert.True(result.NoDatabaseWrites);
+        Assert.True(result.NoSql);
+        Assert.True(result.NoScheduler);
+    }
+
+    [Fact]
     public void ResultValidationRejectsSideEffectFlags()
     {
         var valid = GhgSourceDiscoveryBoundary.CreateResult();
@@ -171,6 +196,55 @@ public sealed class GhgSourceDiscoveryBoundaryTests
     }
 
     [Fact]
+    public void ResultValidationRejectsDeclaredResultsWithIssueMetadata()
+    {
+        var valid = GhgSourceDiscoveryBoundary.CreateResult();
+        var result = new GhgSourceDiscoveryResult(
+            GhgSourceDiscoveryStatus.Declared,
+            valid.Request,
+            valid.Candidates,
+            [
+                new GhgSourceDiscoveryIssue(
+                    "GHG_SOURCE_DISCOVERY_TEST_ISSUE",
+                    "test issue",
+                    "test"),
+            ]);
+
+        var validation = GhgSourceDiscoveryBoundary.Validate(result);
+
+        Assert.False(validation.IsValid);
+        Assert.Equal(
+            [
+                "GHG_SOURCE_DISCOVERY_RESULT_DECLARED_WITH_ISSUES",
+                "GHG_SOURCE_DISCOVERY_RESULT_STATUS_MISMATCH",
+            ],
+            validation.Issues.Select(issue => issue.Code));
+    }
+
+    [Fact]
+    public void ResultValidationRejectsUndefinedStatus()
+    {
+        var valid = GhgSourceDiscoveryBoundary.CreateResult();
+        var result = new GhgSourceDiscoveryResult(
+            (GhgSourceDiscoveryStatus)999,
+            valid.Request,
+            valid.Candidates,
+            [
+                new GhgSourceDiscoveryIssue(
+                    "GHG_SOURCE_DISCOVERY_TEST_ISSUE",
+                    "test issue",
+                    "test"),
+            ]);
+
+        var validation = GhgSourceDiscoveryBoundary.Validate(result);
+
+        Assert.False(validation.IsValid);
+        Assert.Equal(
+            ["GHG_SOURCE_DISCOVERY_RESULT_INVALID_STATUS"],
+            validation.Issues.Select(issue => issue.Code));
+    }
+
+    [Fact]
     public void BoundaryPublicSurfaceDoesNotExposeRuntimeExecutionMethods()
     {
         var publicMethodNames = typeof(GhgSourceDiscoveryBoundary)
@@ -185,6 +259,33 @@ public sealed class GhgSourceDiscoveryBoundaryTests
         Assert.DoesNotContain("Fetch", publicMethodNames);
         Assert.DoesNotContain("Parse", publicMethodNames);
         Assert.DoesNotContain("Execute", publicMethodNames);
+    }
+
+    [Fact]
+    public void BoundaryTypesDoNotExposeRuntimeExecutionMethods()
+    {
+        var publicMethodNames = new[]
+        {
+            typeof(GhgSourceDiscoveryRequest),
+            typeof(GhgSourceDocumentCandidate),
+            typeof(GhgSourceDiscoveryResult),
+            typeof(GhgSourceDiscoveryIssue),
+            typeof(GhgSourceDiscoveryValidationResult),
+        }
+            .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            .Where(method => !method.Name.StartsWith("get_", StringComparison.Ordinal))
+            .Select(method => method.Name)
+            .ToArray();
+
+        Assert.DoesNotContain("Discover", publicMethodNames);
+        Assert.DoesNotContain("Fetch", publicMethodNames);
+        Assert.DoesNotContain("Parse", publicMethodNames);
+        Assert.DoesNotContain("Execute", publicMethodNames);
+        Assert.DoesNotContain("Schedule", publicMethodNames);
+        Assert.DoesNotContain("Persist", publicMethodNames);
+        Assert.DoesNotContain("Open", publicMethodNames);
+        Assert.DoesNotContain("Read", publicMethodNames);
+        Assert.DoesNotContain("Write", publicMethodNames);
     }
 
     [Fact]
