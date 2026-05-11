@@ -489,6 +489,18 @@ def validate_defra_source_download_execution_result(
         validate_defra_source_download_execution_request(result.request).issues
     )
 
+    if not isinstance(result.status, DEFRASourceDownloadExecutionStatus):
+        issues.append(
+            DEFRASourceDownloadExecutionIssue(
+                code="DEFRA_SOURCE_DOWNLOAD_RESULT_INVALID_STATUS",
+                message=(
+                    "status must be a defined DEFRA source download execution "
+                    "status."
+                ),
+                field_name="status",
+            )
+        )
+
     for field_name, value in (
         ("no_parse", result.no_parse),
         ("no_database_writes", result.no_database_writes),
@@ -544,9 +556,23 @@ def _validate_source_reference_uri(
     request: DEFRASourceDownloadExecutionRequest,
     issues: list[DEFRASourceDownloadExecutionIssue],
 ) -> None:
-    parsed = urlparse(request.source_reference_uri)
+    if not isinstance(request.source_reference_uri, str) or not (
+        source_reference_uri := request.source_reference_uri.strip()
+    ):
+        return
+
+    parsed = urlparse(source_reference_uri)
     scheme = parsed.scheme
     if not scheme:
+        if "://" in source_reference_uri:
+            issues.append(
+                DEFRASourceDownloadExecutionIssue(
+                    code="DEFRA_SOURCE_DOWNLOAD_MALFORMED_SOURCE_REFERENCE_URI",
+                    message="source_reference_uri must be a well-formed URI.",
+                    field_name="source_reference_uri",
+                )
+            )
+            return
         issues.append(
             DEFRASourceDownloadExecutionIssue(
                 code="DEFRA_SOURCE_DOWNLOAD_SOURCE_REFERENCE_URI_MISSING_SCHEME",
@@ -560,6 +586,15 @@ def _validate_source_reference_uri(
             DEFRASourceDownloadExecutionIssue(
                 code="DEFRA_SOURCE_DOWNLOAD_DISCOVERY_REFERENCE_NOT_DOWNLOADABLE",
                 message="discovery references are not direct download references.",
+                field_name="source_reference_uri",
+            )
+        )
+        return
+    if scheme in {"http", "https"} and not parsed.netloc:
+        issues.append(
+            DEFRASourceDownloadExecutionIssue(
+                code="DEFRA_SOURCE_DOWNLOAD_MALFORMED_SOURCE_REFERENCE_URI",
+                message="source_reference_uri must be a well-formed URI.",
                 field_name="source_reference_uri",
             )
         )
@@ -873,11 +908,30 @@ def _is_relative_to(path: Path, parent: Path) -> bool:
 
 
 def _validate_transport_response(
-    response: DEFRASourceDownloadTransportResponse,
+    response: DEFRASourceDownloadTransportResponse | object,
 ) -> DEFRASourceDownloadExecutionValidationResult:
     issues: list[DEFRASourceDownloadExecutionIssue] = []
+    if response is None:
+        return DEFRASourceDownloadExecutionValidationResult(
+            issues=(
+                DEFRASourceDownloadExecutionIssue(
+                    code="DEFRA_SOURCE_DOWNLOAD_RESPONSE_MISSING",
+                    message="transport response is required.",
+                    field_name="transport",
+                ),
+            )
+        )
+
     content = getattr(response, "content", None)
-    if not isinstance(content, bytes):
+    if content is None:
+        issues.append(
+            DEFRASourceDownloadExecutionIssue(
+                code="DEFRA_SOURCE_DOWNLOAD_RESPONSE_MISSING_CONTENT",
+                message="transport response content is required.",
+                field_name="transport.content",
+            )
+        )
+    elif not isinstance(content, bytes):
         issues.append(
             DEFRASourceDownloadExecutionIssue(
                 code="DEFRA_SOURCE_DOWNLOAD_RESPONSE_CONTENT_NOT_BYTES",
@@ -893,6 +947,21 @@ def _validate_transport_response(
                 field_name="transport.content",
             )
         )
+
+    _validate_optional_text(
+        getattr(response, "content_type", None),
+        "transport.content_type",
+        "DEFRA_SOURCE_DOWNLOAD_RESPONSE_BLANK_CONTENT_TYPE",
+        "response content_type must be non-empty when provided.",
+        issues,
+    )
+    _validate_optional_text(
+        getattr(response, "final_uri", None),
+        "transport.final_uri",
+        "DEFRA_SOURCE_DOWNLOAD_RESPONSE_BLANK_FINAL_URI",
+        "response final_uri must be non-empty when provided.",
+        issues,
+    )
 
     return DEFRASourceDownloadExecutionValidationResult(issues=tuple(issues))
 
