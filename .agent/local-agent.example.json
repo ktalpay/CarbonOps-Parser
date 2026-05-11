@@ -1,0 +1,10 @@
+{
+  "repo": "ktalpay/CarbonOps-Parser",
+  "source_root": "/Users/oxygen/FutureOps/Agents/CarbonOps-Parser/main",
+  "agents_root": "/Users/oxygen/FutureOps/Agents/CarbonOps-Parser",
+  "base_branch": "develop",
+  "validation_mode": "minimal",
+  "python_bin": "python",
+  "runner_script_path": "/Users/oxygen/FutureOps/Agents/CarbonOps-Parser/main/scripts/local_codex_task_runner.py",
+  "log_directory": "/Users/oxygen/FutureOps/Agents/CarbonOps-Parser/.logs"
+}
