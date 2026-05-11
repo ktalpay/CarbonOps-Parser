@@ -256,6 +256,41 @@ def test_result_validation_rejects_side_effect_flags() -> None:
     )
 
 
+def test_result_validation_rejects_declared_results_with_issue_metadata() -> None:
+    result = replace(
+        create_defra_source_discovery_result(),
+        issues=(
+            DEFRASourceDiscoveryIssue(
+                code="DEFRA_SOURCE_DISCOVERY_TEST_ISSUE",
+                message="test issue",
+                field_name="test",
+            ),
+        ),
+    )
+
+    validation = validate_defra_source_discovery_result(result)
+
+    assert validation.is_valid is False
+    assert _issue_codes(validation.issues) == (
+        "DEFRA_SOURCE_DISCOVERY_RESULT_DECLARED_WITH_ISSUES",
+        "DEFRA_SOURCE_DISCOVERY_RESULT_STATUS_MISMATCH",
+    )
+
+
+def test_result_validation_rejects_undefined_status() -> None:
+    result = replace(
+        create_defra_source_discovery_result(),
+        status="declared",  # type: ignore[arg-type]
+    )
+
+    validation = validate_defra_source_discovery_result(result)
+
+    assert validation.is_valid is False
+    assert _issue_codes(validation.issues) == (
+        "DEFRA_SOURCE_DISCOVERY_RESULT_INVALID_STATUS",
+    )
+
+
 def test_defra_discovery_contract_dataclasses_are_immutable() -> None:
     request = create_defra_source_discovery_request()
     result = create_defra_source_discovery_result()
