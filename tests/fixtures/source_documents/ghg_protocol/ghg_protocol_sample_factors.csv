@@ -1,0 +1,4 @@
+record_type,source_year,source_version,factor_id,factor_name,factor_value,unit,category,subcategory,scope,gas,provenance_note
+emission_factor,2024,v1,GHG-ELEC-001,Grid electricity,0.233,kg CO2e/kWh,Stationary combustion,Electricity,Scope 2,CO2e,fixture row 1
+metadata,2024,v1,NOTE-001,Workbook note,0,not applicable,Notes,,,,unsupported row
+emission_factor,2024,v1,GHG-GAS-001,Natural gas,0.184,kg CO2e/kWh,Stationary combustion,Natural gas,Scope 1,CO2e,fixture row 3

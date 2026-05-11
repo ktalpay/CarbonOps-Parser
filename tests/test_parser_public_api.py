@@ -9,6 +9,8 @@ from carbonfactor_parser.parsers import (
     defra_desnz_parser,
     example_parser,
     example_source_specific_parser,
+    ghg_protocol_adapter,
+    ghg_protocol_content_parser,
     execution_plan,
     execution_result,
     execution_runner,
@@ -30,6 +32,8 @@ from carbonfactor_parser.parsers import (
     DefraDesnzParser,
     ExampleInMemoryParser,
     ExampleSourceSpecificParser,
+    GHGProtocolParserAdapter,
+    GHG_PROTOCOL_NORMALIZED_CONTENT_HEADER,
     NoopParserAdapter,
     ParserAdapter,
     ParserAdapterRegistry,
@@ -70,6 +74,7 @@ from carbonfactor_parser.parsers import (
     load_parser_file_content_from_local_path,
     plan_parser_execution,
     parse_defra_desnz_file_content,
+    parse_ghg_protocol_file_content,
     register_parser_adapter,
     resolve_parser_adapters,
     run_parser_execution,
@@ -89,6 +94,8 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "DefraDesnzParser",
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
+    "GHGProtocolParserAdapter",
+    "GHG_PROTOCOL_NORMALIZED_CONTENT_HEADER",
     "DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES",
     "NoopParserAdapter",
     "ParserAdapter",
@@ -129,6 +136,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "load_parser_file_content_from_local_path",
     "plan_parser_execution",
     "parse_defra_desnz_file_content",
+    "parse_ghg_protocol_file_content",
     "register_parser_adapter",
     "resolve_parser_adapters",
     "run_parser_execution",
@@ -151,6 +159,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     "ExampleInMemoryParser": example_parser.ExampleInMemoryParser,
     "ExampleSourceSpecificParser": (
         example_source_specific_parser.ExampleSourceSpecificParser
+    ),
+    "GHGProtocolParserAdapter": ghg_protocol_adapter.GHGProtocolParserAdapter,
+    "GHG_PROTOCOL_NORMALIZED_CONTENT_HEADER": (
+        ghg_protocol_content_parser.GHG_PROTOCOL_NORMALIZED_CONTENT_HEADER
     ),
     "DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES": (
         file_content_loader.DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES
@@ -220,6 +232,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     "parse_defra_desnz_file_content": (
         defra_desnz_content_parser.parse_defra_desnz_file_content
     ),
+    "parse_ghg_protocol_file_content": (
+        ghg_protocol_content_parser.parse_ghg_protocol_file_content
+    ),
     "register_parser_adapter": adapter_registry.register_parser_adapter,
     "resolve_parser_adapters": adapter_registry.resolve_parser_adapters,
     "run_parser_execution": execution_runner.run_parser_execution,
@@ -249,6 +264,10 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "DefraDesnzParser": DefraDesnzParser,
         "ExampleInMemoryParser": ExampleInMemoryParser,
         "ExampleSourceSpecificParser": ExampleSourceSpecificParser,
+        "GHGProtocolParserAdapter": GHGProtocolParserAdapter,
+        "GHG_PROTOCOL_NORMALIZED_CONTENT_HEADER": (
+            GHG_PROTOCOL_NORMALIZED_CONTENT_HEADER
+        ),
         "DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES": (
             DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES
         ),
@@ -293,6 +312,7 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         ),
         "plan_parser_execution": plan_parser_execution,
         "parse_defra_desnz_file_content": parse_defra_desnz_file_content,
+        "parse_ghg_protocol_file_content": parse_ghg_protocol_file_content,
         "register_parser_adapter": register_parser_adapter,
         "resolve_parser_adapters": resolve_parser_adapters,
         "run_parser_execution": run_parser_execution,
