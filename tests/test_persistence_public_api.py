@@ -21,6 +21,7 @@ from carbonfactor_parser.persistence import (
     postgresql_transaction_policy,
     repository,
     schema,
+    source_document_repository,
 )
 from carbonfactor_parser.persistence import (
     PersistenceInput,
@@ -41,6 +42,11 @@ from carbonfactor_parser.persistence import (
     PersistenceRepository,
     PersistenceResult,
     PersistenceResultStatus,
+    SourceDocumentRepository,
+    SourceDocumentRepositoryIssue,
+    SourceDocumentRepositoryPersistResult,
+    SourceDocumentRepositoryPersistStatus,
+    SourceDocumentRepositoryValidationResult,
     PsycopgPostgreSQLSessionAdapter,
     PsycopgPostgreSQLSessionAdapterBoundaryResult,
     PsycopgPostgreSQLSessionAdapterMetadata,
@@ -153,6 +159,7 @@ from carbonfactor_parser.persistence import (
     build_postgresql_transaction_plan,
     build_default_postgresql_schema_isolation_strategy,
     create_persistence_result,
+    create_source_document_repository_persist_result,
     create_postgresql_connection_session_runtime_contract,
     create_postgresql_integration_test_boundary,
     create_postgresql_persistence_options,
@@ -174,6 +181,7 @@ from carbonfactor_parser.persistence import (
     get_normalized_record_postgresql_schema,
     render_postgresql_ddl_preview,
     should_skip_postgresql_integration_tests,
+    validate_source_document_repository_inputs,
     validate_psycopg_session_adapter_boundary,
     validate_postgresql_connection_session_runtime_contract,
     validate_postgresql_persistence_options,
@@ -203,6 +211,11 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PersistenceRepository",
     "PersistenceResult",
     "PersistenceResultStatus",
+    "SourceDocumentRepository",
+    "SourceDocumentRepositoryIssue",
+    "SourceDocumentRepositoryPersistResult",
+    "SourceDocumentRepositoryPersistStatus",
+    "SourceDocumentRepositoryValidationResult",
     "PsycopgPostgreSQLSessionAdapter",
     "PsycopgPostgreSQLSessionAdapterBoundaryResult",
     "PsycopgPostgreSQLSessionAdapterMetadata",
@@ -315,6 +328,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "build_postgresql_transaction_plan",
     "build_default_postgresql_schema_isolation_strategy",
     "create_persistence_result",
+    "create_source_document_repository_persist_result",
     "create_postgresql_connection_session_runtime_contract",
     "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",
@@ -336,6 +350,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
     "should_skip_postgresql_integration_tests",
+    "validate_source_document_repository_inputs",
     "validate_psycopg_session_adapter_boundary",
     "validate_postgresql_connection_session_runtime_contract",
     "validate_postgresql_persistence_options",
@@ -380,6 +395,19 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PersistenceRepository": repository.PersistenceRepository,
     "PersistenceResult": repository.PersistenceResult,
     "PersistenceResultStatus": repository.PersistenceResultStatus,
+    "SourceDocumentRepository": source_document_repository.SourceDocumentRepository,
+    "SourceDocumentRepositoryIssue": (
+        source_document_repository.SourceDocumentRepositoryIssue
+    ),
+    "SourceDocumentRepositoryPersistResult": (
+        source_document_repository.SourceDocumentRepositoryPersistResult
+    ),
+    "SourceDocumentRepositoryPersistStatus": (
+        source_document_repository.SourceDocumentRepositoryPersistStatus
+    ),
+    "SourceDocumentRepositoryValidationResult": (
+        source_document_repository.SourceDocumentRepositoryValidationResult
+    ),
     "PsycopgPostgreSQLSessionAdapter": (
         postgresql_psycopg_session_adapter.PsycopgPostgreSQLSessionAdapter
     ),
@@ -748,6 +776,9 @@ EXPECTED_PUBLIC_EXPORTS = {
         .build_default_postgresql_schema_isolation_strategy
     ),
     "create_persistence_result": repository.create_persistence_result,
+    "create_source_document_repository_persist_result": (
+        source_document_repository.create_source_document_repository_persist_result
+    ),
     "create_postgresql_connection_session_runtime_contract": (
         postgresql_connection_session_contract
         .create_postgresql_connection_session_runtime_contract
@@ -822,6 +853,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     "should_skip_postgresql_integration_tests": (
         integration_test_boundary.should_skip_postgresql_integration_tests
     ),
+    "validate_source_document_repository_inputs": (
+        source_document_repository.validate_source_document_repository_inputs
+    ),
     "validate_psycopg_session_adapter_boundary": (
         postgresql_psycopg_session_adapter
         .validate_psycopg_session_adapter_boundary
@@ -881,6 +915,17 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PersistenceRepository": PersistenceRepository,
         "PersistenceResult": PersistenceResult,
         "PersistenceResultStatus": PersistenceResultStatus,
+        "SourceDocumentRepository": SourceDocumentRepository,
+        "SourceDocumentRepositoryIssue": SourceDocumentRepositoryIssue,
+        "SourceDocumentRepositoryPersistResult": (
+            SourceDocumentRepositoryPersistResult
+        ),
+        "SourceDocumentRepositoryPersistStatus": (
+            SourceDocumentRepositoryPersistStatus
+        ),
+        "SourceDocumentRepositoryValidationResult": (
+            SourceDocumentRepositoryValidationResult
+        ),
         "PsycopgPostgreSQLSessionAdapter": PsycopgPostgreSQLSessionAdapter,
         "PsycopgPostgreSQLSessionAdapterBoundaryResult": (
             PsycopgPostgreSQLSessionAdapterBoundaryResult
@@ -1109,6 +1154,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
             build_default_postgresql_schema_isolation_strategy
         ),
         "create_persistence_result": create_persistence_result,
+        "create_source_document_repository_persist_result": (
+            create_source_document_repository_persist_result
+        ),
         "create_postgresql_connection_session_runtime_contract": (
             create_postgresql_connection_session_runtime_contract
         ),
@@ -1169,6 +1217,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "render_postgresql_ddl_preview": render_postgresql_ddl_preview,
         "should_skip_postgresql_integration_tests": (
             should_skip_postgresql_integration_tests
+        ),
+        "validate_source_document_repository_inputs": (
+            validate_source_document_repository_inputs
         ),
         "validate_psycopg_session_adapter_boundary": (
             validate_psycopg_session_adapter_boundary
