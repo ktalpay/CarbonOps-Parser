@@ -20,6 +20,12 @@ public sealed class SourceAcquisitionContractPublicApiTests
             typeof(SourceAcquisitionRunRequest),
             typeof(SourceAcquisitionRunResult),
             typeof(SourceAcquisitionRunRegistry),
+            typeof(ISourceAcquisitionRunRepository),
+            typeof(SourceAcquisitionRunRepositoryPersistStatus),
+            typeof(SourceAcquisitionRunRepositoryIssue),
+            typeof(SourceAcquisitionRunRepositoryPersistResult),
+            typeof(SourceAcquisitionRunRepositoryValidationResult),
+            typeof(SourceAcquisitionRunRepositoryRegistry),
         };
 
         Assert.Equal(
@@ -34,6 +40,12 @@ public sealed class SourceAcquisitionContractPublicApiTests
                 "SourceAcquisitionRunRequest",
                 "SourceAcquisitionRunResult",
                 "SourceAcquisitionRunRegistry",
+                "ISourceAcquisitionRunRepository",
+                "SourceAcquisitionRunRepositoryPersistStatus",
+                "SourceAcquisitionRunRepositoryIssue",
+                "SourceAcquisitionRunRepositoryPersistResult",
+                "SourceAcquisitionRunRepositoryValidationResult",
+                "SourceAcquisitionRunRepositoryRegistry",
             ],
             publicContractTypes.Select(type => type.Name));
         Assert.All(publicContractTypes, type => Assert.True(type.IsPublic, $"{type.Name} must be public."));
@@ -106,11 +118,16 @@ public sealed class SourceAcquisitionContractPublicApiTests
         var artifacts = SourceDownloadArtifactRegistry.CreateDefaultArtifactBatch();
         var requests = SourceAcquisitionRunRegistry.CreateDefaultRunRequests();
         var results = SourceAcquisitionRunRegistry.CreateDefaultRunResults();
+        var persistResult = SourceAcquisitionRunRepositoryRegistry.CreatePersistResult(
+            "in_memory",
+            results);
 
         Assert.Equal(3, candidates.CandidateCount);
         Assert.Equal(3, artifacts.ArtifactCount);
         Assert.Equal(3, requests.Count);
         Assert.Equal(3, results.Count);
+        Assert.Equal(3, persistResult.PersistedCount);
+        Assert.Equal(SourceAcquisitionRunRepositoryPersistStatus.Declared, persistResult.Status);
         Assert.Equal(
             ParserAdapterDescriptorRegistry.Descriptors.Select(descriptor => descriptor.SourceFamily),
             requests.Select(request => request.SourceFamily));
@@ -143,6 +160,7 @@ public sealed class SourceAcquisitionContractPublicApiTests
             typeof(SourceDiscoveryCandidateRegistry),
             typeof(SourceDownloadArtifactRegistry),
             typeof(SourceAcquisitionRunRegistry),
+            typeof(SourceAcquisitionRunRepositoryRegistry),
         };
         var publicMethodNames = sourceAcquisitionContractTypes
             .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly))
@@ -156,6 +174,8 @@ public sealed class SourceAcquisitionContractPublicApiTests
                 "CreateDefaultArtifactBatch",
                 "CreateDefaultRunRequests",
                 "CreateDefaultRunResults",
+                "CreatePersistResult",
+                "ValidateInputs",
             ],
             publicMethodNames);
         Assert.DoesNotContain("Discover", publicMethodNames);
@@ -199,6 +219,46 @@ public sealed class SourceAcquisitionContractPublicApiTests
             "Calculate",
             "Factor",
             "Persist",
+        };
+
+        foreach (var term in blockedTerms)
+        {
+            Assert.DoesNotContain(publicMembers, member => member.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+
+        Assert.DoesNotContain("Parse", publicMembers);
+        Assert.DoesNotContain("Execute", publicMembers);
+    }
+
+    [Fact]
+    public void SourceAcquisitionRunRepositoryContractPublicApiDoesNotExposeRuntimeDbHttpFileIoOrParserExecutionSurface()
+    {
+        var repositoryContractTypes = new[]
+        {
+            typeof(ISourceAcquisitionRunRepository),
+            typeof(SourceAcquisitionRunRepositoryIssue),
+            typeof(SourceAcquisitionRunRepositoryPersistResult),
+            typeof(SourceAcquisitionRunRepositoryValidationResult),
+            typeof(SourceAcquisitionRunRepositoryRegistry),
+        };
+        var publicMembers = repositoryContractTypes
+            .SelectMany(type => type.GetMembers(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            .Select(member => member.Name)
+            .ToArray();
+        var blockedTerms = new[]
+        {
+            "Db",
+            "Sql",
+            "Postgres",
+            "Http",
+            "Open",
+            "ReadFile",
+            "Write",
+            "StatFile",
+            "Exists",
+            "Fetch",
+            "Calculate",
+            "Factor",
         };
 
         foreach (var term in blockedTerms)
