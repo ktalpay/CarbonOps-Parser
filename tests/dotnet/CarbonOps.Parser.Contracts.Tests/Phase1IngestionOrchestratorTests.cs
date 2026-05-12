@@ -15,6 +15,10 @@ public sealed class Phase1IngestionOrchestratorTests
 
         var result = orchestrator.Run(request);
 
+        Assert.Equal(Phase1IngestionRunStatus.Completed, result.Status);
+        Assert.Equal(
+            [SourceFamily.GhgProtocol, SourceFamily.DefraDesnz, SourceFamily.IpccEfdb],
+            result.SelectedSourceFamilies);
         Assert.Equal(3, result.SourceFamilyCount);
         Assert.Equal(3, result.CompletedSourceFamilyCount);
         Assert.Equal(0, result.FailedSourceFamilyCount);
@@ -44,6 +48,7 @@ public sealed class Phase1IngestionOrchestratorTests
 
         var result = orchestrator.Run(request);
 
+        Assert.Equal(Phase1IngestionRunStatus.NotExecutable, result.Status);
         Assert.Equal(0, result.SourceFamilyCount);
         Assert.Equal(["PHASE1_SOURCE_FAMILY_SELECTION_REQUIRED"], result.Failures.Select(failure => failure.Code));
         Assert.Empty(log);
@@ -58,10 +63,28 @@ public sealed class Phase1IngestionOrchestratorTests
 
         var result = orchestrator.Run(request);
 
+        Assert.Equal(Phase1IngestionRunStatus.Completed, result.Status);
         Assert.Single(result.FamilyResults);
         Assert.Equal(SourceFamily.DefraDesnz, result.FamilyResults[0].SourceFamily);
         Assert.Equal(Phase1IngestionFamilyRunStatus.Completed, result.FamilyResults[0].Status);
+        Assert.Equal("phase1_ingestion_orchestrator_run", result.FamilyResults[0].AcquisitionRun?.RunId);
         Assert.Equal(["defra_desnz:discover_download", "defra_desnz:normalize"], log);
+    }
+
+    [Fact]
+    public void DuplicateSourceFamilySelectionIsIdempotent()
+    {
+        var log = new List<string>();
+        var orchestrator = CreateOrchestrator(log);
+        var request = new Phase1IngestionOrchestratorRequest(
+            [SourceFamily.IpccEfdb, SourceFamily.IpccEfdb]);
+
+        var result = orchestrator.Run(request);
+
+        Assert.Equal(Phase1IngestionRunStatus.Completed, result.Status);
+        Assert.Equal([SourceFamily.IpccEfdb], result.SelectedSourceFamilies);
+        Assert.Single(result.FamilyResults);
+        Assert.Equal(["ipcc_efdb:discover_download", "ipcc_efdb:normalize"], log);
     }
 
     [Fact]
@@ -74,6 +97,7 @@ public sealed class Phase1IngestionOrchestratorTests
 
         var result = orchestrator.Run(request);
 
+        Assert.Equal(Phase1IngestionRunStatus.CompletedWithFailures, result.Status);
         Assert.Equal(
             [
                 Phase1IngestionFamilyRunStatus.Completed,
@@ -114,14 +138,18 @@ public sealed class Phase1IngestionOrchestratorTests
 
         Assert.Equal(Phase1IngestionExecutionMode.BoundedParallel, result.Request.ExecutionMode);
         Assert.Equal(2, result.Request.MaxDegreeOfParallelism);
-        Assert.Equal(1, result.CompletedSourceFamilyCount);
-        Assert.Empty(result.Failures);
+        Assert.Equal(Phase1IngestionRunStatus.NotExecutable, result.Status);
+        Assert.Equal([SourceFamily.GhgProtocol], result.SelectedSourceFamilies);
+        Assert.Equal(0, result.CompletedSourceFamilyCount);
+        Assert.Equal(["PHASE1_INGESTION_BOUNDED_PARALLEL_NOT_ENABLED"], result.Failures.Select(failure => failure.Code));
+        Assert.Empty(log);
     }
 
     [Fact]
-    public void RuntimeConfigReadinessDecisionIsRecordedWithoutLoadingSecrets()
+    public void RuntimeConfigReadinessBlocksBeforeSourceExecutionWithoutLoadingSecrets()
     {
-        var orchestrator = CreateOrchestrator([]);
+        var log = new List<string>();
+        var orchestrator = CreateOrchestrator(log);
         var request = new Phase1IngestionOrchestratorRequest(
             [SourceFamily.IpccEfdb],
             runtimeConfigGate: new PostgreSQLRuntimeConfigGate(Requested: true));
@@ -132,7 +160,10 @@ public sealed class Phase1IngestionOrchestratorTests
         Assert.False(result.RuntimeConfigDecision.LoadsEnvironment);
         Assert.False(result.RuntimeConfigDecision.LoadsConfigFiles);
         Assert.False(result.RuntimeConfigDecision.LoadsCredentials);
-        Assert.Equal(1, result.CompletedSourceFamilyCount);
+        Assert.Equal(Phase1IngestionRunStatus.NotExecutable, result.Status);
+        Assert.Equal(0, result.CompletedSourceFamilyCount);
+        Assert.Equal(["POSTGRESQL_RUNTIME_CONFIG_BLOCKED"], result.Failures.Select(failure => failure.Code));
+        Assert.Empty(log);
     }
 
     private static Phase1IngestionOrchestrator CreateOrchestrator(

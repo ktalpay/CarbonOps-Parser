@@ -31,5 +31,9 @@ public sealed class ContractEnumTests
         Assert.Equal(
             ["Pending", "Running", "Completed", "Failed"],
             Enum.GetNames<ParserRunStatus>());
+
+        Assert.Equal(
+            ["Completed", "CompletedWithFailures", "Failed", "NotExecutable"],
+            Enum.GetNames<Phase1IngestionRunStatus>());
     }
 }

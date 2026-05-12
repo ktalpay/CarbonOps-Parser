@@ -6,6 +6,14 @@ public enum Phase1IngestionExecutionMode
     BoundedParallel = 1,
 }
 
+public enum Phase1IngestionRunStatus
+{
+    Completed = 0,
+    CompletedWithFailures = 1,
+    Failed = 2,
+    NotExecutable = 3,
+}
+
 public enum Phase1IngestionFamilyRunStatus
 {
     Completed = 0,
@@ -120,6 +128,10 @@ public sealed record Phase1IngestionOrchestratorResult
 
     public PostgreSQLRuntimeConfigGateDecision RuntimeConfigDecision { get; }
 
+    public Phase1IngestionRunStatus Status { get; }
+
+    public IReadOnlyList<SourceFamily> SelectedSourceFamilies { get; }
+
     public IReadOnlyList<Phase1IngestionFamilyResult> FamilyResults { get; }
 
     public IReadOnlyList<Phase1IngestionFailure> Failures { get; }
@@ -146,12 +158,38 @@ public sealed record Phase1IngestionOrchestratorResult
         Phase1IngestionOrchestratorRequest request,
         PostgreSQLRuntimeConfigGateDecision runtimeConfigDecision,
         IEnumerable<Phase1IngestionFamilyResult> familyResults,
-        IEnumerable<Phase1IngestionFailure>? failures = null)
+        IEnumerable<Phase1IngestionFailure>? failures = null,
+        Phase1IngestionRunStatus? status = null,
+        IEnumerable<SourceFamily>? selectedSourceFamilies = null)
     {
         Request = request;
         RuntimeConfigDecision = runtimeConfigDecision;
-        FamilyResults = Array.AsReadOnly(familyResults.ToArray());
-        Failures = Array.AsReadOnly((failures ?? []).ToArray());
+        var familyResultArray = familyResults.ToArray();
+        var failureArray = (failures ?? []).ToArray();
+        FamilyResults = Array.AsReadOnly(familyResultArray);
+        Failures = Array.AsReadOnly(failureArray);
+        Status = status ?? StatusFromFamilyResults(familyResultArray);
+        SelectedSourceFamilies = Array.AsReadOnly(
+            (selectedSourceFamilies ?? familyResultArray.Select(result => result.SourceFamily))
+            .ToArray());
+    }
+
+    private static Phase1IngestionRunStatus StatusFromFamilyResults(
+        IReadOnlyCollection<Phase1IngestionFamilyResult> familyResults)
+    {
+        if (familyResults.Count == 0)
+        {
+            return Phase1IngestionRunStatus.Failed;
+        }
+
+        var completedCount = familyResults.Count(result =>
+            result.Status == Phase1IngestionFamilyRunStatus.Completed);
+
+        return completedCount == familyResults.Count
+            ? Phase1IngestionRunStatus.Completed
+            : completedCount > 0
+                ? Phase1IngestionRunStatus.CompletedWithFailures
+                : Phase1IngestionRunStatus.Failed;
     }
 }
 
@@ -191,14 +229,26 @@ public sealed class Phase1IngestionOrchestrator
     public Phase1IngestionOrchestratorResult Run(Phase1IngestionOrchestratorRequest request)
     {
         var runtimeDecision = PostgreSQLRuntimeConfigGateEvaluator.Evaluate(request.RuntimeConfigGate);
-        var requestFailures = ValidateRequest(request).ToArray();
-        if (requestFailures.Length > 0)
+        var selectedSourceFamilies = request.SourceFamilies
+            .Where(sourceFamily => Enum.IsDefined(sourceFamily))
+            .Distinct()
+            .ToArray();
+        var readinessFailures = ValidateRequest(request)
+            .Concat(ValidatePostgreSQLReadiness(request, runtimeDecision))
+            .ToArray();
+        if (readinessFailures.Length > 0)
         {
-            return new Phase1IngestionOrchestratorResult(request, runtimeDecision, [], requestFailures);
+            return new Phase1IngestionOrchestratorResult(
+                request,
+                runtimeDecision,
+                [],
+                readinessFailures,
+                Phase1IngestionRunStatus.NotExecutable,
+                selectedSourceFamilies);
         }
 
         var familyResults = new List<Phase1IngestionFamilyResult>();
-        foreach (var sourceFamily in request.SourceFamilies)
+        foreach (var sourceFamily in selectedSourceFamilies)
         {
             familyResults.Add(RunSourceFamily(sourceFamily, request));
         }
@@ -207,7 +257,8 @@ public sealed class Phase1IngestionOrchestrator
             request,
             runtimeDecision,
             familyResults,
-            familyResults.SelectMany(result => result.Failures));
+            familyResults.SelectMany(result => result.Failures),
+            selectedSourceFamilies: selectedSourceFamilies);
     }
 
     private Phase1IngestionFamilyResult RunSourceFamily(
@@ -230,7 +281,7 @@ public sealed class Phase1IngestionOrchestrator
 
         try
         {
-            acquisitionRun = runtime.DiscoverAndDownload($"{request.RunId}_{sourceKey}", request.CorrelationId);
+            acquisitionRun = runtime.DiscoverAndDownload(request.RunId, request.CorrelationId);
             failures.AddRange(ValidateAcquisition(sourceFamily, sourceKey, acquisitionRun));
             acquisitionPersist = sourceAcquisitionRunRepository.PersistRuns([acquisitionRun]);
             failures.AddRange(FromAcquisitionRepositoryIssues(sourceFamily, sourceKey, acquisitionPersist.Issues));
@@ -249,7 +300,7 @@ public sealed class Phase1IngestionOrchestrator
                 sourceKey,
                 parserKey,
                 bridgeBatch.Bridges.Select(bridge => bridge.ParserInputArtifact),
-                runId: $"{request.RunId}_{sourceKey}_parser",
+                runId: $"{request.RunId}-{sourceKey}-parser",
                 correlationId: request.CorrelationId,
                 requestedReportingYear: acquisitionRun.ReportingYear);
             parserRun = runtime.Normalize(parserRequest);
@@ -335,24 +386,19 @@ public sealed class Phase1IngestionOrchestrator
 
     private static IEnumerable<Phase1IngestionFailure> ValidateRequest(Phase1IngestionOrchestratorRequest request)
     {
-        if (request.SourceFamilies.Count == 0)
+        var hasValidSourceFamily = request.SourceFamilies.Any(sourceFamily =>
+            Enum.IsDefined(sourceFamily));
+        if (request.SourceFamilies.Count == 0 || !hasValidSourceFamily)
         {
             yield return Failure(SourceFamily.GhgProtocol, "", "request", "PHASE1_SOURCE_FAMILY_SELECTION_REQUIRED", "At least one source family must be explicitly selected.", "SourceFamilies");
         }
 
-        var seenFamilies = new HashSet<SourceFamily>();
         for (var index = 0; index < request.SourceFamilies.Count; index++)
         {
             var sourceFamily = request.SourceFamilies[index];
             if (!Enum.IsDefined(sourceFamily))
             {
                 yield return Failure(SourceFamily.GhgProtocol, "", "request", "PHASE1_SOURCE_FAMILY_INVALID", "Selected source families must be defined Phase 1 source families.", $"SourceFamilies[{index}]");
-                continue;
-            }
-
-            if (!seenFamilies.Add(sourceFamily))
-            {
-                yield return Failure(sourceFamily, sourceFamily.ToWireName(), "request", "PHASE1_SOURCE_FAMILY_DUPLICATE", "Selected source families must not contain duplicates.", $"SourceFamilies[{index}]");
             }
         }
 
@@ -370,6 +416,30 @@ public sealed class Phase1IngestionOrchestrator
         {
             yield return Failure(SourceFamily.GhgProtocol, "", "request", "PHASE1_SEQUENTIAL_MAX_DEGREE_MUST_BE_ONE", "Sequential execution must use MaxDegreeOfParallelism=1.", "MaxDegreeOfParallelism");
         }
+
+        if (request.ExecutionMode == Phase1IngestionExecutionMode.BoundedParallel)
+        {
+            yield return Failure(SourceFamily.GhgProtocol, "", "execution_mode", "PHASE1_INGESTION_BOUNDED_PARALLEL_NOT_ENABLED", "Bounded parallel execution is a declared extension point only.", "ExecutionMode");
+        }
+    }
+
+    private static IEnumerable<Phase1IngestionFailure> ValidatePostgreSQLReadiness(
+        Phase1IngestionOrchestratorRequest request,
+        PostgreSQLRuntimeConfigGateDecision runtimeDecision)
+    {
+        if (!request.RuntimeConfigGate.Requested || runtimeDecision.RuntimeEnabled)
+        {
+            yield break;
+        }
+
+        var issue = runtimeDecision.Issues.FirstOrDefault();
+        yield return Failure(
+            SourceFamily.GhgProtocol,
+            "",
+            "postgresql_runtime_config",
+            issue?.Code ?? "PHASE1_INGESTION_POSTGRESQL_RUNTIME_NOT_READY",
+            issue?.Message ?? "PostgreSQL runtime configuration is not ready.",
+            issue?.FieldName ?? "RuntimeConfigGate");
     }
 
     private static IEnumerable<Phase1IngestionFailure> ValidateAcquisition(

@@ -113,9 +113,28 @@ def test_orchestrator_only_runs_explicitly_selected_source_family() -> None:
 
     assert result.status is Phase1IngestionRunStatus.COMPLETED
     assert result.selected_source_families == ("defra_desnz",)
+    assert result.family_results[0].acquisition_result is not None
+    assert result.family_results[0].acquisition_result.run_id == "phase1-run-002"
     assert runtimes["defra_desnz"].calls == ("discover", "download", "parse")
     assert runtimes["ghg_protocol"].calls == ()
     assert runtimes["ipcc_efdb"].calls == ()
+
+
+def test_duplicate_source_family_selection_is_idempotent() -> None:
+    runtime = _FakeSourceRuntime("ipcc_efdb")
+
+    result = run_phase1_ingestion_orchestrator(
+        Phase1IngestionOrchestratorRequest(
+            source_families=("ipcc", "ipcc_efdb"),
+            run_id="phase1-run-008",
+        ),
+        _dependencies({"ipcc_efdb": runtime}),
+    )
+
+    assert result.status is Phase1IngestionRunStatus.COMPLETED
+    assert result.selected_source_families == ("ipcc_efdb",)
+    assert len(result.family_results) == 1
+    assert runtime.calls == ("discover", "download", "parse")
 
 
 def test_partial_failure_is_deterministic_per_source_family() -> None:
