@@ -1,3 +1,4 @@
+using System.Text.Json;
 using CarbonOps.Parser.Contracts;
 
 namespace CarbonOps.Parser.Contracts.Tests;
@@ -7,21 +8,10 @@ public sealed class GhgProtocolNormalizedContentParserTests
     [Fact]
     public void GhgProtocolHeaderIsDeterministic()
     {
+        using var expectations = LoadParityExpectations();
+
         Assert.Equal(
-            [
-                "record_type",
-                "source_year",
-                "source_version",
-                "factor_id",
-                "factor_name",
-                "factor_value",
-                "unit",
-                "category",
-                "subcategory",
-                "scope",
-                "gas",
-                "provenance_note",
-            ],
+            JsonStringArray(expectations.RootElement.GetProperty("header")),
             GhgProtocolNormalizedContentParser.Header);
     }
 
@@ -74,6 +64,35 @@ public sealed class GhgProtocolNormalizedContentParserTests
     }
 
     [Fact]
+    public void ValidGhgProtocolContentMatchesSharedParityExpectations()
+    {
+        using var expectations = LoadParityExpectations();
+        var root = expectations.RootElement;
+        var request = CreateRequest();
+        var result = GhgProtocolNormalizedContentParser.Parse(
+            request,
+            CreateContentMap("ghg_protocol_sample_factors.csv"));
+        var expectedRows = root.GetProperty("sample_rows").EnumerateArray().ToArray();
+
+        Assert.Equal(root.GetProperty("sample_status").GetProperty("dotnet").GetString(), result.Status.ToString());
+        Assert.Equal(
+            JsonStringArray(root.GetProperty("sample_issue_codes")),
+            result.ValidationIssues.Select(issue => issue.Code));
+        Assert.Equal(expectedRows.Length, result.RowCount);
+
+        for (var index = 0; index < expectedRows.Length; index++)
+        {
+            var expected = expectedRows[index];
+            var actual = result.Rows[index];
+
+            Assert.Equal(expected.GetProperty("row_identifier").GetString(), actual.RowIdentifier);
+            Assert.Equal(expected.GetProperty("source_row_number").GetInt32(), actual.SourceRowNumber);
+            Assert.Equal(expected.GetProperty("reporting_year").GetInt32(), actual.ReportingYear);
+            Assert.Equal(JsonFieldArray(expected.GetProperty("fields")), actual.Fields);
+        }
+    }
+
+    [Fact]
     public void GhgProtocolParserIsDeterministicForFixtureInput()
     {
         var request = CreateRequest();
@@ -89,30 +108,30 @@ public sealed class GhgProtocolNormalizedContentParserTests
     [Fact]
     public void MalformedGhgProtocolRowsReturnStructuredErrors()
     {
+        using var expectations = LoadParityExpectations();
+        var root = expectations.RootElement;
         var result = GhgProtocolNormalizedContentParser.Parse(
             CreateRequest(),
             CreateContentMap("ghg_protocol_malformed_factors.csv"));
 
-        Assert.Equal(ParserRunStatus.Failed, result.Status);
+        Assert.Equal(root.GetProperty("malformed_status").GetProperty("dotnet").GetString(), result.Status.ToString());
         Assert.Equal(0, result.RowCount);
         Assert.Equal(
-            [
-                "GHG_PROTOCOL_CONTENT_INVALID_FACTOR_VALUE",
-                "GHG_PROTOCOL_CONTENT_INVALID_SOURCE_YEAR",
-            ],
+            root.GetProperty("malformed_issues").EnumerateArray().Select(issue => issue.GetProperty("code").GetString()),
             result.ValidationIssues.Select(issue => issue.Code));
         Assert.Equal(
-            [
-                "factor_value",
-                "source_year",
-            ],
+            root.GetProperty("malformed_issues").EnumerateArray().Select(issue => issue.GetProperty("field_key").GetString()),
             result.ValidationIssues.Select(issue => issue.FieldKey));
-        Assert.Equal([2, 3], result.ValidationIssues.Select(issue => issue.SourceRowNumber));
+        Assert.Equal(
+            root.GetProperty("malformed_issues").EnumerateArray().Select(issue => (int?)issue.GetProperty("source_row_number").GetInt32()),
+            result.ValidationIssues.Select(issue => issue.SourceRowNumber));
     }
 
     [Fact]
     public void UnsupportedGhgProtocolRowsAreSkippedWithWarnings()
     {
+        using var expectations = LoadParityExpectations();
+        var root = expectations.RootElement;
         var content = string.Join(
             "\n",
             [
@@ -124,13 +143,10 @@ public sealed class GhgProtocolNormalizedContentParserTests
             CreateRequest(),
             new Dictionary<string, string> { [ArtifactReference] = content });
 
-        Assert.Equal(ParserRunStatus.Completed, result.Status);
+        Assert.Equal(root.GetProperty("unsupported_only_status").GetProperty("dotnet").GetString(), result.Status.ToString());
         Assert.Equal(0, result.RowCount);
         Assert.Equal(
-            [
-                "GHG_PROTOCOL_CONTENT_UNSUPPORTED_ROW_SKIPPED",
-                "GHG_PROTOCOL_CONTENT_NO_RECORDS",
-            ],
+            JsonStringArray(root.GetProperty("unsupported_only_issue_codes")),
             result.ValidationIssues.Select(issue => issue.Code));
         Assert.Equal(ParserValidationIssueSeverity.Warning, result.ValidationIssues[0].Severity);
         Assert.Equal("record_type", result.ValidationIssues[0].FieldKey);
@@ -182,6 +198,22 @@ public sealed class GhgProtocolNormalizedContentParserTests
             [ArtifactReference] = File.ReadAllText(Path.Combine(FixtureDirectory(), fixtureName)),
         };
 
+    private static JsonDocument LoadParityExpectations() =>
+        JsonDocument.Parse(File.ReadAllText(Path.Combine(ParityFixtureDirectory(), "ghg_protocol_normalized_output_expectations.json")));
+
+    private static IReadOnlyList<string> JsonStringArray(JsonElement array) =>
+        array.EnumerateArray().Select(item => item.GetString() ?? string.Empty).ToArray();
+
+    private static IReadOnlyList<ParserNormalizedField> JsonFieldArray(JsonElement array) =>
+        array
+            .EnumerateArray()
+            .Select(field =>
+            {
+                var values = field.EnumerateArray().ToArray();
+                return new ParserNormalizedField(values[0].GetString() ?? string.Empty, values[1].GetString());
+            })
+            .ToArray();
+
     private static string FixtureDirectory()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -202,5 +234,22 @@ public sealed class GhgProtocolNormalizedContentParserTests
         }
 
         throw new DirectoryNotFoundException("Could not locate GHG Protocol fixture directory.");
+    }
+
+    private static string ParityFixtureDirectory()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var fixtureDirectory = Path.Combine(directory.FullName, "tests", "fixtures", "parity");
+            if (Directory.Exists(fixtureDirectory))
+            {
+                return fixtureDirectory;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate parity fixture directory.");
     }
 }

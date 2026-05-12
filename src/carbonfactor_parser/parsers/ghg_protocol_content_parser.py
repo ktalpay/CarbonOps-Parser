@@ -308,6 +308,9 @@ def _normalized_raw_fields(
     parser_input,
     row_number: int,
 ) -> dict[str, object]:
+    master_id = f"ghg_master_{row['source_year']}_{row['source_version']}_{row['factor_id']}"
+    detail_id = f"ghg_detail_{row['source_year']}_{row['source_version']}_{row['factor_id']}"
+
     return {
         "source_family": parser_input.source_family,
         "source_id": parser_input.source_id,
@@ -323,8 +326,17 @@ def _normalized_raw_fields(
         "gas": row["gas"] or None,
         "provenance_note": row["provenance_note"] or None,
         "provenance_artifact_reference": parser_input.artifact_reference,
-        "provenance_checksum_sha256": parser_input.checksum_sha256,
+        "provenance_checksum_algorithm": "sha256"
+        if parser_input.checksum_sha256
+        else None,
+        "provenance_checksum_value": parser_input.checksum_sha256,
         "provenance_row_number": row_number,
+        "source_family_master_id": master_id,
+        "source_family_detail_id": detail_id,
+        "master_external_key": (
+            f"{row['source_year']}:{row['source_version']}:{row['factor_id']}"
+        ),
+        "detail_external_key": f"{row['factor_id']}:{row['unit']}",
     }
 
 
