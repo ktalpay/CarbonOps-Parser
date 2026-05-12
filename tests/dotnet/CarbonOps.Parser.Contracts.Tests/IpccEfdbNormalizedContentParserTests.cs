@@ -1,3 +1,4 @@
+using System.Text.Json;
 using CarbonOps.Parser.Contracts;
 
 namespace CarbonOps.Parser.Contracts.Tests;
@@ -7,23 +8,10 @@ public sealed class IpccEfdbNormalizedContentParserTests
     [Fact]
     public void IpccEfdbHeaderIsDeterministic()
     {
+        using var expectations = LoadParityExpectations();
+
         Assert.Equal(
-            [
-                "record_type",
-                "source_year",
-                "source_version",
-                "factor_id",
-                "factor_name",
-                "factor_value",
-                "unit",
-                "category",
-                "subcategory",
-                "ipcc_sector",
-                "gas",
-                "region",
-                "technology",
-                "provenance",
-            ],
+            JsonStringArray(expectations.RootElement.GetProperty("header")),
             IpccEfdbNormalizedContentParser.Header);
     }
 
@@ -97,34 +85,63 @@ public sealed class IpccEfdbNormalizedContentParserTests
     }
 
     [Fact]
+    public void ValidIpccEfdbContentMatchesSharedParityExpectations()
+    {
+        using var expectations = LoadParityExpectations();
+        var root = expectations.RootElement;
+        var request = CreateRequest();
+        var result = IpccEfdbNormalizedContentParser.Parse(
+            request,
+            CreateContentMap("ipcc_efdb_sample_factors.csv"));
+        var expectedRows = root.GetProperty("sample_rows").EnumerateArray().ToArray();
+
+        Assert.Equal(
+            root.GetProperty("sample_status").GetProperty("dotnet").GetString(),
+            result.Status.ToString());
+        Assert.Equal(
+            JsonStringArray(root.GetProperty("sample_issue_codes")),
+            result.ValidationIssues.Select(issue => issue.Code));
+        Assert.Equal(expectedRows.Length, result.RowCount);
+
+        for (var index = 0; index < expectedRows.Length; index++)
+        {
+            var expected = expectedRows[index];
+            var actual = result.Rows[index];
+
+            Assert.Equal(expected.GetProperty("row_identifier").GetString(), actual.RowIdentifier);
+            Assert.Equal(expected.GetProperty("source_row_number").GetInt32(), actual.SourceRowNumber);
+            Assert.Equal(expected.GetProperty("reporting_year").GetInt32(), actual.ReportingYear);
+            Assert.Equal(JsonFieldArray(expected.GetProperty("fields")), actual.Fields);
+        }
+    }
+
+    [Fact]
     public void MalformedIpccEfdbRowsReturnStructuredErrors()
     {
+        using var expectations = LoadParityExpectations();
+        var root = expectations.RootElement;
         var result = IpccEfdbNormalizedContentParser.Parse(
             CreateRequest(),
             CreateContentMap("ipcc_efdb_malformed_factors.csv"));
 
-        Assert.Equal(ParserRunStatus.Failed, result.Status);
+        Assert.Equal(
+            root.GetProperty("malformed_status").GetProperty("dotnet").GetString(),
+            result.Status.ToString());
         Assert.Equal(0, result.RowCount);
         Assert.Equal(
-            [
-                "IPCC_EFDB_CONTENT_INVALID_SOURCE_YEAR",
-                "IPCC_EFDB_CONTENT_INVALID_FACTOR_VALUE",
-                "IPCC_EFDB_CONTENT_MISSING_REQUIRED_FIELD",
-            ],
+            root.GetProperty("malformed_issues")
+                .EnumerateArray()
+                .Select(issue => issue.GetProperty("code").GetString()),
             result.ValidationIssues.Select(issue => issue.Code));
         Assert.Equal(
-            [
-                "source_year",
-                "factor_value",
-                "factor_id",
-            ],
+            root.GetProperty("malformed_issues")
+                .EnumerateArray()
+                .Select(issue => issue.GetProperty("field_key").GetString()),
             result.ValidationIssues.Select(issue => issue.FieldKey));
         Assert.Equal(
-            [
-                (int?)2,
-                (int?)3,
-                (int?)4,
-            ],
+            root.GetProperty("malformed_issues")
+                .EnumerateArray()
+                .Select(issue => (int?)issue.GetProperty("source_row_number").GetInt32()),
             result.ValidationIssues.Select(issue => issue.SourceRowNumber));
         Assert.Equal("year", result.ValidationIssues[0].Context.Single(context => context.Key == "raw_value").Value);
         Assert.Equal("not-a-number", result.ValidationIssues[1].Context.Single(context => context.Key == "raw_value").Value);
@@ -133,6 +150,8 @@ public sealed class IpccEfdbNormalizedContentParserTests
     [Fact]
     public void UnsupportedIpccEfdbRowsAreSkippedWithWarnings()
     {
+        using var expectations = LoadParityExpectations();
+        var root = expectations.RootElement;
         var content = string.Join(
             "\n",
             [
@@ -144,13 +163,12 @@ public sealed class IpccEfdbNormalizedContentParserTests
             CreateRequest(),
             new Dictionary<string, string> { [ArtifactReference] = content });
 
-        Assert.Equal(ParserRunStatus.Completed, result.Status);
+        Assert.Equal(
+            root.GetProperty("unsupported_only_status").GetProperty("dotnet").GetString(),
+            result.Status.ToString());
         Assert.Equal(0, result.RowCount);
         Assert.Equal(
-            [
-                "IPCC_EFDB_CONTENT_UNSUPPORTED_ROW_SKIPPED",
-                "IPCC_EFDB_CONTENT_NO_RECORDS",
-            ],
+            JsonStringArray(root.GetProperty("unsupported_only_issue_codes")),
             result.ValidationIssues.Select(issue => issue.Code));
         Assert.Equal(ParserValidationIssueSeverity.Warning, result.ValidationIssues[0].Severity);
         Assert.Equal("record_type", result.ValidationIssues[0].FieldKey);
@@ -235,6 +253,24 @@ public sealed class IpccEfdbNormalizedContentParserTests
             [ArtifactReference] = File.ReadAllText(Path.Combine(FixtureDirectory(), fixtureName)),
         };
 
+    private static JsonDocument LoadParityExpectations() =>
+        JsonDocument.Parse(File.ReadAllText(Path.Combine(
+            ParityFixtureDirectory(),
+            "ipcc_efdb_normalized_output_expectations.json")));
+
+    private static IReadOnlyList<string> JsonStringArray(JsonElement array) =>
+        array.EnumerateArray().Select(item => item.GetString() ?? string.Empty).ToArray();
+
+    private static IReadOnlyList<ParserNormalizedField> JsonFieldArray(JsonElement array) =>
+        array
+            .EnumerateArray()
+            .Select(field =>
+            {
+                var values = field.EnumerateArray().ToArray();
+                return new ParserNormalizedField(values[0].GetString() ?? string.Empty, values[1].GetString());
+            })
+            .ToArray();
+
     private static string FixtureDirectory()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -255,5 +291,22 @@ public sealed class IpccEfdbNormalizedContentParserTests
         }
 
         throw new DirectoryNotFoundException("Could not locate IPCC EFDB fixture directory.");
+    }
+
+    private static string ParityFixtureDirectory()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var fixtureDirectory = Path.Combine(directory.FullName, "tests", "fixtures", "parity");
+            if (Directory.Exists(fixtureDirectory))
+            {
+                return fixtureDirectory;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate parity fixture directory.");
     }
 }
