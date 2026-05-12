@@ -118,6 +118,19 @@ public static class ContractWireNames
                 "Unknown DEFRA source download execution status."),
         };
 
+    public static string ToWireName(this IpccSourceDownloadExecutionStatus value) =>
+        value switch
+        {
+            IpccSourceDownloadExecutionStatus.Blocked => "blocked",
+            IpccSourceDownloadExecutionStatus.Downloaded => "downloaded",
+            IpccSourceDownloadExecutionStatus.Failed => "failed",
+            IpccSourceDownloadExecutionStatus.AlreadyKnown => "already_known",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(value),
+                value,
+                "Unknown IPCC source download execution status."),
+        };
+
     public static string ToWireName(this ParserSourceFormat value) =>
         value switch
         {
@@ -334,6 +347,22 @@ public static class ContractWireNames
         };
 
         return wireName is "blocked" or "downloaded" or "failed";
+    }
+
+    public static bool TryParseIpccSourceDownloadExecutionStatusWireName(
+        string? wireName,
+        out IpccSourceDownloadExecutionStatus value)
+    {
+        value = wireName switch
+        {
+            "blocked" => IpccSourceDownloadExecutionStatus.Blocked,
+            "downloaded" => IpccSourceDownloadExecutionStatus.Downloaded,
+            "failed" => IpccSourceDownloadExecutionStatus.Failed,
+            "already_known" => IpccSourceDownloadExecutionStatus.AlreadyKnown,
+            _ => default,
+        };
+
+        return wireName is "blocked" or "downloaded" or "failed" or "already_known";
     }
 
     public static bool TryParseParserSourceFormatWireName(string? wireName, out ParserSourceFormat value)
