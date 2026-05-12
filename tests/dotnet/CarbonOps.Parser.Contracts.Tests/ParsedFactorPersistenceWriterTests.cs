@@ -1,3 +1,4 @@
+using System.Text.Json;
 using CarbonOps.Parser.Contracts;
 
 namespace CarbonOps.Parser.Contracts.Tests;
@@ -34,6 +35,55 @@ public sealed class ParsedFactorPersistenceWriterTests
         Assert.Equal($"{factorId}:{unit}:{gas}", command.DetailRecords[0].DetailExternalKey);
         Assert.Equal("1.25", command.DetailRecords[0].FactorValue);
         Assert.Equal(unit, command.DetailRecords[0].FactorUnit);
+    }
+
+    [Fact]
+    public void WriterMatchesSharedParityFixtureForFallbackPersistenceIntent()
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(ParityFixturePath()));
+        var root = document.RootElement;
+        var rowExpectation = root.GetProperty("normalized_row");
+        var expectedCommand = root.GetProperty("expected_command");
+        var sourceFamily = ParseSourceFamily(rowExpectation.GetProperty("source_family").GetString()!);
+        var row = new ParserNormalizedOutputRow(
+            sourceFamily,
+            rowExpectation.GetProperty("source_key").GetString()!,
+            new ParserKey(rowExpectation.GetProperty("parser_key").GetString()!),
+            rowExpectation.GetProperty("artifact_reference").GetString()!,
+            rowExpectation.GetProperty("row_id").GetString()!,
+            rowExpectation.GetProperty("source_row_number").GetInt32(),
+            rowExpectation.GetProperty("fields").EnumerateArray().Select(field =>
+                new ParserNormalizedField(field[0].GetString()!, field[1].GetString())),
+            reportingYear: rowExpectation.GetProperty("reporting_year").GetInt32());
+
+        var command = ParsedFactorPersistenceWriter.BuildCommand(new ParserNormalizedOutputBatch([row]));
+
+        Assert.Empty(command.Issues);
+        Assert.Equal(expectedCommand.GetProperty("master_count").GetInt32(), command.MasterRecords.Count);
+        Assert.Equal(expectedCommand.GetProperty("detail_count").GetInt32(), command.DetailRecords.Count);
+        Assert.Equal(expectedCommand.GetProperty("skipped_duplicate_count").GetInt32(), command.SkippedDuplicateCount);
+        var expectedMaster = expectedCommand.GetProperty("master_record");
+        var expectedDetail = expectedCommand.GetProperty("detail_record");
+        var master = command.MasterRecords[0];
+        var detail = command.DetailRecords[0];
+        Assert.Equal(expectedMaster.GetProperty("source_family").GetString(), PersistenceFamilyName(master.SourceFamily));
+        Assert.Equal(expectedMaster.GetProperty("source_family_master_id").GetString(), master.SourceFamilyMasterId);
+        Assert.Equal(expectedMaster.GetProperty("source_document_id").GetString(), master.SourceDocumentId);
+        Assert.Equal(expectedMaster.GetProperty("master_external_key").GetString(), master.MasterExternalKey);
+        Assert.Equal(expectedMaster.GetProperty("lifecycle_status").GetString(), master.LifecycleStatus);
+        Assert.Equal(expectedMaster.GetProperty("record_checksum_sha256").GetString(), master.RecordChecksumSha256);
+        Assert.Equal(expectedMaster.GetProperty("created_at").GetString(), master.CreatedAt);
+        Assert.Equal(expectedMaster.GetProperty("updated_at").GetString(), master.UpdatedAt);
+        Assert.Equal(expectedDetail.GetProperty("source_family").GetString(), PersistenceFamilyName(detail.SourceFamily));
+        Assert.Equal(expectedDetail.GetProperty("source_family_detail_id").GetString(), detail.SourceFamilyDetailId);
+        Assert.Equal(expectedDetail.GetProperty("source_family_master_id").GetString(), detail.SourceFamilyMasterId);
+        Assert.Equal(expectedDetail.GetProperty("detail_external_key").GetString(), detail.DetailExternalKey);
+        Assert.Equal(expectedDetail.GetProperty("factor_value").GetString(), detail.FactorValue);
+        Assert.Equal(expectedDetail.GetProperty("factor_unit").GetString(), detail.FactorUnit);
+        Assert.Equal(expectedDetail.GetProperty("lifecycle_status").GetString(), detail.LifecycleStatus);
+        Assert.Equal(expectedDetail.GetProperty("record_checksum_sha256").GetString(), detail.RecordChecksumSha256);
+        Assert.Equal(expectedDetail.GetProperty("created_at").GetString(), detail.CreatedAt);
+        Assert.Equal(expectedDetail.GetProperty("updated_at").GetString(), detail.UpdatedAt);
     }
 
     [Fact]
@@ -182,6 +232,46 @@ public sealed class ParsedFactorPersistenceWriterTests
             ],
             reportingYear: 2024);
     }
+
+    private static string ParityFixturePath()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var fixturePath = Path.Combine(
+                directory.FullName,
+                "tests",
+                "fixtures",
+                "parity",
+                "parsed_factor_persistence_writer_expectations.json");
+            if (File.Exists(fixturePath))
+            {
+                return fixturePath;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new FileNotFoundException("Parsed factor persistence parity fixture was not found.");
+    }
+
+    private static SourceFamily ParseSourceFamily(string value) =>
+        value switch
+        {
+            "ghg_protocol" => SourceFamily.GhgProtocol,
+            "defra_desnz" => SourceFamily.DefraDesnz,
+            "ipcc_efdb" => SourceFamily.IpccEfdb,
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown source family."),
+        };
+
+    private static string PersistenceFamilyName(SourceFamily value) =>
+        value switch
+        {
+            SourceFamily.GhgProtocol => "ghg",
+            SourceFamily.DefraDesnz => "defra",
+            SourceFamily.IpccEfdb => "ipcc",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown source family."),
+        };
 
     private sealed class FakeSourceFamilyRepository : ISourceFamilyRepository
     {

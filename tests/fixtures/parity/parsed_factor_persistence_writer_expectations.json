@@ -1,0 +1,49 @@
+{
+  "normalized_row": {
+    "source_family": "ghg_protocol",
+    "source_key": "ghg_protocol",
+    "parser_key": "ghg_protocol_phase1_parser",
+    "artifact_reference": "artifact://ghg/factors.csv",
+    "row_id": "ghg-row-001",
+    "source_row_number": 2,
+    "reporting_year": 2024,
+    "fields": [
+      ["source_year", "2024"],
+      ["source_version", "fixture-v1"],
+      ["factor_id", "GHG-001"],
+      ["factor_value", "1.25"],
+      ["factor_unit", "kgco2e"],
+      ["gas", "CO2e"],
+      ["provenance_artifact_reference", "artifact://ghg/factors.csv"],
+      ["provenance_checksum_value", "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"]
+    ]
+  },
+  "expected_command": {
+    "status": "declared",
+    "master_count": 1,
+    "detail_count": 1,
+    "skipped_duplicate_count": 0,
+    "master_record": {
+      "source_family": "ghg",
+      "source_family_master_id": "ghg_master_5ebca809c257b701",
+      "source_document_id": "source_document_d979c281dce2fa107de70d92",
+      "master_external_key": "2024:fixture-v1:GHG-001",
+      "lifecycle_status": "active",
+      "record_checksum_sha256": "35dfd2ec45f7b5e377d264064a2e2ca6cc36b37f1d6fca5a0e45a9c6683308b8",
+      "created_at": "dry_run_timestamp_unavailable",
+      "updated_at": "dry_run_timestamp_unavailable"
+    },
+    "detail_record": {
+      "source_family": "ghg",
+      "source_family_detail_id": "ghg_detail_e51dd21014b70f03",
+      "source_family_master_id": "ghg_master_5ebca809c257b701",
+      "detail_external_key": "GHG-001:kgco2e:CO2e",
+      "factor_value": "1.25",
+      "factor_unit": "kgco2e",
+      "lifecycle_status": "active",
+      "record_checksum_sha256": "fcac1282d6dc4d117b0f4ce6ae2bb54da5b04a80bc30ca485ae180280bc7e681",
+      "created_at": "dry_run_timestamp_unavailable",
+      "updated_at": "dry_run_timestamp_unavailable"
+    }
+  }
+}
