@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace CarbonOps.Parser.Contracts;
 
@@ -358,16 +359,9 @@ public static class ParsedFactorPersistenceWriter
 
     private static string StableDigest(params string?[] values)
     {
-        var builder = new StringBuilder();
-        foreach (var value in values)
-        {
-            builder.Append(value?.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "-1");
-            builder.Append(':');
-            builder.Append(value);
-            builder.Append('|');
-        }
+        var payload = JsonSerializer.Serialize(values);
 
-        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(builder.ToString()))).ToLowerInvariant();
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
     }
 
     private static ParsedFactorPersistenceIssue FromRepositoryIssue(SourceFamilyRepositoryIssue issue) =>
