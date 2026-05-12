@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import builtins
+import json
 from decimal import Decimal
 import sqlite3
 import urllib.request
@@ -15,6 +16,9 @@ from carbonfactor_parser.parsers import (
 
 
 FIXTURE_DIR = "tests/fixtures/source_documents/ghg_protocol"
+PARITY_EXPECTATIONS = (
+    "tests/fixtures/parity/ghg_protocol_normalized_output_expectations.json"
+)
 
 
 def _content_input(
@@ -38,21 +42,23 @@ def _fixture_content(name: str) -> str:
         return fixture.read()
 
 
+def _parity_expectations() -> dict[str, object]:
+    with open(PARITY_EXPECTATIONS, encoding="utf-8") as fixture:
+        return json.load(fixture)
+
+
+def _canonical_fields(raw_fields: dict[str, object]) -> list[list[str | None]]:
+    expected_keys = [
+        key for key, _ in _parity_expectations()["sample_rows"][0]["fields"]
+    ]
+    return [
+        [key, None if raw_fields[key] is None else str(raw_fields[key])]
+        for key in expected_keys
+    ]
+
+
 def test_ghg_protocol_normalized_content_header_is_deterministic() -> None:
-    assert GHG_PROTOCOL_NORMALIZED_CONTENT_HEADER == (
-        "record_type",
-        "source_year",
-        "source_version",
-        "factor_id",
-        "factor_name",
-        "factor_value",
-        "unit",
-        "category",
-        "subcategory",
-        "scope",
-        "gas",
-        "provenance_note",
-    )
+    assert list(GHG_PROTOCOL_NORMALIZED_CONTENT_HEADER) == _parity_expectations()["header"]
 
 
 def test_valid_ghg_protocol_content_returns_normalized_records() -> None:
@@ -94,9 +100,37 @@ def test_valid_ghg_protocol_content_returns_normalized_records() -> None:
             "tests/fixtures/source_documents/ghg_protocol/"
             "ghg_protocol_sample_factors.csv"
         ),
-        "provenance_checksum_sha256": "b" * 64,
+        "provenance_checksum_algorithm": "sha256",
+        "provenance_checksum_value": "b" * 64,
         "provenance_row_number": 2,
+        "source_family_master_id": "ghg_master_2024_v1_GHG-ELEC-001",
+        "source_family_detail_id": "ghg_detail_2024_v1_GHG-ELEC-001",
+        "master_external_key": "2024:v1:GHG-ELEC-001",
+        "detail_external_key": "GHG-ELEC-001:kg CO2e/kWh",
     }
+
+
+def test_valid_ghg_protocol_content_matches_shared_parity_expectations() -> None:
+    expectations = _parity_expectations()
+
+    result = parse_ghg_protocol_file_content(
+        _content_input(content=_fixture_content("ghg_protocol_sample_factors.csv")),
+    )
+
+    assert result.status.value == expectations["sample_status"]["python"]
+    assert tuple(issue.code for issue in result.issues) == tuple(
+        expectations["sample_issue_codes"],
+    )
+    assert result.raw_record_payload is not None
+    assert result.parsed_record_count == len(expectations["sample_rows"])
+
+    for record, expected_row in zip(
+        result.raw_record_payload.records,
+        expectations["sample_rows"],
+        strict=True,
+    ):
+        assert record.row_number == expected_row["source_row_number"]
+        assert _canonical_fields(record.raw_fields) == expected_row["fields"]
 
 
 def test_ghg_protocol_content_parser_is_deterministic_for_fixture_input() -> None:
@@ -112,25 +146,25 @@ def test_ghg_protocol_content_parser_is_deterministic_for_fixture_input() -> Non
 
 
 def test_malformed_ghg_protocol_rows_return_structured_errors() -> None:
+    expectations = _parity_expectations()
     result = parse_ghg_protocol_file_content(
         _content_input(content=_fixture_content("ghg_protocol_malformed_factors.csv")),
     )
 
-    assert result.status == ParserExecutionResultStatus.FAILED
+    assert result.status.value == expectations["malformed_status"]["python"]
     assert result.parsed_record_count == 0
     assert result.raw_record_payload is None
-    assert tuple(issue.code for issue in result.issues) == (
-        "GHG_PROTOCOL_CONTENT_INVALID_FACTOR_VALUE",
-        "GHG_PROTOCOL_CONTENT_INVALID_SOURCE_YEAR",
+    assert tuple(issue.code for issue in result.issues) == tuple(
+        issue["code"] for issue in expectations["malformed_issues"]
     )
-    assert tuple(issue.location for issue in result.issues) == (
-        "row[2].factor_value",
-        "row[3].source_year",
+    assert tuple(issue.location for issue in result.issues) == tuple(
+        issue["python_location"] for issue in expectations["malformed_issues"]
     )
     assert result.issues[0].context == {"row_number": 2}
 
 
 def test_unsupported_ghg_protocol_rows_are_skipped_with_warning() -> None:
+    expectations = _parity_expectations()
     content = (
         "record_type,source_year,source_version,factor_id,factor_name,"
         "factor_value,unit,category,subcategory,scope,gas,provenance_note\n"
@@ -139,11 +173,10 @@ def test_unsupported_ghg_protocol_rows_are_skipped_with_warning() -> None:
 
     result = parse_ghg_protocol_file_content(_content_input(content=content))
 
-    assert result.status == ParserExecutionResultStatus.NO_RECORDS
+    assert result.status.value == expectations["unsupported_only_status"]["python"]
     assert result.parsed_record_count == 0
-    assert tuple(issue.code for issue in result.issues) == (
-        "GHG_PROTOCOL_CONTENT_UNSUPPORTED_ROW_SKIPPED",
-        "GHG_PROTOCOL_CONTENT_NO_RECORDS",
+    assert tuple(issue.code for issue in result.issues) == tuple(
+        expectations["unsupported_only_issue_codes"],
     )
     assert result.issues[0].context == {
         "row_number": 2,
