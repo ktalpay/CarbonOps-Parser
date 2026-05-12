@@ -30,6 +30,14 @@ from carbonfactor_parser.persistence.postgresql_insert_builder import (
     PostgreSQLInsertStatement,
     build_postgresql_insert_statement,
 )
+from carbonfactor_parser.persistence.parsed_factor_persistence_writer import (
+    ParsedFactorPersistenceCommand,
+    ParsedFactorPersistenceIssue,
+    ParsedFactorPersistenceStatus,
+    ParsedFactorPersistenceWriterResult,
+    build_parsed_factor_persistence_command,
+    persist_parsed_factor_records,
+)
 from carbonfactor_parser.persistence.postgresql_connection_session_contract import (
     PostgreSQLConnectionSession,
     PostgreSQLConnectionSessionContractDescription,
@@ -239,6 +247,10 @@ __all__ = (
     "PersistenceRepository",
     "PersistenceResult",
     "PersistenceResultStatus",
+    "ParsedFactorPersistenceCommand",
+    "ParsedFactorPersistenceIssue",
+    "ParsedFactorPersistenceStatus",
+    "ParsedFactorPersistenceWriterResult",
     "SourceDocumentRepository",
     "SourceDocumentRepositoryIssue",
     "SourceDocumentRepositoryPersistResult",
@@ -347,6 +359,7 @@ __all__ = (
     "PostgreSQLTransactionPolicyValidationResult",
     "PostgreSQLTransactionRuntimeBoundary",
     "build_persistence_input_from_normalization_result",
+    "build_parsed_factor_persistence_command",
     "build_default_postgresql_transaction_policy",
     "build_default_postgresql_idempotency_conflict_strategy",
     "build_disabled_postgresql_execution_result",
@@ -385,6 +398,7 @@ __all__ = (
     "evaluate_postgresql_integration_test_opt_in_config",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
+    "persist_parsed_factor_records",
     "should_skip_postgresql_integration_tests",
     "source_family_repository_table_names",
     "validate_source_document_repository_inputs",
