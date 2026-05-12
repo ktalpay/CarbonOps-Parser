@@ -1,0 +1,3 @@
+source_year,source_version,category,subcategory,activity,factor_id,factor_name,factor_value,unit,greenhouse_gas,provenance
+2024,conversion-factors-2024,Energy,Electricity,Generated,DEFRA-2024-ELEC,Electricity generated,not-a-number,kWh,CO2e,worksheet:UK electricity row 10
+2024,conversion-factors-2024,Transport,Vans,Average van,DEFRA-2024-VAN,Average van distance,0.17031,,CO2e,worksheet:Business travel land row 24
