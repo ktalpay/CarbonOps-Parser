@@ -371,7 +371,7 @@ def _normalized_raw_fields(
         "source_family_master_id": master_id,
         "source_family_detail_id": detail_id,
         "master_external_key": f"{source_year}:{source_version}:{factor_id}",
-        "detail_external_key": f"{factor_id}:{unit}:{gas}",
+        "detail_external_key": f"{factor_id}:{unit}:{gas}:{row['ipcc_sector']}",
     }
 
 

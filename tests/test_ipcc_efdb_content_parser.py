@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import builtins
+import json
 import sqlite3
 import urllib.request
 from decimal import Decimal
@@ -17,6 +18,9 @@ from carbonfactor_parser.parsers import (
 
 
 FIXTURE_DIR = "tests/fixtures/source_documents/ipcc_efdb"
+PARITY_EXPECTATIONS = (
+    "tests/fixtures/parity/ipcc_efdb_normalized_output_expectations.json"
+)
 
 
 def _content_input(
@@ -40,23 +44,23 @@ def _fixture_content(name: str) -> str:
         return fixture.read()
 
 
+def _parity_expectations() -> dict[str, object]:
+    with open(PARITY_EXPECTATIONS, encoding="utf-8") as fixture:
+        return json.load(fixture)
+
+
+def _canonical_fields(raw_fields: dict[str, object]) -> list[list[str | None]]:
+    expected_keys = [
+        key for key, _ in _parity_expectations()["sample_rows"][0]["fields"]
+    ]
+    return [
+        [key, None if raw_fields[key] is None else str(raw_fields[key])]
+        for key in expected_keys
+    ]
+
+
 def test_ipcc_efdb_normalized_content_header_is_deterministic() -> None:
-    assert IPCC_EFDB_NORMALIZED_CONTENT_HEADER == (
-        "record_type",
-        "source_year",
-        "source_version",
-        "factor_id",
-        "factor_name",
-        "factor_value",
-        "unit",
-        "category",
-        "subcategory",
-        "ipcc_sector",
-        "gas",
-        "region",
-        "technology",
-        "provenance",
-    )
+    assert list(IPCC_EFDB_NORMALIZED_CONTENT_HEADER) == _parity_expectations()["header"]
 
 
 def test_valid_ipcc_efdb_content_returns_normalized_records() -> None:
@@ -110,7 +114,7 @@ def test_valid_ipcc_efdb_content_returns_normalized_records() -> None:
             "ipcc_detail_2006_efdb-v2024_IPCC-ENERGY-CO2"
         ),
         "master_external_key": "2006:efdb-v2024:IPCC-ENERGY-CO2",
-        "detail_external_key": "IPCC-ENERGY-CO2:t CO2/TJ:CO2",
+        "detail_external_key": "IPCC-ENERGY-CO2:t CO2/TJ:CO2:1A",
     }
     assert record.source_context == {
         "artifact_reference": (
@@ -123,6 +127,29 @@ def test_valid_ipcc_efdb_content_returns_normalized_records() -> None:
         "source_version": "efdb-v2024",
         "provenance": "worksheet:EFDB row 12",
     }
+
+
+def test_valid_ipcc_efdb_content_matches_shared_parity_expectations() -> None:
+    expectations = _parity_expectations()
+
+    result = parse_ipcc_efdb_file_content(
+        _content_input(content=_fixture_content("ipcc_efdb_sample_factors.csv")),
+    )
+
+    assert result.status.value == expectations["sample_status"]["python"]
+    assert tuple(issue.code for issue in result.issues) == tuple(
+        expectations["sample_issue_codes"],
+    )
+    assert result.raw_record_payload is not None
+    assert result.parsed_record_count == len(expectations["sample_rows"])
+
+    for record, expected_row in zip(
+        result.raw_record_payload.records,
+        expectations["sample_rows"],
+        strict=True,
+    ):
+        assert record.row_number == expected_row["source_row_number"]
+        assert _canonical_fields(record.raw_fields) == expected_row["fields"]
 
 
 def test_ipcc_efdb_content_parser_is_deterministic_for_fixture_input() -> None:
@@ -138,22 +165,19 @@ def test_ipcc_efdb_content_parser_is_deterministic_for_fixture_input() -> None:
 
 
 def test_malformed_ipcc_efdb_rows_return_structured_errors() -> None:
+    expectations = _parity_expectations()
     result = parse_ipcc_efdb_file_content(
         _content_input(content=_fixture_content("ipcc_efdb_malformed_factors.csv")),
     )
 
-    assert result.status == ParserExecutionResultStatus.FAILED
+    assert result.status.value == expectations["malformed_status"]["python"]
     assert result.parsed_record_count == 0
     assert result.raw_record_payload is None
-    assert tuple(issue.code for issue in result.issues) == (
-        "IPCC_EFDB_CONTENT_INVALID_SOURCE_YEAR",
-        "IPCC_EFDB_CONTENT_INVALID_FACTOR_VALUE",
-        "IPCC_EFDB_CONTENT_MISSING_REQUIRED_FIELD",
+    assert tuple(issue.code for issue in result.issues) == tuple(
+        issue["code"] for issue in expectations["malformed_issues"]
     )
-    assert tuple(issue.location for issue in result.issues) == (
-        "row[2].source_year",
-        "row[3].factor_value",
-        "row[4].factor_id",
+    assert tuple(issue.location for issue in result.issues) == tuple(
+        issue["python_location"] for issue in expectations["malformed_issues"]
     )
     assert result.issues[0].context == {
         "row_number": 2,
@@ -163,6 +187,7 @@ def test_malformed_ipcc_efdb_rows_return_structured_errors() -> None:
 
 
 def test_unsupported_ipcc_efdb_rows_are_skipped_with_warning() -> None:
+    expectations = _parity_expectations()
     content = (
         "record_type,source_year,source_version,factor_id,factor_name,"
         "factor_value,unit,category,subcategory,ipcc_sector,gas,region,"
@@ -173,11 +198,10 @@ def test_unsupported_ipcc_efdb_rows_are_skipped_with_warning() -> None:
 
     result = parse_ipcc_efdb_file_content(_content_input(content=content))
 
-    assert result.status == ParserExecutionResultStatus.NO_RECORDS
+    assert result.status.value == expectations["unsupported_only_status"]["python"]
     assert result.parsed_record_count == 0
-    assert tuple(issue.code for issue in result.issues) == (
-        "IPCC_EFDB_CONTENT_UNSUPPORTED_ROW_SKIPPED",
-        "IPCC_EFDB_CONTENT_NO_RECORDS",
+    assert tuple(issue.code for issue in result.issues) == tuple(
+        expectations["unsupported_only_issue_codes"],
     )
     assert result.issues[0].context == {
         "row_number": 2,
