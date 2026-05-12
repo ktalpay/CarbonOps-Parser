@@ -1,0 +1,4 @@
+record_type,source_year,source_version,factor_id,factor_name,factor_value,unit,category,subcategory,ipcc_sector,gas,region,technology,provenance
+emission_factor,year,efdb-v2024,IPCC-BAD-YEAR,Bad year,1.2,kg CO2/TJ,Energy,,1A,CO2,Global,Default,worksheet:bad year
+emission_factor,2006,efdb-v2024,IPCC-BAD-VALUE,Bad value,not-a-number,kg CO2/TJ,Energy,,1A,CO2,Global,Default,worksheet:bad value
+emission_factor,2006,efdb-v2024,,Missing factor id,1.2,kg CO2/TJ,Energy,,1A,CO2,Global,Default,worksheet:missing factor id
