@@ -61,6 +61,14 @@ EXPECTED_CONTRACT_API_SYMBOLS = (
     "IPCCSourceDiscoveryStatus",
     "IPCCSourceDiscoveryValidationResult",
     "IPCCSourceDocumentCandidate",
+    "IPCCSourceDownloadExecutionIssue",
+    "IPCCSourceDownloadExecutionRequest",
+    "IPCCSourceDownloadExecutionResult",
+    "IPCCSourceDownloadExecutionStatus",
+    "IPCCSourceDownloadExecutionValidationResult",
+    "IPCCSourceDownloadTransport",
+    "IPCCSourceDownloadTransportResponse",
+    "IPCCSourceDownloadedArtifact",
     "SourceAcquisitionRunIssue",
     "SourceAcquisitionRunRepository",
     "SourceAcquisitionRunRepositoryIssue",
@@ -103,6 +111,7 @@ EXPECTED_CONTRACT_API_SYMBOLS = (
     "create_ghg_source_download_execution_request",
     "create_ipcc_source_discovery_request",
     "create_ipcc_source_discovery_result",
+    "create_ipcc_source_download_execution_request",
     "create_source_artifact_parser_input_bridge_entry",
     "create_source_acquisition_run_request",
     "create_source_acquisition_run_result",
@@ -131,6 +140,9 @@ EXPECTED_CONTRACT_API_SYMBOLS = (
     "validate_ipcc_source_discovery_request",
     "validate_ipcc_source_discovery_result",
     "validate_ipcc_source_document_candidate",
+    "execute_ipcc_source_download",
+    "validate_ipcc_source_download_execution_request",
+    "validate_ipcc_source_download_execution_result",
     "validate_source_artifact_parser_input_bridge_entry",
     "validate_source_artifact_parser_input_bridge_result",
     "validate_source_acquisition_run_request",
@@ -264,6 +276,19 @@ def test_public_source_acquisition_contract_api_exports_work_together() -> None:
     assert ipcc_discovery.status is contract_api.IPCCSourceDiscoveryStatus.DECLARED
     assert ipcc_discovery.candidate_count == 1
     assert contract_api.validate_ipcc_source_discovery_result(ipcc_discovery).is_valid
+    ipcc_download_request = (
+        contract_api.create_ipcc_source_download_execution_request(
+            ipcc_discovery.candidates[0],
+            target_root="/tmp/carbonops-ipcc",
+            target_relative_path="ipcc/source.discovery",
+        )
+    )
+    assert (
+        contract_api.validate_ipcc_source_download_execution_request(
+            ipcc_download_request,
+        ).is_valid
+        is False
+    )
 
 
 def test_source_acquisition_package_import_is_lazy_and_runtime_passive() -> None:
@@ -338,6 +363,7 @@ def test_source_acquisition_contract_api_does_not_export_internal_module_names()
     assert "ghg_source_discovery_boundary" not in contract_api.__all__
     assert "ghg_source_download_execution_boundary" not in contract_api.__all__
     assert "ipcc_source_discovery_boundary" not in contract_api.__all__
+    assert "ipcc_source_download_execution_boundary" not in contract_api.__all__
     assert all(not name.startswith("_") for name in contract_api.__all__)
 
 
