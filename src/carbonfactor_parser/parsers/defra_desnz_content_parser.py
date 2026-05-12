@@ -29,6 +29,31 @@ DEFRA_DESNZ_MINIMAL_CONTENT_HEADER = (
     "unit",
 )
 
+DEFRA_DESNZ_NORMALIZED_CONTENT_HEADER = (
+    "source_year",
+    "source_version",
+    "category",
+    "subcategory",
+    "activity",
+    "factor_id",
+    "factor_name",
+    "factor_value",
+    "unit",
+    "greenhouse_gas",
+    "provenance",
+)
+
+_DEFRA_DESNZ_REQUIRED_NORMALIZED_FIELDS = (
+    "source_year",
+    "source_version",
+    "category",
+    "factor_id",
+    "factor_name",
+    "factor_value",
+    "unit",
+    "provenance",
+)
+
 
 def parse_defra_desnz_file_content(
     content_input: ParserFileContentInput,
@@ -107,7 +132,10 @@ def _parse_minimal_csv(
     parser_input,
 ) -> ParserExecutionResult:
     reader = csv.DictReader(StringIO(content_text))
-    if tuple(reader.fieldnames or ()) != DEFRA_DESNZ_MINIMAL_CONTENT_HEADER:
+    fieldnames = tuple(reader.fieldnames or ())
+    if fieldnames == DEFRA_DESNZ_NORMALIZED_CONTENT_HEADER:
+        return _parse_normalized_csv(reader, parser_input)
+    if fieldnames != DEFRA_DESNZ_MINIMAL_CONTENT_HEADER:
         return create_parser_execution_result(
             status=ParserExecutionResultStatus.FAILED,
             parser_input=parser_input,
@@ -115,8 +143,8 @@ def _parse_minimal_csv(
                 ParserExecutionIssue(
                     code="DEFRA_DESNZ_CONTENT_INVALID_HEADER",
                     message=(
-                        "DEFRA/DESNZ minimal content header must be "
-                        "factor_id,factor_name,unit."
+                        "DEFRA/DESNZ content header must match either the "
+                        "minimal fixture shape or normalized extraction shape."
                     ),
                     severity=ParserExecutionIssueSeverity.ERROR,
                     location="header",
@@ -190,6 +218,155 @@ def _parse_minimal_csv(
     )
 
 
+def _parse_normalized_csv(
+    reader: csv.DictReader,
+    parser_input,
+) -> ParserExecutionResult:
+    parser_metadata = _parser_metadata(
+        parser_kind="defra_desnz_normalized_csv_extraction",
+        is_real_source_parser=True,
+    )
+    issues: list[ParserExecutionIssue] = []
+    raw_records = []
+    parsed_record_count = 0
+
+    for row_number, row in enumerate(reader, start=2):
+        if None in row:
+            return create_parser_execution_result(
+                status=ParserExecutionResultStatus.FAILED,
+                parser_input=parser_input,
+                issues=(
+                    ParserExecutionIssue(
+                        code="DEFRA_DESNZ_CONTENT_INVALID_ROW",
+                        message="DEFRA/DESNZ normalized content row has an unexpected column count.",
+                        severity=ParserExecutionIssueSeverity.ERROR,
+                        location=f"row[{row_number}]",
+                    ),
+                ),
+                parser_metadata=parser_metadata,
+            )
+        if not any((value or "").strip() for value in row.values()):
+            continue
+
+        row_issues = _normalized_row_issues(row, row_number)
+        issues.extend(row_issues)
+        if row_issues:
+            continue
+
+        parsed_record_count += 1
+        raw_records.append(
+            create_parsed_raw_record(
+                source_family=parser_input.source_family,
+                source_id=parser_input.source_id,
+                record_index=parsed_record_count,
+                row_number=row_number,
+                raw_fields={key: (value or "").strip() for key, value in row.items()},
+                parser_metadata=parser_metadata,
+                source_context={
+                    "artifact_reference": parser_input.artifact_reference,
+                    "source_year": (row.get("source_year") or "").strip(),
+                    "source_version": (row.get("source_version") or "").strip(),
+                    "provenance": (row.get("provenance") or "").strip(),
+                },
+            ),
+        )
+
+    if issues:
+        return create_parser_execution_result(
+            status=ParserExecutionResultStatus.FAILED,
+            parser_input=parser_input,
+            parsed_record_count=parsed_record_count,
+            issues=tuple(issues),
+            parser_metadata=parser_metadata,
+            raw_record_payload=(
+                create_parsed_raw_record_payload(
+                    source_family=parser_input.source_family,
+                    source_id=parser_input.source_id,
+                    records=tuple(raw_records),
+                    parser_metadata=parser_metadata,
+                    source_context={
+                        "artifact_reference": parser_input.artifact_reference,
+                    },
+                )
+                if raw_records
+                else None
+            ),
+        )
+
+    if parsed_record_count == 0:
+        return create_parser_execution_result(
+            status=ParserExecutionResultStatus.NO_RECORDS,
+            parser_input=parser_input,
+            issues=(
+                ParserExecutionIssue(
+                    code="DEFRA_DESNZ_CONTENT_NO_RECORDS",
+                    message="DEFRA/DESNZ normalized content header was present but no rows were parsed.",
+                    severity=ParserExecutionIssueSeverity.WARNING,
+                    location="content",
+                ),
+            ),
+            parser_metadata=parser_metadata,
+        )
+
+    return create_parser_execution_result(
+        status=ParserExecutionResultStatus.SUCCESS,
+        parser_input=parser_input,
+        parsed_record_count=parsed_record_count,
+        parser_metadata=parser_metadata,
+        raw_record_payload=create_parsed_raw_record_payload(
+            source_family=parser_input.source_family,
+            source_id=parser_input.source_id,
+            records=tuple(raw_records),
+            parser_metadata=parser_metadata,
+            source_context={
+                "artifact_reference": parser_input.artifact_reference,
+            },
+        ),
+    )
+
+
+def _normalized_row_issues(
+    row: dict[str, str],
+    row_number: int,
+) -> tuple[ParserExecutionIssue, ...]:
+    issues: list[ParserExecutionIssue] = []
+    for field_name in _DEFRA_DESNZ_REQUIRED_NORMALIZED_FIELDS:
+        if not (row.get(field_name) or "").strip():
+            issues.append(
+                ParserExecutionIssue(
+                    code="DEFRA_DESNZ_CONTENT_MISSING_REQUIRED_FIELD",
+                    message=(
+                        "DEFRA/DESNZ normalized content row is missing "
+                        f"required field: {field_name}."
+                    ),
+                    severity=ParserExecutionIssueSeverity.ERROR,
+                    location=f"row[{row_number}].{field_name}",
+                    context={"row_number": row_number, "field_name": field_name},
+                ),
+            )
+
+    factor_value = (row.get("factor_value") or "").strip()
+    if factor_value:
+        try:
+            float(factor_value)
+        except ValueError:
+            issues.append(
+                ParserExecutionIssue(
+                    code="DEFRA_DESNZ_CONTENT_INVALID_FACTOR_VALUE",
+                    message="DEFRA/DESNZ normalized factor_value must be numeric.",
+                    severity=ParserExecutionIssueSeverity.ERROR,
+                    location=f"row[{row_number}].factor_value",
+                    context={
+                        "row_number": row_number,
+                        "field_name": "factor_value",
+                        "raw_value": factor_value,
+                    },
+                ),
+            )
+
+    return tuple(issues)
+
+
 def _content_text(content_input: ParserFileContentInput) -> str | None:
     if isinstance(content_input.content, str):
         return content_input.content
@@ -217,9 +394,13 @@ def _parser_input_from_content_input(content_input: ParserFileContentInput):
     )
 
 
-def _parser_metadata() -> dict[str, object]:
+def _parser_metadata(
+    *,
+    parser_kind: str = "minimal_defra_desnz_content_fixture",
+    is_real_source_parser: bool = False,
+) -> dict[str, object]:
     return {
-        "parser_kind": "minimal_defra_desnz_content_fixture",
-        "is_real_source_parser": False,
+        "parser_kind": parser_kind,
+        "is_real_source_parser": is_real_source_parser,
         "normalization_executed": False,
     }

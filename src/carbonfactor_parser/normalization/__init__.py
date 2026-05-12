@@ -8,6 +8,7 @@ from carbonfactor_parser.normalization.contracts import (
 )
 from carbonfactor_parser.normalization.defra_desnz_mapper import (
     DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS,
+    DEFRA_DESNZ_NORMALIZED_MAPPING_FIELDS,
     DefraDesnzNormalizationMappingResult,
     DefraDesnzNormalizationMappingStatus,
     map_defra_desnz_normalization_input,
@@ -50,6 +51,7 @@ __all__ = (
     "NormalizationResultSummary",
     "NormalizedRecord",
     "DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS",
+    "DEFRA_DESNZ_NORMALIZED_MAPPING_FIELDS",
     "DefraDesnzNormalizationMappingResult",
     "DefraDesnzNormalizationMappingStatus",
     "ArtificialNormalizationExecutor",
