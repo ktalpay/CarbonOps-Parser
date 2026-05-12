@@ -19,6 +19,7 @@ from carbonfactor_parser.persistence import (
     postgresql_schema_bootstrap_planner,
     postgresql_schema_isolation_strategy,
     postgresql_transaction_policy,
+    parsed_factor_persistence_writer,
     repository,
     schema,
     source_document_repository,
@@ -43,6 +44,10 @@ from carbonfactor_parser.persistence import (
     PersistenceRepository,
     PersistenceResult,
     PersistenceResultStatus,
+    ParsedFactorPersistenceCommand,
+    ParsedFactorPersistenceIssue,
+    ParsedFactorPersistenceStatus,
+    ParsedFactorPersistenceWriterResult,
     SourceDocumentRepository,
     SourceDocumentRepositoryIssue,
     SourceDocumentRepositoryPersistResult,
@@ -151,6 +156,7 @@ from carbonfactor_parser.persistence import (
     PostgreSQLTransactionPolicyValidationResult,
     PostgreSQLTransactionRuntimeBoundary,
     build_persistence_input_from_normalization_result,
+    build_parsed_factor_persistence_command,
     build_default_postgresql_transaction_policy,
     build_default_postgresql_idempotency_conflict_strategy,
     build_disabled_postgresql_execution_result,
@@ -191,6 +197,7 @@ from carbonfactor_parser.persistence import (
     render_postgresql_ddl_preview,
     should_skip_postgresql_integration_tests,
     source_family_repository_table_names,
+    persist_parsed_factor_records,
     validate_source_document_repository_inputs,
     validate_source_family_repository_inputs,
     validate_psycopg_session_adapter_boundary,
@@ -222,6 +229,10 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PersistenceRepository",
     "PersistenceResult",
     "PersistenceResultStatus",
+    "ParsedFactorPersistenceCommand",
+    "ParsedFactorPersistenceIssue",
+    "ParsedFactorPersistenceStatus",
+    "ParsedFactorPersistenceWriterResult",
     "SourceDocumentRepository",
     "SourceDocumentRepositoryIssue",
     "SourceDocumentRepositoryPersistResult",
@@ -330,6 +341,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLTransactionPolicyValidationResult",
     "PostgreSQLTransactionRuntimeBoundary",
     "build_persistence_input_from_normalization_result",
+    "build_parsed_factor_persistence_command",
     "build_default_postgresql_transaction_policy",
     "build_default_postgresql_idempotency_conflict_strategy",
     "build_disabled_postgresql_execution_result",
@@ -368,6 +380,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "evaluate_postgresql_integration_test_opt_in_config",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
+    "persist_parsed_factor_records",
     "should_skip_postgresql_integration_tests",
     "source_family_repository_table_names",
     "validate_source_document_repository_inputs",
@@ -416,6 +429,18 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PersistenceRepository": repository.PersistenceRepository,
     "PersistenceResult": repository.PersistenceResult,
     "PersistenceResultStatus": repository.PersistenceResultStatus,
+    "ParsedFactorPersistenceCommand": (
+        parsed_factor_persistence_writer.ParsedFactorPersistenceCommand
+    ),
+    "ParsedFactorPersistenceIssue": (
+        parsed_factor_persistence_writer.ParsedFactorPersistenceIssue
+    ),
+    "ParsedFactorPersistenceStatus": (
+        parsed_factor_persistence_writer.ParsedFactorPersistenceStatus
+    ),
+    "ParsedFactorPersistenceWriterResult": (
+        parsed_factor_persistence_writer.ParsedFactorPersistenceWriterResult
+    ),
     "SourceDocumentRepository": source_document_repository.SourceDocumentRepository,
     "SourceDocumentRepositoryIssue": (
         source_document_repository.SourceDocumentRepositoryIssue
@@ -756,6 +781,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     "build_persistence_input_from_normalization_result": (
         input.build_persistence_input_from_normalization_result
     ),
+    "build_parsed_factor_persistence_command": (
+        parsed_factor_persistence_writer.build_parsed_factor_persistence_command
+    ),
     "build_default_postgresql_transaction_policy": (
         postgresql_transaction_policy.build_default_postgresql_transaction_policy
     ),
@@ -895,6 +923,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     "source_family_repository_table_names": (
         source_family_repository.source_family_repository_table_names
     ),
+    "persist_parsed_factor_records": (
+        parsed_factor_persistence_writer.persist_parsed_factor_records
+    ),
     "validate_source_document_repository_inputs": (
         source_document_repository.validate_source_document_repository_inputs
     ),
@@ -960,6 +991,10 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PersistenceRepository": PersistenceRepository,
         "PersistenceResult": PersistenceResult,
         "PersistenceResultStatus": PersistenceResultStatus,
+        "ParsedFactorPersistenceCommand": ParsedFactorPersistenceCommand,
+        "ParsedFactorPersistenceIssue": ParsedFactorPersistenceIssue,
+        "ParsedFactorPersistenceStatus": ParsedFactorPersistenceStatus,
+        "ParsedFactorPersistenceWriterResult": ParsedFactorPersistenceWriterResult,
         "SourceDocumentRepository": SourceDocumentRepository,
         "SourceDocumentRepositoryIssue": SourceDocumentRepositoryIssue,
         "SourceDocumentRepositoryPersistResult": (
@@ -1172,6 +1207,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "build_persistence_input_from_normalization_result": (
             build_persistence_input_from_normalization_result
         ),
+        "build_parsed_factor_persistence_command": (
+            build_parsed_factor_persistence_command
+        ),
         "build_default_postgresql_transaction_policy": (
             build_default_postgresql_transaction_policy
         ),
@@ -1276,6 +1314,7 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
             get_normalized_record_postgresql_schema
         ),
         "render_postgresql_ddl_preview": render_postgresql_ddl_preview,
+        "persist_parsed_factor_records": persist_parsed_factor_records,
         "should_skip_postgresql_integration_tests": (
             should_skip_postgresql_integration_tests
         ),
