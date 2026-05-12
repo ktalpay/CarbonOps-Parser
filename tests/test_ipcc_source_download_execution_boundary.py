@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import FrozenInstanceError, replace
 from hashlib import sha256
 import importlib
+import json
 from pathlib import Path
 import shutil
 import sys
@@ -61,6 +62,11 @@ BANNED_EXECUTABLE_PARSER_MODULES = (
     "carbonfactor_parser.parsers.ipcc_efdb_parser",
     "carbonfactor_parser.parsers.execution_runner",
     "carbonfactor_parser.parsers.file_content_loader",
+)
+
+PARITY_FIXTURE_PATH = (
+    Path(__file__).parent
+    / "fixtures/parity/ipcc_source_download_execution_expectations.json"
 )
 
 
@@ -270,6 +276,121 @@ def test_successful_download_is_explicit_and_uses_injected_transport(
     )
     assert result.downloaded is True
     assert validate_ipcc_source_download_execution_result(result).is_valid is True
+
+
+def test_download_execution_matches_shared_parity_fixture(tmp_path: Path) -> None:
+    fixture = _load_parity_fixture()
+    request = replace(
+        _fixture_request(tmp_path, fixture),
+        expected_checksum_sha256=fixture["successful_download"]["checksum_sha256"],
+    )
+    payload = fixture["successful_download"]["payload_text"].encode()
+
+    successful = execute_ipcc_source_download(
+        request,
+        lambda _: IPCCSourceDownloadTransportResponse(
+            content=payload,
+            content_type=fixture["content_type"],
+            final_uri=fixture["successful_download"]["final_uri"],
+        ),
+    )
+
+    assert successful.status.value == fixture["successful_download"]["status"]
+    assert successful.downloaded is fixture["successful_download"]["downloaded"]
+    assert successful.artifact is not None
+    assert successful.artifact.source_family == fixture["source_family"]
+    assert successful.artifact.source_key == fixture["source_key"]
+    assert successful.artifact.candidate_id == fixture["candidate_id"]
+    assert successful.artifact.artifact_kind == fixture["artifact_kind"]
+    assert successful.artifact.checksum_sha256 == (
+        fixture["successful_download"]["checksum_sha256"]
+    )
+    assert successful.artifact.size_bytes == fixture["successful_download"]["size_bytes"]
+    assert successful.artifact.content_type == fixture["content_type"]
+    assert successful.artifact.extension == fixture["extension"]
+    assert successful.artifact.final_uri == fixture["successful_download"]["final_uri"]
+    assert successful.artifact.document_year == fixture["document_year"]
+    assert successful.artifact.reporting_year == fixture["reporting_year"]
+    assert successful.artifact.version_label == fixture["version_label"]
+    assert successful.artifact.reused_existing is (
+        fixture["successful_download"]["reused_existing"]
+    )
+    assert _issue_codes(successful.issues) == tuple(
+        fixture["successful_download"]["issue_codes"]
+    )
+
+    existing_root = tmp_path / "existing"
+    existing_request = replace(
+        _fixture_request(existing_root, fixture),
+        expected_checksum_sha256=fixture["existing_known_document"]["checksum_sha256"],
+    )
+    existing_target = existing_root / fixture["target_relative_path"]
+    existing_target.parent.mkdir(parents=True)
+    existing_target.write_bytes(fixture["existing_known_document"]["payload_text"].encode())
+
+    existing = execute_ipcc_source_download(existing_request, _unexpected_transport)
+
+    assert existing.status.value == fixture["existing_known_document"]["python"]["status"]
+    assert existing.downloaded is fixture["existing_known_document"]["python"]["downloaded"]
+    assert existing.artifact is not None
+    assert existing.artifact.reused_existing is (
+        fixture["existing_known_document"]["python"]["reused_existing"]
+    )
+    assert existing.artifact.checksum_sha256 == (
+        fixture["existing_known_document"]["checksum_sha256"]
+    )
+    assert existing.artifact.size_bytes == fixture["existing_known_document"]["size_bytes"]
+    assert _issue_codes(existing.issues) == tuple(
+        fixture["existing_known_document"]["issue_codes"]
+    )
+
+    mismatch = execute_ipcc_source_download(
+        replace(
+            _fixture_request(tmp_path / "mismatch", fixture),
+            expected_checksum_sha256=fixture["checksum_mismatch"][
+                "expected_checksum_sha256"
+            ],
+        ),
+        lambda _: IPCCSourceDownloadTransportResponse(
+            content=fixture["checksum_mismatch"]["payload_text"].encode()
+        ),
+    )
+    assert mismatch.status.value == fixture["checksum_mismatch"]["status"]
+    assert mismatch.artifact is fixture["checksum_mismatch"]["artifact"]
+    assert _issue_codes(mismatch.issues) == tuple(
+        fixture["checksum_mismatch"]["issue_codes"]
+    )
+
+    blank_metadata = execute_ipcc_source_download(
+        _fixture_request(tmp_path / "blank-metadata", fixture),
+        lambda _: IPCCSourceDownloadTransportResponse(
+            content=b"content",
+            content_type=" ",
+            final_uri=" ",
+        ),
+    )
+    assert blank_metadata.status.value == fixture["blank_response_metadata"]["status"]
+    assert blank_metadata.artifact is fixture["blank_response_metadata"]["artifact"]
+    assert _issue_codes(blank_metadata.issues) == tuple(
+        fixture["blank_response_metadata"]["issue_codes"]
+    )
+
+    default_candidate_request = create_ipcc_source_download_execution_request(
+        create_ipcc_source_discovery_result().candidates[0],
+        target_root=str(tmp_path / "default-candidate"),
+        target_relative_path=fixture["target_relative_path"],
+        allow_download_execution=True,
+        allow_file_write=True,
+    )
+    default_candidate = execute_ipcc_source_download(
+        default_candidate_request,
+        _unexpected_transport,
+    )
+    assert default_candidate.status.value == fixture["default_candidate_blocked"]["status"]
+    assert default_candidate.artifact is fixture["default_candidate_blocked"]["artifact"]
+    assert _issue_codes(default_candidate.issues) == tuple(
+        fixture["default_candidate_blocked"]["issue_codes"]
+    )
 
 
 def test_existing_known_target_is_idempotent_without_transport(
@@ -697,6 +818,36 @@ def _valid_request(tmp_path: Path) -> IPCCSourceDownloadExecutionRequest:
         allow_download_execution=True,
         allow_file_write=True,
     )
+
+
+def _fixture_request(
+    tmp_path: Path,
+    fixture: dict[str, object],
+) -> IPCCSourceDownloadExecutionRequest:
+    candidate = replace(
+        _downloadable_candidate(),
+        candidate_id=str(fixture["candidate_id"]),
+        title=str(fixture["candidate_title"]),
+        reference_uri=str(fixture["source_reference_uri"]),
+        artifact_kind=str(fixture["artifact_kind"]),
+        content_type=str(fixture["content_type"]),
+        extension=str(fixture["extension"]),
+        document_year=int(fixture["document_year"]),
+        reporting_year=int(fixture["reporting_year"]),
+        version_label=str(fixture["version_label"]),
+    )
+    return create_ipcc_source_download_execution_request(
+        candidate,
+        target_root=str(tmp_path),
+        target_relative_path=str(fixture["target_relative_path"]),
+        allow_download_execution=True,
+        allow_file_write=True,
+    )
+
+
+def _load_parity_fixture() -> dict[str, object]:
+    with PARITY_FIXTURE_PATH.open(encoding="utf-8") as fixture_file:
+        return json.load(fixture_file)
 
 
 def _unexpected_transport(

@@ -1,0 +1,68 @@
+{
+  "source_family": "ipcc_efdb",
+  "source_key": "ipcc_efdb",
+  "candidate_id": "ipcc_source_discovery_candidate_001_ipcc_efdb",
+  "candidate_title": "IPCC EFDB",
+  "source_reference_uri": "mock://ipcc_efdb/efdb.xlsx",
+  "artifact_kind": "xlsx",
+  "target_relative_path": "ipcc/efdb.xlsx",
+  "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "extension": ".xlsx",
+  "document_year": 2006,
+  "reporting_year": 2024,
+  "version_label": "pt053_fixture_download",
+  "successful_download": {
+    "payload_text": "deterministic ipcc source bytes",
+    "status": "downloaded",
+    "downloaded": true,
+    "already_known": false,
+    "reused_existing": false,
+    "checksum_sha256": "ab52d433d6f9e29ba16eb12a7d77cfb67c6778c61368ac52efbc40ff983fd5d1",
+    "size_bytes": 31,
+    "final_uri": "mock://ipcc_efdb/final.xlsx",
+    "issue_codes": []
+  },
+  "existing_known_document": {
+    "payload_text": "existing ipcc bytes",
+    "transport_called": false,
+    "checksum_sha256": "360694d307907c42592d1af4b00f15120568a9b2ed538f857dce1d45e239474d",
+    "size_bytes": 19,
+    "issue_codes": [],
+    "python": {
+      "status": "downloaded",
+      "downloaded": true,
+      "reused_existing": true
+    },
+    "dotnet": {
+      "status": "already_known",
+      "downloaded": false,
+      "already_known": true
+    },
+    "intentional_difference": ".NET exposes an explicit already_known status; Python keeps the existing public downloaded status and marks the artifact reused_existing=true."
+  },
+  "checksum_mismatch": {
+    "payload_text": "unexpected",
+    "expected_checksum_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "status": "failed",
+    "artifact": null,
+    "issue_codes": [
+      "IPCC_SOURCE_DOWNLOAD_CHECKSUM_MISMATCH"
+    ]
+  },
+  "default_candidate_blocked": {
+    "status": "blocked",
+    "artifact": null,
+    "issue_codes": [
+      "IPCC_SOURCE_DOWNLOAD_CANDIDATE_NOT_DOWNLOADABLE",
+      "IPCC_SOURCE_DOWNLOAD_DISCOVERY_REFERENCE_NOT_DOWNLOADABLE"
+    ]
+  },
+  "blank_response_metadata": {
+    "status": "failed",
+    "artifact": null,
+    "issue_codes": [
+      "IPCC_SOURCE_DOWNLOAD_RESPONSE_BLANK_CONTENT_TYPE",
+      "IPCC_SOURCE_DOWNLOAD_RESPONSE_BLANK_FINAL_URI"
+    ]
+  }
+}

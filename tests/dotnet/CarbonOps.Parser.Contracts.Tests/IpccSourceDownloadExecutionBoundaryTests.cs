@@ -1,5 +1,7 @@
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using CarbonOps.Parser.Contracts;
 
 namespace CarbonOps.Parser.Contracts.Tests;
@@ -154,6 +156,111 @@ public sealed class IpccSourceDownloadExecutionBoundaryTests
     }
 
     [Fact]
+    public void DownloadExecutionMatchesSharedParityFixture()
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(ParityFixturePath()));
+        var fixture = document.RootElement;
+        using var temp = new TemporaryDirectory();
+
+        var successfulFixture = fixture.GetProperty("successful_download");
+        var request = FixtureRequest(temp.Path, fixture) with
+        {
+            ExpectedChecksumSha256 = RequiredString(successfulFixture, "checksum_sha256"),
+        };
+        var payload = Encoding.UTF8.GetBytes(RequiredString(successfulFixture, "payload_text"));
+
+        var successful = IpccSourceDownloadExecutionBoundary.Execute(
+            request,
+            _ => new IpccSourceDownloadTransportResponse(
+                payload,
+                RequiredString(fixture, "content_type"),
+                RequiredString(successfulFixture, "final_uri")),
+            () => RetrievedAt);
+
+        Assert.Equal(RequiredString(successfulFixture, "status"), successful.Status.ToWireName());
+        Assert.Equal(successfulFixture.GetProperty("downloaded").GetBoolean(), successful.Downloaded);
+        Assert.Equal(successfulFixture.GetProperty("already_known").GetBoolean(), successful.AlreadyKnown);
+        Assert.NotNull(successful.Artifact);
+        Assert.Equal(SourceFamily.IpccEfdb, successful.Artifact.SourceFamily);
+        Assert.Equal(RequiredString(fixture, "source_key"), successful.Artifact.SourceKey);
+        Assert.Equal(RequiredString(fixture, "candidate_id"), successful.Artifact.CandidateId);
+        Assert.Equal(RequiredString(fixture, "artifact_kind"), successful.Artifact.ArtifactKind);
+        Assert.Equal(RequiredString(successfulFixture, "checksum_sha256"), successful.Artifact.ChecksumSha256);
+        Assert.Equal(successfulFixture.GetProperty("size_bytes").GetInt64(), successful.Artifact.SizeBytes);
+        Assert.Equal(RequiredString(fixture, "content_type"), successful.Artifact.ContentType);
+        Assert.Equal(RequiredString(fixture, "extension"), successful.Artifact.Extension);
+        Assert.Equal(RequiredString(successfulFixture, "final_uri"), successful.Artifact.FinalUri);
+        Assert.Equal(fixture.GetProperty("document_year").GetInt32(), successful.Artifact.DocumentYear);
+        Assert.Equal(fixture.GetProperty("reporting_year").GetInt32(), successful.Artifact.ReportingYear);
+        Assert.Equal(RequiredString(fixture, "version_label"), successful.Artifact.VersionLabel);
+        AssertIssueCodes(successful.Issues, successfulFixture);
+
+        var existingFixture = fixture.GetProperty("existing_known_document");
+        using var existingTemp = new TemporaryDirectory();
+        var existingRequest = FixtureRequest(existingTemp.Path, fixture) with
+        {
+            ExpectedChecksumSha256 = RequiredString(existingFixture, "checksum_sha256"),
+        };
+        var existingTarget = Path.Combine(existingTemp.Path, RequiredString(fixture, "target_relative_path"));
+        Directory.CreateDirectory(Path.GetDirectoryName(existingTarget)!);
+        File.WriteAllBytes(
+            existingTarget,
+            Encoding.UTF8.GetBytes(RequiredString(existingFixture, "payload_text")));
+
+        var existing = IpccSourceDownloadExecutionBoundary.Execute(
+            existingRequest,
+            UnexpectedTransport,
+            () => RetrievedAt);
+        var dotnetExisting = existingFixture.GetProperty("dotnet");
+
+        Assert.Equal(RequiredString(dotnetExisting, "status"), existing.Status.ToWireName());
+        Assert.Equal(dotnetExisting.GetProperty("downloaded").GetBoolean(), existing.Downloaded);
+        Assert.Equal(dotnetExisting.GetProperty("already_known").GetBoolean(), existing.AlreadyKnown);
+        Assert.NotNull(existing.Artifact);
+        Assert.Equal(RequiredString(existingFixture, "checksum_sha256"), existing.Artifact.ChecksumSha256);
+        Assert.Equal(existingFixture.GetProperty("size_bytes").GetInt64(), existing.Artifact.SizeBytes);
+        AssertIssueCodes(existing.Issues, existingFixture);
+
+        var mismatchFixture = fixture.GetProperty("checksum_mismatch");
+        var mismatch = IpccSourceDownloadExecutionBoundary.Execute(
+            FixtureRequest(Path.Combine(temp.Path, "mismatch"), fixture) with
+            {
+                ExpectedChecksumSha256 = RequiredString(mismatchFixture, "expected_checksum_sha256"),
+            },
+            _ => new IpccSourceDownloadTransportResponse(
+                Encoding.UTF8.GetBytes(RequiredString(mismatchFixture, "payload_text"))));
+
+        Assert.Equal(RequiredString(mismatchFixture, "status"), mismatch.Status.ToWireName());
+        Assert.Null(mismatch.Artifact);
+        AssertIssueCodes(mismatch.Issues, mismatchFixture);
+
+        var blankMetadataFixture = fixture.GetProperty("blank_response_metadata");
+        var blankMetadata = IpccSourceDownloadExecutionBoundary.Execute(
+            FixtureRequest(Path.Combine(temp.Path, "blank-metadata"), fixture),
+            _ => new IpccSourceDownloadTransportResponse("content"u8.ToArray(), " ", " "));
+
+        Assert.Equal(RequiredString(blankMetadataFixture, "status"), blankMetadata.Status.ToWireName());
+        Assert.Null(blankMetadata.Artifact);
+        AssertIssueCodes(blankMetadata.Issues, blankMetadataFixture);
+
+        var defaultCandidateFixture = fixture.GetProperty("default_candidate_blocked");
+        var defaultCandidateRequest = IpccSourceDownloadExecutionBoundary.CreateRequest(
+            IpccSourceDiscoveryBoundary.CreateResult().Candidates[0],
+            Path.Combine(temp.Path, "default-candidate"),
+            RequiredString(fixture, "target_relative_path"),
+            allowDownloadExecution: true,
+            allowFileWrite: true);
+
+        var defaultCandidate = IpccSourceDownloadExecutionBoundary.Execute(
+            defaultCandidateRequest,
+            UnexpectedTransport);
+
+        Assert.Equal(RequiredString(defaultCandidateFixture, "status"), defaultCandidate.Status.ToWireName());
+        Assert.Null(defaultCandidate.Artifact);
+        AssertIssueCodes(defaultCandidate.Issues, defaultCandidateFixture);
+    }
+
+    [Fact]
     public void ExistingKnownDocumentIsIdempotentAndDoesNotCallTransport()
     {
         using var temp = new TemporaryDirectory();
@@ -283,6 +390,28 @@ public sealed class IpccSourceDownloadExecutionBoundaryTests
             allowDownloadExecution: true,
             allowFileWrite: true);
 
+    private static IpccSourceDownloadExecutionRequest FixtureRequest(
+        string targetRoot,
+        JsonElement fixture) =>
+        IpccSourceDownloadExecutionBoundary.CreateRequest(
+            new IpccSourceDocumentCandidate(
+                SourceFamily.IpccEfdb,
+                RequiredString(fixture, "source_key"),
+                RequiredString(fixture, "candidate_id"),
+                RequiredString(fixture, "candidate_title"),
+                RequiredString(fixture, "source_reference_uri"),
+                RequiredString(fixture, "artifact_kind"),
+                documentYear: fixture.GetProperty("document_year").GetInt32(),
+                reportingYear: fixture.GetProperty("reporting_year").GetInt32(),
+                contentType: RequiredString(fixture, "content_type"),
+                extension: RequiredString(fixture, "extension"),
+                versionLabel: RequiredString(fixture, "version_label"),
+                downloadAllowed: true),
+            targetRoot,
+            RequiredString(fixture, "target_relative_path"),
+            allowDownloadExecution: true,
+            allowFileWrite: true);
+
     private static IpccSourceDocumentCandidate DownloadableCandidate() =>
         new(
             SourceFamily.IpccEfdb,
@@ -312,6 +441,44 @@ public sealed class IpccSourceDownloadExecutionBoundaryTests
 
     private static IpccSourceDownloadTransportResponse UnexpectedTransport(string sourceReferenceUri) =>
         throw new InvalidOperationException($"transport should not be called for {sourceReferenceUri}");
+
+    private static void AssertIssueCodes(
+        IReadOnlyList<IpccSourceDownloadExecutionIssue> issues,
+        JsonElement fixture)
+    {
+        Assert.Equal(
+            fixture
+                .GetProperty("issue_codes")
+                .EnumerateArray()
+                .Select(code => code.GetString() ?? string.Empty),
+            issues.Select(issue => issue.Code));
+    }
+
+    private static string RequiredString(JsonElement element, string propertyName) =>
+        element.GetProperty(propertyName).GetString()
+        ?? throw new InvalidOperationException($"Missing string property {propertyName}.");
+
+    private static string ParityFixturePath()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+        while (current is not null)
+        {
+            var candidate = Path.Combine(
+                current.FullName,
+                "tests",
+                "fixtures",
+                "parity",
+                "ipcc_source_download_execution_expectations.json");
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            current = current.Parent;
+        }
+
+        throw new FileNotFoundException("IPCC source download parity fixture was not found.");
+    }
 
     private sealed class TemporaryDirectory : IDisposable
     {
