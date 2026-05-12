@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+from decimal import Decimal, InvalidOperation
 from io import StringIO
 
 from carbonfactor_parser.parsers.execution_result import (
@@ -225,6 +226,7 @@ def _parse_normalized_csv(
     parser_metadata = _parser_metadata(
         parser_kind="defra_desnz_normalized_csv_extraction",
         is_real_source_parser=True,
+        normalization_executed=True,
     )
     issues: list[ParserExecutionIssue] = []
     raw_records = []
@@ -260,7 +262,7 @@ def _parse_normalized_csv(
                 source_id=parser_input.source_id,
                 record_index=parsed_record_count,
                 row_number=row_number,
-                raw_fields={key: (value or "").strip() for key, value in row.items()},
+                raw_fields=_normalized_raw_fields(row, parser_input, row_number),
                 parser_metadata=parser_metadata,
                 source_context={
                     "artifact_reference": parser_input.artifact_reference,
@@ -345,26 +347,92 @@ def _normalized_row_issues(
                 ),
             )
 
+    source_year = (row.get("source_year") or "").strip()
+    parsed_source_year = int(source_year) if source_year.isdecimal() else 0
+    if parsed_source_year < 1:
+        issues.append(
+            ParserExecutionIssue(
+                code="DEFRA_DESNZ_CONTENT_INVALID_SOURCE_YEAR",
+                message="DEFRA/DESNZ source_year must be a positive integer.",
+                severity=ParserExecutionIssueSeverity.ERROR,
+                location=f"row[{row_number}].source_year",
+                context={
+                    "row_number": row_number,
+                    "field_name": "source_year",
+                    "raw_value": source_year,
+                },
+            ),
+        )
+
     factor_value = (row.get("factor_value") or "").strip()
-    if factor_value:
-        try:
-            float(factor_value)
-        except ValueError:
-            issues.append(
-                ParserExecutionIssue(
-                    code="DEFRA_DESNZ_CONTENT_INVALID_FACTOR_VALUE",
-                    message="DEFRA/DESNZ normalized factor_value must be numeric.",
-                    severity=ParserExecutionIssueSeverity.ERROR,
-                    location=f"row[{row_number}].factor_value",
-                    context={
-                        "row_number": row_number,
-                        "field_name": "factor_value",
-                        "raw_value": factor_value,
-                    },
-                ),
-            )
+    parsed_factor_value = _parse_factor_decimal(factor_value)
+    if parsed_factor_value is None or not parsed_factor_value.is_finite():
+        issues.append(
+            ParserExecutionIssue(
+                code="DEFRA_DESNZ_CONTENT_INVALID_FACTOR_VALUE",
+                message="DEFRA/DESNZ normalized factor_value must be numeric.",
+                severity=ParserExecutionIssueSeverity.ERROR,
+                location=f"row[{row_number}].factor_value",
+                context={
+                    "row_number": row_number,
+                    "field_name": "factor_value",
+                    "raw_value": factor_value,
+                },
+            ),
+        )
 
     return tuple(issues)
+
+
+def _parse_factor_decimal(raw_value: str) -> Decimal | None:
+    if "e" in raw_value.lower():
+        return None
+    try:
+        parsed_value = Decimal(raw_value.replace(",", ""))
+    except InvalidOperation:
+        return None
+    return parsed_value if parsed_value.is_finite() else None
+
+
+def _normalized_raw_fields(
+    row: dict[str, str],
+    parser_input,
+    row_number: int,
+) -> dict[str, object]:
+    normalized_row = {key: (value or "").strip() for key, value in row.items()}
+    source_year = normalized_row["source_year"]
+    source_version = normalized_row["source_version"]
+    factor_id = normalized_row["factor_id"]
+    unit = normalized_row["unit"]
+    greenhouse_gas = normalized_row["greenhouse_gas"]
+    master_id = f"defra_master_{source_year}_{source_version}_{factor_id}"
+    detail_id = f"defra_detail_{source_year}_{source_version}_{factor_id}"
+
+    return {
+        "source_family": parser_input.source_family,
+        "source_id": parser_input.source_id,
+        "source_year": int(source_year),
+        "source_version": source_version,
+        "factor_id": factor_id,
+        "factor_name": normalized_row["factor_name"],
+        "factor_value": _parse_factor_decimal(normalized_row["factor_value"]),
+        "unit": unit,
+        "category": normalized_row["category"],
+        "subcategory": normalized_row["subcategory"] or None,
+        "activity": normalized_row["activity"] or None,
+        "greenhouse_gas": greenhouse_gas or None,
+        "provenance_artifact_reference": parser_input.artifact_reference,
+        "provenance_checksum_algorithm": "sha256"
+        if parser_input.checksum_sha256
+        else None,
+        "provenance_checksum_value": parser_input.checksum_sha256,
+        "provenance_row_number": row_number,
+        "provenance": normalized_row["provenance"],
+        "source_family_master_id": master_id,
+        "source_family_detail_id": detail_id,
+        "master_external_key": f"{source_year}:{source_version}:{factor_id}",
+        "detail_external_key": f"{factor_id}:{unit}:{greenhouse_gas}",
+    }
 
 
 def _content_text(content_input: ParserFileContentInput) -> str | None:
@@ -398,9 +466,10 @@ def _parser_metadata(
     *,
     parser_kind: str = "minimal_defra_desnz_content_fixture",
     is_real_source_parser: bool = False,
+    normalization_executed: bool = False,
 ) -> dict[str, object]:
     return {
         "parser_kind": parser_kind,
         "is_real_source_parser": is_real_source_parser,
-        "normalization_executed": False,
+        "normalization_executed": normalization_executed,
     }

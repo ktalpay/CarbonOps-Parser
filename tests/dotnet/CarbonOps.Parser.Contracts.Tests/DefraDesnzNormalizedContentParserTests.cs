@@ -1,3 +1,4 @@
+using System.Text.Json;
 using CarbonOps.Parser.Contracts;
 
 namespace CarbonOps.Parser.Contracts.Tests;
@@ -7,20 +8,10 @@ public sealed class DefraDesnzNormalizedContentParserTests
     [Fact]
     public void DefraDesnzHeaderIsDeterministic()
     {
+        using var expectations = LoadParityExpectations();
+
         Assert.Equal(
-            [
-                "source_year",
-                "source_version",
-                "category",
-                "subcategory",
-                "activity",
-                "factor_id",
-                "factor_name",
-                "factor_value",
-                "unit",
-                "greenhouse_gas",
-                "provenance",
-            ],
+            JsonStringArray(expectations.RootElement.GetProperty("header")),
             DefraDesnzNormalizedContentParser.Header);
     }
 
@@ -71,6 +62,35 @@ public sealed class DefraDesnzNormalizedContentParserTests
     }
 
     [Fact]
+    public void ValidDefraDesnzContentMatchesSharedParityExpectations()
+    {
+        using var expectations = LoadParityExpectations();
+        var root = expectations.RootElement;
+        var request = CreateRequest();
+        var result = DefraDesnzNormalizedContentParser.Parse(
+            request,
+            CreateContentMap("defra_desnz_normalized_factors.csv"));
+        var expectedRows = root.GetProperty("sample_rows").EnumerateArray().ToArray();
+
+        Assert.Equal(root.GetProperty("sample_status").GetProperty("dotnet").GetString(), result.Status.ToString());
+        Assert.Equal(
+            JsonStringArray(root.GetProperty("sample_issue_codes")),
+            result.ValidationIssues.Select(issue => issue.Code));
+        Assert.Equal(expectedRows.Length, result.RowCount);
+
+        for (var index = 0; index < expectedRows.Length; index++)
+        {
+            var expected = expectedRows[index];
+            var actual = result.Rows[index];
+
+            Assert.Equal(expected.GetProperty("row_identifier").GetString(), actual.RowIdentifier);
+            Assert.Equal(expected.GetProperty("source_row_number").GetInt32(), actual.SourceRowNumber);
+            Assert.Equal(expected.GetProperty("reporting_year").GetInt32(), actual.ReportingYear);
+            Assert.Equal(JsonFieldArray(expected.GetProperty("fields")), actual.Fields);
+        }
+    }
+
+    [Fact]
     public void DefraDesnzParserIsDeterministicForFixtureInput()
     {
         var request = CreateRequest();
@@ -86,32 +106,43 @@ public sealed class DefraDesnzNormalizedContentParserTests
     [Fact]
     public void MalformedDefraDesnzRowsReturnStructuredErrors()
     {
+        using var expectations = LoadParityExpectations();
+        var root = expectations.RootElement;
         var result = DefraDesnzNormalizedContentParser.Parse(
             CreateRequest(),
             CreateContentMap("defra_desnz_malformed_factors.csv"));
 
-        Assert.Equal(ParserRunStatus.Failed, result.Status);
+        Assert.Equal(root.GetProperty("malformed_status").GetProperty("dotnet").GetString(), result.Status.ToString());
         Assert.Equal(0, result.RowCount);
         Assert.Equal(
-            [
-                "DEFRA_DESNZ_CONTENT_INVALID_FACTOR_VALUE",
-                "DEFRA_DESNZ_CONTENT_MISSING_REQUIRED_FIELD",
-            ],
+            root.GetProperty("malformed_issues").EnumerateArray().Select(issue => issue.GetProperty("code").GetString()),
             result.ValidationIssues.Select(issue => issue.Code));
         Assert.Equal(
-            [
-                "factor_value",
-                "unit",
-            ],
+            root.GetProperty("malformed_issues").EnumerateArray().Select(issue => issue.GetProperty("field_key").GetString()),
             result.ValidationIssues.Select(issue => issue.FieldKey));
         Assert.Equal(
-            new int?[]
-            {
-                2,
-                3,
-            },
+            root.GetProperty("malformed_issues").EnumerateArray().Select(issue => (int?)issue.GetProperty("source_row_number").GetInt32()),
             result.ValidationIssues.Select(issue => issue.SourceRowNumber));
         Assert.Equal("not-a-number", result.ValidationIssues[0].Context.Single(context => context.Key == "raw_value").Value);
+    }
+
+    [Fact]
+    public void EmptyDefraDesnzContentMatchesDocumentedParityStatus()
+    {
+        using var expectations = LoadParityExpectations();
+        var root = expectations.RootElement;
+        var content = string.Join("\n", [string.Join(",", DefraDesnzNormalizedContentParser.Header), string.Empty]);
+
+        var result = DefraDesnzNormalizedContentParser.Parse(
+            CreateRequest(),
+            new Dictionary<string, string> { [ArtifactReference] = content });
+
+        Assert.Equal(root.GetProperty("empty_status").GetProperty("dotnet").GetString(), result.Status.ToString());
+        Assert.Equal(0, result.RowCount);
+        Assert.Equal(
+            JsonStringArray(root.GetProperty("empty_issue_codes")),
+            result.ValidationIssues.Select(issue => issue.Code));
+        Assert.Equal(ParserValidationIssueSeverity.Warning, result.ValidationIssues[0].Severity);
     }
 
     [Fact]
@@ -193,6 +224,22 @@ public sealed class DefraDesnzNormalizedContentParserTests
             [ArtifactReference] = File.ReadAllText(Path.Combine(FixtureDirectory(), fixtureName)),
         };
 
+    private static JsonDocument LoadParityExpectations() =>
+        JsonDocument.Parse(File.ReadAllText(Path.Combine(ParityFixtureDirectory(), "defra_desnz_normalized_output_expectations.json")));
+
+    private static IReadOnlyList<string> JsonStringArray(JsonElement array) =>
+        array.EnumerateArray().Select(item => item.GetString() ?? string.Empty).ToArray();
+
+    private static IReadOnlyList<ParserNormalizedField> JsonFieldArray(JsonElement array) =>
+        array
+            .EnumerateArray()
+            .Select(field =>
+            {
+                var values = field.EnumerateArray().ToArray();
+                return new ParserNormalizedField(values[0].GetString() ?? string.Empty, values[1].GetString());
+            })
+            .ToArray();
+
     private static string FixtureDirectory()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -213,5 +260,22 @@ public sealed class DefraDesnzNormalizedContentParserTests
         }
 
         throw new DirectoryNotFoundException("Could not locate DEFRA/DESNZ fixture directory.");
+    }
+
+    private static string ParityFixtureDirectory()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var fixtureDirectory = Path.Combine(directory.FullName, "tests", "fixtures", "parity");
+            if (Directory.Exists(fixtureDirectory))
+            {
+                return fixtureDirectory;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate parity fixture directory.");
     }
 }
