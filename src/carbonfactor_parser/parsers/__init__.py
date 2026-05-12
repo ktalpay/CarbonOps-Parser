@@ -10,6 +10,7 @@ _PUBLIC_EXPORTS = {
     "ArtificialFixtureParser": "fixture_parser",
     "ArtificialParserAdapter": "artificial_adapter",
     "DEFRA_DESNZ_MINIMAL_CONTENT_HEADER": "defra_desnz_content_parser",
+    "DEFRA_DESNZ_NORMALIZED_CONTENT_HEADER": "defra_desnz_content_parser",
     "DefraDesnzParserAdapter": "defra_desnz_adapter",
     "DefraDesnzParser": "defra_desnz_parser",
     "ExampleInMemoryParser": "example_parser",

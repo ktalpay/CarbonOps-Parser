@@ -4,6 +4,7 @@ import urllib.request
 
 from carbonfactor_parser.parsers import (
     DEFRA_DESNZ_MINIMAL_CONTENT_HEADER,
+    DEFRA_DESNZ_NORMALIZED_CONTENT_HEADER,
     ParserExecutionResult,
     ParserExecutionResultStatus,
     create_parser_file_content_input,
@@ -64,6 +65,45 @@ def test_valid_in_memory_defra_desnz_content_returns_success() -> None:
     }
     assert result.raw_record_payload.records[0].record_index == 1
     assert result.raw_record_payload.records[0].row_number == 2
+
+
+def test_valid_normalized_defra_desnz_content_returns_success() -> None:
+    content_input = _content_input(
+        content=(
+            ",".join(DEFRA_DESNZ_NORMALIZED_CONTENT_HEADER)
+            + "\n"
+            + "2024,conversion-factors-2024,Energy,Electricity,Generated,"
+            + "DEFRA-2024-ELEC,Electricity generated,0.20705,kWh,CO2e,"
+            + "worksheet:UK electricity row 10\n"
+        ),
+    )
+
+    result = parse_defra_desnz_file_content(content_input)
+
+    assert result.status == ParserExecutionResultStatus.SUCCESS
+    assert result.parsed_record_count == 1
+    assert result.issues == ()
+    assert result.raw_record_payload is not None
+    record = result.raw_record_payload.records[0]
+    assert record.raw_fields == {
+        "source_year": "2024",
+        "source_version": "conversion-factors-2024",
+        "category": "Energy",
+        "subcategory": "Electricity",
+        "activity": "Generated",
+        "factor_id": "DEFRA-2024-ELEC",
+        "factor_name": "Electricity generated",
+        "factor_value": "0.20705",
+        "unit": "kWh",
+        "greenhouse_gas": "CO2e",
+        "provenance": "worksheet:UK electricity row 10",
+    }
+    assert record.source_context == {
+        "artifact_reference": "data/source-acquisition/defra_desnz/source.csv",
+        "source_year": "2024",
+        "source_version": "conversion-factors-2024",
+        "provenance": "worksheet:UK electricity row 10",
+    }
 
 
 def test_parsed_record_count_is_deterministic() -> None:
@@ -135,6 +175,31 @@ def test_invalid_row_returns_failed_issue() -> None:
     assert result.status == ParserExecutionResultStatus.FAILED
     assert result.parsed_record_count == 0
     assert result.issues[0].code == "DEFRA_DESNZ_CONTENT_INVALID_ROW"
+
+
+def test_normalized_content_malformed_row_returns_structured_issue() -> None:
+    result = parse_defra_desnz_file_content(
+        _content_input(
+            content=(
+                ",".join(DEFRA_DESNZ_NORMALIZED_CONTENT_HEADER)
+                + "\n"
+                + "2024,conversion-factors-2024,Energy,Electricity,Generated,"
+                + "DEFRA-2024-ELEC,Electricity generated,not-a-number,kWh,CO2e,"
+                + "worksheet:UK electricity row 10\n"
+            ),
+        ),
+    )
+
+    assert result.status == ParserExecutionResultStatus.FAILED
+    assert result.parsed_record_count == 0
+    assert result.raw_record_payload is None
+    assert result.issues[0].code == "DEFRA_DESNZ_CONTENT_INVALID_FACTOR_VALUE"
+    assert result.issues[0].location == "row[2].factor_value"
+    assert result.issues[0].context == {
+        "row_number": 2,
+        "field_name": "factor_value",
+        "raw_value": "not-a-number",
+    }
 
 
 def test_invalid_content_identity_returns_failed_issue() -> None:
