@@ -46,6 +46,8 @@ public sealed record Phase1IngestionOrchestratorRequest
 
     public string? CorrelationId { get; }
 
+    public Phase1OperationalEventSink? OperationalEventSink { get; }
+
     public Phase1IngestionOrchestratorRequest(
         IEnumerable<SourceFamily> sourceFamilies,
         Phase1IngestionExecutionMode executionMode = Phase1IngestionExecutionMode.Sequential,
@@ -53,7 +55,8 @@ public sealed record Phase1IngestionOrchestratorRequest
         PostgreSQLRuntimeConfigGate? runtimeConfigGate = null,
         string runId = "phase1_ingestion_orchestrator_run",
         string? correlationId = null,
-        PostgreSQLSchemaBootstrapReport? schemaBootstrapReport = null)
+        PostgreSQLSchemaBootstrapReport? schemaBootstrapReport = null,
+        Phase1OperationalEventSink? operationalEventSink = null)
     {
         SourceFamilies = Array.AsReadOnly(sourceFamilies.ToArray());
         ExecutionMode = executionMode;
@@ -62,6 +65,7 @@ public sealed record Phase1IngestionOrchestratorRequest
         SchemaBootstrapReport = schemaBootstrapReport;
         RunId = runId;
         CorrelationId = correlationId;
+        OperationalEventSink = operationalEventSink;
     }
 }
 
@@ -232,6 +236,11 @@ public sealed class Phase1IngestionOrchestrator
 
     public Phase1IngestionOrchestratorResult Run(Phase1IngestionOrchestratorRequest request)
     {
+        Phase1OperationalDiagnostics.Emit(
+            request.OperationalEventSink,
+            "phase1_orchestrator_started",
+            Phase1OperationalDiagnostics.SummarizeOrchestratorRequest(request));
+
         var runtimeDecision = PostgreSQLRuntimeConfigGateEvaluator.Evaluate(request.RuntimeConfigGate);
         var selectedSourceFamilies = request.SourceFamilies
             .Where(sourceFamily => Enum.IsDefined(sourceFamily))
@@ -242,27 +251,45 @@ public sealed class Phase1IngestionOrchestrator
             .ToArray();
         if (readinessFailures.Length > 0)
         {
-            return new Phase1IngestionOrchestratorResult(
+            var blockedResult = new Phase1IngestionOrchestratorResult(
                 request,
                 runtimeDecision,
                 [],
                 readinessFailures,
                 Phase1IngestionRunStatus.NotExecutable,
                 selectedSourceFamilies);
+            Phase1OperationalDiagnostics.Emit(
+                request.OperationalEventSink,
+                "phase1_orchestrator_completed",
+                Phase1OperationalDiagnostics.SummarizeOrchestratorResultForDiagnostics(blockedResult));
+            return blockedResult;
         }
 
         var familyResults = new List<Phase1IngestionFamilyResult>();
         foreach (var sourceFamily in selectedSourceFamilies)
         {
-            familyResults.Add(RunSourceFamily(sourceFamily, request));
+            var familyResult = RunSourceFamily(sourceFamily, request);
+            familyResults.Add(familyResult);
+            Phase1OperationalDiagnostics.Emit(
+                request.OperationalEventSink,
+                "phase1_source_family_completed",
+                Phase1OperationalDiagnostics.SummarizeFamilyResultForDiagnostics(
+                    familyResult,
+                    request.RunId,
+                    request.CorrelationId));
         }
 
-        return new Phase1IngestionOrchestratorResult(
+        var result = new Phase1IngestionOrchestratorResult(
             request,
             runtimeDecision,
             familyResults,
             familyResults.SelectMany(result => result.Failures),
             selectedSourceFamilies: selectedSourceFamilies);
+        Phase1OperationalDiagnostics.Emit(
+            request.OperationalEventSink,
+            "phase1_orchestrator_completed",
+            Phase1OperationalDiagnostics.SummarizeOrchestratorResultForDiagnostics(result));
+        return result;
     }
 
     private Phase1IngestionFamilyResult RunSourceFamily(
