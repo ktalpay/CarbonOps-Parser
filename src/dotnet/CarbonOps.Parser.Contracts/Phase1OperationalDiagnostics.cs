@@ -289,6 +289,11 @@ public static partial class Phase1OperationalDiagnostics
     private static bool IsSensitiveField(string fieldName)
     {
         var normalized = fieldName.Trim().ToLowerInvariant();
+        if (normalized == "password_set")
+        {
+            return false;
+        }
+
         return SensitiveRuntimeOptionFields.Contains(normalized) ||
             SensitiveKeyParts.Any(part => normalized.Contains(part, StringComparison.Ordinal));
     }

@@ -238,7 +238,7 @@ public sealed class Phase1IngestionOrchestrator
     {
         Phase1OperationalDiagnostics.Emit(
             request.OperationalEventSink,
-            "phase1_orchestrator_started",
+            "phase1_ingestion_orchestrator_started",
             Phase1OperationalDiagnostics.SummarizeOrchestratorRequest(request));
 
         var runtimeDecision = PostgreSQLRuntimeConfigGateEvaluator.Evaluate(request.RuntimeConfigGate);
@@ -260,7 +260,7 @@ public sealed class Phase1IngestionOrchestrator
                 selectedSourceFamilies);
             Phase1OperationalDiagnostics.Emit(
                 request.OperationalEventSink,
-                "phase1_orchestrator_completed",
+                "phase1_ingestion_orchestrator_completed",
                 Phase1OperationalDiagnostics.SummarizeOrchestratorResultForDiagnostics(blockedResult));
             return blockedResult;
         }
@@ -287,7 +287,7 @@ public sealed class Phase1IngestionOrchestrator
             selectedSourceFamilies: selectedSourceFamilies);
         Phase1OperationalDiagnostics.Emit(
             request.OperationalEventSink,
-            "phase1_orchestrator_completed",
+            "phase1_ingestion_orchestrator_completed",
             Phase1OperationalDiagnostics.SummarizeOrchestratorResultForDiagnostics(result));
         return result;
     }
@@ -535,7 +535,7 @@ public sealed class Phase1IngestionOrchestrator
             parserRun.ArtifactReferences.FirstOrDefault() ?? $"{parserRun.SourceKey}_artifact_unavailable",
             "not_supplied",
             $"{parserRun.SourceKey}_parser_run_checksum_not_supplied",
-            isDryRunChecksum: true);
+            IsDryRunChecksum: true);
         var rejectedRows = parserRun.ValidationIssues.Count(issue => issue.Severity == ParserValidationIssueSeverity.Error);
         return new ParserRunResult(
             request,

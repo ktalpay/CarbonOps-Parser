@@ -295,6 +295,8 @@ def _safe_checksum(value: Any) -> str | None:
 
 def _is_sensitive_field(field_name: str) -> bool:
     normalized = field_name.strip().lower()
+    if normalized == "password_set":
+        return False
     return (
         normalized in _SENSITIVE_RUNTIME_OPTION_FIELDS
         or any(part in normalized for part in _SENSITIVE_KEY_PARTS)
