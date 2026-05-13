@@ -44,6 +44,12 @@ from carbonfactor_parser.source_acquisition.models import (
     SourceDocumentPersistenceMappingStatus,
     SourceDocumentPersistenceRecord,
 )
+from carbonfactor_parser.source_acquisition.phase1_observability import (
+    emit_phase1_operational_event,
+    summarize_phase1_family_result_for_diagnostics,
+    summarize_phase1_orchestrator_request,
+    summarize_phase1_orchestrator_result_for_diagnostics,
+)
 from carbonfactor_parser.source_acquisition.run_contract import (
     SourceAcquisitionRunResult,
     SourceAcquisitionRunStatus,
@@ -216,6 +222,10 @@ def run_phase1_ingestion_orchestrator(
 ) -> Phase1IngestionOrchestratorResult:
     """Run Phase 1 ingestion sequentially with all runtime work injected."""
 
+    emit_phase1_operational_event(
+        "phase1_ingestion_orchestrator_started",
+        summarize_phase1_orchestrator_request(request),
+    )
     selected_families, request_failures = _normalize_source_families(
         request.source_families,
     )
@@ -225,19 +235,44 @@ def run_phase1_ingestion_orchestrator(
         *_postgresql_readiness_failures(request),
     )
     if readiness_failures:
-        return _not_executable_result(request, selected_families, readiness_failures)
+        result = _not_executable_result(request, selected_families, readiness_failures)
+        emit_phase1_operational_event(
+            "phase1_ingestion_orchestrator_completed",
+            summarize_phase1_orchestrator_result_for_diagnostics(result),
+        )
+        return result
 
     family_results: list[Phase1SourceFamilyIngestionResult] = []
     for source_family in selected_families:
-        family_results.append(
-            _run_source_family(
-                source_family=source_family,
-                request=request,
-                dependencies=dependencies,
-            )
+        emit_phase1_operational_event(
+            "phase1_source_family_started",
+            {
+                "correlation_id": request.correlation_id,
+                "run_id": request.run_id,
+                "source_family": source_family,
+            },
+        )
+        family_result = _run_source_family(
+            source_family=source_family,
+            request=request,
+            dependencies=dependencies,
+        )
+        family_results.append(family_result)
+        emit_phase1_operational_event(
+            "phase1_source_family_completed",
+            summarize_phase1_family_result_for_diagnostics(
+                family_result,
+                run_id=request.run_id,
+                correlation_id=request.correlation_id,
+            ),
         )
 
-    return _create_result(request, selected_families, tuple(family_results))
+    result = _create_result(request, selected_families, tuple(family_results))
+    emit_phase1_operational_event(
+        "phase1_ingestion_orchestrator_completed",
+        summarize_phase1_orchestrator_result_for_diagnostics(result),
+    )
+    return result
 
 
 def _run_source_family(

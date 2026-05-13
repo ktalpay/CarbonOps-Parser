@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import logging
 from decimal import Decimal
 
 from carbonfactor_parser.parsers.input_artifact_contract import (
@@ -49,6 +51,9 @@ from carbonfactor_parser.source_acquisition.phase1_ingestion_orchestrator import
     Phase1IngestionRunStatus,
     run_phase1_ingestion_orchestrator,
 )
+from carbonfactor_parser.source_acquisition.phase1_observability import (
+    PHASE1_OPERATIONAL_LOGGER_NAME,
+)
 from carbonfactor_parser.source_acquisition.run_contract import (
     SourceAcquisitionRunSummary,
     SourceAcquisitionRunResult,
@@ -96,6 +101,86 @@ def test_orchestrator_runs_selected_phase1_families_end_to_end_sequentially() ->
     assert result.summary.persisted_master_count == 3
     assert result.summary.persisted_detail_count == 3
     assert result.failures == ()
+
+
+def test_orchestrator_emits_correlation_friendly_operational_logs(caplog) -> None:
+    dependencies = _dependencies({"ghg_protocol": _FakeSourceRuntime("ghg_protocol")})
+
+    with caplog.at_level(logging.INFO, logger=PHASE1_OPERATIONAL_LOGGER_NAME):
+        run_phase1_ingestion_orchestrator(
+            Phase1IngestionOrchestratorRequest(
+                source_families=("ghg_protocol",),
+                run_id="phase1-run-009",
+                correlation_id="correlation-009",
+            ),
+            dependencies,
+        )
+
+    events = [json.loads(record.message) for record in caplog.records]
+
+    assert tuple(event["event"] for event in events) == (
+        "phase1_ingestion_orchestrator_started",
+        "phase1_source_family_started",
+        "phase1_source_family_completed",
+        "phase1_ingestion_orchestrator_completed",
+    )
+    family_completed = events[2]
+    assert family_completed["run_id"] == "phase1-run-009"
+    assert family_completed["correlation_id"] == "correlation-009"
+    assert family_completed["source_family"] == "ghg_protocol"
+    assert family_completed["parser"]["row_count"] == 1
+    assert family_completed["persistence"] == {
+        "parsed_factor_detail_count": 1,
+        "parsed_factor_master_count": 1,
+        "parser_run_count": 1,
+        "source_document_count": 1,
+        "source_run_count": 1,
+    }
+    assert family_completed["documents"] == [
+        {
+            "checksum_sha256": None,
+            "document_id": "phase1-run-009_ghg_protocol_ghg_protocol-artifact",
+            "source_family": "ghg_protocol",
+        },
+    ]
+
+
+def test_orchestrator_failure_log_uses_structured_reason_codes(caplog) -> None:
+    dependencies = _dependencies(
+        {
+            "defra_desnz": _FakeSourceRuntime(
+                "defra_desnz",
+                parser_status=ParserRunStatus.FAILED,
+            ),
+        }
+    )
+
+    with caplog.at_level(logging.INFO, logger=PHASE1_OPERATIONAL_LOGGER_NAME):
+        run_phase1_ingestion_orchestrator(
+            Phase1IngestionOrchestratorRequest(
+                source_families=("defra_desnz",),
+                run_id="phase1-run-010",
+            ),
+            dependencies,
+        )
+
+    family_completed = [
+        json.loads(record.message)
+        for record in caplog.records
+        if json.loads(record.message)["event"] == "phase1_source_family_completed"
+    ][0]
+
+    assert family_completed["status"] == "failed_parser"
+    assert family_completed["failures"] == [
+        {
+            "code": "PHASE1_INGESTION_PARSER_FAILED",
+            "field_name": "parser_run_result.status",
+            "message": "Parser run returned failed status.",
+            "severity": "error",
+            "source_family": "defra_desnz",
+            "stage": "parser",
+        },
+    ]
 
 
 def test_orchestrator_only_runs_explicitly_selected_source_family() -> None:
