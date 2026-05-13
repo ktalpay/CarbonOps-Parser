@@ -123,6 +123,7 @@ public sealed class Phase1ScheduledIngestionServiceHost
     private readonly object syncRoot = new();
     private readonly Phase1SchemaBootstrapChecker schemaBootstrapChecker;
     private readonly Phase1OrchestratorRunner orchestratorRunner;
+    private readonly Phase1OperationalEventSink? operationalEventSink;
     private PostgreSQLSchemaBootstrapReport? schemaBootstrapReport;
     private bool runInProgress;
     private bool shutdownRequested;
@@ -135,15 +136,22 @@ public sealed class Phase1ScheduledIngestionServiceHost
     public Phase1ScheduledIngestionServiceHost(
         Phase1ServiceHostConfig config,
         Phase1OrchestratorRunner orchestratorRunner,
-        Phase1SchemaBootstrapChecker? schemaBootstrapChecker = null)
+        Phase1SchemaBootstrapChecker? schemaBootstrapChecker = null,
+        Phase1OperationalEventSink? operationalEventSink = null)
     {
         Config = config;
         this.orchestratorRunner = orchestratorRunner;
         this.schemaBootstrapChecker = schemaBootstrapChecker ?? DefaultSchemaBootstrapChecker;
+        this.operationalEventSink = operationalEventSink;
     }
 
     public Phase1ServiceHostStartupResult Start()
     {
+        Phase1OperationalDiagnostics.Emit(
+            operationalEventSink,
+            "phase1_service_host_starting",
+            StartingDiagnosticPayload(Config));
+
         var issues = ValidateConfig(Config).ToList();
         PostgreSQLSchemaBootstrapReport? report = null;
 
@@ -163,7 +171,7 @@ public sealed class Phase1ScheduledIngestionServiceHost
             if (shutdownRequested)
             {
                 Status = Phase1ServiceHostStatus.Stopped;
-                return new Phase1ServiceHostStartupResult(
+                var blockedResult = new Phase1ServiceHostStartupResult(
                     Phase1ServiceHostStatus.Blocked,
                     [
                         new Phase1ServiceHostIssue(
@@ -172,12 +180,21 @@ public sealed class Phase1ScheduledIngestionServiceHost
                             "status"),
                     ],
                     report);
+                Phase1OperationalDiagnostics.Emit(
+                    operationalEventSink,
+                    "phase1_service_host_started",
+                    StartupDiagnosticPayload(blockedResult));
+                return blockedResult;
             }
 
             Status = status;
             schemaBootstrapReport = report;
         }
 
+        Phase1OperationalDiagnostics.Emit(
+            operationalEventSink,
+            "phase1_service_host_started",
+            StartupDiagnosticPayload(result));
         return result;
     }
 
@@ -190,14 +207,19 @@ public sealed class Phase1ScheduledIngestionServiceHost
         {
             if (shutdownRequested)
             {
-                return new Phase1ScheduledRunResult(
+                var result = new Phase1ScheduledRunResult(
                     Phase1ScheduledRunStatus.SkippedShuttingDown,
                     issues: [ShutdownIssue()]);
+                Phase1OperationalDiagnostics.Emit(
+                    operationalEventSink,
+                    "phase1_service_host_scheduled_run_skipped",
+                    ScheduledRunDiagnosticPayload(result));
+                return result;
             }
 
             if (runInProgress)
             {
-                return new Phase1ScheduledRunResult(
+                var result = new Phase1ScheduledRunResult(
                     Phase1ScheduledRunStatus.SkippedAlreadyRunning,
                     issues:
                     [
@@ -206,11 +228,16 @@ public sealed class Phase1ScheduledIngestionServiceHost
                             "Scheduled trigger skipped while a run is active.",
                             "run_in_progress"),
                     ]);
+                Phase1OperationalDiagnostics.Emit(
+                    operationalEventSink,
+                    "phase1_service_host_scheduled_run_skipped",
+                    ScheduledRunDiagnosticPayload(result));
+                return result;
             }
 
             if (Status != Phase1ServiceHostStatus.Ready)
             {
-                return new Phase1ScheduledRunResult(
+                var result = new Phase1ScheduledRunResult(
                     Phase1ScheduledRunStatus.SkippedNotStarted,
                     issues:
                     [
@@ -219,6 +246,11 @@ public sealed class Phase1ScheduledIngestionServiceHost
                             "Service host must start successfully first.",
                             "status"),
                     ]);
+                Phase1OperationalDiagnostics.Emit(
+                    operationalEventSink,
+                    "phase1_service_host_scheduled_run_skipped",
+                    ScheduledRunDiagnosticPayload(result));
+                return result;
             }
 
             runInProgress = true;
@@ -227,6 +259,16 @@ public sealed class Phase1ScheduledIngestionServiceHost
             runId = $"{Config.RunIdPrefix}-{runSequence:000000}";
             request = BuildOrchestratorRequest(runId);
         }
+
+        Phase1OperationalDiagnostics.Emit(
+            operationalEventSink,
+            "phase1_service_host_scheduled_run_started",
+            new SortedDictionary<string, object?>(StringComparer.Ordinal)
+            {
+                ["correlation_id"] = request.CorrelationId,
+                ["run_id"] = runId,
+                ["source_families"] = request.SourceFamilies.Select(sourceFamily => sourceFamily.ToWireName()).ToArray(),
+            });
 
         Phase1IngestionOrchestratorResult orchestratorResult;
         try
@@ -244,10 +286,15 @@ public sealed class Phase1ScheduledIngestionServiceHost
             }
         }
 
-        return new Phase1ScheduledRunResult(
+        var scheduledRunResult = new Phase1ScheduledRunResult(
             Phase1ScheduledRunStatus.Started,
             runId,
             orchestratorResult);
+        Phase1OperationalDiagnostics.Emit(
+            operationalEventSink,
+            "phase1_service_host_scheduled_run_completed",
+            ScheduledRunDiagnosticPayload(scheduledRunResult));
+        return scheduledRunResult;
     }
 
     public Phase1ServiceHostStatus RequestShutdown()
@@ -347,7 +394,8 @@ public sealed class Phase1ScheduledIngestionServiceHost
             Config.MaxDegreeOfParallelism,
             Config.RuntimeConfigGate,
             runId,
-            schemaBootstrapReport: schemaBootstrapReport);
+            schemaBootstrapReport: schemaBootstrapReport,
+            operationalEventSink: operationalEventSink);
 
     private static IEnumerable<Phase1ServiceHostIssue> SchemaBootstrapIssues(
         PostgreSQLSchemaBootstrapReport report)
@@ -373,4 +421,91 @@ public sealed class Phase1ScheduledIngestionServiceHost
             "PHASE1_SERVICE_HOST_SHUTTING_DOWN",
             "Scheduled trigger skipped because shutdown was requested.",
             "status");
+
+    private static IReadOnlyDictionary<string, object?> StartingDiagnosticPayload(
+        Phase1ServiceHostConfig config) =>
+        new SortedDictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["postgresql_options"] = Phase1OperationalDiagnostics.SummarizePostgreSQLOptionsForDiagnostics(
+                config.PostgreSQLOptions),
+            ["run_id_prefix"] = config.RunIdPrefix,
+            ["schedule_interval_seconds"] = config.ScheduleIntervalSeconds,
+            ["source_families"] = config.SourceFamilies.Select(sourceFamily => sourceFamily.ToWireName()).ToArray(),
+        };
+
+    private static IReadOnlyDictionary<string, object?> StartupDiagnosticPayload(
+        Phase1ServiceHostStartupResult result)
+    {
+        var report = result.SchemaBootstrapReport;
+        return new SortedDictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["issues"] = result.Issues.Select(ServiceHostIssuePayload).ToArray(),
+            ["schema_bootstrap"] = new SortedDictionary<string, object?>(StringComparer.Ordinal)
+            {
+                ["fail_on_missing"] = report?.FailOnMissing,
+                ["missing_table_count"] = report?.MissingTableNames.Count,
+                ["mode"] = report is null ? null : SchemaBootstrapModeWireName(report.Mode),
+                ["status"] = null,
+            },
+            ["status"] = ServiceHostStatusWireName(result.Status),
+        };
+    }
+
+    private static IReadOnlyDictionary<string, object?> ScheduledRunDiagnosticPayload(
+        Phase1ScheduledRunResult result)
+    {
+        var payload = new SortedDictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["issues"] = result.Issues.Select(ServiceHostIssuePayload).ToArray(),
+            ["run_id"] = result.RunId,
+            ["status"] = ScheduledRunStatusWireName(result.Status),
+        };
+        if (result.OrchestratorResult is not null)
+        {
+            payload["orchestrator"] = Phase1OperationalDiagnostics.SummarizeOrchestratorResultForDiagnostics(
+                result.OrchestratorResult);
+        }
+
+        return payload;
+    }
+
+    private static IReadOnlyDictionary<string, object?> ServiceHostIssuePayload(
+        Phase1ServiceHostIssue issue) =>
+        new SortedDictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["code"] = issue.Code,
+            ["field_name"] = issue.FieldName,
+            ["message"] = issue.Message,
+            ["severity"] = issue.Severity,
+        };
+
+    private static string ServiceHostStatusWireName(Phase1ServiceHostStatus status) =>
+        status switch
+        {
+            Phase1ServiceHostStatus.Created => "created",
+            Phase1ServiceHostStatus.Ready => "ready",
+            Phase1ServiceHostStatus.Blocked => "blocked",
+            Phase1ServiceHostStatus.Running => "running",
+            Phase1ServiceHostStatus.ShutdownRequested => "shutdown_requested",
+            Phase1ServiceHostStatus.Stopped => "stopped",
+            _ => throw new ArgumentOutOfRangeException(nameof(status), status, "Unknown Phase 1 service host status."),
+        };
+
+    private static string ScheduledRunStatusWireName(Phase1ScheduledRunStatus status) =>
+        status switch
+        {
+            Phase1ScheduledRunStatus.Started => "started",
+            Phase1ScheduledRunStatus.SkippedNotStarted => "skipped_not_started",
+            Phase1ScheduledRunStatus.SkippedAlreadyRunning => "skipped_already_running",
+            Phase1ScheduledRunStatus.SkippedShuttingDown => "skipped_shutting_down",
+            _ => throw new ArgumentOutOfRangeException(nameof(status), status, "Unknown Phase 1 scheduled run status."),
+        };
+
+    private static string SchemaBootstrapModeWireName(PostgreSQLSchemaBootstrapMode mode) =>
+        mode switch
+        {
+            PostgreSQLSchemaBootstrapMode.CheckOnly => "check_only",
+            PostgreSQLSchemaBootstrapMode.CreateMissing => "create_missing",
+            _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknown PostgreSQL schema bootstrap mode."),
+        };
 }

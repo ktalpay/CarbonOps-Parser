@@ -117,6 +117,22 @@ public sealed class Phase1OperationalDiagnosticsTests
                 "source_candidate_count",
             ],
             Strings(fixture.GetProperty("summary_keys")));
+        Assert.Equal(
+            [
+                "phase1_ingestion_orchestrator_started",
+                "phase1_source_family_completed",
+                "phase1_ingestion_orchestrator_completed",
+            ],
+            Strings(fixture.GetProperty("orchestrator_event_names")));
+        Assert.Equal(
+            [
+                "phase1_service_host_starting",
+                "phase1_service_host_started",
+                "phase1_service_host_scheduled_run_started",
+                "phase1_service_host_scheduled_run_completed",
+                "phase1_service_host_scheduled_run_skipped",
+            ],
+            Strings(fixture.GetProperty("service_host_event_names")));
         Assert.Equal(Phase1OperationalDiagnostics.Redacted, fixture.GetProperty("redacted").GetString());
         Assert.Contains(
             "intentionally coarser",

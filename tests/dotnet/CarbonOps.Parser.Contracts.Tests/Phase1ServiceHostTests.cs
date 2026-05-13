@@ -1,4 +1,5 @@
 using CarbonOps.Parser.Contracts;
+using System.Text.Json;
 
 namespace CarbonOps.Parser.Contracts.Tests;
 
@@ -52,12 +53,14 @@ public sealed class Phase1ServiceHostTests
     public void ScheduledTriggerRunsOrchestratorForSelectedSourceFamilies()
     {
         var runner = new FakeOrchestratorRunner();
+        var events = new List<string>();
         var host = new Phase1ScheduledIngestionServiceHost(
             Config(
                 sourceFamilies: [SourceFamily.DefraDesnz, SourceFamily.IpccEfdb],
                 runIdPrefix: "phase1-test"),
             runner.Run,
-            new FakeSchemaBootstrapChecker(present: true).Check);
+            new FakeSchemaBootstrapChecker(present: true).Check,
+            events.Add);
 
         var startup = host.Start();
         var result = host.TriggerScheduledRun();
@@ -66,10 +69,67 @@ public sealed class Phase1ServiceHostTests
         Assert.Equal(Phase1ScheduledRunStatus.Started, result.Status);
         Assert.Equal("phase1-test-000001", result.RunId);
         Assert.Equal([SourceFamily.DefraDesnz, SourceFamily.IpccEfdb], runner.Requests[0].SourceFamilies);
-        Assert.NotNull(runner.Requests[0].SchemaBootstrapReport);
-        Assert.Empty(runner.Requests[0].SchemaBootstrapReport.MissingTableNames);
-        Assert.Equal(Phase1IngestionRunStatus.Completed, result.OrchestratorResult?.Status);
+        var schemaBootstrapReport = Assert.IsType<PostgreSQLSchemaBootstrapReport>(
+            runner.Requests[0].SchemaBootstrapReport);
+        Assert.Empty(schemaBootstrapReport.MissingTableNames);
+        var orchestratorResult = Assert.IsType<Phase1IngestionOrchestratorResult>(
+            result.OrchestratorResult);
+        Assert.Equal(Phase1IngestionRunStatus.Completed, orchestratorResult.Status);
         Assert.Equal(Phase1ServiceHostStatus.Ready, host.Status);
+        Assert.NotNull(runner.Requests[0].OperationalEventSink);
+        Assert.Equal(
+            [
+                "phase1_service_host_starting",
+                "phase1_service_host_started",
+                "phase1_service_host_scheduled_run_started",
+                "phase1_service_host_scheduled_run_completed",
+            ],
+            events.Select(EventName));
+        Assert.Contains("\"run_id\":\"phase1-test-000001\"", events[2], StringComparison.Ordinal);
+        Assert.Contains("\"status\":\"started\"", events[3], StringComparison.Ordinal);
+        Assert.Contains("\"status\":\"completed\"", events[3], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ServiceHostStartupDiagnosticsRedactPostgreSQLRuntimeConfig()
+    {
+        var events = new List<string>();
+        var host = new Phase1ScheduledIngestionServiceHost(
+            Config(),
+            _ => throw new InvalidOperationException("orchestrator should not run"),
+            new FakeSchemaBootstrapChecker(present: true).Check,
+            events.Add);
+
+        host.Start();
+
+        Assert.Equal("phase1_service_host_starting", EventName(events[0]));
+        using var document = JsonDocument.Parse(events[0]);
+        var postgresqlOptions = document.RootElement.GetProperty("postgresql_options");
+        Assert.Equal(Phase1OperationalDiagnostics.Redacted, postgresqlOptions.GetProperty("host").GetString());
+        Assert.Equal(Phase1OperationalDiagnostics.Redacted, postgresqlOptions.GetProperty("database").GetString());
+        Assert.Equal(Phase1OperationalDiagnostics.Redacted, postgresqlOptions.GetProperty("username").GetString());
+        Assert.True(postgresqlOptions.GetProperty("password_set").GetBoolean());
+        Assert.DoesNotContain("localhost", events[0], StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("carbonops", events[0], StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ServiceHostSkippedRunDiagnosticsEmitThroughSink()
+    {
+        var events = new List<string>();
+        var host = new Phase1ScheduledIngestionServiceHost(
+            Config(),
+            _ => throw new InvalidOperationException("orchestrator should not run"),
+            new FakeSchemaBootstrapChecker(present: true).Check,
+            events.Add);
+
+        var result = host.TriggerScheduledRun();
+
+        Assert.Equal(Phase1ScheduledRunStatus.SkippedNotStarted, result.Status);
+        var skipped = Assert.Single(events);
+        Assert.Equal("phase1_service_host_scheduled_run_skipped", EventName(skipped));
+        Assert.Contains("\"status\":\"skipped_not_started\"", skipped, StringComparison.Ordinal);
+        Assert.Contains("PHASE1_SERVICE_HOST_NOT_READY", skipped, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -179,6 +239,12 @@ public sealed class Phase1ServiceHostTests
             [],
             status: Phase1IngestionRunStatus.Completed,
             selectedSourceFamilies: request.SourceFamilies);
+
+    private static string EventName(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.GetProperty("event").GetString() ?? string.Empty;
+    }
 
     private sealed class FakeSchemaBootstrapChecker(bool present)
     {

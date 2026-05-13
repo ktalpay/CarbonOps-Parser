@@ -160,4 +160,16 @@ def test_phase1_operational_diagnostics_shared_parity_shape() -> None:
         "source_artifact_count",
         "source_candidate_count",
     ]
+    assert expectations["orchestrator_event_names"] == [
+        "phase1_ingestion_orchestrator_started",
+        "phase1_source_family_completed",
+        "phase1_ingestion_orchestrator_completed",
+    ]
+    assert expectations["service_host_event_names"] == [
+        "phase1_service_host_starting",
+        "phase1_service_host_started",
+        "phase1_service_host_scheduled_run_started",
+        "phase1_service_host_scheduled_run_completed",
+        "phase1_service_host_scheduled_run_skipped",
+    ]
     assert expectations["redacted"] == REDACTED

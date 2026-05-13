@@ -56,9 +56,9 @@ public sealed class Phase1IngestionOrchestratorTests
 
         Assert.Equal(Phase1IngestionRunStatus.Completed, result.Status);
         Assert.Equal(3, events.Count);
-        Assert.Equal("phase1_orchestrator_started", EventName(events[0]));
+        Assert.Equal("phase1_ingestion_orchestrator_started", EventName(events[0]));
         Assert.Equal("phase1_source_family_completed", EventName(events[1]));
-        Assert.Equal("phase1_orchestrator_completed", EventName(events[2]));
+        Assert.Equal("phase1_ingestion_orchestrator_completed", EventName(events[2]));
         Assert.Contains("\"run_id\":\"run-001\"", events[1], StringComparison.Ordinal);
         Assert.Contains("\"correlation_id\":\"corr-001\"", events[1], StringComparison.Ordinal);
         Assert.Contains("\"source_family\":\"ghg_protocol\"", events[1], StringComparison.Ordinal);
@@ -126,7 +126,9 @@ public sealed class Phase1IngestionOrchestratorTests
     public void PartialFailureSemanticsAreDeterministicPerSourceFamily()
     {
         var log = new List<string>();
-        var orchestrator = CreateOrchestrator(log, failingParserFamilies: [SourceFamily.DefraDesnz]);
+        var orchestrator = CreateOrchestrator(
+            log,
+            failingParserFamilies: new HashSet<SourceFamily> { SourceFamily.DefraDesnz });
         var request = new Phase1IngestionOrchestratorRequest(
             [SourceFamily.GhgProtocol, SourceFamily.DefraDesnz, SourceFamily.IpccEfdb]);
 

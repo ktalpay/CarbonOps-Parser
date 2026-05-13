@@ -11,11 +11,11 @@ reported at family and orchestrator levels, and structured failure records carry
 reason codes.
 
 The review found no evidence of raw credential logging in the tested diagnostic
-helpers. However, the production-readiness surface is not merge-ready yet
-because the .NET service host does not expose or emit service-host diagnostics,
-and Python/.NET orchestrator event names are not aligned. Those gaps make
-cross-language operational dashboards, log queries, and runbooks harder to make
-deterministic during production troubleshooting.
+helpers. The previously blocking .NET service-host diagnostic gap and
+Python/.NET orchestrator event-name drift have been resolved, so the PR is now
+merge-ready for this review scope. This does not claim a complete production
+observability stack; it confirms the contract-level diagnostics needed for the
+next hardening increment.
 
 ## Reviewed Scope
 
@@ -29,6 +29,8 @@ deterministic during production troubleshooting.
   serialization, PostgreSQL option summaries, orchestrator request summaries,
   per-family result summaries, and run-level result summaries.
 - .NET Phase 1 orchestrator operational event sink and tests.
+- .NET Phase 1 service-host operational event sink and lifecycle diagnostic
+  tests.
 - Shared `phase1_operational_diagnostics_expectations.json` parity fixture.
 - Prior RV-052 and RV-053 findings for orchestrator and service-host readiness.
 
@@ -42,12 +44,14 @@ secret fragments are also removed from diagnostic strings. The diagnostic
 summaries expose `password_set` as a boolean capability signal without exposing
 the password value.
 
-Correlation is present for orchestrator diagnostics. Python emits
+Correlation is present for orchestrator diagnostics. Python and .NET emit
 `correlation_id` and `run_id` in orchestrator start, per-family completion, and
-run completion payloads. .NET emits the same identifiers through the optional
-orchestrator event sink. This is enough to connect a selected Phase 1
-orchestrator run with its per-family diagnostic records when the sink/logger is
-wired by a host.
+run completion payloads using shared event names:
+`phase1_ingestion_orchestrator_started`,
+`phase1_source_family_completed`, and
+`phase1_ingestion_orchestrator_completed`. This is enough to connect a selected
+Phase 1 orchestrator run with its per-family diagnostic records when the
+sink/logger is wired by a host.
 
 Run-status reporting is structured. Python reports top-level statuses such as
 `completed`, `completed_with_failures`, `failed`, and `not_executable`, plus
@@ -68,38 +72,40 @@ and .NET orchestrator failures carry structured codes rather than free-text-only
 messages, and tested diagnostics preserve those codes while redacting sensitive
 message fragments.
 
-## Blocking Mismatches
+## Resolved Blocking Mismatches
 
-- The .NET service host does not currently accept an operational event sink and
-  does not emit startup, bootstrap, scheduled-run, skipped-run, or
-  orchestrator-result diagnostics. Python has service-host diagnostic events for
-  these lifecycle states. This is a production troubleshooting gap for
-  cross-language service deployments.
-- Python and .NET orchestrator event names differ. Python emits
+- The .NET service host now accepts an optional operational event sink and emits
+  structured lifecycle diagnostics for startup, startup result, scheduled-run
+  start, scheduled-run completion, and skipped scheduled runs:
+  `phase1_service_host_starting`, `phase1_service_host_started`,
+  `phase1_service_host_scheduled_run_started`,
+  `phase1_service_host_scheduled_run_completed`, and
+  `phase1_service_host_scheduled_run_skipped`.
+- Python and .NET orchestrator event names are now aligned on
   `phase1_ingestion_orchestrator_started` and
-  `phase1_ingestion_orchestrator_completed`, while .NET emits
-  `phase1_orchestrator_started` and `phase1_orchestrator_completed`. The
-  payload shape is mostly aligned, but event-name drift makes log queries and
-  runbooks language-specific.
-- The shared parity fixture covers diagnostic payload keys and the known .NET
-  family-status coarseness, but it does not assert event-name parity or
-  service-host diagnostic parity.
+  `phase1_ingestion_orchestrator_completed`.
+- The shared parity fixture now represents both orchestrator event-name parity
+  and service-host lifecycle event-name parity, and .NET tests assert the
+  service-host sink path and PostgreSQL-sensitive value redaction.
 
 ## Known Limitations
 
 - Diagnostics are structured JSON/log-contract helpers, not a full
   observability stack. Metrics, traces, alert rules, dashboards, SLOs,
   retention policy, and centralized log ingestion are not implemented here.
-- Python logs directly through the Phase 1 logger; .NET uses an optional
-  orchestrator event sink. Production host wiring for .NET is not proven by the
-  current service-host contract.
-- Service-host diagnostics in Python summarize lifecycle outcomes, but they do
-  not add distributed scheduler identity, process identity, deployment version,
-  host name, retry attempt, lock owner, or cancellation context.
+- Python logs directly through the Phase 1 logger; .NET uses optional event
+  sinks. Production log pipeline wiring remains separate from this contract
+  work.
+- Service-host diagnostics summarize lifecycle outcomes, but they do not add
+  distributed scheduler identity, process identity, deployment version, host
+  name, retry attempt, lock owner, or cancellation context.
+- Distributed scheduler identity is not implemented.
+- Distributed lock or lease behavior is not implemented.
 - Runtime database execution was not performed. Redaction was validated through
   deterministic contract tests and local summaries only.
 - Diagnostic checks do not prove live source availability, parser correctness,
-  source correctness, carbon-accounting correctness, or release packaging.
+  source correctness, carbon-accounting correctness, deployment packaging, or
+  release packaging.
 - Redaction is pattern-based. It protects the expected credential fields and
   common inline secret forms, but production logging policy should still avoid
   passing arbitrary raw exception payloads or connection strings into diagnostic
@@ -107,14 +113,15 @@ message fragments.
 
 ## Verdict
 
-Not merge-ready for production observability readiness.
+Merge-ready for the RV-054 contract-level observability and diagnostics review
+scope.
 
 The Python and .NET diagnostic payload helpers are coherent enough to preserve
 safe redaction, correlation identity, run status, source-family context, and
-failure reason codes at the orchestrator level. The remaining .NET service-host
-diagnostic gap and cross-language event-name drift should be fixed or explicitly
-accepted before this review can support final production hardening and release
-packaging.
+failure reason codes at the orchestrator and service-host levels. The earlier
+blocking .NET service-host diagnostic gap, cross-language event-name drift, and
+fixture coverage gap are fixed. The known limitations above remain out of scope
+for this task and should be handled by later production hardening work.
 
 Task-ID: RV-054
 Task-Issue: #496
