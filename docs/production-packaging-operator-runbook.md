@@ -119,6 +119,12 @@ Combined CI/release gate:
 python scripts/release_validation_gate.py
 ```
 
+Production release-candidate dry-run verification:
+
+```bash
+python scripts/production_rc_verification.py
+```
+
 The combined gate runs a focused Phase 1 Python release-validation test set,
 local source acquisition and parser fixture checks, focused stable .NET
 production-safety contract checks, parity fixture presence checks, sample config
@@ -138,6 +144,7 @@ Default combined gate command coverage includes:
 ```bash
 python -m pytest \
   tests/test_release_validation_gate.py \
+  tests/test_production_rc_verification.py \
   tests/test_production_config_boundary.py \
   tests/test_phase1_observability.py \
   tests/test_production_packaging_operator_runbook.py \
@@ -199,6 +206,10 @@ parser contract failures are resolved.
 
 The commands above must not require production configuration or credentials.
 Treat any prompt for production values during these checks as a release blocker.
+The production RC verifier defaults to `--mode dry-run`, does not connect to
+PostgreSQL, does not call live source endpoints, and does not run destructive
+database commands. `--mode integration` and `--mode live` are separate opt-in
+paths and must not be used as the default release-candidate check.
 
 ## Run
 
@@ -300,6 +311,13 @@ OPS-032 pull request bodies must end with:
 ```text
 Task-ID: OPS-032
 Task-Issue: #499
+```
+
+OPS-033 pull request bodies must end with:
+
+```text
+Task-ID: OPS-033
+Task-Issue: #500
 ```
 
 OPS-036 pull request bodies must end with:
