@@ -166,6 +166,24 @@ public sealed class Phase1IngestionOrchestratorTests
         Assert.Empty(log);
     }
 
+    [Fact]
+    public void SchemaBootstrapReadinessBlocksBeforeSourceExecution()
+    {
+        var log = new List<string>();
+        var orchestrator = CreateOrchestrator(log);
+        var request = new Phase1IngestionOrchestratorRequest(
+            [SourceFamily.IpccEfdb],
+            schemaBootstrapReport: PostgreSQLSchemaBootstrapBoundary.BuildReport());
+
+        var result = orchestrator.Run(request);
+
+        Assert.Equal(Phase1IngestionRunStatus.NotExecutable, result.Status);
+        Assert.Equal(0, result.CompletedSourceFamilyCount);
+        Assert.Equal("postgresql_schema_bootstrap", result.Failures[0].Stage);
+        Assert.Equal("PHASE1_INGESTION_POSTGRESQL_SCHEMA_NOT_READY", result.Failures[0].Code);
+        Assert.Empty(log);
+    }
+
     private static Phase1IngestionOrchestrator CreateOrchestrator(
         List<string> log,
         IReadOnlySet<SourceFamily>? failingParserFamilies = null)
