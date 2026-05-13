@@ -128,7 +128,10 @@ def test_orchestrator_emits_correlation_friendly_operational_logs(caplog) -> Non
     assert family_completed["run_id"] == "phase1-run-009"
     assert family_completed["correlation_id"] == "correlation-009"
     assert family_completed["source_family"] == "ghg_protocol"
-    assert family_completed["parser"]["row_count"] == 1
+    assert family_completed["source_key"] == "ghg_protocol"
+    assert family_completed["parser"]["accepted_row_count"] == 1
+    assert family_completed["parser"]["validation_issue_count"] == 0
+    assert family_completed["parser"]["failure_count"] == 0
     assert family_completed["persistence"] == {
         "parsed_factor_detail_count": 1,
         "parsed_factor_master_count": 1,
@@ -139,8 +142,9 @@ def test_orchestrator_emits_correlation_friendly_operational_logs(caplog) -> Non
     assert family_completed["documents"] == [
         {
             "checksum_sha256": None,
-            "document_id": "phase1-run-009_ghg_protocol_ghg_protocol-artifact",
+            "document_id": "ghg_protocol-artifact",
             "source_family": "ghg_protocol",
+            "source_key": "ghg_protocol",
         },
     ]
 
@@ -178,6 +182,7 @@ def test_orchestrator_failure_log_uses_structured_reason_codes(caplog) -> None:
             "message": "Parser run returned failed status.",
             "severity": "error",
             "source_family": "defra_desnz",
+            "source_key": "defra_desnz",
             "stage": "parser",
         },
     ]

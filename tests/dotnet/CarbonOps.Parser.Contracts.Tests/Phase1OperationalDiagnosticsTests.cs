@@ -80,6 +80,51 @@ public sealed class Phase1OperationalDiagnosticsTests
     }
 
     [Fact]
+    public void DiagnosticsShapeMatchesSharedParityFixture()
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(ParityFixturePath()));
+        var fixture = document.RootElement;
+
+        Assert.Equal(
+            ["correlation_id", "execution_mode", "max_degree_of_parallelism", "run_id", "source_families"],
+            Strings(fixture.GetProperty("request_keys")));
+        Assert.Equal(
+            ["correlation_id", "documents", "failures", "parser", "persistence", "run_id", "source_family", "source_key", "status"],
+            Strings(fixture.GetProperty("family_keys")));
+        Assert.Equal(
+            ["checksum_sha256", "document_id", "source_family", "source_key"],
+            Strings(fixture.GetProperty("document_keys")));
+        Assert.Equal(
+            ["accepted_row_count", "failure_count", "result_status", "run_id", "validation_issue_count"],
+            Strings(fixture.GetProperty("parser_keys")));
+        Assert.Equal(
+            ["code", "field_name", "message", "severity", "source_family", "source_key", "stage"],
+            Strings(fixture.GetProperty("failure_keys")));
+        Assert.Equal(
+            [
+                "completed_family_count",
+                "failed_family_count",
+                "failure_count",
+                "parsed_factor_row_count",
+                "parser_run_count",
+                "persisted_detail_count",
+                "persisted_master_count",
+                "persisted_parser_run_count",
+                "persisted_source_document_count",
+                "persisted_source_run_count",
+                "requested_family_count",
+                "source_artifact_count",
+                "source_candidate_count",
+            ],
+            Strings(fixture.GetProperty("summary_keys")));
+        Assert.Equal(Phase1OperationalDiagnostics.Redacted, fixture.GetProperty("redacted").GetString());
+        Assert.Contains(
+            "intentionally coarser",
+            fixture.GetProperty("intentional_status_difference").GetString(),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void FamilyDiagnosticsIncludeSafeDocumentParserPersistenceAndFailureShape()
     {
         var checksum = new string('A', 64);
@@ -147,9 +192,38 @@ public sealed class Phase1OperationalDiagnosticsTests
 
         Assert.Contains("\"checksum_sha256\":\"" + checksum.ToLowerInvariant() + "\"", json, StringComparison.Ordinal);
         Assert.Contains("\"document_id\":\"document-001\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"source_key\":\"ghg_protocol\"", json, StringComparison.Ordinal);
         Assert.Contains("\"accepted_row_count\":0", json, StringComparison.Ordinal);
+        Assert.Contains("\"validation_issue_count\":1", json, StringComparison.Ordinal);
+        Assert.Contains("\"failure_count\":1", json, StringComparison.Ordinal);
+        Assert.Contains("\"status\":\"failed\"", json, StringComparison.Ordinal);
         Assert.Contains("\"source_document_count\":1", json, StringComparison.Ordinal);
         Assert.Contains("\"code\":\"GHG_PROTOCOL_CONTENT_INVALID_HEADER\"", json, StringComparison.Ordinal);
         Assert.DoesNotContain("raw-secret", json, StringComparison.Ordinal);
+    }
+
+    private static string[] Strings(JsonElement element) =>
+        element.EnumerateArray().Select(item => item.GetString() ?? string.Empty).ToArray();
+
+    private static string ParityFixturePath()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var fixturePath = Path.Combine(
+                directory.FullName,
+                "tests",
+                "fixtures",
+                "parity",
+                "phase1_operational_diagnostics_expectations.json");
+            if (File.Exists(fixturePath))
+            {
+                return fixturePath;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new FileNotFoundException("Phase 1 operational diagnostics parity fixture was not found.");
     }
 }

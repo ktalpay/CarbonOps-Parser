@@ -62,9 +62,14 @@ public sealed class Phase1IngestionOrchestratorTests
         Assert.Contains("\"run_id\":\"run-001\"", events[1], StringComparison.Ordinal);
         Assert.Contains("\"correlation_id\":\"corr-001\"", events[1], StringComparison.Ordinal);
         Assert.Contains("\"source_family\":\"ghg_protocol\"", events[1], StringComparison.Ordinal);
+        Assert.Contains("\"source_key\":\"ghg_protocol\"", events[1], StringComparison.Ordinal);
+        Assert.Contains("\"status\":\"completed\"", events[1], StringComparison.Ordinal);
         Assert.Contains("\"document_id\":\"ghg_protocol_artifact\"", events[1], StringComparison.Ordinal);
         Assert.Contains("\"accepted_row_count\":1", events[1], StringComparison.Ordinal);
+        Assert.Contains("\"validation_issue_count\":0", events[1], StringComparison.Ordinal);
         Assert.Contains("\"parsed_factor_master_count\":1", events[1], StringComparison.Ordinal);
+        Assert.Contains("\"execution_mode\":\"sequential\"", events[0], StringComparison.Ordinal);
+        Assert.Contains("\"max_degree_of_parallelism\":1", events[0], StringComparison.Ordinal);
         Assert.DoesNotContain("password=", string.Join("\n", events), StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("connection_string=", string.Join("\n", events), StringComparison.OrdinalIgnoreCase);
     }
