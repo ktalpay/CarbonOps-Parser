@@ -11,14 +11,20 @@ import sys
 from dataclasses import dataclass
 from typing import Callable, Sequence
 
+try:
+    from scripts.agent_task_status import (
+        SUPPORTED_TASK_STATUS_LABELS,
+        TaskStatusReplacement,
+        replace_task_status,
+    )
+except ModuleNotFoundError:  # pragma: no cover - direct script execution path
+    from agent_task_status import (  # type: ignore[no-redef]
+        SUPPORTED_TASK_STATUS_LABELS,
+        TaskStatusReplacement,
+        replace_task_status,
+    )
 
-SUPPORTED_STATUS_LABELS = (
-    "status:blocked",
-    "status:ready",
-    "status:in-progress",
-    "status:merged",
-    "status:needs-attention",
-)
+SUPPORTED_STATUS_LABELS = SUPPORTED_TASK_STATUS_LABELS
 
 TASK_ID_PATTERN = re.compile(r"\b([A-Za-z]+-[0-9][0-9A-Za-z-]*)\b")
 TASK_ID_FOOTER_PATTERN = re.compile(
@@ -51,11 +57,7 @@ class PullRequest:
     merged: bool
 
 
-@dataclass(frozen=True)
-class StatusReplacement:
-    issue_number: int
-    old_statuses: tuple[str, ...]
-    new_status: str
+StatusReplacement = TaskStatusReplacement
 
 
 @dataclass(frozen=True)
@@ -209,6 +211,9 @@ class GitHubClient:
     def remove_label(self, issue_number: int, label: str) -> None:
         self.runner(("gh", "issue", "edit", str(issue_number), "--repo", self.repo, "--remove-label", label))
 
+    def edit_body(self, issue_number: int, body: str) -> None:
+        self.runner(("gh", "issue", "edit", str(issue_number), "--repo", self.repo, "--body", body))
+
     def comment(self, issue_number: int, body: str) -> None:
         self.runner(("gh", "issue", "comment", str(issue_number), "--repo", self.repo, "--body", body))
 
@@ -251,27 +256,17 @@ def parse_task_list(raw_value: str | None) -> tuple[str, ...]:
     return tuple(task_ids)
 
 
-def status_labels(labels: Sequence[str]) -> tuple[str, ...]:
-    return tuple(label for label in labels if label.startswith("status:"))
-
-
 def replace_status_label(client: GitHubClient, issue: Issue, new_status: str) -> StatusReplacement:
-    if new_status not in SUPPORTED_STATUS_LABELS:
-        raise WatcherError(f"Unsupported status label: {new_status}")
-
-    old_statuses = status_labels(issue.labels)
-    if new_status not in issue.labels:
-        client.add_label(issue.number, new_status)
-
-    for label in old_statuses:
-        if label != new_status:
-            client.remove_label(issue.number, label)
-
-    return StatusReplacement(
-        issue_number=issue.number,
-        old_statuses=old_statuses,
-        new_status=new_status,
-    )
+    try:
+        return replace_task_status(
+            client,
+            issue_number=issue.number,
+            labels=issue.labels,
+            body=issue.body,
+            new_status=new_status,
+        )
+    except ValueError as exc:
+        raise WatcherError(str(exc)) from exc
 
 
 def resolve_task_issue(client: GitHubClient, pull_request: PullRequest) -> tuple[str, Issue]:
