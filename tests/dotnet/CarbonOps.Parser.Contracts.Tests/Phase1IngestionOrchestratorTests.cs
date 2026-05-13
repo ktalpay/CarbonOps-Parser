@@ -1,3 +1,4 @@
+using System.Text.Json;
 using CarbonOps.Parser.Contracts;
 
 namespace CarbonOps.Parser.Contracts.Tests;
@@ -37,6 +38,35 @@ public sealed class Phase1IngestionOrchestratorTests
                 "ipcc_efdb:normalize",
             ],
             log);
+    }
+
+    [Fact]
+    public void OrchestratorEmitsCorrelationFriendlyOperationalEventsWhenSinkIsProvided()
+    {
+        var runtimeLog = new List<string>();
+        var events = new List<string>();
+        var orchestrator = CreateOrchestrator(runtimeLog);
+        var request = new Phase1IngestionOrchestratorRequest(
+            [SourceFamily.GhgProtocol],
+            runId: "run-001",
+            correlationId: "corr-001",
+            operationalEventSink: events.Add);
+
+        var result = orchestrator.Run(request);
+
+        Assert.Equal(Phase1IngestionRunStatus.Completed, result.Status);
+        Assert.Equal(3, events.Count);
+        Assert.Equal("phase1_orchestrator_started", EventName(events[0]));
+        Assert.Equal("phase1_source_family_completed", EventName(events[1]));
+        Assert.Equal("phase1_orchestrator_completed", EventName(events[2]));
+        Assert.Contains("\"run_id\":\"run-001\"", events[1], StringComparison.Ordinal);
+        Assert.Contains("\"correlation_id\":\"corr-001\"", events[1], StringComparison.Ordinal);
+        Assert.Contains("\"source_family\":\"ghg_protocol\"", events[1], StringComparison.Ordinal);
+        Assert.Contains("\"document_id\":\"ghg_protocol_artifact\"", events[1], StringComparison.Ordinal);
+        Assert.Contains("\"accepted_row_count\":1", events[1], StringComparison.Ordinal);
+        Assert.Contains("\"parsed_factor_master_count\":1", events[1], StringComparison.Ordinal);
+        Assert.DoesNotContain("password=", string.Join("\n", events), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("connection_string=", string.Join("\n", events), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -200,6 +230,12 @@ public sealed class Phase1IngestionOrchestratorTests
             new FakeSourceDocumentRepository(),
             new FakeParserRunRepository(),
             new FakeSourceFamilyRepository()));
+    }
+
+    private static string EventName(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.GetProperty("event").GetString() ?? "";
     }
 
     private sealed class FakeSourceFamilyRuntime(
