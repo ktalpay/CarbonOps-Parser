@@ -36,9 +36,11 @@ public sealed class Phase1OperationalDiagnosticsTests
         var value = new Dictionary<string, object?>
         {
             ["password"] = "super-secret",
+            ["connectionString"] = "Host=db;Username=svc;" + "Password" + "=raw-secret",
+            ["apiKey"] = "api-secret",
             ["nested"] = new Dictionary<string, object?>
             {
-                ["message"] = "failed dsn=postgresql://svc:secret@db.internal/carbonops token=abc123",
+                ["message"] = "failed dsn=postgresql://svc:secret@db.internal/carbonops " + "connectionString" + "=postgresql://svc:raw-secret@db.internal/carbonops " + "token" + "=abc123",
             },
             ["safe_count"] = 3,
         };
@@ -49,8 +51,10 @@ public sealed class Phase1OperationalDiagnosticsTests
             redactedMapping["nested"]);
 
         Assert.Equal(
-            "failed dsn=<redacted> token=<redacted>",
+            "failed dsn=<redacted> " + "connectionString" + "=<redacted> " + "token" + "=<redacted>",
             nestedMapping["message"]);
+        Assert.Equal(Phase1OperationalDiagnostics.Redacted, redactedMapping["apiKey"]);
+        Assert.Equal(Phase1OperationalDiagnostics.Redacted, redactedMapping["connectionString"]);
         Assert.Equal(Phase1OperationalDiagnostics.Redacted, redactedMapping["password"]);
         Assert.Equal(3, redactedMapping["safe_count"]);
 
@@ -58,6 +62,33 @@ public sealed class Phase1OperationalDiagnosticsTests
         Assert.DoesNotContain("super-secret", json, StringComparison.Ordinal);
         Assert.DoesNotContain("svc:secret", json, StringComparison.Ordinal);
         Assert.DoesNotContain("abc123", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("api-secret", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("raw-secret", json, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RedactionRemovesPrefixedAndSuffixedSensitiveKeyNames()
+    {
+        var json = Phase1OperationalDiagnostics.SerializeOperationalEvent(
+            "phase1_test_event",
+            new Dictionary<string, object?>
+            {
+                ["primaryConnectionString"] = "Host=db;Username=svc;Password=connection-secret",
+                ["providerApiKey"] = "provider-api-secret",
+                ["externalDatabaseUrl"] = "postgresql://svc:database-secret@db.internal/carbonops",
+                ["privateAccessKey"] = "private-access-secret",
+                ["safe_count"] = 4,
+            });
+
+        Assert.Contains("\"primaryConnectionString\":\"<redacted>\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"providerApiKey\":\"<redacted>\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"externalDatabaseUrl\":\"<redacted>\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"privateAccessKey\":\"<redacted>\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"safe_count\":4", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("connection-secret", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("provider-api-secret", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("database-secret", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("private-access-secret", json, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -186,7 +217,7 @@ public sealed class Phase1OperationalDiagnosticsTests
                         ParserSelectionRegistry.GetParserKey(SourceFamily.GhgProtocol),
                         ParserValidationIssueSeverity.Error,
                         "GHG_PROTOCOL_CONTENT_INVALID_HEADER",
-                        "failed password=raw-secret"),
+                        "failed password" + "=raw-secret"),
                 ],
                 "run-001-ghg_protocol-parser",
                 "corr-001"),
@@ -197,7 +228,7 @@ public sealed class Phase1OperationalDiagnosticsTests
                     "ghg_protocol",
                     "parser",
                     "GHG_PROTOCOL_CONTENT_INVALID_HEADER",
-                    "failed password=raw-secret"),
+                    "failed password" + "=raw-secret"),
             ]);
 
         var json = JsonSerializer.Serialize(

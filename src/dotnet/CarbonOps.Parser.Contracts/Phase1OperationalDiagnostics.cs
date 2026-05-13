@@ -26,8 +26,17 @@ public static partial class Phase1OperationalDiagnostics
         "application_name",
         "dsn",
         "connection_string",
+        "connectionstring",
         "connection_uri",
+        "connectionuri",
         "database_url",
+        "databaseurl",
+        "api_key",
+        "apikey",
+        "access_key",
+        "accesskey",
+        "private_key",
+        "privatekey",
     };
 
     private static readonly string[] SensitiveKeyParts =
@@ -42,7 +51,14 @@ public static partial class Phase1OperationalDiagnostics
         "connection_string",
         "connection_uri",
         "database_url",
+        "api_key",
+        "access_key",
+        "private_key",
     ];
+
+    private static readonly string[] CompactSensitiveKeyParts = SensitiveKeyParts
+        .Select(CompactFieldName)
+        .ToArray();
 
     public static IReadOnlyDictionary<string, object?> BuildOperationalEvent(
         string eventName,
@@ -289,14 +305,20 @@ public static partial class Phase1OperationalDiagnostics
     private static bool IsSensitiveField(string fieldName)
     {
         var normalized = fieldName.Trim().ToLowerInvariant();
+        var compact = CompactFieldName(normalized);
         if (normalized == "password_set")
         {
             return false;
         }
 
         return SensitiveRuntimeOptionFields.Contains(normalized) ||
-            SensitiveKeyParts.Any(part => normalized.Contains(part, StringComparison.Ordinal));
+            SensitiveKeyParts.Any(part => normalized.Contains(part, StringComparison.Ordinal)) ||
+            CompactSensitiveKeyParts.Any(part => compact.Contains(part, StringComparison.Ordinal));
     }
+
+    private static string CompactFieldName(string fieldName) =>
+        fieldName.Replace("_", string.Empty, StringComparison.Ordinal)
+            .Replace("-", string.Empty, StringComparison.Ordinal);
 
     private static string Phase1ExecutionModeWireName(Phase1IngestionExecutionMode value) =>
         value switch
@@ -331,6 +353,6 @@ public static partial class Phase1OperationalDiagnostics
     [GeneratedRegex("//[^/\\s:@]+:[^@\\s/]+@")]
     private static partial Regex UserInfoUriPattern();
 
-    [GeneratedRegex("(?i)\\b(password|passwd|pwd|secret|token|dsn|connection_string)=([^\\s;,]+)")]
+    [GeneratedRegex("(?i)\\b(password|passwd|pwd|secret|token|dsn|connection[_-]?string)=([^\\s;,]+)")]
     private static partial Regex SensitiveAssignmentPattern();
 }

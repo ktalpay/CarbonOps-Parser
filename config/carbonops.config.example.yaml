@@ -10,7 +10,12 @@ database:
   # Phase 1 implements PostgreSQL only.
   # mysql and mssql are reserved for future configuration compatibility.
   provider: postgres
-  connectionString: "Host=localhost;Port=5432;Database=carbonops_parser;Username=carbonops;Password=change-me"
+  host: "${CARBONOPS_PARSER_POSTGRES_HOST}"
+  port: 5432
+  database: "${CARBONOPS_PARSER_POSTGRES_DATABASE}"
+  username: "${CARBONOPS_PARSER_POSTGRES_USERNAME}"
+  # Secret value must be supplied by the environment or secret manager, not this file.
+  passwordEnvVar: CARBONOPS_PARSER_POSTGRES_PASSWORD
   schema: carbonops
 
 storage:

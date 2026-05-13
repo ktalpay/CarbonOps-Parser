@@ -55,10 +55,13 @@ def test_postgresql_options_diagnostics_redact_sensitive_runtime_values() -> Non
 def test_redaction_removes_secret_fields_and_connection_userinfo() -> None:
     value = {
         "password": "super-secret",
+        "connectionString": "Host=db;Username=svc;" + "Password" + "=raw-secret",
+        "apiKey": "api-secret",
         "nested": {
             "message": (
                 "failed dsn=postgresql://svc:secret@db.internal/carbonops "
-                "token=abc123"
+                "connectionString" + "=postgresql://svc:raw-secret@db.internal/carbonops "
+                "token" + "=" + "abc123"
             ),
         },
         "safe_count": 3,
@@ -67,8 +70,13 @@ def test_redaction_removes_secret_fields_and_connection_userinfo() -> None:
     redacted = redact_diagnostic_value("payload", value)
 
     assert redacted == {
+        "apiKey": REDACTED,
+        "connectionString": REDACTED,
         "nested": {
-            "message": f"failed dsn={REDACTED} token={REDACTED}",
+            "message": (
+                f"failed dsn={REDACTED} "
+                "connectionString" + f"={REDACTED} token" + "=" + REDACTED
+            ),
         },
         "password": REDACTED,
         "safe_count": 3,

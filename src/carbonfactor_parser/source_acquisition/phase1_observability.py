@@ -19,7 +19,7 @@ REDACTED = "<redacted>"
 _CHECKSUM_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
 _USERINFO_URI_PATTERN = re.compile(r"//[^/\s:@]+:[^@\s/]+@")
 _SENSITIVE_ASSIGNMENT_PATTERN = re.compile(
-    r"(?i)\b(password|passwd|pwd|secret|token|dsn|connection_string)=([^\s;,]+)",
+    r"(?i)\b(password|passwd|pwd|secret|token|dsn|connection[_-]?string)=([^\s;,]+)",
 )
 _SENSITIVE_KEY_PARTS = (
     "password",
@@ -30,8 +30,17 @@ _SENSITIVE_KEY_PARTS = (
     "credential",
     "dsn",
     "connection_string",
+    "connectionstring",
     "connection_uri",
+    "connectionuri",
     "database_url",
+    "databaseurl",
+    "api_key",
+    "apikey",
+    "access_key",
+    "accesskey",
+    "private_key",
+    "privatekey",
 )
 _SENSITIVE_RUNTIME_OPTION_FIELDS = frozenset(
     {
@@ -295,11 +304,12 @@ def _safe_checksum(value: Any) -> str | None:
 
 def _is_sensitive_field(field_name: str) -> bool:
     normalized = field_name.strip().lower()
+    compact = normalized.replace("_", "").replace("-", "")
     if normalized == "password_set":
         return False
     return (
         normalized in _SENSITIVE_RUNTIME_OPTION_FIELDS
-        or any(part in normalized for part in _SENSITIVE_KEY_PARTS)
+        or any(part in normalized or part in compact for part in _SENSITIVE_KEY_PARTS)
     )
 
 
