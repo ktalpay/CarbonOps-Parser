@@ -18,7 +18,7 @@ Both implementations should follow the same conceptual model so users can choose
 The shared example contains:
 
 - `app`: application identity, environment label, and log level.
-- `database`: provider, connection string, and PostgreSQL schema name.
+- `database`: provider, split PostgreSQL connection fields, secret reference, and schema name.
 - `storage`: raw source file archive path.
 - `execution`: retry and single-instance lock settings.
 - `sources`: source-specific check, download, schedule, and import settings.
@@ -63,8 +63,33 @@ Provider validation must happen before source checks, downloads, parsing, or imp
 | Field | Required | Purpose | Phase 1 guidance |
 | --- | --- | --- | --- |
 | `provider` | Yes | Selects the database provider. | Use `postgres`. |
-| `connectionString` | Yes | Provides the PostgreSQL connection details. | Keep secrets out of committed real configs. |
+| `host` | Yes | PostgreSQL host name. | Use an environment-specific value outside committed production config. |
+| `port` | Yes | PostgreSQL port. | Must be an integer from 1 to 65535. |
+| `database` | Yes | PostgreSQL database name. | Use an environment-specific value outside committed production config. |
+| `username` | Yes | PostgreSQL user name. | Use an environment-specific value outside committed production config. |
+| `passwordEnvVar` | Yes | Names the environment variable or secret binding that supplies the PostgreSQL password. | Use `CARBONOPS_PARSER_POSTGRES_PASSWORD`; do not store the password here. |
 | `schema` | Yes | Names the PostgreSQL schema for CarbonOps-Parser tables. | Use `carbonops`. |
+
+Raw PostgreSQL connection strings are not accepted for production configuration because they commonly combine host, username, and password into one value that is easy to leak in diagnostics. Python and .NET both expect split non-secret fields plus `CARBONOPS_PARSER_POSTGRES_PASSWORD` as the secret boundary.
+
+## Production Environment Boundary
+
+Production startup validation is fail-closed. The runtime should validate these required keys before source checks, downloads, parsing, imports, or database execution:
+
+- `CARBONOPS_PARSER_ENV`
+- `CARBONOPS_PARSER_DATABASE_PROVIDER`
+- `CARBONOPS_PARSER_POSTGRES_HOST`
+- `CARBONOPS_PARSER_POSTGRES_PORT`
+- `CARBONOPS_PARSER_POSTGRES_DATABASE`
+- `CARBONOPS_PARSER_POSTGRES_USERNAME`
+- `CARBONOPS_PARSER_POSTGRES_PASSWORD`
+- `CARBONOPS_PARSER_POSTGRES_SCHEMA`
+- `CARBONOPS_PARSER_RAW_ARCHIVE_PATH`
+- `CARBONOPS_PARSER_LOG_LEVEL`
+
+`CARBONOPS_PARSER_POSTGRES_PASSWORD` is the only required secret in this Phase 1 boundary. Validators may confirm that it is present, but validation results, logs, and diagnostics must not echo its value. Missing or invalid configuration messages should name the key and the expected shape only.
+
+The Python and .NET contracts are intentionally aligned: both validate caller-provided mappings, both require PostgreSQL provider `postgres`, both reject raw connection-string config, and neither reads environment variables, config files, credentials, opens a PostgreSQL connection, or runs SQL during validation.
 
 ## Storage Section
 
@@ -171,7 +196,11 @@ app:
 
 database:
   provider: postgres
-  connectionString: "Host=localhost;Port=5432;Database=carbonops_parser;Username=carbonops;Password=change-me"
+  host: "${CARBONOPS_PARSER_POSTGRES_HOST}"
+  port: 5432
+  database: "${CARBONOPS_PARSER_POSTGRES_DATABASE}"
+  username: "${CARBONOPS_PARSER_POSTGRES_USERNAME}"
+  passwordEnvVar: CARBONOPS_PARSER_POSTGRES_PASSWORD
   schema: carbonops
 
 storage:

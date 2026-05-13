@@ -26,8 +26,17 @@ public static partial class Phase1OperationalDiagnostics
         "application_name",
         "dsn",
         "connection_string",
+        "connectionstring",
         "connection_uri",
+        "connectionuri",
         "database_url",
+        "databaseurl",
+        "api_key",
+        "apikey",
+        "access_key",
+        "accesskey",
+        "private_key",
+        "privatekey",
     };
 
     private static readonly string[] SensitiveKeyParts =
@@ -289,13 +298,17 @@ public static partial class Phase1OperationalDiagnostics
     private static bool IsSensitiveField(string fieldName)
     {
         var normalized = fieldName.Trim().ToLowerInvariant();
+        var compact = normalized.Replace("_", string.Empty, StringComparison.Ordinal)
+            .Replace("-", string.Empty, StringComparison.Ordinal);
         if (normalized == "password_set")
         {
             return false;
         }
 
         return SensitiveRuntimeOptionFields.Contains(normalized) ||
-            SensitiveKeyParts.Any(part => normalized.Contains(part, StringComparison.Ordinal));
+            SensitiveKeyParts.Any(part =>
+                normalized.Contains(part, StringComparison.Ordinal) ||
+                compact.Contains(part, StringComparison.Ordinal));
     }
 
     private static string Phase1ExecutionModeWireName(Phase1IngestionExecutionMode value) =>
@@ -331,6 +344,6 @@ public static partial class Phase1OperationalDiagnostics
     [GeneratedRegex("//[^/\\s:@]+:[^@\\s/]+@")]
     private static partial Regex UserInfoUriPattern();
 
-    [GeneratedRegex("(?i)\\b(password|passwd|pwd|secret|token|dsn|connection_string)=([^\\s;,]+)")]
+    [GeneratedRegex("(?i)\\b(password|passwd|pwd|secret|token|dsn|connection[_-]?string)=([^\\s;,]+)")]
     private static partial Regex SensitiveAssignmentPattern();
 }
