@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from carbonfactor_parser.persistence.postgresql_options import (
     create_postgresql_persistence_options,
 )
@@ -149,6 +151,34 @@ def test_graceful_shutdown_blocks_new_runs_and_stops_after_active_run() -> None:
     )
     assert host.status is Phase1ServiceHostStatus.STOPPED
     assert after_shutdown_result.status is Phase1ScheduledRunStatus.SKIPPED_SHUTTING_DOWN
+
+
+def test_scheduled_runner_error_releases_overlap_guard_and_returns_ready() -> None:
+    failed_once = False
+
+    def runner(
+        request: Phase1IngestionOrchestratorRequest,
+    ) -> Phase1IngestionOrchestratorResult:
+        nonlocal failed_once
+        if not failed_once:
+            failed_once = True
+            raise RuntimeError(f"boom: {request.run_id}")
+        return _orchestrator_result(request)
+
+    host = Phase1ScheduledIngestionServiceHost(
+        _config(),
+        schema_bootstrap_checker=_FakeSchemaBootstrapChecker(present=True),
+        orchestrator_runner=runner,
+    )
+
+    host.start()
+    with pytest.raises(RuntimeError, match="boom: phase1-scheduled-000001"):
+        host.trigger_scheduled_run()
+
+    assert host.status is Phase1ServiceHostStatus.READY
+    follow_up = host.trigger_scheduled_run()
+    assert follow_up.status is Phase1ScheduledRunStatus.STARTED
+    assert follow_up.run_id == "phase1-scheduled-000002"
 
 
 class _FakeSchemaBootstrapChecker:

@@ -40,6 +40,8 @@ public sealed record Phase1IngestionOrchestratorRequest
 
     public PostgreSQLRuntimeConfigGate RuntimeConfigGate { get; }
 
+    public PostgreSQLSchemaBootstrapReport? SchemaBootstrapReport { get; }
+
     public string RunId { get; }
 
     public string? CorrelationId { get; }
@@ -50,12 +52,14 @@ public sealed record Phase1IngestionOrchestratorRequest
         int maxDegreeOfParallelism = 1,
         PostgreSQLRuntimeConfigGate? runtimeConfigGate = null,
         string runId = "phase1_ingestion_orchestrator_run",
-        string? correlationId = null)
+        string? correlationId = null,
+        PostgreSQLSchemaBootstrapReport? schemaBootstrapReport = null)
     {
         SourceFamilies = Array.AsReadOnly(sourceFamilies.ToArray());
         ExecutionMode = executionMode;
         MaxDegreeOfParallelism = maxDegreeOfParallelism;
         RuntimeConfigGate = runtimeConfigGate ?? new PostgreSQLRuntimeConfigGate();
+        SchemaBootstrapReport = schemaBootstrapReport;
         RunId = runId;
         CorrelationId = correlationId;
     }
@@ -427,19 +431,29 @@ public sealed class Phase1IngestionOrchestrator
         Phase1IngestionOrchestratorRequest request,
         PostgreSQLRuntimeConfigGateDecision runtimeDecision)
     {
-        if (!request.RuntimeConfigGate.Requested || runtimeDecision.RuntimeEnabled)
+        if (request.RuntimeConfigGate.Requested && !runtimeDecision.RuntimeEnabled)
         {
-            yield break;
+            var issue = runtimeDecision.Issues.FirstOrDefault();
+            yield return Failure(
+                SourceFamily.GhgProtocol,
+                "",
+                "postgresql_runtime_config",
+                issue?.Code ?? "PHASE1_INGESTION_POSTGRESQL_RUNTIME_NOT_READY",
+                issue?.Message ?? "PostgreSQL runtime configuration is not ready.",
+                issue?.FieldName ?? "RuntimeConfigGate");
         }
 
-        var issue = runtimeDecision.Issues.FirstOrDefault();
-        yield return Failure(
-            SourceFamily.GhgProtocol,
-            "",
-            "postgresql_runtime_config",
-            issue?.Code ?? "PHASE1_INGESTION_POSTGRESQL_RUNTIME_NOT_READY",
-            issue?.Message ?? "PostgreSQL runtime configuration is not ready.",
-            issue?.FieldName ?? "RuntimeConfigGate");
+        if (request.SchemaBootstrapReport is { FailOnMissing: true } report &&
+            report.MissingTableNames.Count > 0)
+        {
+            yield return Failure(
+                SourceFamily.GhgProtocol,
+                "",
+                "postgresql_schema_bootstrap",
+                "PHASE1_INGESTION_POSTGRESQL_SCHEMA_NOT_READY",
+                "PostgreSQL schema bootstrap reported missing required tables.",
+                "schema_bootstrap_report.missing_table_names");
+        }
     }
 
     private static IEnumerable<Phase1IngestionFailure> ValidateAcquisition(

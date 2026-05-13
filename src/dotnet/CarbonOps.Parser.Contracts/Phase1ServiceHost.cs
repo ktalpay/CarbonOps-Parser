@@ -346,7 +346,8 @@ public sealed class Phase1ScheduledIngestionServiceHost
             Config.ExecutionMode,
             Config.MaxDegreeOfParallelism,
             Config.RuntimeConfigGate,
-            runId);
+            runId,
+            schemaBootstrapReport: schemaBootstrapReport);
 
     private static IEnumerable<Phase1ServiceHostIssue> SchemaBootstrapIssues(
         PostgreSQLSchemaBootstrapReport report)

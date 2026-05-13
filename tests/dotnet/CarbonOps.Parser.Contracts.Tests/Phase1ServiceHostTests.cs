@@ -66,6 +66,8 @@ public sealed class Phase1ServiceHostTests
         Assert.Equal(Phase1ScheduledRunStatus.Started, result.Status);
         Assert.Equal("phase1-test-000001", result.RunId);
         Assert.Equal([SourceFamily.DefraDesnz, SourceFamily.IpccEfdb], runner.Requests[0].SourceFamilies);
+        Assert.NotNull(runner.Requests[0].SchemaBootstrapReport);
+        Assert.Empty(runner.Requests[0].SchemaBootstrapReport.MissingTableNames);
         Assert.Equal(Phase1IngestionRunStatus.Completed, result.OrchestratorResult?.Status);
         Assert.Equal(Phase1ServiceHostStatus.Ready, host.Status);
     }
@@ -126,6 +128,34 @@ public sealed class Phase1ServiceHostTests
         Assert.Equal(Phase1ScheduledRunStatus.SkippedShuttingDown, nestedResult.Status);
         Assert.Equal(Phase1ServiceHostStatus.Stopped, host.Status);
         Assert.Equal(Phase1ScheduledRunStatus.SkippedShuttingDown, afterShutdownResult.Status);
+    }
+
+    [Fact]
+    public void ScheduledRunnerErrorReleasesOverlapGuardAndReturnsReady()
+    {
+        var failedOnce = false;
+        var host = new Phase1ScheduledIngestionServiceHost(
+            Config(),
+            request =>
+            {
+                if (!failedOnce)
+                {
+                    failedOnce = true;
+                    throw new InvalidOperationException($"boom: {request.RunId}");
+                }
+
+                return OrchestratorResult(request);
+            },
+            new FakeSchemaBootstrapChecker(present: true).Check);
+
+        host.Start();
+        var exception = Assert.Throws<InvalidOperationException>(() => host.TriggerScheduledRun());
+
+        Assert.Equal("boom: phase1-scheduled-000001", exception.Message);
+        Assert.Equal(Phase1ServiceHostStatus.Ready, host.Status);
+        var followUp = host.TriggerScheduledRun();
+        Assert.Equal(Phase1ScheduledRunStatus.Started, followUp.Status);
+        Assert.Equal("phase1-scheduled-000002", followUp.RunId);
     }
 
     private static Phase1ServiceHostConfig Config(
