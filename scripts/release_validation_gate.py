@@ -24,6 +24,7 @@ POSTGRESQL_TEST_DSN_ENV = "CARBONOPS_POSTGRESQL_TEST_DSN"
 
 RELEASE_GATE_PYTHON_TEST_TARGETS = (
     "tests/test_release_validation_gate.py",
+    "tests/test_production_rc_verification.py",
     "tests/test_production_config_boundary.py",
     "tests/test_phase1_observability.py",
     "tests/test_production_packaging_operator_runbook.py",
@@ -73,6 +74,7 @@ REQUIRED_PARITY_FIXTURES = (
 REQUIRED_RUNBOOK_MARKERS = (
     "python -m pytest",
     "git diff --check",
+    "python scripts/production_rc_verification.py",
     "carbonops-source-acquisition validate",
     "carbonops-source-acquisition run --dry-run",
     "carbonops-parser local-dry-run",
@@ -81,6 +83,8 @@ REQUIRED_RUNBOOK_MARKERS = (
     "full .NET contract suite is outside the default release gate",
     "The commands above must not require production configuration or credentials.",
     "Raw PostgreSQL connection strings are rejected",
+    "Task-ID: OPS-033",
+    "Task-Issue: #500",
 )
 
 REQUIRED_CONFIG_MARKERS = (
