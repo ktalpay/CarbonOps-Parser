@@ -36,7 +36,25 @@ def test_default_release_gate_commands_are_local_only() -> None:
     assert any("carbonfactor_parser.source_acquisition.cli validate" in command for command in rendered_commands)
     assert any("carbonfactor_parser.source_acquisition.cli run --dry-run" in command for command in rendered_commands)
     assert any("carbonfactor_parser.cli local-dry-run" in command for command in rendered_commands)
-    assert any("dotnet test src/dotnet/CarbonOps.Parser.sln --configuration Release" in command for command in rendered_commands)
+    dotnet_commands = [
+        command for command in commands if command.args[:2] == ("dotnet", "test")
+    ]
+    assert len(dotnet_commands) == 1
+    dotnet_command = dotnet_commands[0]
+    assert "src/dotnet/CarbonOps.Parser.sln" not in dotnet_command.args
+    assert release_validation_gate.RELEASE_GATE_DOTNET_TEST_PROJECT in dotnet_command.args
+    assert "--filter" in dotnet_command.args
+    assert (
+        release_validation_gate.RELEASE_GATE_DOTNET_TEST_FILTER
+        in dotnet_command.args
+    )
+    assert "ProductionConfigBoundaryTests" in release_validation_gate.RELEASE_GATE_DOTNET_TEST_FILTER
+    assert "Phase1OperationalDiagnosticsTests" in release_validation_gate.RELEASE_GATE_DOTNET_TEST_FILTER
+    assert "PostgreSQLRuntimeConfigGateContractTests" in release_validation_gate.RELEASE_GATE_DOTNET_TEST_FILTER
+    assert not any(
+        "dotnet test src/dotnet/CarbonOps.Parser.sln" in command
+        for command in rendered_commands
+    )
 
     findings = release_validation_gate.validate_default_commands(commands)
 

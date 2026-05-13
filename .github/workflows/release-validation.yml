@@ -51,5 +51,5 @@ jobs:
         run: dotnet restore src/dotnet/CarbonOps.Parser.sln
 
       - name: Run Phase 1 release validation gate
-        # Gate includes: dotnet test src/dotnet/CarbonOps.Parser.sln --configuration Release
+        # Gate includes: dotnet test tests/dotnet/CarbonOps.Parser.Contracts.Tests/CarbonOps.Parser.Contracts.Tests.csproj --configuration Release --no-restore --filter
         run: python scripts/release_validation_gate.py

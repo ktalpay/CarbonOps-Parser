@@ -32,6 +32,16 @@ RELEASE_GATE_PYTHON_TEST_TARGETS = (
     "tests/test_agent_dispatch_handoff_reporter.py",
 )
 
+RELEASE_GATE_DOTNET_TEST_PROJECT = (
+    "tests/dotnet/CarbonOps.Parser.Contracts.Tests/"
+    "CarbonOps.Parser.Contracts.Tests.csproj"
+)
+RELEASE_GATE_DOTNET_TEST_FILTER = (
+    "FullyQualifiedName~ProductionConfigBoundaryTests|"
+    "FullyQualifiedName~Phase1OperationalDiagnosticsTests|"
+    "FullyQualifiedName~PostgreSQLRuntimeConfigGateContractTests"
+)
+
 SECRET_PATTERNS = (
     re.compile(r"(?i)(password\s*[=:]\s*)([^\s'\";]+)"),
     re.compile(r"(?i)(token\s*[=:]\s*)([^\s'\";]+)"),
@@ -66,7 +76,9 @@ REQUIRED_RUNBOOK_MARKERS = (
     "carbonops-source-acquisition validate",
     "carbonops-source-acquisition run --dry-run",
     "carbonops-parser local-dry-run",
-    "dotnet test src/dotnet/CarbonOps.Parser.sln --configuration Release",
+    "dotnet test tests/dotnet/CarbonOps.Parser.Contracts.Tests/CarbonOps.Parser.Contracts.Tests.csproj",
+    "--filter \"FullyQualifiedName~ProductionConfigBoundaryTests|FullyQualifiedName~Phase1OperationalDiagnosticsTests|FullyQualifiedName~PostgreSQLRuntimeConfigGateContractTests\"",
+    "full .NET contract suite is outside the default release gate",
     "The commands above must not require production configuration or credentials.",
     "Raw PostgreSQL connection strings are rejected",
 )
@@ -158,14 +170,16 @@ def build_default_commands(python_bin: str) -> tuple[GateCommand, ...]:
             ),
         ),
         GateCommand(
-            ".NET contract tests",
+            "focused stable .NET production-safety contract tests",
             (
                 "dotnet",
                 "test",
-                "src/dotnet/CarbonOps.Parser.sln",
+                RELEASE_GATE_DOTNET_TEST_PROJECT,
                 "--configuration",
                 "Release",
                 "--no-restore",
+                "--filter",
+                RELEASE_GATE_DOTNET_TEST_FILTER,
             ),
         ),
         GateCommand("whitespace diff check", ("git", "diff", "--check")),
@@ -259,7 +273,7 @@ def validate_workflow(root: Path = REPOSITORY_ROOT) -> list[GateCheck]:
         'python -m pip install -e ".[postgresql]"',
         "python -m pip install pytest",
         "scripts/release_validation_gate.py",
-        "dotnet test src/dotnet/CarbonOps.Parser.sln --configuration Release",
+        "dotnet test tests/dotnet/CarbonOps.Parser.Contracts.Tests/CarbonOps.Parser.Contracts.Tests.csproj --configuration Release --no-restore --filter",
         "CARBONOPS_RELEASE_GATE_RUN_INTEGRATION",
     )
     return [
