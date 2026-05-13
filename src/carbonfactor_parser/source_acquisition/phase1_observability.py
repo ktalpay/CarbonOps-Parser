@@ -100,7 +100,7 @@ def summarize_phase1_orchestrator_request(request: Any) -> dict[str, Any]:
     return {
         "correlation_id": _safe_text(getattr(request, "correlation_id", None)),
         "execution_mode": _enum_value(getattr(request, "execution_mode", None)),
-        "max_parallelism": getattr(request, "max_parallelism", None),
+        "max_degree_of_parallelism": getattr(request, "max_parallelism", None),
         "run_id": _safe_text(getattr(request, "run_id", None)),
         "source_families": tuple(getattr(request, "source_families", ())),
     }
@@ -122,10 +122,26 @@ def summarize_phase1_family_result_for_diagnostics(
         "documents": _document_summaries(acquisition_result, run_id),
         "failures": _failure_summaries(getattr(family_result, "failures", ())),
         "parser": {
-            "issue_count": _nested_attr(parser_run_result, "summary", "issue_count", 0),
+            "accepted_row_count": _nested_attr(
+                parser_run_result,
+                "summary",
+                "row_count",
+                0,
+            ),
+            "failure_count": _nested_attr(
+                parser_run_result,
+                "summary",
+                "error_count",
+                0,
+            ),
             "result_status": _enum_value(getattr(parser_run_result, "status", None)),
-            "row_count": _nested_attr(parser_run_result, "summary", "row_count", 0),
             "run_id": _safe_text(getattr(parser_run_result, "run_id", None)),
+            "validation_issue_count": _nested_attr(
+                parser_run_result,
+                "summary",
+                "issue_count",
+                0,
+            ),
         },
         "persistence": {
             "parsed_factor_detail_count": getattr(
@@ -148,6 +164,7 @@ def summarize_phase1_family_result_for_diagnostics(
         },
         "run_id": _safe_text(run_id),
         "source_family": getattr(family_result, "source_family", None),
+        "source_key": _source_key(family_result),
         "status": _enum_value(getattr(family_result, "status", None)),
     }
 
@@ -206,11 +223,9 @@ def _document_summaries(
             "checksum_sha256": _safe_checksum(
                 getattr(artifact, "checksum_sha256", None),
             ),
-            "document_id": (
-                f"{run_id}_{getattr(artifact, 'source_family', '')}_"
-                f"{getattr(artifact, 'artifact_id', '')}"
-            ),
+            "document_id": _safe_text(getattr(artifact, "artifact_id", None)),
             "source_family": getattr(artifact, "source_family", None),
+            "source_key": getattr(artifact, "source_key", None),
         }
         for artifact in getattr(acquisition_result, "artifacts", ())
     )
@@ -224,6 +239,7 @@ def _failure_summaries(failures: Any) -> tuple[dict[str, Any], ...]:
             "message": _safe_text(getattr(failure, "message", None)),
             "severity": getattr(failure, "severity", None),
             "source_family": getattr(failure, "source_family", None),
+            "source_key": _failure_source_key(failure),
             "stage": getattr(failure, "stage", None),
         }
         for failure in failures
@@ -292,6 +308,23 @@ def _enum_value(value: Any) -> Any:
 def _nested_attr(value: Any, first: str, second: str, default: Any) -> Any:
     nested = getattr(value, first, None)
     return getattr(nested, second, default)
+
+
+def _source_key(family_result: Any) -> Any:
+    source_key = getattr(family_result, "source_key", None)
+    if source_key is not None:
+        return source_key
+    acquisition_result = getattr(family_result, "acquisition_result", None)
+    if acquisition_result is not None:
+        return getattr(acquisition_result, "source_key", None)
+    return getattr(family_result, "source_family", None)
+
+
+def _failure_source_key(failure: Any) -> Any:
+    source_key = getattr(failure, "source_key", None)
+    if source_key is not None:
+        return source_key
+    return getattr(failure, "source_family", None)
 
 
 __all__ = (

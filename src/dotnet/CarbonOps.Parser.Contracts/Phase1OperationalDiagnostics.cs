@@ -107,7 +107,7 @@ public static partial class Phase1OperationalDiagnostics
         new SortedDictionary<string, object?>(StringComparer.Ordinal)
         {
             ["correlation_id"] = SafeText(request.CorrelationId),
-            ["execution_mode"] = request.ExecutionMode.ToString(),
+            ["execution_mode"] = Phase1ExecutionModeWireName(request.ExecutionMode),
             ["max_degree_of_parallelism"] = request.MaxDegreeOfParallelism,
             ["run_id"] = SafeText(request.RunId),
             ["source_families"] = request.SourceFamilies.Select(sourceFamily => sourceFamily.ToWireName()).ToArray(),
@@ -141,7 +141,7 @@ public static partial class Phase1OperationalDiagnostics
             ["run_id"] = SafeText(runId ?? familyResult.AcquisitionRun?.RunId),
             ["source_family"] = familyResult.SourceFamily.ToWireName(),
             ["source_key"] = familyResult.SourceKey,
-            ["status"] = familyResult.Status.ToString(),
+            ["status"] = Phase1FamilyRunStatusWireName(familyResult.Status),
         };
 
     public static IReadOnlyDictionary<string, object?> SummarizeOrchestratorResultForDiagnostics(
@@ -158,21 +158,28 @@ public static partial class Phase1OperationalDiagnostics
                 .Select(familyResult => new SortedDictionary<string, object?>(StringComparer.Ordinal)
                 {
                     ["source_family"] = familyResult.SourceFamily.ToWireName(),
-                    ["status"] = familyResult.Status.ToString(),
+                    ["status"] = Phase1FamilyRunStatusWireName(familyResult.Status),
                 })
                 .ToArray(),
-            ["status"] = result.Status.ToString(),
+            ["status"] = Phase1RunStatusWireName(result.Status),
             ["summary"] = new SortedDictionary<string, object?>(StringComparer.Ordinal)
             {
-                ["completed_source_family_count"] = result.CompletedSourceFamilyCount,
-                ["failed_source_family_count"] = result.FailedSourceFamilyCount,
+                ["completed_family_count"] = result.CompletedSourceFamilyCount,
+                ["failed_family_count"] = result.FailedSourceFamilyCount,
                 ["failure_count"] = result.FailureCount,
-                ["source_document_metadata_count"] = result.TotalSourceDocumentMetadataCount,
-                ["source_family_count"] = result.SourceFamilyCount,
-                ["total_parser_accepted_row_count"] = result.TotalParserAcceptedRowCount,
-                ["total_parser_failure_count"] = result.TotalParserFailureCount,
-                ["total_persisted_detail_count"] = result.TotalPersistedDetailCount,
-                ["total_persisted_master_count"] = result.TotalPersistedMasterCount,
+                ["parsed_factor_row_count"] = result.TotalParserAcceptedRowCount,
+                ["parser_run_count"] = result.FamilyResults.Count(familyResult => familyResult.ParserRun is not null),
+                ["persisted_detail_count"] = result.TotalPersistedDetailCount,
+                ["persisted_master_count"] = result.TotalPersistedMasterCount,
+                ["persisted_parser_run_count"] = result.FamilyResults.Sum(familyResult =>
+                    familyResult.ParserRunPersistResult?.PersistedCount ?? 0),
+                ["persisted_source_document_count"] = result.FamilyResults.Sum(familyResult =>
+                    familyResult.SourceDocumentPersistResult?.PersistedCount ?? 0),
+                ["persisted_source_run_count"] = result.FamilyResults.Sum(familyResult =>
+                    familyResult.AcquisitionRunPersistResult?.PersistedCount ?? 0),
+                ["requested_family_count"] = result.Request.SourceFamilies.Count,
+                ["source_artifact_count"] = result.TotalSourceDocumentMetadataCount,
+                ["source_candidate_count"] = result.FamilyResults.Sum(familyResult => familyResult.SourceCandidateCount),
             },
         };
 
@@ -192,6 +199,7 @@ public static partial class Phase1OperationalDiagnostics
                 ["checksum_sha256"] = SafeChecksum(artifact.Checksum?.Value),
                 ["document_id"] = SafeText(artifact.ArtifactId),
                 ["source_family"] = artifact.SourceFamily.ToWireName(),
+                ["source_key"] = artifact.SourceKey,
             })
             .ToArray();
 
@@ -284,6 +292,33 @@ public static partial class Phase1OperationalDiagnostics
         return SensitiveRuntimeOptionFields.Contains(normalized) ||
             SensitiveKeyParts.Any(part => normalized.Contains(part, StringComparison.Ordinal));
     }
+
+    private static string Phase1ExecutionModeWireName(Phase1IngestionExecutionMode value) =>
+        value switch
+        {
+            Phase1IngestionExecutionMode.Sequential => "sequential",
+            Phase1IngestionExecutionMode.BoundedParallel => "bounded_parallel",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown Phase 1 execution mode."),
+        };
+
+    private static string Phase1RunStatusWireName(Phase1IngestionRunStatus value) =>
+        value switch
+        {
+            Phase1IngestionRunStatus.Completed => "completed",
+            Phase1IngestionRunStatus.CompletedWithFailures => "completed_with_failures",
+            Phase1IngestionRunStatus.Failed => "failed",
+            Phase1IngestionRunStatus.NotExecutable => "not_executable",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown Phase 1 run status."),
+        };
+
+    private static string Phase1FamilyRunStatusWireName(Phase1IngestionFamilyRunStatus value) =>
+        value switch
+        {
+            Phase1IngestionFamilyRunStatus.Completed => "completed",
+            Phase1IngestionFamilyRunStatus.Failed => "failed",
+            Phase1IngestionFamilyRunStatus.Skipped => "skipped",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown Phase 1 family run status."),
+        };
 
     [GeneratedRegex("^[0-9a-fA-F]{64}$")]
     private static partial Regex ChecksumPattern();

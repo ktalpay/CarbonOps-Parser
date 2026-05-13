@@ -1,0 +1,59 @@
+{
+  "request_keys": [
+    "correlation_id",
+    "execution_mode",
+    "max_degree_of_parallelism",
+    "run_id",
+    "source_families"
+  ],
+  "family_keys": [
+    "correlation_id",
+    "documents",
+    "failures",
+    "parser",
+    "persistence",
+    "run_id",
+    "source_family",
+    "source_key",
+    "status"
+  ],
+  "document_keys": [
+    "checksum_sha256",
+    "document_id",
+    "source_family",
+    "source_key"
+  ],
+  "parser_keys": [
+    "accepted_row_count",
+    "failure_count",
+    "result_status",
+    "run_id",
+    "validation_issue_count"
+  ],
+  "failure_keys": [
+    "code",
+    "field_name",
+    "message",
+    "severity",
+    "source_family",
+    "source_key",
+    "stage"
+  ],
+  "summary_keys": [
+    "completed_family_count",
+    "failed_family_count",
+    "failure_count",
+    "parsed_factor_row_count",
+    "parser_run_count",
+    "persisted_detail_count",
+    "persisted_master_count",
+    "persisted_parser_run_count",
+    "persisted_source_document_count",
+    "persisted_source_run_count",
+    "requested_family_count",
+    "source_artifact_count",
+    "source_candidate_count"
+  ],
+  "redacted": "<redacted>",
+  "intentional_status_difference": ".NET Phase1IngestionFamilyRunStatus is intentionally coarser than Python; shared diagnostics preserve stage and failure code for troubleshooting."
+}
