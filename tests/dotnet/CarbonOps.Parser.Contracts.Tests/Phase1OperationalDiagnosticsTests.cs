@@ -67,6 +67,31 @@ public sealed class Phase1OperationalDiagnosticsTests
     }
 
     [Fact]
+    public void RedactionRemovesPrefixedAndSuffixedSensitiveKeyNames()
+    {
+        var json = Phase1OperationalDiagnostics.SerializeOperationalEvent(
+            "phase1_test_event",
+            new Dictionary<string, object?>
+            {
+                ["primaryConnectionString"] = "Host=db;Username=svc;Password=connection-secret",
+                ["providerApiKey"] = "provider-api-secret",
+                ["externalDatabaseUrl"] = "postgresql://svc:database-secret@db.internal/carbonops",
+                ["privateAccessKey"] = "private-access-secret",
+                ["safe_count"] = 4,
+            });
+
+        Assert.Contains("\"primaryConnectionString\":\"<redacted>\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"providerApiKey\":\"<redacted>\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"externalDatabaseUrl\":\"<redacted>\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"privateAccessKey\":\"<redacted>\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"safe_count\":4", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("connection-secret", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("provider-api-secret", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("database-secret", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("private-access-secret", json, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void OperationalEventJsonShapeIsStable()
     {
         var json = Phase1OperationalDiagnostics.SerializeOperationalEvent(

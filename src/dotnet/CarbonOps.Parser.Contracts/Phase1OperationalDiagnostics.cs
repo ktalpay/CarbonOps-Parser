@@ -51,7 +51,14 @@ public static partial class Phase1OperationalDiagnostics
         "connection_string",
         "connection_uri",
         "database_url",
+        "api_key",
+        "access_key",
+        "private_key",
     ];
+
+    private static readonly string[] CompactSensitiveKeyParts = SensitiveKeyParts
+        .Select(CompactFieldName)
+        .ToArray();
 
     public static IReadOnlyDictionary<string, object?> BuildOperationalEvent(
         string eventName,
@@ -298,18 +305,20 @@ public static partial class Phase1OperationalDiagnostics
     private static bool IsSensitiveField(string fieldName)
     {
         var normalized = fieldName.Trim().ToLowerInvariant();
-        var compact = normalized.Replace("_", string.Empty, StringComparison.Ordinal)
-            .Replace("-", string.Empty, StringComparison.Ordinal);
+        var compact = CompactFieldName(normalized);
         if (normalized == "password_set")
         {
             return false;
         }
 
         return SensitiveRuntimeOptionFields.Contains(normalized) ||
-            SensitiveKeyParts.Any(part =>
-                normalized.Contains(part, StringComparison.Ordinal) ||
-                compact.Contains(part, StringComparison.Ordinal));
+            SensitiveKeyParts.Any(part => normalized.Contains(part, StringComparison.Ordinal)) ||
+            CompactSensitiveKeyParts.Any(part => compact.Contains(part, StringComparison.Ordinal));
     }
+
+    private static string CompactFieldName(string fieldName) =>
+        fieldName.Replace("_", string.Empty, StringComparison.Ordinal)
+            .Replace("-", string.Empty, StringComparison.Ordinal);
 
     private static string Phase1ExecutionModeWireName(Phase1IngestionExecutionMode value) =>
         value switch
