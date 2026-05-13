@@ -8,6 +8,7 @@
 - [Ingestion Metadata Model](ingestion-metadata-model.md)
 - [Ingestion Contracts](ingestion-contracts.md)
 - [Engineering Standards](engineering-standards.md)
+- [Production Packaging And Operator Runbook](production-packaging-operator-runbook.md)
 - [Source Support](source-support.md)
 - [Source Discovery](source-discovery.md)
 - [Source Ingestion Boundaries](source-ingestion-boundaries.md)

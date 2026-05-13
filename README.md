@@ -400,6 +400,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Ingestion Metadata Model](docs/ingestion-metadata-model.md)
 - [Codex-Assisted Runs](docs/codex-runs/README.md)
 - [Engineering Standards](docs/engineering-standards.md)
+- [Production Packaging And Operator Runbook](docs/production-packaging-operator-runbook.md)
 - [Linux Service Setup](docs/linux-service-setup.md)
 - [Source Support](docs/source-support.md)
 - [Source Discovery](docs/source-discovery.md)
