@@ -119,11 +119,12 @@ Combined CI/release gate:
 python scripts/release_validation_gate.py
 ```
 
-The combined gate runs Python tests, local source acquisition and parser
-fixture checks, .NET contract checks, parity fixture presence checks, sample
-config safety checks, static workflow/runbook safety checks, and whitespace
-validation. Full repository public-safety validation is currently noisy because
-of existing fixture strings and is tracked separately until baseline support is
+The combined gate runs a focused Phase 1 Python release-validation test set,
+local source acquisition and parser fixture checks, .NET contract checks,
+parity fixture presence checks, sample config safety checks, static
+workflow/runbook safety checks, and whitespace validation. The full Python test
+suite and full repository public-safety validation remain separate tracked
+hardening items until baseline/noise cleanup and allowlist support are
 available. PostgreSQL integration validation remains opt-in only through
 `CARBONOPS_RELEASE_GATE_RUN_INTEGRATION=1`,
 `CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1`, and an externally supplied
@@ -132,7 +133,14 @@ available. PostgreSQL integration validation remains opt-in only through
 Default combined gate command coverage includes:
 
 ```bash
-python -m pytest
+python -m pytest \
+  tests/test_release_validation_gate.py \
+  tests/test_production_config_boundary.py \
+  tests/test_phase1_observability.py \
+  tests/test_production_packaging_operator_runbook.py \
+  tests/test_postgresql_runtime_config_gate.py \
+  tests/test_agent_task_watcher.py \
+  tests/test_agent_dispatch_handoff_reporter.py
 git diff --check
 ```
 

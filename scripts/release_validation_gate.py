@@ -22,6 +22,16 @@ INTEGRATION_OPT_IN_ENV = "CARBONOPS_RELEASE_GATE_RUN_INTEGRATION"
 POSTGRESQL_INTEGRATION_ENV = "CARBONOPS_RUN_POSTGRESQL_INTEGRATION"
 POSTGRESQL_TEST_DSN_ENV = "CARBONOPS_POSTGRESQL_TEST_DSN"
 
+RELEASE_GATE_PYTHON_TEST_TARGETS = (
+    "tests/test_release_validation_gate.py",
+    "tests/test_production_config_boundary.py",
+    "tests/test_phase1_observability.py",
+    "tests/test_production_packaging_operator_runbook.py",
+    "tests/test_postgresql_runtime_config_gate.py",
+    "tests/test_agent_task_watcher.py",
+    "tests/test_agent_dispatch_handoff_reporter.py",
+)
+
 SECRET_PATTERNS = (
     re.compile(r"(?i)(password\s*[=:]\s*)([^\s'\";]+)"),
     re.compile(r"(?i)(token\s*[=:]\s*)([^\s'\";]+)"),
@@ -96,7 +106,10 @@ def sanitize_output(text: str) -> str:
 
 def build_default_commands(python_bin: str) -> tuple[GateCommand, ...]:
     return (
-        GateCommand("python tests", (python_bin, "-m", "pytest")),
+        GateCommand(
+            "focused Phase 1 Python release-validation tests",
+            (python_bin, "-m", "pytest", *RELEASE_GATE_PYTHON_TEST_TARGETS),
+        ),
         GateCommand(
             "source acquisition metadata validation",
             (

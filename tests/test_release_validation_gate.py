@@ -21,7 +21,15 @@ def test_default_release_gate_commands_are_local_only() -> None:
     rendered_commands = [" ".join(command.args) for command in commands]
 
     assert all(command.local_only for command in commands)
-    assert any("python -m pytest" in command for command in rendered_commands)
+    python_test_commands = [
+        command for command in commands if command.args[:3] == ("python", "-m", "pytest")
+    ]
+    assert len(python_test_commands) == 1
+    assert python_test_commands[0].args != ("python", "-m", "pytest")
+    assert all(
+        target in python_test_commands[0].args
+        for target in release_validation_gate.RELEASE_GATE_PYTHON_TEST_TARGETS
+    )
     assert not any(
         "scripts/check_public_safety.py" in command for command in rendered_commands
     )

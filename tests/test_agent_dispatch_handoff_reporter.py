@@ -200,7 +200,12 @@ def _queue_runner(
 
 def _assert_no_forbidden_commands(calls: list[tuple[str, ...]]) -> None:
     for call in calls:
-        joined = " ".join(call).lower()
+        command_parts = tuple(
+            part
+            for index, part in enumerate(call)
+            if part != "--body" and (index == 0 or call[index - 1] != "--body")
+        )
+        joined = " ".join(command_parts).lower()
         assert call[1:3] not in {
             ("pr", "merge"),
             ("pr", "review"),
@@ -585,9 +590,13 @@ def test_claim_mode_claims_exactly_one_issue_by_lane_priority_and_number(tmp_pat
     )
 
     issue_edit_calls = [call for call in calls if call[1:3] == ("issue", "edit")]
+    label_edit_calls = [call for call in issue_edit_calls if "--body" not in call]
+    body_edit_calls = [call for call in issue_edit_calls if "--body" in call]
     assert exit_code == 0
-    assert len(issue_edit_calls) == 1
-    assert issue_edit_calls[0][3] == "407"
+    assert len(label_edit_calls) == 1
+    assert label_edit_calls[0][3] == "407"
+    assert len(body_edit_calls) == 1
+    assert body_edit_calls[0][3] == "407"
     assert "Selected issue number: #407" in report
 
 
