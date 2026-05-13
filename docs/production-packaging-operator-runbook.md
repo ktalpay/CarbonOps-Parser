@@ -113,12 +113,53 @@ It contains placeholders only.
 
 Run validation in this order before any production start attempt.
 
-Repository checks:
+Combined CI/release gate:
 
 ```bash
-python -m pytest
-python scripts/check_public_safety.py
+python scripts/release_validation_gate.py
+```
+
+The combined gate runs a focused Phase 1 Python release-validation test set,
+local source acquisition and parser fixture checks, focused stable .NET
+production-safety contract checks, parity fixture presence checks, sample config
+safety checks, static workflow/runbook safety checks, and whitespace validation.
+The full Python test suite, full .NET contract suite, and full repository
+public-safety validation remain separate tracked hardening items until
+baseline/noise cleanup, allowlist support, and parser fixture determinism cleanup
+are available. The full .NET contract suite is outside the default release gate
+until known deterministic parser assertion failures are resolved. PostgreSQL
+integration validation remains opt-in only through
+`CARBONOPS_RELEASE_GATE_RUN_INTEGRATION=1`,
+`CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1`, and an externally supplied
+`CARBONOPS_POSTGRESQL_TEST_DSN`.
+
+Default combined gate command coverage includes:
+
+```bash
+python -m pytest \
+  tests/test_release_validation_gate.py \
+  tests/test_production_config_boundary.py \
+  tests/test_phase1_observability.py \
+  tests/test_production_packaging_operator_runbook.py \
+  tests/test_postgresql_runtime_config_gate.py \
+  tests/test_agent_task_watcher.py \
+  tests/test_agent_dispatch_handoff_reporter.py
 git diff --check
+```
+
+Focused stable .NET production-safety contract coverage:
+
+```bash
+dotnet test tests/dotnet/CarbonOps.Parser.Contracts.Tests/CarbonOps.Parser.Contracts.Tests.csproj \
+  --configuration Release \
+  --no-restore \
+  --filter "FullyQualifiedName~ProductionConfigBoundaryTests|FullyQualifiedName~Phase1OperationalDiagnosticsTests|FullyQualifiedName~PostgreSQLRuntimeConfigGateContractTests"
+```
+
+Repository checks outside the default combined gate:
+
+```bash
+python scripts/check_public_safety.py
 ```
 
 Python package smoke:
@@ -146,11 +187,15 @@ carbonops-parser local-dry-run \
   --include-postgresql-preview
 ```
 
-.NET packaging smoke:
+.NET checks outside the default combined gate:
 
 ```bash
 dotnet test src/dotnet/CarbonOps.Parser.sln --configuration Release
 ```
+
+The full .NET contract suite currently includes known deterministic parser
+assertion failures and must stay outside the default release gate until those
+parser contract failures are resolved.
 
 The commands above must not require production configuration or credentials.
 Treat any prompt for production values during these checks as a release blocker.
@@ -249,6 +294,13 @@ pull requests, approve pull requests, or remove raw archives unless a separate
 human-approved retention process requires it.
 
 ## PR Body Footer
+
+OPS-032 pull request bodies must end with:
+
+```text
+Task-ID: OPS-032
+Task-Issue: #499
+```
 
 OPS-036 pull request bodies must end with:
 
