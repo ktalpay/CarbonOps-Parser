@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+import logging
+
 import pytest
 
 from carbonfactor_parser.persistence.postgresql_options import (
@@ -24,6 +27,10 @@ from carbonfactor_parser.source_acquisition.phase1_service_host import (
     Phase1ServiceHostConfig,
     Phase1ServiceHostStatus,
     validate_phase1_service_host_config,
+)
+from carbonfactor_parser.source_acquisition.phase1_observability import (
+    PHASE1_OPERATIONAL_LOGGER_NAME,
+    REDACTED,
 )
 
 
@@ -65,6 +72,33 @@ def test_service_host_startup_checks_phase1_schema_before_ready() -> None:
     assert result.schema_bootstrap_report is not None
     assert result.schema_bootstrap_report.missing_table_names
     assert result.issues[0].code == "PHASE1_SERVICE_HOST_POSTGRESQL_SCHEMA_NOT_READY"
+
+
+def test_service_host_startup_logs_redacted_runtime_config(caplog) -> None:
+    host = Phase1ScheduledIngestionServiceHost(
+        _config(),
+        schema_bootstrap_checker=_FakeSchemaBootstrapChecker(present=True),
+        orchestrator_runner=_FakeOrchestratorRunner(),
+    )
+
+    with caplog.at_level(logging.INFO, logger=PHASE1_OPERATIONAL_LOGGER_NAME):
+        host.start()
+
+    starting = json.loads(caplog.records[0].message)
+
+    assert starting["event"] == "phase1_service_host_starting"
+    assert starting["postgresql_options"] == {
+        "application_name": None,
+        "connect_timeout_seconds": None,
+        "database": REDACTED,
+        "host": REDACTED,
+        "password_set": True,
+        "port": 5432,
+        "ssl_mode": None,
+        "username": REDACTED,
+    }
+    assert "localhost" not in caplog.records[0].message
+    assert "carbonops" not in caplog.records[0].message
 
 
 def test_scheduled_trigger_runs_orchestrator_for_selected_source_families() -> None:

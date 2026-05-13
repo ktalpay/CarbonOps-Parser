@@ -24,6 +24,11 @@ from carbonfactor_parser.source_acquisition.phase1_ingestion_orchestrator import
     Phase1IngestionOrchestratorRequest,
     Phase1IngestionOrchestratorResult,
 )
+from carbonfactor_parser.source_acquisition.phase1_observability import (
+    emit_phase1_operational_event,
+    summarize_phase1_orchestrator_result_for_diagnostics,
+    summarize_postgresql_options_for_diagnostics,
+)
 
 
 _SOURCE_FAMILY_ALIASES = {
@@ -149,6 +154,17 @@ class Phase1ScheduledIngestionServiceHost:
     def start(self) -> Phase1ServiceHostStartupResult:
         """Validate config and check schema readiness before scheduled runs."""
 
+        emit_phase1_operational_event(
+            "phase1_service_host_starting",
+            {
+                "postgresql_options": summarize_postgresql_options_for_diagnostics(
+                    self.config.postgresql_options,
+                ),
+                "run_id_prefix": self.config.run_id_prefix,
+                "schedule_interval_seconds": self.config.schedule_interval_seconds,
+                "source_families": self.config.source_families,
+            },
+        )
         issues = list(validate_phase1_service_host_config(self.config))
         schema_report = None
         if not issues:
@@ -183,12 +199,20 @@ class Phase1ScheduledIngestionServiceHost:
                     ),
                     schema_bootstrap_report=schema_report,
                 )
+                emit_phase1_operational_event(
+                    "phase1_service_host_started",
+                    _startup_diagnostic_payload(self._startup_result),
+                )
                 return self._startup_result
 
             self._status = status
             self._startup_result = result
             self._schema_bootstrap_report = schema_report
 
+        emit_phase1_operational_event(
+            "phase1_service_host_started",
+            _startup_diagnostic_payload(result),
+        )
         return result
 
     def trigger_scheduled_run(self) -> Phase1ScheduledRunResult:
@@ -196,12 +220,17 @@ class Phase1ScheduledIngestionServiceHost:
 
         with self._lock:
             if self._shutdown_requested:
-                return Phase1ScheduledRunResult(
+                result = Phase1ScheduledRunResult(
                     status=Phase1ScheduledRunStatus.SKIPPED_SHUTTING_DOWN,
                     issues=(_shutdown_issue(),),
                 )
+                emit_phase1_operational_event(
+                    "phase1_service_host_scheduled_run_skipped",
+                    _scheduled_run_diagnostic_payload(result),
+                )
+                return result
             if self._run_in_progress:
-                return Phase1ScheduledRunResult(
+                result = Phase1ScheduledRunResult(
                     status=Phase1ScheduledRunStatus.SKIPPED_ALREADY_RUNNING,
                     issues=(
                         Phase1ServiceHostIssue(
@@ -211,8 +240,13 @@ class Phase1ScheduledIngestionServiceHost:
                         ),
                     ),
                 )
+                emit_phase1_operational_event(
+                    "phase1_service_host_scheduled_run_skipped",
+                    _scheduled_run_diagnostic_payload(result),
+                )
+                return result
             if self._status is not Phase1ServiceHostStatus.READY:
-                return Phase1ScheduledRunResult(
+                result = Phase1ScheduledRunResult(
                     status=Phase1ScheduledRunStatus.SKIPPED_NOT_STARTED,
                     issues=(
                         Phase1ServiceHostIssue(
@@ -222,6 +256,11 @@ class Phase1ScheduledIngestionServiceHost:
                         ),
                     ),
                 )
+                emit_phase1_operational_event(
+                    "phase1_service_host_scheduled_run_skipped",
+                    _scheduled_run_diagnostic_payload(result),
+                )
+                return result
 
             self._run_in_progress = True
             self._status = Phase1ServiceHostStatus.RUNNING
@@ -229,6 +268,14 @@ class Phase1ScheduledIngestionServiceHost:
             run_id = f"{self.config.run_id_prefix}-{self._run_sequence:06d}"
             request = self._build_orchestrator_request(run_id)
 
+        emit_phase1_operational_event(
+            "phase1_service_host_scheduled_run_started",
+            {
+                "correlation_id": request.correlation_id,
+                "run_id": run_id,
+                "source_families": request.source_families,
+            },
+        )
         try:
             orchestrator_result = self._orchestrator_runner(request)
         finally:
@@ -240,11 +287,16 @@ class Phase1ScheduledIngestionServiceHost:
                     else Phase1ServiceHostStatus.READY
                 )
 
-        return Phase1ScheduledRunResult(
+        result = Phase1ScheduledRunResult(
             status=Phase1ScheduledRunStatus.STARTED,
             run_id=run_id,
             orchestrator_result=orchestrator_result,
         )
+        emit_phase1_operational_event(
+            "phase1_service_host_scheduled_run_completed",
+            _scheduled_run_diagnostic_payload(result),
+        )
+        return result
 
     def request_shutdown(self) -> Phase1ServiceHostStatus:
         """Request graceful shutdown without interrupting an active run."""
@@ -392,6 +444,46 @@ def _shutdown_issue() -> Phase1ServiceHostIssue:
         message="Scheduled trigger skipped because shutdown was requested.",
         field_name="status",
     )
+
+
+def _startup_diagnostic_payload(
+    result: Phase1ServiceHostStartupResult,
+) -> dict[str, object]:
+    report = result.schema_bootstrap_report
+    return {
+        "issues": tuple(_service_host_issue_payload(issue) for issue in result.issues),
+        "schema_bootstrap": {
+            "fail_on_missing": getattr(report, "fail_on_missing", None),
+            "missing_table_count": len(getattr(report, "missing_table_names", ())),
+            "mode": getattr(getattr(report, "mode", None), "value", None),
+            "status": getattr(getattr(report, "status", None), "value", None),
+        },
+        "status": result.status.value,
+    }
+
+
+def _scheduled_run_diagnostic_payload(
+    result: Phase1ScheduledRunResult,
+) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "issues": tuple(_service_host_issue_payload(issue) for issue in result.issues),
+        "run_id": result.run_id,
+        "status": result.status.value,
+    }
+    if result.orchestrator_result is not None:
+        payload["orchestrator"] = summarize_phase1_orchestrator_result_for_diagnostics(
+            result.orchestrator_result,
+        )
+    return payload
+
+
+def _service_host_issue_payload(issue: Phase1ServiceHostIssue) -> dict[str, object]:
+    return {
+        "code": issue.code,
+        "field_name": issue.field_name,
+        "message": issue.message,
+        "severity": issue.severity,
+    }
 
 
 __all__ = (
