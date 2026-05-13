@@ -113,12 +113,33 @@ It contains placeholders only.
 
 Run validation in this order before any production start attempt.
 
-Repository checks:
+Combined CI/release gate:
+
+```bash
+python scripts/release_validation_gate.py
+```
+
+The combined gate runs Python tests, local source acquisition and parser
+fixture checks, .NET contract checks, parity fixture presence checks, sample
+config safety checks, static workflow/runbook safety checks, and whitespace
+validation. Full repository public-safety validation is currently noisy because
+of existing fixture strings and is tracked separately until baseline support is
+available. PostgreSQL integration validation remains opt-in only through
+`CARBONOPS_RELEASE_GATE_RUN_INTEGRATION=1`,
+`CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1`, and an externally supplied
+`CARBONOPS_POSTGRESQL_TEST_DSN`.
+
+Default combined gate command coverage includes:
 
 ```bash
 python -m pytest
-python scripts/check_public_safety.py
 git diff --check
+```
+
+Repository checks outside the default combined gate:
+
+```bash
+python scripts/check_public_safety.py
 ```
 
 Python package smoke:
@@ -249,6 +270,13 @@ pull requests, approve pull requests, or remove raw archives unless a separate
 human-approved retention process requires it.
 
 ## PR Body Footer
+
+OPS-032 pull request bodies must end with:
+
+```text
+Task-ID: OPS-032
+Task-Issue: #499
+```
 
 OPS-036 pull request bodies must end with:
 

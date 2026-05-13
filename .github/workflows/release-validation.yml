@@ -1,0 +1,55 @@
+name: Release validation
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+    inputs:
+      include_integration:
+        description: "Run opt-in integration validation"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  contents: read
+
+jobs:
+  phase-1-release-gate:
+    name: Phase 1 release gate
+    runs-on: ubuntu-latest
+    env:
+      CARBONOPS_RELEASE_GATE_RUN_INTEGRATION: ${{ github.event_name == 'workflow_dispatch' && inputs.include_integration == 'true' && '1' || '0' }}
+      CARBONOPS_RUN_POSTGRESQL_INTEGRATION: ${{ github.event_name == 'workflow_dispatch' && inputs.include_integration == 'true' && '1' || '0' }}
+      CARBONOPS_POSTGRESQL_TEST_DSN: ${{ secrets.CARBONOPS_POSTGRESQL_TEST_DSN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install Python package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[postgresql]"
+          python -m pip install pytest
+
+      - name: Restore .NET solution
+        run: dotnet restore src/dotnet/CarbonOps.Parser.sln
+
+      - name: Run Phase 1 release validation gate
+        # Gate includes: dotnet test src/dotnet/CarbonOps.Parser.sln --configuration Release
+        run: python scripts/release_validation_gate.py
