@@ -21,6 +21,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Sequence
 
+try:
+    from scripts.agent_task_status import replace_task_status
+except ModuleNotFoundError:  # pragma: no cover - direct script execution path
+    from agent_task_status import replace_task_status  # type: ignore[no-redef]
+
 
 DEFAULT_REPOSITORY = "ktalpay/CarbonOps-Parser"
 BASE_BRANCH = "develop"
@@ -126,6 +131,7 @@ class HandoffPackage:
     safety_constraints: tuple[str, ...]
     human_action_needed: str
     artifact_path: Path | None = None
+    issue_labels: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -134,6 +140,7 @@ class ClaimResult:
     removed_label: str
     added_label: str
     command: tuple[str, ...]
+    body_command: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -697,6 +704,7 @@ def build_handoff_package(
         human_action_needed=(
             "Review this handoff report, then start the appropriate local Codex lane task manually."
         ),
+        issue_labels=issue.labels,
     )
 
 
@@ -939,6 +947,7 @@ def build_report(outcome: SelectionOutcome) -> str:
                 f"- Selected issue: #{outcome.claim_result.issue_number}",
                 f"- Removed label: `{outcome.claim_result.removed_label}`",
                 f"- Added label: `{outcome.claim_result.added_label}`",
+                "- Updated issue body `Status:` field to `in-progress`.",
                 "- Lane, agent, and type labels were left unchanged.",
                 "",
             )
@@ -1106,6 +1115,7 @@ def write_prompt_artifact(package: HandoffPackage, artifact_dir: Path) -> Handof
         safety_constraints=package.safety_constraints,
         human_action_needed=package.human_action_needed,
         artifact_path=artifact_path,
+        issue_labels=package.issue_labels,
     )
 
 
@@ -1132,6 +1142,7 @@ def locate_or_generate_prompt_artifact(
             safety_constraints=package.safety_constraints,
             human_action_needed=package.human_action_needed,
             artifact_path=artifact_path,
+            issue_labels=package.issue_labels,
         )
     return write_prompt_artifact(package, artifact_dir)
 
@@ -2217,6 +2228,7 @@ def build_run_once_report(outcome: RunOnceOutcome) -> str:
                 f"- Selected issue: #{outcome.claim_result.issue_number}",
                 f"- Removed label: `{outcome.claim_result.removed_label}`",
                 f"- Added label: `{outcome.claim_result.added_label}`",
+                "- Updated issue body `Status:` field to `in-progress`.",
                 "- Lane, agent, and type labels were left unchanged.",
                 "",
             )
@@ -2373,25 +2385,94 @@ def require_issue(issue: Issue | None) -> Issue:
     return issue
 
 
+class ClaimStatusClient:
+    def __init__(self, repository: str, runner: CommandRunner) -> None:
+        self.repository = repository
+        self.runner = runner
+        self.commands: list[tuple[str, ...]] = []
+
+    def add_label(self, issue_number: int, label: str) -> None:
+        command = (
+            "gh",
+            "issue",
+            "edit",
+            str(issue_number),
+            "--repo",
+            self.repository,
+            "--add-label",
+            label,
+        )
+        self.commands.append(command)
+        self.runner(command)
+
+    def remove_label(self, issue_number: int, label: str) -> None:
+        command = (
+            "gh",
+            "issue",
+            "edit",
+            str(issue_number),
+            "--repo",
+            self.repository,
+            "--remove-label",
+            label,
+        )
+        self.commands.append(command)
+        self.runner(command)
+
+    def replace_status_labels(
+        self,
+        issue_number: int,
+        old_statuses: Sequence[str],
+        new_status: str,
+    ) -> None:
+        command = (
+            "gh",
+            "issue",
+            "edit",
+            str(issue_number),
+            "--repo",
+            self.repository,
+            *tuple(
+                part
+                for label in old_statuses
+                if label != new_status
+                for part in ("--remove-label", label)
+            ),
+            "--add-label",
+            new_status,
+        )
+        self.commands.append(command)
+        self.runner(command)
+
+    def edit_body(self, issue_number: int, body: str) -> None:
+        command = (
+            "gh",
+            "issue",
+            "edit",
+            str(issue_number),
+            "--repo",
+            self.repository,
+            "--body",
+            body,
+        )
+        self.commands.append(command)
+        self.runner(command)
+
+
 def claim_selected_issue(
     repository: str,
     package: HandoffPackage,
     runner: CommandRunner = subprocess_runner,
 ) -> ClaimResult:
-    command = (
-        "gh",
-        "issue",
-        "edit",
-        str(package.selected_issue_number),
-        "--repo",
-        repository,
-        "--remove-label",
-        "status:ready",
-        "--add-label",
-        "status:in-progress",
-    )
+    client = ClaimStatusClient(repository, runner)
     try:
-        runner(command)
+        replace_task_status(
+            client,
+            issue_number=package.selected_issue_number,
+            labels=package.issue_labels or ("status:ready",),
+            body=package.issue_body,
+            new_status="status:in-progress",
+        )
     except subprocess.CalledProcessError as exc:
         stderr = exc.stderr.strip() if exc.stderr else ""
         detail = stderr or str(exc)
@@ -2407,7 +2488,8 @@ def claim_selected_issue(
         issue_number=package.selected_issue_number,
         removed_label="status:ready",
         added_label="status:in-progress",
-        command=command,
+        command=client.commands[0],
+        body_command=client.commands[-1] if len(client.commands) > 1 else (),
     )
 
 

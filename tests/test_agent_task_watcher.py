@@ -29,6 +29,7 @@ class FakeClient:
         self.find_calls: list[str] = []
         self.add_calls: list[tuple[int, str]] = []
         self.remove_calls: list[tuple[int, str]] = []
+        self.edit_body_calls: list[tuple[int, str]] = []
 
     def view_pr(self, pr_number: int) -> PullRequest:
         assert pr_number == self.pull_request.number
@@ -66,6 +67,17 @@ class FakeClient:
             title=issue.title,
             body=issue.body,
             labels=tuple(existing for existing in issue.labels if existing != label),
+            state=issue.state,
+        )
+
+    def edit_body(self, issue_number: int, body: str) -> None:
+        self.edit_body_calls.append((issue_number, body))
+        issue = self.issues[issue_number]
+        self.issues[issue_number] = Issue(
+            number=issue.number,
+            title=issue.title,
+            body=body,
+            labels=issue.labels,
             state=issue.state,
         )
 
@@ -111,6 +123,7 @@ def test_merged_transition_removes_other_status_labels_and_adds_merged() -> None
         (505, "status:in-progress"),
         (505, "status:blocked"),
     ]
+    assert client.issues[505].body.startswith("Task ID: OPS-031\nStatus: merged\n")
 
 
 def test_ready_transition_removes_blocked_in_progress_merged_and_adds_ready() -> None:
@@ -125,6 +138,39 @@ def test_ready_transition_removes_blocked_in_progress_merged_and_adds_ready() ->
 
     assert replacement.old_statuses == ("status:blocked", "status:in-progress", "status:merged")
     assert client.issues[506].labels == ("agent:ops", "status:ready")
+    assert client.issues[506].body.startswith("Task ID: OPS-032\nStatus: ready\n")
+
+
+def test_blocked_transition_updates_body_status() -> None:
+    issue = _issue(
+        508,
+        "OPS-034",
+        ("status:ready", "lane:ops"),
+        body="Task ID: OPS-034\nLane: ops\nStatus: ready\nDepends on: OPS-033\nUnblocks: none",
+    )
+    client = FakeClient(issues=(issue,), pull_request=_pr("Task-ID: OPS-034\nTask-Issue: #508"))
+
+    watcher.replace_status_label(client, issue, "status:blocked")
+
+    assert client.issues[508].labels == ("lane:ops", "status:blocked")
+    assert client.issues[508].body.splitlines().count("Status: blocked") == 1
+    assert "Status: ready" not in client.issues[508].body
+
+
+def test_in_progress_transition_updates_existing_body_status() -> None:
+    issue = _issue(
+        507,
+        "OPS-033",
+        ("status:ready", "lane:ops"),
+        body="Task ID: OPS-033\nLane: ops\nStatus: ready\nDepends on: none\nUnblocks: none",
+    )
+    client = FakeClient(issues=(issue,), pull_request=_pr("Task-ID: OPS-033\nTask-Issue: #507"))
+
+    watcher.replace_status_label(client, issue, "status:in-progress")
+
+    assert client.issues[507].labels == ("lane:ops", "status:in-progress")
+    assert client.issues[507].body.splitlines().count("Status: in-progress") == 1
+    assert "Status: ready" not in client.issues[507].body
 
 
 def test_repeated_watcher_run_is_idempotent() -> None:
@@ -142,11 +188,15 @@ def test_repeated_watcher_run_is_idempotent() -> None:
 
     watcher.process_merged_pr(client, 505)
     first_labels = client.issues[505].labels
+    first_body = client.issues[505].body
     watcher.process_merged_pr(client, 505)
 
     assert first_labels == ("status:merged",)
     assert client.issues[505].labels == first_labels
+    assert client.issues[505].body == first_body
+    assert client.issues[505].body.splitlines().count("Status: merged") == 1
     assert client.add_calls == [(505, "status:merged")]
+    assert client.edit_body_calls == [(505, first_body)]
 
 
 def test_pr_footer_task_issue_mapping_is_preferred_over_title_parsing() -> None:
@@ -202,6 +252,8 @@ def test_downstream_dependency_ready_update_uses_status_replacement() -> None:
     assert result is not None
     assert client.issues[505].labels == ("status:merged",)
     assert client.issues[506].labels == ("lane:ops", "status:ready")
+    assert "Status: merged" in client.issues[505].body
+    assert "Status: ready" in client.issues[506].body
     assert (506, "status:ready") in client.add_calls
     assert (506, "status:blocked") in client.remove_calls
     assert (506, "status:in-progress") in client.remove_calls
@@ -229,6 +281,7 @@ def test_downstream_missing_depends_on_becomes_needs_attention() -> None:
 
     assert result is not None
     assert client.issues[506].labels == ("status:needs-attention",)
+    assert "Status: needs-attention" in client.issues[506].body
     assert "`OPS-032` (#506) needs attention: missing `Depends on:` metadata." in result.skipped_downstream
 
 
