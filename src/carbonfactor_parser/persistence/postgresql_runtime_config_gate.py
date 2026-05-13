@@ -51,6 +51,19 @@ class PostgreSQLRuntimeConfigGateDecision:
     safe_operational_notes: tuple[str, ...]
     issues: tuple[PostgreSQLRuntimeConfigGateIssue, ...] = ()
 
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "required_future_components",
+            tuple(self.required_future_components),
+        )
+        object.__setattr__(
+            self,
+            "safe_operational_notes",
+            tuple(self.safe_operational_notes),
+        )
+        object.__setattr__(self, "issues", tuple(self.issues))
+
 
 @dataclass(frozen=True)
 class PostgreSQLRuntimeConfigGateDescription:
@@ -65,6 +78,9 @@ class PostgreSQLRuntimeConfigGateDescription:
     opens_connection: bool
     runs_sql: bool
     notes: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "notes", tuple(self.notes))
 
 
 def evaluate_postgresql_runtime_config_gate(
