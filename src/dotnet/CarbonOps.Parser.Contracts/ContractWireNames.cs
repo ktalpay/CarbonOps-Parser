@@ -154,6 +154,33 @@ public static class ContractWireNames
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown parser validation issue severity."),
         };
 
+    public static string ToWireName(this DataQualityValidationSeverity value) =>
+        value switch
+        {
+            DataQualityValidationSeverity.BlockingError => "blocking_error",
+            DataQualityValidationSeverity.Warning => "warning",
+            DataQualityValidationSeverity.Info => "info",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(value),
+                value,
+                "Unknown data quality validation severity."),
+        };
+
+    public static string ToWireName(this DataQualityValidationCheck value) =>
+        value switch
+        {
+            DataQualityValidationCheck.RequiredField => "required_field",
+            DataQualityValidationCheck.NumericValue => "numeric_value",
+            DataQualityValidationCheck.Unit => "unit",
+            DataQualityValidationCheck.DuplicateFactorIdentity => "duplicate_factor_identity",
+            DataQualityValidationCheck.Provenance => "provenance",
+            DataQualityValidationCheck.Structure => "structure",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(value),
+                value,
+                "Unknown data quality validation check."),
+        };
+
     public static string ToWireName(this ParserDryRunStatus value) =>
         value switch
         {
@@ -400,6 +427,44 @@ public static class ContractWireNames
         };
 
         return wireName is "info" or "warning" or "error";
+    }
+
+    public static bool TryParseDataQualityValidationSeverityWireName(
+        string? wireName,
+        out DataQualityValidationSeverity value)
+    {
+        value = wireName switch
+        {
+            "blocking_error" => DataQualityValidationSeverity.BlockingError,
+            "warning" => DataQualityValidationSeverity.Warning,
+            "info" => DataQualityValidationSeverity.Info,
+            _ => default,
+        };
+
+        return wireName is "blocking_error" or "warning" or "info";
+    }
+
+    public static bool TryParseDataQualityValidationCheckWireName(
+        string? wireName,
+        out DataQualityValidationCheck value)
+    {
+        value = wireName switch
+        {
+            "required_field" => DataQualityValidationCheck.RequiredField,
+            "numeric_value" => DataQualityValidationCheck.NumericValue,
+            "unit" => DataQualityValidationCheck.Unit,
+            "duplicate_factor_identity" => DataQualityValidationCheck.DuplicateFactorIdentity,
+            "provenance" => DataQualityValidationCheck.Provenance,
+            "structure" => DataQualityValidationCheck.Structure,
+            _ => default,
+        };
+
+        return wireName is "required_field"
+            or "numeric_value"
+            or "unit"
+            or "duplicate_factor_identity"
+            or "provenance"
+            or "structure";
     }
 
     public static bool TryParseParserDryRunStatusWireName(string? wireName, out ParserDryRunStatus value)

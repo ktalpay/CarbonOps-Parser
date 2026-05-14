@@ -33,6 +33,32 @@ public sealed class DataQualityValidationTests
     }
 
     [Fact]
+    public void ValidationSeverityAndCheckNamesArePhase2WireNames()
+    {
+        Assert.Equal("blocking_error", DataQualityValidationSeverity.BlockingError.ToWireName());
+        Assert.Equal("warning", DataQualityValidationSeverity.Warning.ToWireName());
+        Assert.Equal("info", DataQualityValidationSeverity.Info.ToWireName());
+
+        Assert.Equal("required_field", DataQualityValidationCheck.RequiredField.ToWireName());
+        Assert.Equal("numeric_value", DataQualityValidationCheck.NumericValue.ToWireName());
+        Assert.Equal("unit", DataQualityValidationCheck.Unit.ToWireName());
+        Assert.Equal(
+            "duplicate_factor_identity",
+            DataQualityValidationCheck.DuplicateFactorIdentity.ToWireName());
+        Assert.Equal("provenance", DataQualityValidationCheck.Provenance.ToWireName());
+        Assert.Equal("structure", DataQualityValidationCheck.Structure.ToWireName());
+
+        Assert.True(ContractWireNames.TryParseDataQualityValidationSeverityWireName(
+            "blocking_error",
+            out var severity));
+        Assert.Equal(DataQualityValidationSeverity.BlockingError, severity);
+        Assert.True(ContractWireNames.TryParseDataQualityValidationCheckWireName(
+            "duplicate_factor_identity",
+            out var check));
+        Assert.Equal(DataQualityValidationCheck.DuplicateFactorIdentity, check);
+    }
+
+    [Fact]
     public void MissingRequiredFieldsAreBlockingErrors()
     {
         var row = CreateRow(
@@ -190,13 +216,18 @@ public sealed class DataQualityValidationTests
             [
                 new("api_key", "abc123"),
                 new("password", "secret-value"),
+                new("source_reference", "https://user:pass@example.invalid/?token=abc123"),
                 new("visible", "ok"),
             ]);
 
         Assert.Equal(DataQualityValidation.RedactedDiagnosticValue, ContextValue(diagnostic, "api_key"));
         Assert.Equal(DataQualityValidation.RedactedDiagnosticValue, ContextValue(diagnostic, "password"));
+        Assert.Equal(
+            "https://[REDACTED]@example.invalid/?token=[REDACTED]",
+            ContextValue(diagnostic, "source_reference"));
         Assert.Equal("ok", ContextValue(diagnostic, "visible"));
         Assert.DoesNotContain("abc123", diagnostic.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("pass", diagnostic.ToString(), StringComparison.Ordinal);
         Assert.DoesNotContain("secret-value", diagnostic.ToString(), StringComparison.Ordinal);
     }
 

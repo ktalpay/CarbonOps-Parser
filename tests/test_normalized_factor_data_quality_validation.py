@@ -47,6 +47,22 @@ def test_validation_model_represents_blocking_warning_and_info() -> None:
     assert result.info_count == 1
 
 
+def test_validation_severity_and_check_names_are_phase_2_wire_names() -> None:
+    assert tuple(severity.value for severity in DataQualityValidationSeverity) == (
+        "blocking_error",
+        "warning",
+        "info",
+    )
+    assert tuple(check.value for check in DataQualityValidationCheck) == (
+        "required_field",
+        "numeric_value",
+        "unit",
+        "duplicate_factor_identity",
+        "provenance",
+        "structure",
+    )
+
+
 def test_missing_required_fields_are_blocking_errors() -> None:
     record = _record(
         factor_id=" ",
@@ -169,6 +185,7 @@ def test_sensitive_values_are_redacted_from_diagnostic_context() -> None:
         context={
             "api_key": "abc123",
             "nested": {"password": "secret-value", "visible": "ok"},
+            "source_reference": "https://user:pass@example.invalid/?token=abc123",
             "token_values": ("one", "two"),
         },
     )
@@ -178,11 +195,15 @@ def test_sensitive_values_are_redacted_from_diagnostic_context() -> None:
     assert context["api_key"] == REDACTED_DIAGNOSTIC_VALUE
     assert ("password", REDACTED_DIAGNOSTIC_VALUE) in context["nested"]
     assert ("visible", "ok") in context["nested"]
+    assert context["source_reference"] == (
+        "https://[REDACTED]@example.invalid/?token=[REDACTED]"
+    )
     assert context["token_values"] == (
         REDACTED_DIAGNOSTIC_VALUE,
         REDACTED_DIAGNOSTIC_VALUE,
     )
     assert "abc123" not in repr(diagnostic)
+    assert "pass" not in repr(diagnostic)
     assert "secret-value" not in repr(diagnostic)
 
 
