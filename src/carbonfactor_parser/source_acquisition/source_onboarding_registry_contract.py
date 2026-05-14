@@ -370,18 +370,26 @@ def _validate_runtime_safety(entry: SourceOnboardingRegistryEntry) -> None:
 def _validate_registry_order(
     entries: tuple[SourceOnboardingRegistryEntry, ...],
 ) -> None:
-    source_ids = tuple(entry.source_id for entry in entries)
-    if source_ids != tuple(sorted(source_ids, key=_source_order_key)):
+    ordered_entries = tuple(
+        sorted(
+            entries,
+            key=lambda entry: (
+                _source_order_key(entry.source_family),
+                entry.source_id,
+            ),
+        )
+    )
+    if entries != ordered_entries:
         raise ValueError(
             "entries must follow Phase 1 source order, then source_id order.",
         )
 
 
-def _source_order_key(source_id: str) -> tuple[int, str]:
+def _source_order_key(source_family: str) -> int:
     try:
-        return (PHASE2_ONBOARDING_SOURCE_FAMILIES.index(source_id), source_id)
+        return PHASE2_ONBOARDING_SOURCE_FAMILIES.index(source_family)
     except ValueError:
-        return (len(PHASE2_ONBOARDING_SOURCE_FAMILIES), source_id)
+        return len(PHASE2_ONBOARDING_SOURCE_FAMILIES)
 
 
 def _validate_required_string(value: str, field_name: str, source_id: str) -> None:
