@@ -1,5 +1,29 @@
 # Documentation Index
 
+CarbonOps-Parser is a public climate-tech data infrastructure project for auditable carbon accounting source ingestion and validation. It documents Python, .NET, and PostgreSQL boundaries for public emission factors from GHG Protocol, DEFRA/DESNZ, and IPCC EFDB without claiming production carbon-accounting correctness.
+
+## Start Here
+
+- [README](../README.md) - project positioning, safe quickstart, supported sources, status, and roadmap summary.
+- [Examples](../examples/README.md) - deterministic local examples and fixture entry points.
+- [Architecture](architecture.md) - Python, .NET, PostgreSQL, validation, diagnostics, and dry-run boundaries.
+- [Phase 2 Roadmap And Execution Boundary](phase2-roadmap.md) - next-stage roadmap and safety gates.
+- [Release Notes Draft](release-notes-draft.md) - draft notes for a first public alpha/review release.
+
+## Public Discoverability
+
+Repository topics cannot be configured through repository files, but maintainers can use these suggested GitHub topics when publishing or reviewing the public repository:
+
+`carbon-accounting`, `emission-factors`, `carbon-emissions`, `ghg-protocol`, `defra-desnz`, `ipcc-efdb`, `climate-tech`, `data-ingestion`, `python`, `dotnet`, `postgresql`, `postgres`, `etl`, `data-validation`, `open-source`
+
+Search-friendly project description:
+
+> Auditable public carbon emission factor ingestion and validation for climate-tech data infrastructure, with Python and .NET contracts, PostgreSQL readiness, non-destructive dry runs, and documented support boundaries for GHG Protocol, DEFRA/DESNZ, and IPCC EFDB.
+
+Discovery wording should stay conservative. The repository may describe source ingestion, parsing, validation, diagnostics, dry-run previews, and reviewable PostgreSQL readiness. It should not claim production carbon-accounting correctness, compliance correctness, legal correctness, source-owner correctness, or factor correctness.
+
+## Full Map
+
 - [Architecture](architecture.md)
 - [Configuration Model](configuration-model.md)
 - [Background Job Model](background-job-model.md)
@@ -122,6 +146,7 @@
 - [Final Phase 1 Production Readiness Review](final-phase1-production-readiness-review.md)
 - [Phase 2 Roadmap And Execution Boundary](phase2-roadmap.md)
 - [Phase 2 Runtime And Source Expansion Review Gate](phase2-review-gate.md)
+- [Release Notes Draft](release-notes-draft.md)
 - [Repository Navigation Guide](repository-navigation-guide.md)
 - [Review Readiness Checklist](review-readiness-checklist.md)
 - [Documentation Map Consistency Checklist](documentation-map-consistency-checklist.md)
