@@ -305,7 +305,7 @@ def _map_row(
     run_id = _text_or_none(_first_field(fields, "run_id", "ingestion_run_id"))
     validation_status = _text_or_none(
         _first_field(fields, "validation_status"),
-    ) or row.status.value
+    ) or _row_status_value(row.status)
     idempotency_key = _idempotency_key(
         row.source_family,
         row.source_key,
@@ -319,7 +319,7 @@ def _map_row(
         "parser_key": row.parser_key,
         "reporting_year": row.reporting_year,
         "source_row_number": row.source_row_number,
-        "status": row.status.value,
+        "status": _row_status_value(row.status),
     }
 
     return (
@@ -416,6 +416,10 @@ def _positive_int_or_none(value: object | None) -> int | None:
     except (TypeError, ValueError):
         return None
     return parsed if parsed > 0 else None
+
+
+def _row_status_value(status: object) -> str:
+    return str(getattr(status, "value", status))
 
 
 def _json_dumps(value: object) -> str:

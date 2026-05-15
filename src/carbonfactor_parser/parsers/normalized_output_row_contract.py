@@ -330,7 +330,7 @@ def _validate_row_status(
     status: ParserNormalizedOutputRowStatus,
     issues: list[ParserNormalizedOutputRowValidationIssue],
 ) -> None:
-    if not isinstance(status, Enum) or _enum_value(status) not in {
+    if _enum_value(status) not in {
         member.value for member in ParserNormalizedOutputRowStatus
     }:
         issues.append(

@@ -107,6 +107,23 @@ class DataQualityDiagnostic:
             )
             for key, value in self.context
         )
+        safe_provenance = (
+            None
+            if self.provenance is None
+            else DataQualityProvenanceContext(
+                record_id=_repr_safe_diagnostic_value(self.provenance.record_id),
+                source_family=_repr_safe_diagnostic_value(
+                    self.provenance.source_family
+                ),
+                source_id=_repr_safe_diagnostic_value(self.provenance.source_id),
+                source_reference=_repr_safe_diagnostic_value(
+                    self.provenance.source_reference
+                ),
+                row_number=_repr_safe_diagnostic_value(self.provenance.row_number),
+                provenance=_repr_safe_diagnostic_value(self.provenance.provenance),
+                document_id=_repr_safe_diagnostic_value(self.provenance.document_id),
+            )
+        )
         return (
             "DataQualityDiagnostic("
             f"code={self.code!r}, "
@@ -115,7 +132,7 @@ class DataQualityDiagnostic:
             f"check={self.check!r}, "
             f"field_name={self.field_name!r}, "
             f"source_family={self.source_family!r}, "
-            f"provenance={self.provenance!r}, "
+            f"provenance={safe_provenance!r}, "
             f"context={safe_context!r})"
         )
 
@@ -456,7 +473,7 @@ def _safe_text_or_none(value: object) -> str | None:
     text = _text_or_none(value)
     if text is None:
         return None
-    without_userinfo = _redact_uri_userinfo(text)
+    without_userinfo = _redact_uri_userinfo(_redact_uri_userinfo_pattern(text))
     return _SENSITIVE_ASSIGNMENT_PATTERN.sub(
         lambda match: f"{match.group(1)}={REDACTED_DIAGNOSTIC_VALUE}",
         without_userinfo,
@@ -483,6 +500,14 @@ def _redact_uri_userinfo(value: str) -> str:
             parts.query,
             parts.fragment,
         )
+    )
+
+
+def _redact_uri_userinfo_pattern(value: str) -> str:
+    return re.sub(
+        r"(?i)\b([a-z][a-z0-9+.-]*://)([^\s/?#]+@)",
+        lambda match: f"{match.group(1)}{REDACTED_DIAGNOSTIC_VALUE}@",
+        value,
     )
 
 
@@ -529,6 +554,8 @@ def _repr_safe_diagnostic_value(value: object) -> object:
         return tuple(_repr_safe_diagnostic_value(item) for item in value)
     if isinstance(value, list):
         return tuple(_repr_safe_diagnostic_value(item) for item in value)
+    if isinstance(value, str):
+        return _safe_text_or_none(value)
     return value
 
 
