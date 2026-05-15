@@ -11,6 +11,7 @@ from carbonfactor_parser.parsers.input_artifact_contract import (
 )
 from carbonfactor_parser.parsers.normalized_output_row_contract import (
     ParserNormalizedOutputBatch,
+    ParserNormalizedOutputRowStatus,
     create_parser_normalized_output_batch,
     create_parser_normalized_output_row,
 )
@@ -244,7 +245,6 @@ def _batch(
         "factor_name": "Electricity generated",
         "factor_value": Decimal("0.20705"),
         "factor_unit": "kWh",
-        "validation_status": "declared",
         "run_id": "local-only-run-001",
     }
     if normalized_fields is not None:
@@ -255,6 +255,7 @@ def _batch(
                 artifact=artifact,
                 row_id="defra-row-001",
                 source_row_number=2,
+                status=ParserNormalizedOutputRowStatus.DECLARED,
                 normalized_fields=fields,
             ),
         ),

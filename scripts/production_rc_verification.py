@@ -500,6 +500,7 @@ class _DryRunSourceRuntime:
             create_phase1_parser_input_artifact,
         )
         from carbonfactor_parser.parsers.normalized_output_row_contract import (
+            ParserNormalizedOutputRowStatus,
             create_parser_normalized_output_row,
         )
         from carbonfactor_parser.parsers.parser_run_contract import (
@@ -522,7 +523,9 @@ class _DryRunSourceRuntime:
         row = create_parser_normalized_output_row(
             artifact=artifact,
             row_id=f"{source_family}-rc-row-001",
+            status=ParserNormalizedOutputRowStatus.DECLARED,
             normalized_fields={
+                "source_document_id": f"{source_family}-rc-artifact",
                 "source_year": 2024,
                 "source_version": "rc-fixture",
                 "factor_id": f"{source_family}-rc-factor",

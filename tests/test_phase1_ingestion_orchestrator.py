@@ -8,6 +8,7 @@ from carbonfactor_parser.parsers.input_artifact_contract import (
     create_phase1_parser_input_artifact,
 )
 from carbonfactor_parser.parsers.normalized_output_row_contract import (
+    ParserNormalizedOutputRowStatus,
     create_parser_normalized_output_row,
 )
 from carbonfactor_parser.parsers.parser_run_contract import (
@@ -426,12 +427,14 @@ class _FakeSourceRuntime:
                 create_parser_normalized_output_row(
                     artifact=artifact,
                     row_id=f"{source_family}-row-001",
+                    status=ParserNormalizedOutputRowStatus.DECLARED,
                     normalized_fields={
+                        "source_document_id": f"{source_family}-artifact",
                         "source_year": 2024,
                         "source_version": "fixture",
                         "factor_id": f"{source_family}-factor",
                         "factor_value": Decimal("1.0"),
-                        "factor_unit": "kgco2e",
+                        "factor_unit": "kg CO2e",
                     },
                 ),
             )

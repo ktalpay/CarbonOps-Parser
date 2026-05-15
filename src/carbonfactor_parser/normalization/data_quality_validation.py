@@ -49,8 +49,8 @@ _SENSITIVE_FIELD_TOKENS = (
     "token",
 )
 
-_SENSITIVE_ASSIGNMENT_PATTERN = re.compile(
-    r"(?i)\b(api[_-]?key|authorization|credential|password|secret|token)=([^\s&;,]+)",
+_SENSITIVE_KEY_VALUE_PATTERN = re.compile(
+    r"(?i)\b(api[_-]?key|authorization|credential|password|secret|token)\s*[:=]\s*([^\s&;,]+)",
 )
 
 
@@ -473,8 +473,12 @@ def _safe_text_or_none(value: object) -> str | None:
     text = _text_or_none(value)
     if text is None:
         return None
-    without_userinfo = _redact_uri_userinfo(_redact_uri_userinfo_pattern(text))
-    return _SENSITIVE_ASSIGNMENT_PATTERN.sub(
+    return _redact_sensitive_text(text)
+
+
+def _redact_sensitive_text(value: str) -> str:
+    without_userinfo = _redact_uri_userinfo(_redact_uri_userinfo_pattern(value))
+    return _SENSITIVE_KEY_VALUE_PATTERN.sub(
         lambda match: f"{match.group(1)}={REDACTED_DIAGNOSTIC_VALUE}",
         without_userinfo,
     )
