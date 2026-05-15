@@ -19,6 +19,7 @@ EXPECTED_SHARED_TABLE_NAMES = (
     "source_documents",
     "parser_runs",
     "schema_bootstrap_states",
+    "source_family_year_states",
 )
 
 EXPECTED_SOURCE_FAMILY_TABLE_NAMES = {

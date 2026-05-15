@@ -48,6 +48,18 @@ CREATE TABLE schema_bootstrap_states (
     CONSTRAINT uq_schema_bootstrap_states_contract_version UNIQUE (schema_contract_version)
 );
 
+CREATE TABLE source_family_year_states (
+    source_family_year_state_id uuid NOT NULL,
+    source_family text NOT NULL,
+    ingested_year integer NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    CONSTRAINT pk_source_family_year_states PRIMARY KEY (source_family_year_state_id),
+    CONSTRAINT uq_source_family_year_states_family_year UNIQUE (source_family, ingested_year)
+);
+
+CREATE INDEX idx_source_family_year_states_family_year ON source_family_year_states (source_family, ingested_year);
+
 CREATE TABLE ghg_emission_factor_masters (
     ghg_emission_factor_master_id uuid NOT NULL,
     source_document_id uuid NOT NULL,

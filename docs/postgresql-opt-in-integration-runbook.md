@@ -259,6 +259,48 @@ python -m pytest -m postgresql_integration tests/test_postgresql_connection_smok
 This command is a future/manual integration path. It is not part of the default
 test suite and does not exist as runtime persistence enablement.
 
+## PH-011 Docker Runtime Schema And Year-State Integration
+
+PH-011 adds an opt-in integration test that proves runtime schema bootstrap and
+source-family year-state behavior against Docker PostgreSQL. The default test
+suite remains DB-free. Run this only against an isolated local test container on
+the user's M3 test machine.
+
+Start PostgreSQL locally:
+
+```bash
+docker run --rm --name carbonops-ph011-postgres \
+  -e POSTGRES_PASSWORD=carbonops_local_test \
+  -e POSTGRES_USER=carbonops \
+  -e POSTGRES_DB=carbonops_parser_integration_test \
+  -p 54329:5432 \
+  postgres:16
+```
+
+In a second shell, run the focused integration test with an externally supplied
+local DSN:
+
+```bash
+CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1 \
+CARBONOPS_POSTGRESQL_TEST_DSN='postgresql://carbonops:carbonops_local_test@localhost:54329/carbonops_parser_integration_test' \
+python -m pytest -m postgresql_integration tests/test_postgresql_runtime_year_state.py
+```
+
+The test creates a unique `carbonops_ph011_<uuid>` schema, creates missing Phase
+1 tables with `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS`,
+records minimal GHG Protocol year-state rows, verifies latest-year and next-year
+behavior, and verifies DEFRA/DESNZ no-data behavior returns the default initial
+year `2024`.
+
+Do not use production, staging, shared development, customer, or confidential
+databases. Do not commit DSNs, passwords, container logs, or machine-specific
+paths. After the run, unset both integration controls:
+
+```bash
+unset CARBONOPS_RUN_POSTGRESQL_INTEGRATION
+unset CARBONOPS_POSTGRESQL_TEST_DSN
+```
+
 ## Verifying Default Tests Remain DB-Free
 
 Before and after future integration-test work, reviewers should run:

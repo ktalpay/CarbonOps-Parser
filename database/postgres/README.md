@@ -19,6 +19,7 @@ The script creates the `carbonops` schema, enables `pgcrypto` for UUID generatio
 The schema baseline should include:
 
 - Shared ingestion metadata tables.
+- Source-family ingestion year-state table for production E2E targeting.
 - DEFRA/DESNZ source-specific master/detail tables.
 - GHG Protocol source-specific master/detail tables.
 - IPCC EFDB source-specific master/detail tables.

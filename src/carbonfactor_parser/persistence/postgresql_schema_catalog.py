@@ -149,6 +149,33 @@ def _build_shared_tables() -> tuple[TableDefinition, ...]:
                 ),
             ),
         ),
+        TableDefinition(
+            name="source_family_year_states",
+            columns=(
+                ColumnDefinition(
+                    "source_family_year_state_id",
+                    PostgreSQLDataType.UUID,
+                    nullable=False,
+                    is_primary_key=True,
+                ),
+                ColumnDefinition("source_family", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("ingested_year", PostgreSQLDataType.INTEGER, nullable=False),
+                ColumnDefinition("created_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False),
+                ColumnDefinition("updated_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False),
+            ),
+            unique_constraints=(
+                UniqueConstraintDefinition(
+                    name="uq_source_family_year_states_family_year",
+                    column_names=("source_family", "ingested_year"),
+                ),
+            ),
+            indexes=(
+                IndexDefinition(
+                    name="idx_source_family_year_states_family_year",
+                    column_names=("source_family", "ingested_year"),
+                ),
+            ),
+        ),
     )
 
 
