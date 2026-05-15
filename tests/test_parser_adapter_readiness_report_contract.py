@@ -140,15 +140,24 @@ def test_readiness_report_is_read_only() -> None:
         report.entries[0].capability.format_hint = "changed"  # type: ignore[misc]
 
 
-def test_readiness_report_is_metadata_only_and_contract_only() -> None:
+def test_readiness_report_is_metadata_only_and_reflects_declared_capabilities() -> None:
     report = build_phase1_parser_adapter_readiness_report()
 
+    assert tuple(entry.readiness for entry in report.entries) == (
+        "contract_only",
+        "contract_only",
+        "content_parser_ready",
+    )
+    assert tuple(
+        entry.capability.supports_parser_execution for entry in report.entries
+    ) == (False, False, True)
+    assert tuple(
+        entry.capability.supports_content_inspection for entry in report.entries
+    ) == (False, False, True)
+
     for entry in report.entries:
-        assert entry.readiness == "contract_only"
         assert entry.execution_mode == "dry_run"
-        assert entry.capability.supports_parser_execution is False
         assert entry.capability.supports_file_reads is False
-        assert entry.capability.supports_content_inspection is False
         assert not hasattr(entry, "parse")
         assert not hasattr(entry, "can_parse")
         assert not hasattr(entry.capability, "parse")

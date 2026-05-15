@@ -14,6 +14,17 @@ FIXTURE_DIRECTORY = (
     Path(__file__).resolve().parents[0] / "fixtures" / "source_documents" / "defra_desnz"
 )
 
+EXPECTED_FIXTURE_FILE_NAMES = [
+    "defra_desnz_malformed_factors.csv",
+    "defra_desnz_metadata.json",
+    "defra_desnz_normalized_factors.csv",
+    "defra_desnz_sample_factors.csv",
+]
+
+EXPECTED_FIXTURE_SOURCE_NAMES = [
+    f"defra_desnz:{file_name}" for file_name in EXPECTED_FIXTURE_FILE_NAMES
+]
+
 
 def test_manifest_can_be_created_from_no_documents() -> None:
     manifest = build_defra_desnz_fixture_manifest(())
@@ -31,11 +42,8 @@ def test_manifest_can_be_created_from_defra_desnz_fixture_documents() -> None:
 
     manifest = build_defra_desnz_fixture_manifest(documents)
 
-    assert manifest.document_count == 2
-    assert [entry.file_name for entry in manifest.entries] == [
-        "defra_desnz_metadata.json",
-        "defra_desnz_sample_factors.csv",
-    ]
+    assert manifest.document_count == 4
+    assert [entry.file_name for entry in manifest.entries] == EXPECTED_FIXTURE_FILE_NAMES
 
 
 def test_manifest_entry_ordering_is_deterministic() -> None:
@@ -106,8 +114,9 @@ def test_manifest_uses_discovered_document_metadata() -> None:
     assert [entry.source_family for entry in manifest.entries] == [
         SourceFamily.DEFRA_DESNZ,
         SourceFamily.DEFRA_DESNZ,
+        SourceFamily.DEFRA_DESNZ,
+        SourceFamily.DEFRA_DESNZ,
     ]
-    assert [entry.source_name for entry in manifest.entries] == [
-        "defra_desnz:defra_desnz_metadata.json",
-        "defra_desnz:defra_desnz_sample_factors.csv",
-    ]
+    assert [entry.source_name for entry in manifest.entries] == (
+        EXPECTED_FIXTURE_SOURCE_NAMES
+    )

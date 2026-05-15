@@ -11,6 +11,14 @@ from carbonfactor_parser.normalization import (
     ArtificialNormalizationExecutor,
     ArtificialNormalizationSummaryBuilder,
     DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS,
+    DEFRA_DESNZ_NORMALIZED_MAPPING_FIELDS,
+    DEFAULT_SUPPORTED_FACTOR_UNITS,
+    REDACTED_DIAGNOSTIC_VALUE,
+    DataQualityDiagnostic,
+    DataQualityProvenanceContext,
+    DataQualityValidationCheck,
+    DataQualityValidationResult,
+    DataQualityValidationSeverity,
     DefraDesnzNormalizationMappingResult,
     DefraDesnzNormalizationMappingStatus,
     NormalizationInput,
@@ -34,12 +42,14 @@ from carbonfactor_parser.normalization import (
     build_normalization_input_from_raw_payload,
     build_parser_execution_normalization_handoff,
     build_parser_normalization_handoff,
+    create_data_quality_diagnostic,
     create_normalization_input_from_raw_payload,
     create_normalization_input_record_from_raw_record,
     map_defra_desnz_normalization_input,
     map_defra_desnz_normalization_input_record,
     validate_normalization_input,
     validate_normalization_input_record,
+    validate_normalized_factor_output,
 )
 from carbonfactor_parser.normalization.summary import (
     NormalizationResultSummary as SummaryModuleNormalizationResultSummary,
@@ -52,7 +62,15 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "NormalizationResult",
     "NormalizationResultSummary",
     "NormalizedRecord",
+    "DEFAULT_SUPPORTED_FACTOR_UNITS",
+    "REDACTED_DIAGNOSTIC_VALUE",
+    "DataQualityDiagnostic",
+    "DataQualityProvenanceContext",
+    "DataQualityValidationCheck",
+    "DataQualityValidationResult",
+    "DataQualityValidationSeverity",
     "DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS",
+    "DEFRA_DESNZ_NORMALIZED_MAPPING_FIELDS",
     "DefraDesnzNormalizationMappingResult",
     "DefraDesnzNormalizationMappingStatus",
     "ArtificialNormalizationExecutor",
@@ -73,12 +91,14 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "build_normalization_input_from_raw_payload",
     "build_parser_execution_normalization_handoff",
     "build_parser_normalization_handoff",
+    "create_data_quality_diagnostic",
     "create_normalization_input_from_raw_payload",
     "create_normalization_input_record_from_raw_record",
     "map_defra_desnz_normalization_input",
     "map_defra_desnz_normalization_input_record",
     "validate_normalization_input",
     "validate_normalization_input_record",
+    "validate_normalized_factor_output",
 )
 
 EXPECTED_PUBLIC_EXPORTS = {
@@ -87,8 +107,18 @@ EXPECTED_PUBLIC_EXPORTS = {
     "NormalizationResult": contracts.NormalizationResult,
     "NormalizationResultSummary": SummaryModuleNormalizationResultSummary,
     "NormalizedRecord": contracts.NormalizedRecord,
+    "DEFAULT_SUPPORTED_FACTOR_UNITS": normalization.DEFAULT_SUPPORTED_FACTOR_UNITS,
+    "REDACTED_DIAGNOSTIC_VALUE": normalization.REDACTED_DIAGNOSTIC_VALUE,
+    "DataQualityDiagnostic": normalization.DataQualityDiagnostic,
+    "DataQualityProvenanceContext": normalization.DataQualityProvenanceContext,
+    "DataQualityValidationCheck": normalization.DataQualityValidationCheck,
+    "DataQualityValidationResult": normalization.DataQualityValidationResult,
+    "DataQualityValidationSeverity": normalization.DataQualityValidationSeverity,
     "DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS": (
         defra_desnz_mapper.DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS
+    ),
+    "DEFRA_DESNZ_NORMALIZED_MAPPING_FIELDS": (
+        defra_desnz_mapper.DEFRA_DESNZ_NORMALIZED_MAPPING_FIELDS
     ),
     "DefraDesnzNormalizationMappingResult": (
         defra_desnz_mapper.DefraDesnzNormalizationMappingResult
@@ -130,6 +160,7 @@ EXPECTED_PUBLIC_EXPORTS = {
         handoff.build_parser_execution_normalization_handoff
     ),
     "build_parser_normalization_handoff": handoff.build_parser_normalization_handoff,
+    "create_data_quality_diagnostic": normalization.create_data_quality_diagnostic,
     "create_normalization_input_from_raw_payload": (
         input.create_normalization_input_from_raw_payload
     ),
@@ -146,6 +177,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     "validate_normalization_input_record": (
         input.validate_normalization_input_record
     ),
+    "validate_normalized_factor_output": (
+        normalization.validate_normalized_factor_output
+    ),
 }
 
 
@@ -156,8 +190,18 @@ def test_expected_normalization_public_symbols_import_from_package() -> None:
         "NormalizationResult": NormalizationResult,
         "NormalizationResultSummary": NormalizationResultSummary,
         "NormalizedRecord": NormalizedRecord,
+        "DEFAULT_SUPPORTED_FACTOR_UNITS": DEFAULT_SUPPORTED_FACTOR_UNITS,
+        "REDACTED_DIAGNOSTIC_VALUE": REDACTED_DIAGNOSTIC_VALUE,
+        "DataQualityDiagnostic": DataQualityDiagnostic,
+        "DataQualityProvenanceContext": DataQualityProvenanceContext,
+        "DataQualityValidationCheck": DataQualityValidationCheck,
+        "DataQualityValidationResult": DataQualityValidationResult,
+        "DataQualityValidationSeverity": DataQualityValidationSeverity,
         "DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS": (
             DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS
+        ),
+        "DEFRA_DESNZ_NORMALIZED_MAPPING_FIELDS": (
+            DEFRA_DESNZ_NORMALIZED_MAPPING_FIELDS
         ),
         "DefraDesnzNormalizationMappingResult": (
             DefraDesnzNormalizationMappingResult
@@ -195,6 +239,7 @@ def test_expected_normalization_public_symbols_import_from_package() -> None:
             build_parser_execution_normalization_handoff
         ),
         "build_parser_normalization_handoff": build_parser_normalization_handoff,
+        "create_data_quality_diagnostic": create_data_quality_diagnostic,
         "create_normalization_input_from_raw_payload": (
             create_normalization_input_from_raw_payload
         ),
@@ -207,6 +252,7 @@ def test_expected_normalization_public_symbols_import_from_package() -> None:
         ),
         "validate_normalization_input": validate_normalization_input,
         "validate_normalization_input_record": validate_normalization_input_record,
+        "validate_normalized_factor_output": validate_normalized_factor_output,
     }
 
     assert tuple(imported_symbols) == EXPECTED_PUBLIC_SYMBOLS

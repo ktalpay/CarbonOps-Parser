@@ -135,18 +135,25 @@ def test_phase1_parser_adapter_lookup_unknown_values_returns_none() -> None:
     assert get_phase1_parser_adapter_by_parser_key("unknown_parser", registry) is None
 
 
-def test_phase1_parser_adapter_registry_stays_contract_only() -> None:
+def test_phase1_parser_adapter_registry_reports_declared_capabilities() -> None:
     registry = create_phase1_parser_adapter_registry()
 
     for descriptor in registry.descriptors:
         assert descriptor.mode is SourceAcquisitionPlanMode.DRY_RUN
-        assert descriptor.capability.supports_parser_execution is False
         assert descriptor.capability.supports_file_reads is False
-        assert descriptor.capability.supports_content_inspection is False
         assert not hasattr(descriptor, "parse")
         assert not hasattr(descriptor, "can_parse")
         assert not hasattr(descriptor.capability, "parse")
         assert not hasattr(descriptor.capability, "can_parse")
+
+    assert tuple(
+        descriptor.capability.supports_parser_execution
+        for descriptor in registry.descriptors
+    ) == (False, False, True)
+    assert tuple(
+        descriptor.capability.supports_content_inspection
+        for descriptor in registry.descriptors
+    ) == (False, False, True)
 
 
 def test_phase1_parser_adapter_registry_uses_safe_passive_identifiers() -> None:

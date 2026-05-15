@@ -35,7 +35,7 @@ def test_parser_pipeline_summary_example_returns_deterministic_fields() -> None:
 def test_parser_pipeline_summary_example_counts_are_consistent() -> None:
     result = build_parser_pipeline_summary_example()
 
-    assert result["discovered_document_count"] == 2
+    assert result["discovered_document_count"] == 4
     assert result["mapping_entry_count"] == result["discovered_document_count"]
     assert result["parser_record_count"] == result["mapping_entry_count"]
 
@@ -63,7 +63,9 @@ def test_parser_pipeline_summary_example_includes_expected_source_metadata() -> 
 
     assert result["source_families"] == ("defra_desnz",)
     assert result["source_names"] == (
+        "defra_desnz:defra_desnz_malformed_factors.csv",
         "defra_desnz:defra_desnz_metadata.json",
+        "defra_desnz:defra_desnz_normalized_factors.csv",
         "defra_desnz:defra_desnz_sample_factors.csv",
     )
 
@@ -72,7 +74,7 @@ def test_parser_pipeline_summary_example_uses_artificial_fixture_directory() -> 
     result = build_parser_pipeline_summary_example()
 
     assert FIXTURE_DIRECTORY.is_dir()
-    assert result["discovered_document_count"] == 2
+    assert result["discovered_document_count"] == 4
 
 
 def test_parser_pipeline_summary_example_does_not_read_file_contents(monkeypatch) -> None:
@@ -83,7 +85,7 @@ def test_parser_pipeline_summary_example_does_not_read_file_contents(monkeypatch
 
     result = build_parser_pipeline_summary_example()
 
-    assert result["parser_record_count"] == 2
+    assert result["parser_record_count"] == 4
 
 
 def test_parser_pipeline_summary_example_does_not_use_real_source_data() -> None:
@@ -100,6 +102,6 @@ def test_parser_pipeline_summary_example_does_not_use_real_source_data() -> None
 def test_parser_pipeline_summary_example_does_not_change_pipeline_behavior() -> None:
     result = build_parser_pipeline_summary_example()
 
-    assert result["discovered_document_count"] == 2
-    assert result["mapping_entry_count"] == 2
-    assert result["parser_record_count"] == 2
+    assert result["discovered_document_count"] == 4
+    assert result["mapping_entry_count"] == 4
+    assert result["parser_record_count"] == 4

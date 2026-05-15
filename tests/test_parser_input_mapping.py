@@ -16,6 +16,13 @@ FIXTURE_DIRECTORY = (
     Path(__file__).resolve().parents[0] / "fixtures" / "source_documents" / "defra_desnz"
 )
 
+EXPECTED_FIXTURE_FILE_NAMES = [
+    "defra_desnz_malformed_factors.csv",
+    "defra_desnz_metadata.json",
+    "defra_desnz_normalized_factors.csv",
+    "defra_desnz_sample_factors.csv",
+]
+
 
 def test_mapping_can_be_created_from_no_documents() -> None:
     mapping = build_fixture_parser_input_mapping(())
@@ -34,12 +41,9 @@ def test_mapping_can_be_created_from_discovered_fixture_documents() -> None:
 
     mapping = build_fixture_parser_input_mapping(documents)
 
-    assert mapping.document_count == 2
+    assert mapping.document_count == 4
     assert mapping.source_family == SourceFamily.DEFRA_DESNZ
-    assert [entry.file_name for entry in mapping.entries] == [
-        "defra_desnz_metadata.json",
-        "defra_desnz_sample_factors.csv",
-    ]
+    assert [entry.file_name for entry in mapping.entries] == EXPECTED_FIXTURE_FILE_NAMES
 
 
 def test_mapping_entry_ordering_is_deterministic() -> None:
