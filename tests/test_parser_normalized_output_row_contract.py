@@ -284,6 +284,18 @@ def test_invalid_status_returns_invalid_result() -> None:
     assert _issue_codes(result) == ("PARSER_NORMALIZED_ROW_INVALID_STATUS",)
 
 
+def test_reloaded_status_enum_value_remains_valid() -> None:
+    pre_reload_status = ParserNormalizedOutputRowStatus.VALIDATED
+    row = replace(_valid_row("defra_desnz"), status=pre_reload_status)
+    module_name = "carbonfactor_parser.parsers.normalized_output_row_contract"
+    sys.modules.pop(module_name, None)
+    reloaded_module = importlib.import_module(module_name)
+
+    result = reloaded_module.validate_parser_normalized_output_row(row)
+
+    assert result.is_valid is True
+
+
 def test_normalized_row_contract_is_read_only() -> None:
     row = _valid_row("ghg_protocol")
     batch = create_parser_normalized_output_batch((row,))

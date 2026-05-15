@@ -331,7 +331,7 @@ def _validate_row_status(
     status: ParserNormalizedOutputRowStatus,
     issues: list[ParserNormalizedOutputRowValidationIssue],
 ) -> None:
-    if not isinstance(status, ParserNormalizedOutputRowStatus):
+    if not _is_parser_normalized_output_row_status(status):
         issues.append(
             ParserNormalizedOutputRowValidationIssue(
                 code="PARSER_NORMALIZED_ROW_INVALID_STATUS",
@@ -339,6 +339,16 @@ def _validate_row_status(
                 field_name="status",
             )
         )
+
+
+def _is_parser_normalized_output_row_status(status: object) -> bool:
+    if isinstance(status, ParserNormalizedOutputRowStatus):
+        return True
+    return (
+        status.__class__.__name__ == ParserNormalizedOutputRowStatus.__name__
+        and getattr(status, "value", None)
+        in {item.value for item in ParserNormalizedOutputRowStatus}
+    )
 
 
 def _validate_positive_int(

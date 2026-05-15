@@ -267,7 +267,7 @@ def _map_row(
 
     fields = dict(row.normalized_fields)
     issues: list[PostgreSQLNormalizedFactorInsertIssue] = []
-    if row.status is not ParserNormalizedOutputRowStatus.VALIDATED:
+    if not _is_validated_row_status(row.status, ParserNormalizedOutputRowStatus):
         issues.append(
             PostgreSQLNormalizedFactorInsertIssue(
                 code="POSTGRESQL_NORMALIZED_FACTOR_INVALID_ROW_STATUS",
@@ -433,6 +433,16 @@ def _positive_int_or_none(value: object | None) -> int | None:
 
 def _row_status_value(status: object) -> str:
     return str(getattr(status, "value", status))
+
+
+def _is_validated_row_status(status: object, status_enum: object) -> bool:
+    validated = getattr(status_enum, "VALIDATED")
+    if isinstance(status, status_enum):
+        return status is validated
+    return (
+        status.__class__.__name__ == status_enum.__name__
+        and getattr(status, "value", None) == getattr(validated, "value", None)
+    )
 
 
 def _json_dumps(value: object) -> str:
