@@ -60,6 +60,37 @@ CREATE TABLE source_family_year_states (
 
 CREATE INDEX idx_source_family_year_states_family_year ON source_family_year_states (source_family, ingested_year);
 
+CREATE TABLE normalized_factor_records (
+    normalized_factor_record_id text NOT NULL,
+    idempotency_key_sha256 text NOT NULL,
+    source_family text NOT NULL,
+    source_id text NOT NULL,
+    source_year integer,
+    source_version text,
+    record_id text NOT NULL,
+    source_row_number integer,
+    source_document_reference text,
+    source_artifact_reference text,
+    source_checksum_sha256 text,
+    factor_id text,
+    factor_name text,
+    factor_value numeric NOT NULL,
+    factor_unit text NOT NULL,
+    validation_status text NOT NULL,
+    run_id text,
+    parser_key text NOT NULL,
+    metadata jsonb NOT NULL,
+    normalized_fields jsonb NOT NULL,
+    warnings jsonb NOT NULL,
+    errors jsonb NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    CONSTRAINT pk_normalized_factor_records PRIMARY KEY (normalized_factor_record_id),
+    CONSTRAINT uq_normalized_factor_records_idempotency_key UNIQUE (idempotency_key_sha256)
+);
+
+CREATE INDEX idx_normalized_factor_records_source_year ON normalized_factor_records (source_family, source_id, source_year);
+
 CREATE TABLE ghg_emission_factor_masters (
     ghg_emission_factor_master_id uuid NOT NULL,
     source_document_id uuid NOT NULL,

@@ -176,6 +176,104 @@ def _build_shared_tables() -> tuple[TableDefinition, ...]:
                 ),
             ),
         ),
+        TableDefinition(
+            name="normalized_factor_records",
+            columns=(
+                ColumnDefinition(
+                    "normalized_factor_record_id",
+                    PostgreSQLDataType.TEXT,
+                    nullable=False,
+                    is_primary_key=True,
+                ),
+                ColumnDefinition(
+                    "idempotency_key_sha256",
+                    PostgreSQLDataType.TEXT,
+                    nullable=False,
+                ),
+                ColumnDefinition(
+                    "source_family",
+                    PostgreSQLDataType.TEXT,
+                    nullable=False,
+                ),
+                ColumnDefinition("source_id", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition(
+                    "source_year",
+                    PostgreSQLDataType.INTEGER,
+                    nullable=True,
+                ),
+                ColumnDefinition(
+                    "source_version",
+                    PostgreSQLDataType.TEXT,
+                    nullable=True,
+                ),
+                ColumnDefinition("record_id", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition(
+                    "source_row_number",
+                    PostgreSQLDataType.INTEGER,
+                    nullable=True,
+                ),
+                ColumnDefinition(
+                    "source_document_reference",
+                    PostgreSQLDataType.TEXT,
+                    nullable=True,
+                ),
+                ColumnDefinition(
+                    "source_artifact_reference",
+                    PostgreSQLDataType.TEXT,
+                    nullable=True,
+                ),
+                ColumnDefinition(
+                    "source_checksum_sha256",
+                    PostgreSQLDataType.TEXT,
+                    nullable=True,
+                ),
+                ColumnDefinition("factor_id", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("factor_name", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition(
+                    "factor_value",
+                    PostgreSQLDataType.NUMERIC,
+                    nullable=False,
+                ),
+                ColumnDefinition("factor_unit", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition(
+                    "validation_status",
+                    PostgreSQLDataType.TEXT,
+                    nullable=False,
+                ),
+                ColumnDefinition("run_id", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("parser_key", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("metadata", PostgreSQLDataType.JSONB, nullable=False),
+                ColumnDefinition(
+                    "normalized_fields",
+                    PostgreSQLDataType.JSONB,
+                    nullable=False,
+                ),
+                ColumnDefinition("warnings", PostgreSQLDataType.JSONB, nullable=False),
+                ColumnDefinition("errors", PostgreSQLDataType.JSONB, nullable=False),
+                ColumnDefinition(
+                    "created_at",
+                    PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE,
+                    nullable=False,
+                ),
+                ColumnDefinition(
+                    "updated_at",
+                    PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE,
+                    nullable=False,
+                ),
+            ),
+            unique_constraints=(
+                UniqueConstraintDefinition(
+                    name="uq_normalized_factor_records_idempotency_key",
+                    column_names=("idempotency_key_sha256",),
+                ),
+            ),
+            indexes=(
+                IndexDefinition(
+                    name="idx_normalized_factor_records_source_year",
+                    column_names=("source_family", "source_id", "source_year"),
+                ),
+            ),
+        ),
     )
 
 

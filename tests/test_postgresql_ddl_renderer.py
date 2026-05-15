@@ -74,6 +74,8 @@ def test_required_create_table_statements_are_rendered() -> None:
         "source_documents",
         "parser_runs",
         "schema_bootstrap_states",
+        "source_family_year_states",
+        "normalized_factor_records",
         "ghg_emission_factor_masters",
         "ghg_emission_factor_details",
         "defra_emission_factor_masters",
