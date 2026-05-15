@@ -458,10 +458,6 @@ def _safe_context(
 
 
 def _safe_diagnostic_value(field_name: str, value: object) -> object:
-    if _is_sensitive_field(field_name):
-        return REDACTED_DIAGNOSTIC_VALUE if value is not None else None
-    if isinstance(value, str):
-        return _safe_text_or_none(value)
     if isinstance(value, Mapping):
         return tuple(
             (str(key), _safe_diagnostic_value(str(key), item))
@@ -469,6 +465,10 @@ def _safe_diagnostic_value(field_name: str, value: object) -> object:
         )
     if isinstance(value, list | tuple):
         return tuple(_safe_diagnostic_value(field_name, item) for item in value)
+    if _is_sensitive_field(field_name):
+        return REDACTED_DIAGNOSTIC_VALUE if value is not None else None
+    if isinstance(value, str):
+        return _safe_text_or_none(value)
     return value
 
 
