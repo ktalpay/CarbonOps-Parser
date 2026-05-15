@@ -246,6 +246,23 @@ def test_uri_password_with_at_sign_is_redacted_from_diagnostic_repr() -> None:
     )
 
 
+def test_direct_diagnostic_repr_redacts_sensitive_message_text() -> None:
+    sensitive_uri = "postgresql://carbonops:p@ssw0rd@example.invalid/db?password=raw"
+
+    diagnostic = DataQualityDiagnostic(
+        code="SAFE_CONTEXT",
+        message=f"failed to validate {sensitive_uri}",
+        severity=DataQualityValidationSeverity.INFO,
+        check=DataQualityValidationCheck.STRUCTURE,
+    )
+
+    rendered = repr(diagnostic)
+
+    assert "p@ssw0rd" not in rendered
+    assert "password=raw" not in rendered
+    assert "postgresql://[REDACTED]@example.invalid/db?password=[REDACTED]" in rendered
+
+
 def test_valid_factor_output_has_no_diagnostics() -> None:
     result = validate_normalized_factor_output(
         NormalizationResult(records=(_record(),))

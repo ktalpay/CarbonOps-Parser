@@ -126,12 +126,12 @@ class DataQualityDiagnostic:
         )
         return (
             "DataQualityDiagnostic("
-            f"code={self.code!r}, "
-            f"message={self.message!r}, "
+            f"code={_repr_safe_diagnostic_value(self.code)!r}, "
+            f"message={_repr_safe_diagnostic_value(self.message)!r}, "
             f"severity={self.severity!r}, "
             f"check={self.check!r}, "
-            f"field_name={self.field_name!r}, "
-            f"source_family={self.source_family!r}, "
+            f"field_name={_repr_safe_diagnostic_value(self.field_name)!r}, "
+            f"source_family={_repr_safe_diagnostic_value(self.source_family)!r}, "
             f"provenance={safe_provenance!r}, "
             f"context={safe_context!r})"
         )
