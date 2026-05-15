@@ -226,6 +226,26 @@ def test_sensitive_values_are_redacted_from_provenance_context() -> None:
     assert "abc123" not in repr(diagnostic)
 
 
+def test_uri_password_with_at_sign_is_redacted_from_diagnostic_repr() -> None:
+    sensitive_uri = "postgresql://carbonops:p@ssw0rd@example.invalid/db?password=raw"
+
+    diagnostic = create_data_quality_diagnostic(
+        code="SAFE_CONTEXT",
+        message="safe context diagnostic",
+        severity=DataQualityValidationSeverity.INFO,
+        check=DataQualityValidationCheck.STRUCTURE,
+        context={"source_reference": sensitive_uri},
+    )
+
+    rendered = repr(diagnostic)
+
+    assert "p@ssw0rd" not in rendered
+    assert "password=raw" not in rendered
+    assert dict(diagnostic.context)["source_reference"] == (
+        "postgresql://[REDACTED]@example.invalid/db?password=[REDACTED]"
+    )
+
+
 def test_valid_factor_output_has_no_diagnostics() -> None:
     result = validate_normalized_factor_output(
         NormalizationResult(records=(_record(),))

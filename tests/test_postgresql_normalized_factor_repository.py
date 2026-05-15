@@ -244,7 +244,7 @@ def _batch(
         "factor_name": "Electricity generated",
         "factor_value": Decimal("0.20705"),
         "factor_unit": "kWh",
-        "validation_status": "validated",
+        "validation_status": "declared",
         "run_id": "local-only-run-001",
     }
     if normalized_fields is not None:

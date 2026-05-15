@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from enum import Enum
 import re
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 from carbonfactor_parser.normalization.contracts import (
     NormalizationResult,
@@ -48,7 +49,6 @@ _SENSITIVE_FIELD_TOKENS = (
     "token",
 )
 
-_USERINFO_URI_PATTERN = re.compile(r"//[^/\s:@]+:[^@\s/]+@")
 _SENSITIVE_ASSIGNMENT_PATTERN = re.compile(
     r"(?i)\b(api[_-]?key|authorization|credential|password|secret|token)=([^\s&;,]+)",
 )
@@ -436,13 +436,33 @@ def _safe_text_or_none(value: object) -> str | None:
     text = _text_or_none(value)
     if text is None:
         return None
-    without_userinfo = _USERINFO_URI_PATTERN.sub(
-        f"//{REDACTED_DIAGNOSTIC_VALUE}@",
-        text,
-    )
+    without_userinfo = _redact_uri_userinfo(text)
     return _SENSITIVE_ASSIGNMENT_PATTERN.sub(
         lambda match: f"{match.group(1)}={REDACTED_DIAGNOSTIC_VALUE}",
         without_userinfo,
+    )
+
+
+def _redact_uri_userinfo(value: str) -> str:
+    try:
+        parts = urlsplit(value)
+    except ValueError:
+        return value
+
+    if not parts.scheme or "@" not in parts.netloc:
+        return value
+
+    _, separator, hostinfo = parts.netloc.rpartition("@")
+    if not separator:
+        return value
+    return urlunsplit(
+        (
+            parts.scheme,
+            f"{REDACTED_DIAGNOSTIC_VALUE}@{hostinfo}",
+            parts.path,
+            parts.query,
+            parts.fragment,
+        )
     )
 
 
