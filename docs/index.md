@@ -143,6 +143,7 @@ Discovery wording should stay conservative. The repository may describe source i
 - [Stabilization Checkpoint](stabilization-checkpoint.md)
 - [Production Readiness Gap Analysis](production-readiness-gap-analysis.md)
 - [Production Readiness Sequencing Roadmap](production-readiness-sequencing-roadmap.md)
+- [Production E2E Ingestion Readiness Contract](production-e2e-ingestion-readiness-contract.md)
 - [Final Phase 1 Production Readiness Review](final-phase1-production-readiness-review.md)
 - [Phase 2 Roadmap And Execution Boundary](phase2-roadmap.md)
 - [Phase 2 Runtime And Source Expansion Review Gate](phase2-review-gate.md)
