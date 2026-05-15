@@ -255,7 +255,7 @@ def _batch(
                 artifact=artifact,
                 row_id="defra-row-001",
                 source_row_number=2,
-                status=ParserNormalizedOutputRowStatus.DECLARED,
+                status=ParserNormalizedOutputRowStatus.VALIDATED,
                 normalized_fields=fields,
             ),
         ),

@@ -523,7 +523,7 @@ class _DryRunSourceRuntime:
         row = create_parser_normalized_output_row(
             artifact=artifact,
             row_id=f"{source_family}-rc-row-001",
-            status=ParserNormalizedOutputRowStatus.DECLARED,
+            status=ParserNormalizedOutputRowStatus.VALIDATED,
             normalized_fields={
                 "source_document_id": f"{source_family}-rc-artifact",
                 "source_year": 2024,

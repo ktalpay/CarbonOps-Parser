@@ -18,6 +18,7 @@ class ParserNormalizedOutputRowStatus(str, Enum):
     """Runtime-passive normalized parser output row status values."""
 
     DECLARED = "declared"
+    VALIDATED = "validated"
 
 
 @dataclass(frozen=True)
@@ -330,9 +331,7 @@ def _validate_row_status(
     status: ParserNormalizedOutputRowStatus,
     issues: list[ParserNormalizedOutputRowValidationIssue],
 ) -> None:
-    if _enum_value(status) not in {
-        member.value for member in ParserNormalizedOutputRowStatus
-    }:
+    if not isinstance(status, ParserNormalizedOutputRowStatus):
         issues.append(
             ParserNormalizedOutputRowValidationIssue(
                 code="PARSER_NORMALIZED_ROW_INVALID_STATUS",
@@ -340,10 +339,6 @@ def _validate_row_status(
                 field_name="status",
             )
         )
-
-
-def _enum_value(value: object) -> object:
-    return getattr(value, "value", value)
 
 
 def _validate_positive_int(

@@ -427,7 +427,7 @@ class _FakeSourceRuntime:
                 create_parser_normalized_output_row(
                     artifact=artifact,
                     row_id=f"{source_family}-row-001",
-                    status=ParserNormalizedOutputRowStatus.DECLARED,
+                    status=ParserNormalizedOutputRowStatus.VALIDATED,
                     normalized_fields={
                         "source_document_id": f"{source_family}-artifact",
                         "source_year": 2024,

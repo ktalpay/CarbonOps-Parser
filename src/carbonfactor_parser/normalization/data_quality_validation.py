@@ -106,7 +106,7 @@ class DataQualityDiagnostic:
     def __repr__(self) -> str:
         safe_context = tuple(
             (
-                REDACTED_DIAGNOSTIC_VALUE if _is_sensitive_field(key) else key,
+                key,
                 _repr_safe_diagnostic_value(value),
             )
             for key, value in self.context
@@ -550,11 +550,7 @@ def _repr_safe_diagnostic_value(value: object) -> object:
         if all(isinstance(item, tuple) and len(item) == 2 for item in value):
             return tuple(
                 (
-                    (
-                        REDACTED_DIAGNOSTIC_VALUE
-                        if _is_sensitive_field(str(item[0]))
-                        else item[0]
-                    ),
+                    item[0],
                     _repr_safe_diagnostic_value(item[1]),
                 )
                 for item in value

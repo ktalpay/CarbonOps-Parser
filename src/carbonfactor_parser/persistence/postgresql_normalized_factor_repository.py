@@ -261,8 +261,21 @@ def _map_row(
     row: ParserNormalizedOutputRow,
     position: int,
 ) -> tuple[_InsertRecord | None, tuple[PostgreSQLNormalizedFactorInsertIssue, ...]]:
+    from carbonfactor_parser.parsers.normalized_output_row_contract import (
+        ParserNormalizedOutputRowStatus,
+    )
+
     fields = dict(row.normalized_fields)
     issues: list[PostgreSQLNormalizedFactorInsertIssue] = []
+    if row.status is not ParserNormalizedOutputRowStatus.VALIDATED:
+        issues.append(
+            PostgreSQLNormalizedFactorInsertIssue(
+                code="POSTGRESQL_NORMALIZED_FACTOR_INVALID_ROW_STATUS",
+                message="normalized factor row status must be validated before insert.",
+                field_name=f"rows[{position}].status",
+            ),
+        )
+
     factor_value, factor_value_issue = _required_decimal(
         fields,
         ("factor_value", "value"),
