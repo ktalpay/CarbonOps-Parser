@@ -168,6 +168,14 @@ from carbonfactor_parser.persistence.postgresql_persistence_preview import (
     PostgreSQLPersistencePreviewStatus,
     build_postgresql_persistence_preview,
 )
+from carbonfactor_parser.persistence.postgresql_normalized_factor_repository import (
+    NORMALIZED_FACTOR_RECORDS_TABLE_NAME,
+    PostgreSQLNormalizedFactorInsertIssue,
+    PostgreSQLNormalizedFactorInsertStatus,
+    PostgreSQLNormalizedFactorInsertSummary,
+    PostgreSQLNormalizedFactorRuntimeRepository,
+    insert_postgresql_normalized_factor_records,
+)
 from carbonfactor_parser.persistence.postgresql_psycopg_session_adapter import (
     PsycopgPostgreSQLSessionAdapter,
     PsycopgPostgreSQLSessionAdapterBoundaryResult,
@@ -247,6 +255,7 @@ __all__ = (
     "PersistenceRepository",
     "PersistenceResult",
     "PersistenceResultStatus",
+    "NORMALIZED_FACTOR_RECORDS_TABLE_NAME",
     "ParsedFactorPersistenceCommand",
     "ParsedFactorPersistenceIssue",
     "ParsedFactorPersistenceStatus",
@@ -301,6 +310,10 @@ __all__ = (
     "PostgreSQLIdempotencyConflictStrategy",
     "PostgreSQLIdempotencyConflictStrategyDescription",
     "PostgreSQLIdempotencyRequirement",
+    "PostgreSQLNormalizedFactorInsertIssue",
+    "PostgreSQLNormalizedFactorInsertStatus",
+    "PostgreSQLNormalizedFactorInsertSummary",
+    "PostgreSQLNormalizedFactorRuntimeRepository",
     "PostgreSQLPartialSuccessPolicy",
     "PostgreSQLPersistenceColumn",
     "PostgreSQLPersistenceOptions",
@@ -397,6 +410,7 @@ __all__ = (
     "evaluate_postgresql_repository_runtime_safety_gate",
     "evaluate_postgresql_integration_test_opt_in_config",
     "get_normalized_record_postgresql_schema",
+    "insert_postgresql_normalized_factor_records",
     "render_postgresql_ddl_preview",
     "persist_parsed_factor_records",
     "should_skip_postgresql_integration_tests",
