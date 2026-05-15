@@ -481,7 +481,9 @@ def _safe_text_or_none(value: object) -> str | None:
 
 
 def _redact_sensitive_text(value: str) -> str:
-    without_userinfo = _redact_uri_userinfo(_redact_uri_userinfo_pattern(value))
+    without_userinfo = _redact_uri_userinfo(
+        _redact_bare_userinfo_pattern(_redact_uri_userinfo_pattern(value))
+    )
     return _SENSITIVE_KEY_VALUE_PATTERN.sub(
         lambda match: f"{match.group(1)}={REDACTED_DIAGNOSTIC_VALUE}",
         without_userinfo,
@@ -519,6 +521,14 @@ def _redact_uri_userinfo_pattern(value: str) -> str:
     )
 
 
+def _redact_bare_userinfo_pattern(value: str) -> str:
+    return re.sub(
+        r"(?<![\w.-])([^\s:/?#@]+):([^\s/@?#]+)@([^\s/?#]+)",
+        lambda match: f"{REDACTED_DIAGNOSTIC_VALUE}@{match.group(3)}",
+        value,
+    )
+
+
 def _safe_context(
     context: Mapping[str, object] | None,
 ) -> tuple[tuple[str, object], ...]:
@@ -542,7 +552,9 @@ def _safe_diagnostic_value(field_name: str, value: object) -> object:
         return REDACTED_DIAGNOSTIC_VALUE if value is not None else None
     if isinstance(value, str):
         return _safe_text_or_none(value)
-    return value
+    if value is None or isinstance(value, bool | int | float):
+        return value
+    return _redact_sensitive_text(str(value))
 
 
 def _repr_safe_diagnostic_value(value: object) -> object:
@@ -560,7 +572,9 @@ def _repr_safe_diagnostic_value(value: object) -> object:
         return tuple(_repr_safe_diagnostic_value(item) for item in value)
     if isinstance(value, str):
         return _safe_text_or_none(value)
-    return value
+    if value is None or isinstance(value, bool | int | float | Enum):
+        return value
+    return _redact_sensitive_text(str(value))
 
 
 def _is_sensitive_field(field_name: str) -> bool:

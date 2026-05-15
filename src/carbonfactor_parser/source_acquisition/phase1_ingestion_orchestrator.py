@@ -430,7 +430,7 @@ def _run_source_family(
             else None
         ),
     )
-    if parsed_factor_persist.status is not ParsedFactorPersistenceStatus.DECLARED:
+    if parsed_factor_persist.status is ParsedFactorPersistenceStatus.FAILED_VALIDATION:
         return _failed_family(
             source_family,
             Phase1IngestionFamilyStatus.FAILED_PARSED_FACTOR_PERSISTENCE,
