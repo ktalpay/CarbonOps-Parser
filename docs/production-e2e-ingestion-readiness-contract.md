@@ -3,6 +3,10 @@
 This document defines the production end-to-end ingestion readiness contract for
 CarbonOps-Parser.
 
+PH-018 supersedes any earlier test-harness-oriented production-ready
+interpretation. The authoritative production-ready definition is
+[PH-018 Real Production-Ready Ingestion Contract](ph-018-real-production-ready-ingestion-contract.md).
+
 It is documentation only. It does not implement runtime code, call live
 endpoints, execute database operations, create credentials, download source
 files, parse real upstream documents, validate factor correctness, or claim

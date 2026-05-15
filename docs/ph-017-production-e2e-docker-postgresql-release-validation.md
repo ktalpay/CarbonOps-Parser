@@ -1,5 +1,10 @@
 # PH-017 Production E2E Docker PostgreSQL Release Validation
 
+PH-018 supersedes the production-ready interpretation in this PH-017 review.
+The PH-017 evidence remains useful Docker PostgreSQL test-harness validation,
+but it is not sufficient for the real production-ready definition documented in
+[PH-018 Real Production-Ready Ingestion Contract](ph-018-real-production-ready-ingestion-contract.md).
+
 ## Verdict
 
 production-ready with accepted risks

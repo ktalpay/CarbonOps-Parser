@@ -2,6 +2,11 @@
 
 CarbonOps-Parser uses PostgreSQL for Phase 1. The schema contract separates shared ingestion metadata from source-specific master/detail records.
 
+PH-018 is the authoritative production-ready table contract for source-specific
+master/detail persistence:
+[PH-018 Real Production-Ready Ingestion Contract](ph-018-real-production-ready-ingestion-contract.md).
+The model below remains conceptual background where it differs from PH-018.
+
 The contract in this document is intentionally conceptual. The first SQL script should implement these table responsibilities without adding parser logic or runtime behavior to the documentation task that defines the contract.
 
 ## Design Rules
