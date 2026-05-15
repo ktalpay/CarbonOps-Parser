@@ -289,6 +289,24 @@ def test_direct_diagnostic_repr_redacts_sensitive_message_text() -> None:
     assert "postgresql://[REDACTED]@example.invalid/db?password=[REDACTED]" in rendered
 
 
+def test_direct_diagnostic_repr_redacts_nested_mapping_context() -> None:
+    sensitive_uri = "postgresql://carbonops:p@ssw0rd@example.invalid/db?password=raw"
+
+    diagnostic = DataQualityDiagnostic(
+        code="SAFE_CONTEXT",
+        message="safe context diagnostic",
+        severity=DataQualityValidationSeverity.INFO,
+        check=DataQualityValidationCheck.STRUCTURE,
+        context=(("nested", {"password": "raw-secret", "uri": sensitive_uri}),),
+    )
+
+    rendered = repr(diagnostic)
+
+    assert "p@ssw0rd" not in rendered
+    assert "password=raw" not in rendered
+    assert "raw-secret" not in rendered
+
+
 def test_valid_factor_output_has_no_diagnostics() -> None:
     result = validate_normalized_factor_output(
         NormalizationResult(records=(_record(),))

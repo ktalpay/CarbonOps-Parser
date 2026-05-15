@@ -429,12 +429,16 @@ class _FakeSourceRuntime:
                     row_id=f"{source_family}-row-001",
                     status=ParserNormalizedOutputRowStatus.VALIDATED,
                     normalized_fields={
+                        "source_family": source_family,
+                        "source_id": source_family,
                         "source_document_id": f"{source_family}-artifact",
                         "source_year": 2024,
                         "source_version": "fixture",
                         "factor_id": f"{source_family}-factor",
+                        "factor_name": f"{source_family} factor",
                         "factor_value": Decimal("1.0"),
                         "factor_unit": "kg CO2e",
+                        "unit": "kg CO2e",
                     },
                 ),
             )

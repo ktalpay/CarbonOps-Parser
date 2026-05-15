@@ -237,6 +237,8 @@ def _batch(
         reporting_year=2024,
     )
     fields = {
+        "source_family": "defra_desnz",
+        "source_id": "defra_desnz",
         "source_year": 2024,
         "source_version": "conversion-factors-2024",
         "source_checksum_sha256": "a" * 64,
@@ -245,6 +247,7 @@ def _batch(
         "factor_name": "Electricity generated",
         "factor_value": Decimal("0.20705"),
         "factor_unit": "kWh",
+        "unit": "kWh",
         "run_id": "local-only-run-001",
     }
     if normalized_fields is not None:

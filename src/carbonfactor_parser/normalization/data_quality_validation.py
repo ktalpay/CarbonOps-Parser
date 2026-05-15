@@ -558,6 +558,16 @@ def _safe_diagnostic_value(field_name: str, value: object) -> object:
 
 
 def _repr_safe_diagnostic_value(value: object) -> object:
+    if isinstance(value, Mapping):
+        return tuple(
+            (
+                str(key),
+                _safe_diagnostic_value(str(key), item)
+                if _is_sensitive_field(str(key))
+                else _repr_safe_diagnostic_value(item),
+            )
+            for key, item in sorted(value.items(), key=lambda item: str(item[0]))
+        )
     if isinstance(value, tuple):
         if all(isinstance(item, tuple) and len(item) == 2 for item in value):
             return tuple(
