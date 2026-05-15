@@ -246,6 +246,32 @@ def test_uri_password_with_at_sign_is_redacted_from_diagnostic_repr() -> None:
     )
 
 
+def test_sensitive_dsn_fields_are_redacted_from_diagnostic_repr() -> None:
+    sensitive_uri = "postgresql://carbonops:p@ssw0rd@example.invalid/db"
+
+    diagnostic = create_data_quality_diagnostic(
+        code="SAFE_CONTEXT",
+        message=f"failed dsn={sensitive_uri} connection_string={sensitive_uri}",
+        severity=DataQualityValidationSeverity.INFO,
+        check=DataQualityValidationCheck.STRUCTURE,
+        context={
+            "dsn": sensitive_uri,
+            "connection_string": sensitive_uri,
+            "passwd_value": "raw-secret",
+            "pwd_value": "raw-secret",
+        },
+    )
+
+    rendered = repr(diagnostic)
+
+    assert "p@ssw0rd" not in rendered
+    assert "raw-secret" not in rendered
+    assert "dsn=[REDACTED]" in rendered
+    assert "connection_string=[REDACTED]" in rendered
+    assert dict(diagnostic.context)["dsn"] == REDACTED_DIAGNOSTIC_VALUE
+    assert dict(diagnostic.context)["connection_string"] == REDACTED_DIAGNOSTIC_VALUE
+
+
 def test_direct_diagnostic_repr_redacts_sensitive_message_text() -> None:
     sensitive_uri = "postgresql://carbonops:p@ssw0rd@example.invalid/db?password=raw"
 

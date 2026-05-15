@@ -43,14 +43,18 @@ _PROVENANCE_FIELD_NAMES = (
 _SENSITIVE_FIELD_TOKENS = (
     "api_key",
     "authorization",
+    "connection_string",
     "credential",
+    "dsn",
+    "passwd",
     "password",
+    "pwd",
     "secret",
     "token",
 )
 
 _SENSITIVE_KEY_VALUE_PATTERN = re.compile(
-    r"(?i)\b(api[_-]?key|authorization|credential|password|secret|token)\s*[:=]\s*([^\s&;,]+)",
+    r"(?i)\b(api[_-]?key|authorization|connection[_-]?string|credential|dsn|passwd|password|pwd|secret|token)\s*[:=]\s*([^\s&;,]+)",
 )
 
 
