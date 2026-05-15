@@ -561,7 +561,7 @@ def _repr_safe_diagnostic_value(value: object) -> object:
     if isinstance(value, Mapping):
         return tuple(
             (
-                str(key),
+                _repr_safe_context_key(str(key)),
                 _safe_diagnostic_value(str(key), item)
                 if _is_sensitive_field(str(key))
                 else _repr_safe_diagnostic_value(item),
@@ -572,7 +572,7 @@ def _repr_safe_diagnostic_value(value: object) -> object:
         if all(isinstance(item, tuple) and len(item) == 2 for item in value):
             return tuple(
                 (
-                    item[0],
+                    _repr_safe_context_key(str(item[0])),
                     _repr_safe_diagnostic_value(item[1]),
                 )
                 for item in value
@@ -590,6 +590,25 @@ def _repr_safe_diagnostic_value(value: object) -> object:
 def _is_sensitive_field(field_name: str) -> bool:
     normalized = field_name.lower()
     return any(token in normalized for token in _SENSITIVE_FIELD_TOKENS)
+
+
+def _repr_safe_context_key(field_name: str) -> str:
+    normalized = field_name.lower()
+    if any(
+        token in normalized
+        for token in (
+            "api_key",
+            "authorization",
+            "credential",
+            "passwd",
+            "password",
+            "pwd",
+            "secret",
+            "token",
+        )
+    ):
+        return REDACTED_DIAGNOSTIC_VALUE
+    return field_name
 
 
 def _context_value(diagnostic: DataQualityDiagnostic, key: str) -> object:
