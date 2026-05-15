@@ -224,8 +224,20 @@ public sealed record SourceOnboardingRegistry
         return registry;
     }
 
-    public static IReadOnlyList<SourceOnboardingRegistryEntry> ListEntries(SourceOnboardingRegistry? registry = null) =>
-        (registry ?? CreatePhase2SourceOnboardingRegistry()).Entries;
+    public static IReadOnlyList<SourceOnboardingRegistryEntry> ListEntries(SourceOnboardingRegistry? registry = null)
+    {
+        var activeRegistry = registry ?? CreatePhase2SourceOnboardingRegistry();
+        var validation = activeRegistry.Validate();
+
+        if (!validation.IsValid)
+        {
+            throw new ArgumentException(
+                $"Source onboarding registry is invalid: {string.Join("; ", validation.Errors)}",
+                nameof(registry));
+        }
+
+        return activeRegistry.Entries;
+    }
 
     public static bool TryGetBySourceFamily(
         string sourceFamily,

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import FrozenInstanceError, replace
 import importlib
+import json
+from pathlib import Path
 import sys
 
 import pytest
@@ -22,6 +24,9 @@ from carbonfactor_parser.source_acquisition.source_onboarding_registry_contract 
     list_source_onboarding_entries,
     validate_source_onboarding_registry,
 )
+from carbonfactor_parser.parsers.adapter_registry_contract import (
+    create_phase1_parser_adapter_registry,
+)
 
 
 EXPECTED_PHASE1_SOURCE_FAMILIES = (
@@ -39,6 +44,10 @@ BANNED_RUNTIME_MODULE_PREFIXES = (
     "boto3",
     "httpx",
     "urllib3",
+)
+PARITY_EXPECTATIONS_PATH = (
+    Path(__file__).parent
+    / "fixtures/parity/source_onboarding_registry_expectations.json"
 )
 
 
@@ -73,6 +82,36 @@ def test_phase2_source_onboarding_registry_represents_future_metadata() -> None:
             "expected_format",
         )
         assert entry.documents[0].source_reference.startswith("discovery://")
+
+
+def test_phase2_source_onboarding_registry_matches_shared_parity_expectations() -> None:
+    expectations = json.loads(PARITY_EXPECTATIONS_PATH.read_text())
+    registry = create_phase2_source_onboarding_registry()
+
+    assert _registry_to_wire_snapshot(registry) == {
+        "phase2_source_families": expectations["phase2_source_families"],
+        "entries": expectations["entries"],
+    }
+    assert expectations["accepted_asymmetries"] == [
+        "Python validation raises TypeError or ValueError for invalid registries; "
+        ".NET validation returns ContractValidationResult errors and lookup helpers "
+        "throw ArgumentException when an invalid custom registry is supplied."
+    ]
+
+
+def test_phase2_source_onboarding_parser_keys_align_with_phase1_registry() -> None:
+    onboarding_registry = create_phase2_source_onboarding_registry()
+    parser_registry = create_phase1_parser_adapter_registry()
+    parser_keys_by_source_family = {
+        descriptor.source_family: descriptor.parser_key
+        for descriptor in parser_registry.descriptors
+    }
+
+    assert parser_keys_by_source_family == PHASE2_ONBOARDING_PARSER_KEYS_BY_SOURCE_FAMILY
+    for entry in onboarding_registry.entries:
+        assert entry.parser_capability.parser_key == (
+            parser_keys_by_source_family[entry.source_family]
+        )
 
 
 def test_phase2_source_onboarding_registry_is_runtime_safe_by_default() -> None:
@@ -164,11 +203,23 @@ def test_source_onboarding_registry_deterministic_ordering_is_enforced() -> None
     reordered = SourceOnboardingRegistry(
         entries=(registry.entries[1], registry.entries[0], registry.entries[2]),
     )
+    mixed_source_ids = SourceOnboardingRegistry(
+        entries=(
+            _valid_entry("z_custom_source_id", source_family="ghg_protocol"),
+            _valid_entry("a_custom_source_id", source_family="custom_source_family"),
+        ),
+    )
+    mixed_source_ids_reordered = SourceOnboardingRegistry(
+        entries=tuple(reversed(mixed_source_ids.entries)),
+    )
 
     assert create_phase2_source_onboarding_registry() == registry
     assert list_source_onboarding_entries(registry) == registry.entries
+    assert validate_source_onboarding_registry(mixed_source_ids) == mixed_source_ids
     with pytest.raises(ValueError, match="Phase 1 source order"):
         validate_source_onboarding_registry(reordered)
+    with pytest.raises(ValueError, match="Phase 1 source order"):
+        validate_source_onboarding_registry(mixed_source_ids_reordered)
 
 
 def test_source_onboarding_registry_lookup_is_deterministic() -> None:
@@ -182,6 +233,19 @@ def test_source_onboarding_registry_lookup_is_deterministic() -> None:
         assert entry.source_family == source_family
 
     assert get_source_onboarding_entry("unknown_source", registry) is None
+
+
+def test_source_onboarding_registry_lookup_rejects_invalid_custom_registry() -> None:
+    entry = _valid_entry("duplicate_registry_source")
+    registry = SourceOnboardingRegistry(
+        entries=(
+            entry,
+            replace(entry, source_family="duplicate_registry_source_two"),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="Duplicate source_id found"):
+        get_source_onboarding_entry("duplicate_registry_source", registry)
 
 
 def test_source_onboarding_registry_records_are_immutable() -> None:
@@ -238,11 +302,12 @@ def test_source_onboarding_registry_import_is_runtime_passive(
 def _valid_entry(
     source_id: str,
     *,
+    source_family: str | None = None,
     documents: tuple[SourceOnboardingDocument, ...] | None = None,
 ) -> SourceOnboardingRegistryEntry:
     return SourceOnboardingRegistryEntry(
         source_id=source_id,
-        source_family=source_id,
+        source_family=source_family or source_id,
         display_name="New Registry Source",
         documents=documents or (_valid_document(f"{source_id}_document"),),
         discovery_strategy=SourceOnboardingDiscoveryStrategy.SOURCE_SPECIFIC_DISCOVERY,
@@ -267,6 +332,64 @@ def _valid_entry(
             safety_notes="contract metadata only",
         ),
     )
+
+
+def _registry_to_wire_snapshot(registry: SourceOnboardingRegistry) -> dict[str, object]:
+    return {
+        "phase2_source_families": list(PHASE2_ONBOARDING_SOURCE_FAMILIES),
+        "entries": [
+            {
+                "source_id": entry.source_id,
+                "source_family": entry.source_family,
+                "display_name": entry.display_name,
+                "documents": [
+                    {
+                        "document_id": document.document_id,
+                        "display_name": document.display_name,
+                        "source_reference": document.source_reference,
+                        "expected_format": document.expected_format,
+                        "required": document.required,
+                    }
+                    for document in entry.documents
+                ],
+                "discovery_strategy": entry.discovery_strategy.value,
+                "parser_capability": {
+                    "parser_key": entry.parser_capability.parser_key,
+                    "parser_source_format": entry.parser_capability.parser_source_format,
+                    "supports_parser_execution": (
+                        entry.parser_capability.supports_parser_execution
+                    ),
+                    "capability_notes": entry.parser_capability.capability_notes,
+                },
+                "validation_expectations": {
+                    "required_document_fields": list(
+                        entry.validation_expectations.required_document_fields
+                    ),
+                    "checksum_required": (
+                        entry.validation_expectations.checksum_required
+                    ),
+                    "schema_validation_required": (
+                        entry.validation_expectations.schema_validation_required
+                    ),
+                    "validation_notes": (
+                        entry.validation_expectations.validation_notes
+                    ),
+                },
+                "update_cadence": entry.update_cadence.value,
+                "runtime_safety": {
+                    "allows_network_calls": entry.runtime_safety.allows_network_calls,
+                    "allows_file_reads": entry.runtime_safety.allows_file_reads,
+                    "allows_database_writes": (
+                        entry.runtime_safety.allows_database_writes
+                    ),
+                    "requires_credentials": entry.runtime_safety.requires_credentials,
+                    "safety_notes": entry.runtime_safety.safety_notes,
+                },
+                "enabled": entry.enabled,
+            }
+            for entry in registry.entries
+        ],
+    }
 
 
 def _valid_document(document_id: str) -> SourceOnboardingDocument:

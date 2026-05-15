@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using CarbonOps.Parser.Contracts;
 
 namespace CarbonOps.Parser.Contracts.Tests;
@@ -38,6 +39,77 @@ public sealed class SourceOnboardingRegistryContractTests
                 ["document_id", "display_name", "source_reference", "expected_format"],
                 entry.ValidationExpectations.RequiredDocumentFields);
             Assert.StartsWith($"discovery://{entry.SourceId}/", entry.Documents[0].SourceReference, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void Phase2SourceOnboardingRegistryMatchesSharedParityExpectations()
+    {
+        using var expectations = LoadParityExpectations();
+        var root = expectations.RootElement;
+        var registry = SourceOnboardingRegistry.CreatePhase2SourceOnboardingRegistry();
+        var expectedFamilies = JsonStringArray(root.GetProperty("phase2_source_families"));
+        var expectedEntries = root.GetProperty("entries").EnumerateArray().ToArray();
+
+        Assert.Equal(expectedFamilies, SourceOnboardingRegistry.Phase2OnboardingSourceFamilies);
+        Assert.Equal(expectedEntries.Length, registry.Entries.Count);
+
+        for (var index = 0; index < expectedEntries.Length; index++)
+        {
+            var expected = expectedEntries[index];
+            var actual = registry.Entries[index];
+
+            Assert.Equal(expected.GetProperty("source_id").GetString(), actual.SourceId);
+            Assert.Equal(expected.GetProperty("source_family").GetString(), actual.SourceFamily);
+            Assert.Equal(expected.GetProperty("display_name").GetString(), actual.DisplayName);
+            Assert.Equal(expected.GetProperty("discovery_strategy").GetString(), DiscoveryStrategyWireName(actual.DiscoveryStrategy));
+            Assert.Equal(expected.GetProperty("update_cadence").GetString(), UpdateCadenceWireName(actual.UpdateCadence));
+            Assert.Equal(expected.GetProperty("enabled").GetBoolean(), actual.Enabled);
+
+            var expectedDocument = expected.GetProperty("documents")[0];
+            Assert.Equal(expectedDocument.GetProperty("document_id").GetString(), actual.Documents[0].DocumentId);
+            Assert.Equal(expectedDocument.GetProperty("display_name").GetString(), actual.Documents[0].DisplayName);
+            Assert.Equal(expectedDocument.GetProperty("source_reference").GetString(), actual.Documents[0].SourceReference);
+            Assert.Equal(expectedDocument.GetProperty("expected_format").GetString(), actual.Documents[0].ExpectedFormat);
+            Assert.Equal(expectedDocument.GetProperty("required").GetBoolean(), actual.Documents[0].Required);
+
+            var expectedCapability = expected.GetProperty("parser_capability");
+            Assert.Equal(expectedCapability.GetProperty("parser_key").GetString(), actual.ParserCapability.ParserKey.Value);
+            Assert.Equal(expectedCapability.GetProperty("parser_source_format").GetString(), actual.ParserCapability.ParserSourceFormat.ToWireName());
+            Assert.Equal(expectedCapability.GetProperty("supports_parser_execution").GetBoolean(), actual.ParserCapability.SupportsParserExecution);
+            Assert.Equal(expectedCapability.GetProperty("capability_notes").GetString(), actual.ParserCapability.CapabilityNotes);
+
+            var expectedValidation = expected.GetProperty("validation_expectations");
+            Assert.Equal(JsonStringArray(expectedValidation.GetProperty("required_document_fields")), actual.ValidationExpectations.RequiredDocumentFields);
+            Assert.Equal(expectedValidation.GetProperty("checksum_required").GetBoolean(), actual.ValidationExpectations.ChecksumRequired);
+            Assert.Equal(expectedValidation.GetProperty("schema_validation_required").GetBoolean(), actual.ValidationExpectations.SchemaValidationRequired);
+            Assert.Equal(expectedValidation.GetProperty("validation_notes").GetString(), actual.ValidationExpectations.ValidationNotes);
+
+            var expectedSafety = expected.GetProperty("runtime_safety");
+            Assert.Equal(expectedSafety.GetProperty("allows_network_calls").GetBoolean(), actual.RuntimeSafety.AllowsNetworkCalls);
+            Assert.Equal(expectedSafety.GetProperty("allows_file_reads").GetBoolean(), actual.RuntimeSafety.AllowsFileReads);
+            Assert.Equal(expectedSafety.GetProperty("allows_database_writes").GetBoolean(), actual.RuntimeSafety.AllowsDatabaseWrites);
+            Assert.Equal(expectedSafety.GetProperty("requires_credentials").GetBoolean(), actual.RuntimeSafety.RequiresCredentials);
+            Assert.Equal(expectedSafety.GetProperty("safety_notes").GetString(), actual.RuntimeSafety.SafetyNotes);
+        }
+
+        Assert.Equal(
+            [
+                "Python validation raises TypeError or ValueError for invalid registries; .NET validation returns ContractValidationResult errors and lookup helpers throw ArgumentException when an invalid custom registry is supplied.",
+            ],
+            JsonStringArray(root.GetProperty("accepted_asymmetries")));
+    }
+
+    [Fact]
+    public void Phase2SourceOnboardingParserKeysAlignWithPhaseOneDescriptorRegistry()
+    {
+        var registry = SourceOnboardingRegistry.CreatePhase2SourceOnboardingRegistry();
+
+        foreach (var entry in registry.Entries)
+        {
+            Assert.True(ParserAdapterDescriptorRegistry.TryGetBySourceFamily(ParseSourceFamily(entry.SourceFamily), out var descriptor));
+            Assert.NotNull(descriptor);
+            Assert.Equal(descriptor!.ParserKey, entry.ParserCapability.ParserKey);
         }
     }
 
@@ -184,12 +256,22 @@ public sealed class SourceOnboardingRegistryContractTests
                         ValidDocument("a_document"),
                     ]),
             ]);
+        var mixedSourceIds = new SourceOnboardingRegistry(
+            [
+                ValidEntry("z_custom_source_id", "ghg_protocol"),
+                ValidEntry("a_custom_source_id", "custom_source_family"),
+            ]);
+        var mixedSourceIdsReordered = new SourceOnboardingRegistry(mixedSourceIds.Entries.Reverse());
 
         Assert.Equal(SourceOnboardingRegistry.Phase2OnboardingSourceFamilies, registry.Entries.Select(entry => entry.SourceFamily));
         Assert.Equal(registry.Entries, SourceOnboardingRegistry.ListEntries(registry));
+        Assert.True(mixedSourceIds.Validate().IsValid);
         Assert.Contains(
             "Entries must follow Phase 1 source order, then SourceId order.",
             reordered.Validate().Errors);
+        Assert.Contains(
+            "Entries must follow Phase 1 source order, then SourceId order.",
+            mixedSourceIdsReordered.Validate().Errors);
         Assert.Contains(
             "Documents must be ordered by DocumentId for SourceId 'unordered_documents'.",
             unorderedDocuments.Validate().Errors);
@@ -210,6 +292,22 @@ public sealed class SourceOnboardingRegistryContractTests
 
         Assert.False(SourceOnboardingRegistry.TryGetBySourceFamily("unknown_source", out var missing, registry));
         Assert.Null(missing);
+    }
+
+    [Fact]
+    public void LookupRejectsInvalidCustomRegistry()
+    {
+        var entry = ValidEntry("duplicate_registry_source");
+        var registry = new SourceOnboardingRegistry(
+            [
+                entry,
+                ValidEntry("duplicate_registry_source", "duplicate_registry_source_two"),
+            ]);
+
+        var exception = Assert.Throws<ArgumentException>(() =>
+            SourceOnboardingRegistry.TryGetBySourceFamily("duplicate_registry_source", out _, registry));
+
+        Assert.Contains("Duplicate SourceId found: duplicate_registry_source", exception.Message);
     }
 
     [Fact]
@@ -294,6 +392,38 @@ public sealed class SourceOnboardingRegistryContractTests
             $"discovery://{documentId}",
             "discovery");
 
+    private static JsonDocument LoadParityExpectations() =>
+        JsonDocument.Parse(File.ReadAllText(Path.Combine(ParityFixtureDirectory(), "source_onboarding_registry_expectations.json")));
+
+    private static IReadOnlyList<string> JsonStringArray(JsonElement array) =>
+        array.EnumerateArray().Select(item => item.GetString() ?? string.Empty).ToArray();
+
+    private static string DiscoveryStrategyWireName(SourceOnboardingDiscoveryStrategy strategy) =>
+        strategy switch
+        {
+            SourceOnboardingDiscoveryStrategy.DeclaredReference => "declared_reference",
+            SourceOnboardingDiscoveryStrategy.SourceSpecificDiscovery => "source_specific_discovery",
+            _ => throw new ArgumentOutOfRangeException(nameof(strategy), strategy, "Unknown discovery strategy."),
+        };
+
+    private static string UpdateCadenceWireName(SourceOnboardingUpdateCadence cadence) =>
+        cadence switch
+        {
+            SourceOnboardingUpdateCadence.Unknown => "unknown",
+            SourceOnboardingUpdateCadence.Annual => "annual",
+            SourceOnboardingUpdateCadence.Periodic => "periodic",
+            _ => throw new ArgumentOutOfRangeException(nameof(cadence), cadence, "Unknown update cadence."),
+        };
+
+    private static SourceFamily ParseSourceFamily(string sourceFamily) =>
+        sourceFamily switch
+        {
+            "ghg_protocol" => SourceFamily.GhgProtocol,
+            "defra_desnz" => SourceFamily.DefraDesnz,
+            "ipcc_efdb" => SourceFamily.IpccEfdb,
+            _ => throw new ArgumentOutOfRangeException(nameof(sourceFamily), sourceFamily, "Unknown source family."),
+        };
+
     private static ParserKey ExpectedParserKey(string sourceFamily) =>
         sourceFamily switch
         {
@@ -302,4 +432,21 @@ public sealed class SourceOnboardingRegistryContractTests
             "ipcc_efdb" => ParserSelectionRegistry.GetParserKey(SourceFamily.IpccEfdb),
             _ => throw new ArgumentOutOfRangeException(nameof(sourceFamily), sourceFamily, "Unknown source family."),
         };
+
+    private static string ParityFixtureDirectory()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var fixtureDirectory = Path.Combine(directory.FullName, "tests", "fixtures", "parity");
+            if (Directory.Exists(fixtureDirectory))
+            {
+                return fixtureDirectory;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate parity fixture directory.");
+    }
 }
