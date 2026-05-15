@@ -39,7 +39,7 @@ def test_defra_desnz_manifest_example_uses_artificial_fixture_directory() -> Non
 def test_defra_desnz_manifest_example_has_expected_document_count() -> None:
     manifest = build_defra_desnz_fixture_manifest_example()
 
-    assert manifest["document_count"] == 2
+    assert manifest["document_count"] == 4
     assert manifest["warnings"] == ()
 
 
@@ -57,7 +57,9 @@ def test_defra_desnz_manifest_example_derives_file_names_and_extensions() -> Non
         (entry["file_name"], entry["file_extension"])
         for entry in manifest["entries"]
     ] == [
+        ("defra_desnz_malformed_factors.csv", ".csv"),
         ("defra_desnz_metadata.json", ".json"),
+        ("defra_desnz_normalized_factors.csv", ".csv"),
         ("defra_desnz_sample_factors.csv", ".csv"),
     ]
 
@@ -68,7 +70,9 @@ def test_defra_desnz_manifest_example_keeps_source_metadata() -> None:
     assert manifest["source_family"] == SourceFamily.DEFRA_DESNZ.value
     assert manifest["source_name"] == "defra_desnz"
     assert [entry["source_name"] for entry in manifest["entries"]] == [
+        "defra_desnz:defra_desnz_malformed_factors.csv",
         "defra_desnz:defra_desnz_metadata.json",
+        "defra_desnz:defra_desnz_normalized_factors.csv",
         "defra_desnz:defra_desnz_sample_factors.csv",
     ]
 

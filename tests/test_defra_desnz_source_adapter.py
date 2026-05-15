@@ -12,6 +12,17 @@ FIXTURE_DIRECTORY = (
     Path(__file__).resolve().parents[0] / "fixtures" / "source_documents" / "defra_desnz"
 )
 
+EXPECTED_FIXTURE_FILE_NAMES = [
+    "defra_desnz_malformed_factors.csv",
+    "defra_desnz_metadata.json",
+    "defra_desnz_normalized_factors.csv",
+    "defra_desnz_sample_factors.csv",
+]
+
+EXPECTED_FIXTURE_SOURCE_NAMES = [
+    f"defra_desnz:{file_name}" for file_name in EXPECTED_FIXTURE_FILE_NAMES
+]
+
 
 def test_defra_desnz_source_adapter_is_importable() -> None:
     adapter = DefraDesnzSourceAdapter(directory_path=FIXTURE_DIRECTORY)
@@ -25,13 +36,11 @@ def test_defra_desnz_source_adapter_discovers_deterministic_fixture_documents() 
     result = adapter.discover()
 
     assert result.warnings == ()
-    assert [document.source_name for document in result.documents] == [
-        "defra_desnz:defra_desnz_metadata.json",
-        "defra_desnz:defra_desnz_sample_factors.csv",
-    ]
+    assert [document.source_name for document in result.documents] == (
+        EXPECTED_FIXTURE_SOURCE_NAMES
+    )
     assert [Path(document.file_reference or "").name for document in result.documents] == [
-        "defra_desnz_metadata.json",
-        "defra_desnz_sample_factors.csv",
+        *EXPECTED_FIXTURE_FILE_NAMES
     ]
 
 
@@ -117,10 +126,10 @@ def test_defra_desnz_source_adapter_metadata_is_consistent() -> None:
     document = adapter.discover().documents[0]
 
     assert document.source_family == SourceFamily.DEFRA_DESNZ
-    assert document.source_name == "defra_desnz:defra_desnz_sample_factors.csv"
+    assert document.source_name == "defra_desnz:defra_desnz_malformed_factors.csv"
     assert document.source_url is None
     assert document.file_reference == (
-        str(FIXTURE_DIRECTORY / "defra_desnz_sample_factors.csv")
+        str(FIXTURE_DIRECTORY / "defra_desnz_malformed_factors.csv")
     )
 
 
@@ -138,7 +147,7 @@ def test_defra_desnz_source_adapter_works_with_summary_helper() -> None:
 
     summary = summarize_source_adapter_result(adapter.discover())
 
-    assert summary.document_count == 2
+    assert summary.document_count == 4
     assert summary.file_extensions == (".csv", ".json")
     assert summary.source_families == (SourceFamily.DEFRA_DESNZ,)
     assert summary.has_documents is True

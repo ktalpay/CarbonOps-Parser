@@ -12,6 +12,7 @@ from carbonfactor_parser.parsers.input_artifact_contract import (
     create_phase1_parser_input_artifact,
 )
 from carbonfactor_parser.parsers.normalized_output_row_contract import (
+    ParserNormalizedOutputRowStatus,
     create_parser_normalized_output_batch,
     create_parser_normalized_output_row,
 )
@@ -104,6 +105,7 @@ def test_writer_maps_normalized_output_batch_with_explicit_source_document() -> 
                 artifact=artifact,
                 row_id="ghg-row-001",
                 source_row_number=2,
+                status=ParserNormalizedOutputRowStatus.VALIDATED,
                 normalized_fields={
                     "source_year": 2024,
                     "source_version": "ghg-2024",
@@ -142,6 +144,7 @@ def test_writer_matches_shared_parity_fixture_for_fallback_persistence_intent() 
                 artifact=artifact,
                 row_id=row_expectation["row_id"],
                 source_row_number=row_expectation["source_row_number"],
+                status=ParserNormalizedOutputRowStatus.VALIDATED,
                 normalized_fields=dict(row_expectation["fields"]),
             ),
         )

@@ -226,6 +226,87 @@ def test_sensitive_values_are_redacted_from_provenance_context() -> None:
     assert "abc123" not in repr(diagnostic)
 
 
+def test_uri_password_with_at_sign_is_redacted_from_diagnostic_repr() -> None:
+    sensitive_uri = "postgresql://carbonops:p@ssw0rd@example.invalid/db?password=raw"
+
+    diagnostic = create_data_quality_diagnostic(
+        code="SAFE_CONTEXT",
+        message="safe context diagnostic",
+        severity=DataQualityValidationSeverity.INFO,
+        check=DataQualityValidationCheck.STRUCTURE,
+        context={"source_reference": sensitive_uri},
+    )
+
+    rendered = repr(diagnostic)
+
+    assert "p@ssw0rd" not in rendered
+    assert "password=raw" not in rendered
+    assert dict(diagnostic.context)["source_reference"] == (
+        "postgresql://[REDACTED]@example.invalid/db?password=[REDACTED]"
+    )
+
+
+def test_sensitive_dsn_fields_are_redacted_from_diagnostic_repr() -> None:
+    sensitive_uri = "postgresql://carbonops:p@ssw0rd@example.invalid/db"
+
+    diagnostic = create_data_quality_diagnostic(
+        code="SAFE_CONTEXT",
+        message=f"failed dsn={sensitive_uri} connection_string={sensitive_uri}",
+        severity=DataQualityValidationSeverity.INFO,
+        check=DataQualityValidationCheck.STRUCTURE,
+        context={
+            "dsn": sensitive_uri,
+            "connection_string": sensitive_uri,
+            "passwd_value": "raw-secret",
+            "pwd_value": "raw-secret",
+        },
+    )
+
+    rendered = repr(diagnostic)
+
+    assert "p@ssw0rd" not in rendered
+    assert "raw-secret" not in rendered
+    assert "dsn=[REDACTED]" in rendered
+    assert "connection_string=[REDACTED]" in rendered
+    assert dict(diagnostic.context)["dsn"] == REDACTED_DIAGNOSTIC_VALUE
+    assert dict(diagnostic.context)["connection_string"] == REDACTED_DIAGNOSTIC_VALUE
+
+
+def test_direct_diagnostic_repr_redacts_sensitive_message_text() -> None:
+    sensitive_uri = "postgresql://carbonops:p@ssw0rd@example.invalid/db?password=raw"
+
+    diagnostic = DataQualityDiagnostic(
+        code="SAFE_CONTEXT",
+        message=f"failed to validate {sensitive_uri}",
+        severity=DataQualityValidationSeverity.INFO,
+        check=DataQualityValidationCheck.STRUCTURE,
+    )
+
+    rendered = repr(diagnostic)
+
+    assert "p@ssw0rd" not in rendered
+    assert "password=raw" not in rendered
+    assert "postgresql://[REDACTED]@example.invalid/db?password=[REDACTED]" in rendered
+
+
+def test_direct_diagnostic_repr_redacts_nested_mapping_context() -> None:
+    sensitive_uri = "postgresql://carbonops:p@ssw0rd@example.invalid/db?password=raw"
+
+    diagnostic = DataQualityDiagnostic(
+        code="SAFE_CONTEXT",
+        message="safe context diagnostic",
+        severity=DataQualityValidationSeverity.INFO,
+        check=DataQualityValidationCheck.STRUCTURE,
+        context=(("nested", {"password": "raw-secret", "uri": sensitive_uri}),),
+    )
+
+    rendered = repr(diagnostic)
+
+    assert "p@ssw0rd" not in rendered
+    assert "password=raw" not in rendered
+    assert "raw-secret" not in rendered
+
+
 def test_valid_factor_output_has_no_diagnostics() -> None:
     result = validate_normalized_factor_output(
         NormalizationResult(records=(_record(),))

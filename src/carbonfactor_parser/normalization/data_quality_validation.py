@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from enum import Enum
 import re
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 from carbonfactor_parser.normalization.contracts import (
     NormalizationResult,
@@ -42,15 +43,18 @@ _PROVENANCE_FIELD_NAMES = (
 _SENSITIVE_FIELD_TOKENS = (
     "api_key",
     "authorization",
+    "connection_string",
     "credential",
+    "dsn",
+    "passwd",
     "password",
+    "pwd",
     "secret",
     "token",
 )
 
-_USERINFO_URI_PATTERN = re.compile(r"//[^/\s:@]+:[^@\s/]+@")
-_SENSITIVE_ASSIGNMENT_PATTERN = re.compile(
-    r"(?i)\b(api[_-]?key|authorization|credential|password|secret|token)=([^\s&;,]+)",
+_SENSITIVE_KEY_VALUE_PATTERN = re.compile(
+    r"(?i)\b(api[_-]?key|authorization|connection[_-]?string|credential|dsn|passwd|password|pwd|secret|token)\s*[:=]\s*([^\s&;,]+)",
 )
 
 
@@ -98,6 +102,43 @@ class DataQualityDiagnostic:
     source_family: str | None = None
     provenance: DataQualityProvenanceContext | None = None
     context: tuple[tuple[str, object], ...] = ()
+
+    def __repr__(self) -> str:
+        safe_context = tuple(
+            (
+                key,
+                _repr_safe_diagnostic_value(value),
+            )
+            for key, value in self.context
+        )
+        safe_provenance = (
+            None
+            if self.provenance is None
+            else DataQualityProvenanceContext(
+                record_id=_repr_safe_diagnostic_value(self.provenance.record_id),
+                source_family=_repr_safe_diagnostic_value(
+                    self.provenance.source_family
+                ),
+                source_id=_repr_safe_diagnostic_value(self.provenance.source_id),
+                source_reference=_repr_safe_diagnostic_value(
+                    self.provenance.source_reference
+                ),
+                row_number=_repr_safe_diagnostic_value(self.provenance.row_number),
+                provenance=_repr_safe_diagnostic_value(self.provenance.provenance),
+                document_id=_repr_safe_diagnostic_value(self.provenance.document_id),
+            )
+        )
+        return (
+            "DataQualityDiagnostic("
+            f"code={_repr_safe_diagnostic_value(self.code)!r}, "
+            f"message={_repr_safe_diagnostic_value(self.message)!r}, "
+            f"severity={self.severity!r}, "
+            f"check={self.check!r}, "
+            f"field_name={_repr_safe_diagnostic_value(self.field_name)!r}, "
+            f"source_family={_repr_safe_diagnostic_value(self.source_family)!r}, "
+            f"provenance={safe_provenance!r}, "
+            f"context={safe_context!r})"
+        )
 
 
 @dataclass(frozen=True)
@@ -436,13 +477,55 @@ def _safe_text_or_none(value: object) -> str | None:
     text = _text_or_none(value)
     if text is None:
         return None
-    without_userinfo = _USERINFO_URI_PATTERN.sub(
-        f"//{REDACTED_DIAGNOSTIC_VALUE}@",
-        text,
+    return _redact_sensitive_text(text)
+
+
+def _redact_sensitive_text(value: str) -> str:
+    without_userinfo = _redact_uri_userinfo(
+        _redact_bare_userinfo_pattern(_redact_uri_userinfo_pattern(value))
     )
-    return _SENSITIVE_ASSIGNMENT_PATTERN.sub(
+    return _SENSITIVE_KEY_VALUE_PATTERN.sub(
         lambda match: f"{match.group(1)}={REDACTED_DIAGNOSTIC_VALUE}",
         without_userinfo,
+    )
+
+
+def _redact_uri_userinfo(value: str) -> str:
+    try:
+        parts = urlsplit(value)
+    except ValueError:
+        return value
+
+    if not parts.scheme or "@" not in parts.netloc:
+        return value
+
+    _, separator, hostinfo = parts.netloc.rpartition("@")
+    if not separator:
+        return value
+    return urlunsplit(
+        (
+            parts.scheme,
+            f"{REDACTED_DIAGNOSTIC_VALUE}@{hostinfo}",
+            parts.path,
+            parts.query,
+            parts.fragment,
+        )
+    )
+
+
+def _redact_uri_userinfo_pattern(value: str) -> str:
+    return re.sub(
+        r"(?i)\b([a-z][a-z0-9+.-]*://)([^\s/?#]*@)",
+        lambda match: f"{match.group(1)}{REDACTED_DIAGNOSTIC_VALUE}@",
+        value,
+    )
+
+
+def _redact_bare_userinfo_pattern(value: str) -> str:
+    return re.sub(
+        r"(?<![\w.-])([^\s:/?#@]+):([^\s/@?#]+)@([^\s/?#]+)",
+        lambda match: f"{REDACTED_DIAGNOSTIC_VALUE}@{match.group(3)}",
+        value,
     )
 
 
@@ -458,10 +541,6 @@ def _safe_context(
 
 
 def _safe_diagnostic_value(field_name: str, value: object) -> object:
-    if _is_sensitive_field(field_name):
-        return REDACTED_DIAGNOSTIC_VALUE if value is not None else None
-    if isinstance(value, str):
-        return _safe_text_or_none(value)
     if isinstance(value, Mapping):
         return tuple(
             (str(key), _safe_diagnostic_value(str(key), item))
@@ -469,12 +548,67 @@ def _safe_diagnostic_value(field_name: str, value: object) -> object:
         )
     if isinstance(value, list | tuple):
         return tuple(_safe_diagnostic_value(field_name, item) for item in value)
-    return value
+    if _is_sensitive_field(field_name):
+        return REDACTED_DIAGNOSTIC_VALUE if value is not None else None
+    if isinstance(value, str):
+        return _safe_text_or_none(value)
+    if value is None or isinstance(value, bool | int | float):
+        return value
+    return _redact_sensitive_text(str(value))
+
+
+def _repr_safe_diagnostic_value(value: object) -> object:
+    if isinstance(value, Mapping):
+        return tuple(
+            (
+                _repr_safe_context_key(str(key)),
+                _safe_diagnostic_value(str(key), item)
+                if _is_sensitive_field(str(key))
+                else _repr_safe_diagnostic_value(item),
+            )
+            for key, item in sorted(value.items(), key=lambda item: str(item[0]))
+        )
+    if isinstance(value, tuple):
+        if all(isinstance(item, tuple) and len(item) == 2 for item in value):
+            return tuple(
+                (
+                    _repr_safe_context_key(str(item[0])),
+                    _repr_safe_diagnostic_value(item[1]),
+                )
+                for item in value
+            )
+        return tuple(_repr_safe_diagnostic_value(item) for item in value)
+    if isinstance(value, list):
+        return tuple(_repr_safe_diagnostic_value(item) for item in value)
+    if isinstance(value, str):
+        return _safe_text_or_none(value)
+    if value is None or isinstance(value, bool | int | float | Enum):
+        return value
+    return _redact_sensitive_text(str(value))
 
 
 def _is_sensitive_field(field_name: str) -> bool:
     normalized = field_name.lower()
     return any(token in normalized for token in _SENSITIVE_FIELD_TOKENS)
+
+
+def _repr_safe_context_key(field_name: str) -> str:
+    normalized = field_name.lower()
+    if any(
+        token in normalized
+        for token in (
+            "api_key",
+            "authorization",
+            "credential",
+            "passwd",
+            "password",
+            "pwd",
+            "secret",
+            "token",
+        )
+    ):
+        return REDACTED_DIAGNOSTIC_VALUE
+    return field_name
 
 
 def _context_value(diagnostic: DataQualityDiagnostic, key: str) -> object:

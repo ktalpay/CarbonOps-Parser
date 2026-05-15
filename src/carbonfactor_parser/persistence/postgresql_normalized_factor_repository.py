@@ -261,8 +261,21 @@ def _map_row(
     row: ParserNormalizedOutputRow,
     position: int,
 ) -> tuple[_InsertRecord | None, tuple[PostgreSQLNormalizedFactorInsertIssue, ...]]:
+    from carbonfactor_parser.parsers.normalized_output_row_contract import (
+        ParserNormalizedOutputRowStatus,
+    )
+
     fields = dict(row.normalized_fields)
     issues: list[PostgreSQLNormalizedFactorInsertIssue] = []
+    if not _is_validated_row_status(row.status, ParserNormalizedOutputRowStatus):
+        issues.append(
+            PostgreSQLNormalizedFactorInsertIssue(
+                code="POSTGRESQL_NORMALIZED_FACTOR_INVALID_ROW_STATUS",
+                message="normalized factor row status must be validated before insert.",
+                field_name=f"rows[{position}].status",
+            ),
+        )
+
     factor_value, factor_value_issue = _required_decimal(
         fields,
         ("factor_value", "value"),
@@ -305,7 +318,7 @@ def _map_row(
     run_id = _text_or_none(_first_field(fields, "run_id", "ingestion_run_id"))
     validation_status = _text_or_none(
         _first_field(fields, "validation_status"),
-    ) or row.status.value
+    ) or _row_status_value(row.status)
     idempotency_key = _idempotency_key(
         row.source_family,
         row.source_key,
@@ -319,7 +332,7 @@ def _map_row(
         "parser_key": row.parser_key,
         "reporting_year": row.reporting_year,
         "source_row_number": row.source_row_number,
-        "status": row.status.value,
+        "status": _row_status_value(row.status),
     }
 
     return (
@@ -418,6 +431,20 @@ def _positive_int_or_none(value: object | None) -> int | None:
     return parsed if parsed > 0 else None
 
 
+def _row_status_value(status: object) -> str:
+    return str(getattr(status, "value", status))
+
+
+def _is_validated_row_status(status: object, status_enum: object) -> bool:
+    validated = getattr(status_enum, "VALIDATED")
+    if isinstance(status, status_enum):
+        return status is validated
+    return (
+        status.__class__.__name__ == status_enum.__name__
+        and getattr(status, "value", None) == getattr(validated, "value", None)
+    )
+
+
 def _json_dumps(value: object) -> str:
     return json.dumps(value, sort_keys=True, default=str, separators=(",", ":"))
 
@@ -451,13 +478,17 @@ def _rollback(connection: object) -> None:
 
 
 def _redact_sensitive_text(value: str) -> str:
-    redacted = _DSN_PATTERN.sub(r"\1//\2:***@", value)
+    redacted = _DSN_PATTERN.sub(r"\1***@", value)
+    redacted = _BARE_USERINFO_PATTERN.sub(r"***@\3", redacted)
     for pattern in _SECRET_PATTERNS:
         redacted = pattern.sub(r"\1=***", redacted)
     return redacted
 
 
-_DSN_PATTERN = re.compile(r"([a-z][a-z0-9+.-]*:)//([^:@/\s]+):([^@/\s]+)@")
+_DSN_PATTERN = re.compile(r"([a-z][a-z0-9+.-]*://)([^\s/?#]*@)")
+_BARE_USERINFO_PATTERN = re.compile(
+    r"(?<![\w.-])([^\s:/?#@]+):([^\s/@?#]+)@([^\s/?#]+)"
+)
 _SECRET_PATTERNS = (
     re.compile(r"(?i)\b(password|passwd|pwd|dsn|connection_string)=([^\s,;]+)"),
 )

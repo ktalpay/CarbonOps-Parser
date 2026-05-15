@@ -36,8 +36,8 @@ def test_artificial_fixture_parser_usage_example_includes_expected_summary() -> 
 
     assert result["source_family"] == "defra_desnz"
     assert result["source_name"] == "fixture_parser_input_mapping"
-    assert result["input_document_count"] == 2
-    assert result["record_count"] == 2
+    assert result["input_document_count"] == 4
+    assert result["record_count"] == 4
     assert result["warning_count"] == 0
     assert result["error_count"] == 0
     assert result["has_records"] is True
@@ -52,10 +52,24 @@ def test_artificial_fixture_parser_usage_example_returns_artificial_records() ->
 
     assert result["records"] == (
         {
+            "record_id": "defra_desnz:defra_desnz_malformed_factors.csv",
+            "file_name": "defra_desnz_malformed_factors.csv",
+            "file_extension": ".csv",
+            "source_label": "defra_desnz:defra_desnz_malformed_factors.csv",
+            "value_label": "artificial-fixture",
+        },
+        {
             "record_id": "defra_desnz:defra_desnz_metadata.json",
             "file_name": "defra_desnz_metadata.json",
             "file_extension": ".json",
             "source_label": "defra_desnz:defra_desnz_metadata.json",
+            "value_label": "artificial-fixture",
+        },
+        {
+            "record_id": "defra_desnz:defra_desnz_normalized_factors.csv",
+            "file_name": "defra_desnz_normalized_factors.csv",
+            "file_extension": ".csv",
+            "source_label": "defra_desnz:defra_desnz_normalized_factors.csv",
             "value_label": "artificial-fixture",
         },
         {
@@ -72,7 +86,7 @@ def test_artificial_fixture_parser_usage_example_uses_artificial_fixture_directo
     result = build_artificial_fixture_parser_usage_example()
 
     assert FIXTURE_DIRECTORY.is_dir()
-    assert result["record_count"] == 2
+    assert result["record_count"] == 4
 
 
 def test_artificial_fixture_parser_usage_example_does_not_open_files(
@@ -85,7 +99,7 @@ def test_artificial_fixture_parser_usage_example_does_not_open_files(
 
     result = build_artificial_fixture_parser_usage_example()
 
-    assert result["record_count"] == 2
+    assert result["record_count"] == 4
 
 
 def test_artificial_fixture_parser_usage_example_avoids_real_schema_fields() -> None:

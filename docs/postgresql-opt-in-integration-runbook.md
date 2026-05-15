@@ -282,7 +282,7 @@ local DSN:
 
 ```bash
 CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1 \
-CARBONOPS_POSTGRESQL_TEST_DSN='postgresql://carbonops:carbonops_local_test@localhost:54329/carbonops_parser_integration_test' \
+CARBONOPS_POSTGRESQL_TEST_DSN='<external test DSN supplied by the runner>' \
 python -m pytest -m postgresql_integration tests/test_postgresql_runtime_year_state.py
 ```
 

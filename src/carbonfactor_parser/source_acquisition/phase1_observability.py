@@ -17,7 +17,7 @@ PHASE1_OPERATIONAL_LOGGER_NAME = "carbonfactor_parser.phase1"
 REDACTED = "<redacted>"
 
 _CHECKSUM_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
-_USERINFO_URI_PATTERN = re.compile(r"//[^/\s:@]+:[^@\s/]+@")
+_USERINFO_URI_PATTERN = re.compile(r"(?i)\b([a-z][a-z0-9+.-]*://)[^\s/?#]*@")
 _SENSITIVE_ASSIGNMENT_PATTERN = re.compile(
     r"(?i)\b(password|passwd|pwd|secret|token|dsn|connection[_-]?string)=([^\s;,]+)",
 )
@@ -289,7 +289,10 @@ def _stable_value(value: Any) -> Any:
 def _safe_text(value: Any) -> Any:
     if not isinstance(value, str):
         return value
-    without_userinfo = _USERINFO_URI_PATTERN.sub(f"//{REDACTED}@", value)
+    without_userinfo = _USERINFO_URI_PATTERN.sub(
+        lambda match: f"{match.group(1)}{REDACTED}@",
+        value,
+    )
     return _SENSITIVE_ASSIGNMENT_PATTERN.sub(
         lambda match: f"{match.group(1)}={REDACTED}",
         without_userinfo,
