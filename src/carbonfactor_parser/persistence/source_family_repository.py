@@ -25,14 +25,30 @@ class SourceFamilyMasterRecord:
 
     source_family: SourceFamily
     source_family_master_id: str
+    source_year: int
+    source_version: str
+    source_release: str | None
     source_document_id: str
+    ingestion_run_id: str | None
+    run_id: str | None
     master_external_key: str
-    lifecycle_status: str
+    status: str
+    artifact_reference: str | None
+    artifact_checksum_sha256: str | None
+    archive_reference: str | None
+    archive_checksum_sha256: str | None
     effective_from: str | None
     effective_to: str | None
     record_checksum_sha256: str
+    metadata: dict[str, object]
     created_at: str
     updated_at: str
+
+    @property
+    def lifecycle_status(self) -> str:
+        """Backward-compatible alias for the persisted master status."""
+
+        return self.status
 
 
 @dataclass(frozen=True)
@@ -43,12 +59,23 @@ class SourceFamilyDetailRecord:
     source_family_detail_id: str
     source_family_master_id: str
     detail_external_key: str
+    source_row_number: int | None
+    factor_id: str | None
+    factor_name: str | None
     factor_value: str
     factor_unit: str
-    lifecycle_status: str
+    status: str
     record_checksum_sha256: str
+    raw_fields: dict[str, object]
+    normalized_fields: dict[str, object]
     created_at: str
     updated_at: str
+
+    @property
+    def lifecycle_status(self) -> str:
+        """Backward-compatible alias for the persisted detail status."""
+
+        return self.status
 
 
 @dataclass(frozen=True)
@@ -218,9 +245,10 @@ def _validate_master_record(
 ) -> None:
     for field_name in (
         "source_family_master_id",
+        "source_version",
         "source_document_id",
         "master_external_key",
-        "lifecycle_status",
+        "status",
         "record_checksum_sha256",
         "created_at",
         "updated_at",
@@ -229,6 +257,22 @@ def _validate_master_record(
             issues,
             getattr(record, field_name),
             f"master_records[{index}].{field_name}",
+        )
+    if not isinstance(record.source_year, int) or isinstance(record.source_year, bool):
+        issues.append(
+            SourceFamilyRepositoryIssue(
+                code="SOURCE_FAMILY_REPOSITORY_INVALID_SOURCE_YEAR",
+                message="source_year must be an integer.",
+                field_name=f"master_records[{index}].source_year",
+            ),
+        )
+    if not isinstance(record.metadata, dict):
+        issues.append(
+            SourceFamilyRepositoryIssue(
+                code="SOURCE_FAMILY_REPOSITORY_INVALID_METADATA",
+                message="metadata must be a dictionary.",
+                field_name=f"master_records[{index}].metadata",
+            ),
         )
 
 
@@ -250,7 +294,7 @@ def _validate_detail_record(
         "detail_external_key",
         "factor_value",
         "factor_unit",
-        "lifecycle_status",
+        "status",
         "record_checksum_sha256",
         "created_at",
         "updated_at",
@@ -260,6 +304,15 @@ def _validate_detail_record(
             getattr(record, field_name),
             f"detail_records[{index}].{field_name}",
         )
+    for field_name in ("raw_fields", "normalized_fields"):
+        if not isinstance(getattr(record, field_name), dict):
+            issues.append(
+                SourceFamilyRepositoryIssue(
+                    code="SOURCE_FAMILY_REPOSITORY_INVALID_DETAIL_FIELDS",
+                    message="detail field payloads must be dictionaries.",
+                    field_name=f"detail_records[{index}].{field_name}",
+                ),
+            )
 
     if (
         source_family is not None

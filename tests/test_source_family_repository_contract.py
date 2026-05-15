@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+from dataclasses import replace
 
 from carbonfactor_parser.persistence import source_family_repository as module
 from carbonfactor_parser.persistence.postgresql_schema_catalog import SourceFamily
@@ -39,12 +40,22 @@ def _sample_master_record(
     return SourceFamilyMasterRecord(
         source_family=source_family,
         source_family_master_id=source_family_master_id,
+        source_year=2025,
+        source_version="conversion-factors-2025",
+        source_release=None,
         source_document_id="source_document_001",
+        ingestion_run_id=None,
+        run_id="dry_run_001",
         master_external_key="defra_2025_publication",
-        lifecycle_status="declared",
+        status="declared",
+        artifact_reference="artifact://defra/2025",
+        artifact_checksum_sha256="a" * 64,
+        archive_reference=None,
+        archive_checksum_sha256=None,
         effective_from=None,
         effective_to=None,
         record_checksum_sha256="checksum_master_001",
+        metadata={},
         created_at="dry_run_timestamp_unavailable",
         updated_at="dry_run_timestamp_unavailable",
     )
@@ -60,10 +71,15 @@ def _sample_detail_record(
         source_family_detail_id="defra_detail_001",
         source_family_master_id=source_family_master_id,
         detail_external_key="defra_row_001",
+        source_row_number=2,
+        factor_id="DEFRA-2025-ELEC",
+        factor_name="Electricity",
         factor_value="1.25",
         factor_unit="kgco2e",
-        lifecycle_status="declared",
+        status="declared",
         record_checksum_sha256="checksum_detail_001",
+        raw_fields={},
+        normalized_fields={},
         created_at="dry_run_timestamp_unavailable",
         updated_at="dry_run_timestamp_unavailable",
     )
@@ -149,6 +165,31 @@ def test_source_family_repository_validation_requires_detail_master_reference() 
     assert validation.issues[0].field_name == (
         "detail_records[0].source_family_master_id"
     )
+
+
+def test_source_family_repository_validation_requires_master_source_metadata() -> None:
+    validation = validate_source_family_repository_inputs(
+        provider_name="in_memory",
+        master_records=(
+            _sample_master_record(source_family_master_id="master_001"),
+        ),
+        detail_records=(),
+    )
+
+    assert validation.is_valid is True
+
+    invalid_master = replace(
+        _sample_master_record(source_family_master_id="master_001"),
+        source_year=True,  # type: ignore[arg-type]
+    )
+    invalid = validate_source_family_repository_inputs(
+        provider_name="in_memory",
+        master_records=(invalid_master,),
+        detail_records=(),
+    )
+
+    assert invalid.is_valid is False
+    assert invalid.issues[0].code == "SOURCE_FAMILY_REPOSITORY_INVALID_SOURCE_YEAR"
 
 
 def test_source_family_repository_persist_result_reports_validation_failure() -> None:

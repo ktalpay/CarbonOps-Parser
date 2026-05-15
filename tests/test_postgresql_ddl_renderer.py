@@ -94,7 +94,15 @@ def test_primary_key_foreign_key_unique_and_index_statements_are_rendered() -> N
     assert "PRIMARY KEY" in statements
     assert "REFERENCES ghg_emission_factor_masters (ghg_emission_factor_master_id)" in statements
     assert "CONSTRAINT uq_source_documents_family_uri_checksum UNIQUE" in statements
+    assert (
+        "CONSTRAINT uq_defra_emission_factor_masters_family_year_version_key "
+        "UNIQUE (source_family, source_year, source_version, master_external_key)"
+    ) in statements
     assert "CREATE INDEX idx_ingestion_runs_run_status ON ingestion_runs (run_status);" in statements
+    assert (
+        "CREATE INDEX idx_ghg_emission_factor_masters_source_year "
+        "ON ghg_emission_factor_masters (source_family, source_year, source_version);"
+    ) in statements
 
 
 def test_renderer_output_is_deterministic() -> None:
