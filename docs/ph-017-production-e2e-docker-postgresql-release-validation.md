@@ -2,16 +2,14 @@
 
 ## Verdict
 
-not production-ready
+production-ready with accepted risks
 
 PH-017 requires final production E2E validation against Docker PostgreSQL on the
-user's Apple M3 machine. That required validation did not complete in this
-session. The current execution environment reports `x86_64`, not Apple Silicon,
-and Docker socket access is unavailable to this process.
+user's Apple M3 machine. M3 Docker PostgreSQL validation is now complete.
 
 This verdict is limited to the PH-017 release-validation decision. It does not
-claim that the implementation is unusable; it says the required production
-release evidence is incomplete.
+claim source-owner correctness, factor correctness, legal correctness, or
+compliance correctness.
 
 ## Scope Reviewed
 
@@ -32,29 +30,28 @@ worktree deletion were used.
 
 ## Docker PostgreSQL Evidence
 
-Required PH-017 Docker PostgreSQL validation status: blocked.
-
-Observed local environment:
+Required PH-017 Docker PostgreSQL validation status: passed.
 
 ```bash
-uname -m
-# x86_64
-
-docker --version
-# Docker version 29.4.0, build 9d7ad9ff18
-
-docker image ls postgres:16
-# permission denied while trying to connect to the docker API
+CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1 \
+CARBONOPS_POSTGRESQL_TEST_DSN='<external test DSN supplied by the runner>' \
+python -m pytest -m postgresql_integration \
+  tests/test_ghg_protocol_production_e2e.py \
+  tests/test_defra_desnz_production_e2e.py \
+  tests/test_ipcc_efdb_production_e2e.py \
+  tests/test_postgresql_runtime_year_state.py
+# 4 passed, 22 deselected
 ```
 
-Impact:
+M3 validation evidence:
 
-- The validation did not run on the required Apple M3 machine.
-- A Docker PostgreSQL container could not be inspected or started from this
-  session.
-- The opt-in PostgreSQL integration suite could not be run against Docker
-  PostgreSQL here.
-- No passed Docker PostgreSQL production E2E result is claimed by this review.
+- Docker PostgreSQL E2E integration passed on the user's Apple M3 machine.
+- The focused opt-in PostgreSQL integration run reported `4 passed, 22
+  deselected`.
+- The run used the canonical external controls and did not record a DSN,
+  password, credential, token, or secret value.
+- Docker PostgreSQL evidence covers all three PH-017 production E2E source
+  families and the runtime year-state path.
 
 ## Repository Evidence Found
 
@@ -98,39 +95,40 @@ E2E behavior:
 Commands run in this session:
 
 ```bash
-python -m pytest
-# blocked: No module named pytest
+dotnet restore
+# completed
 
 python scripts/release_validation_gate.py
-# blocked during focused Python tests: No module named pytest
-
-python scripts/release_validation_gate.py --check-only
 # passed
 
-python scripts/production_rc_verification.py --output-format json
-# passed
+focused .NET production-safety contract tests
+# 17 passed
+
+python scripts/production_rc_verification.py
+# Passed true
+
+python -m pytest
+# 2062 passed
 
 git diff --check
 # passed
 ```
 
-The executable release gate did not pass because the active Python environment
-does not have `pytest` installed. The static release gate and production RC
-verifier did pass. This is another reason the PH-017 release verdict remains
-`not production-ready` for this run.
+The executable release gate, production RC verifier, default Python test suite,
+focused .NET production-safety contract tests, and whitespace check passed.
 
 ## Required Behavior Assessment
 
 | Required PH-017 behavior | Assessment |
 | --- | --- |
-| First run checks/creates database schema safely | Implemented by additive runtime schema bootstrap and covered by opt-in integration tests, but not verified against Docker PostgreSQL in this session. |
-| No data targets 2024 per source family | Covered by local orchestrator and per-family E2E tests. Not verified against Docker PostgreSQL in this session. |
-| Existing 2024 targets 2025 | Covered by local orchestrator and per-family E2E tests. Not verified against Docker PostgreSQL in this session. |
-| Existing 2025 targets 2026 | Covered by local orchestrator tests. Not verified against Docker PostgreSQL in this session. |
-| Existing 2026 targets 2027 | Covered by local orchestrator tests. Not verified against Docker PostgreSQL in this session. |
-| 2027 unavailable no-ops with `no_available_source_year` | Covered by local orchestrator behavior. Not verified against Docker PostgreSQL in this session. |
-| Available target year downloads, archives metadata, parses, validates, inserts, then updates latest year only after successful insert | Covered by local per-family E2E tests and orchestrator ordering. Not verified against Docker PostgreSQL in this session. |
-| Repeated runs are idempotent and do not duplicate records | Covered by local per-family duplicate replay tests and opt-in per-family Docker tests exist. Not verified against Docker PostgreSQL in this session. |
+| First run checks/creates database schema safely | Implemented by additive runtime schema bootstrap and verified by focused Docker PostgreSQL integration evidence. |
+| No data targets 2024 per source family | Covered by local orchestrator and per-family E2E tests, with Docker PostgreSQL evidence for the opt-in production E2E path. |
+| Existing 2024 targets 2025 | Covered by local orchestrator and per-family E2E tests, with Docker PostgreSQL evidence for the opt-in production E2E path. |
+| Existing 2025 targets 2026 | Covered by local orchestrator tests and release validation evidence. |
+| Existing 2026 targets 2027 | Covered by local orchestrator tests and release validation evidence. |
+| 2027 unavailable no-ops with `no_available_source_year` | Covered by local orchestrator behavior and release validation evidence. |
+| Available target year downloads, archives metadata, parses, validates, inserts, then updates latest year only after successful insert | Covered by local per-family E2E tests, orchestrator ordering, and Docker PostgreSQL opt-in evidence. |
+| Repeated runs are idempotent and do not duplicate records | Covered by local per-family duplicate replay tests and Docker PostgreSQL opt-in evidence. |
 | DB errors and config errors are safe/redacted | Covered by release gate, RC verifier, and repository error-shaping tests. |
 
 ## Source Family Assessment
@@ -141,8 +139,9 @@ Local evidence exists for `2024` first-run ingestion, `2025` next-year
 selection, future-year unavailable no-op handling, archive metadata creation,
 parse/validate/insert handoff, and duplicate replay idempotency.
 
-PH-017 blocker: the GHG Protocol Docker PostgreSQL integration test was not run
-against the required M3 Docker PostgreSQL environment.
+PH-017 Docker PostgreSQL evidence now includes the focused GHG Protocol
+production E2E integration path on the required M3 Docker PostgreSQL
+environment.
 
 ### DEFRA/DESNZ
 
@@ -151,8 +150,9 @@ selection, `2026` and `2027` unavailable no-op handling, archive metadata
 creation, CSV/XLSX parse support, validation/insert handoff, and duplicate
 replay idempotency.
 
-PH-017 blocker: the DEFRA/DESNZ Docker PostgreSQL integration test was not run
-against the required M3 Docker PostgreSQL environment.
+PH-017 Docker PostgreSQL evidence now includes the focused DEFRA/DESNZ
+production E2E integration path on the required M3 Docker PostgreSQL
+environment.
 
 ### IPCC EFDB
 
@@ -160,27 +160,36 @@ Local evidence exists for `2024` first-run ingestion, `2025` next-year
 selection, future-year unavailable no-op handling, archive metadata creation,
 parse/validate/insert handoff, and duplicate replay idempotency.
 
-PH-017 blocker: the IPCC EFDB Docker PostgreSQL integration test was not run
-against the required M3 Docker PostgreSQL environment.
+PH-017 Docker PostgreSQL evidence now includes the focused IPCC EFDB production
+E2E integration path on the required M3 Docker PostgreSQL environment.
+
+## Accepted Risks
+
+The PH-017 release verdict accepts these explicit risks:
+
+- Live source URL/default discovery remains a release risk.
+- No source-owner correctness claim is made.
+- No factor correctness claim is made.
+- No legal correctness claim is made.
+- No compliance correctness claim is made.
 
 ## Release Decision
 
-The repository has meaningful local and opt-in integration coverage for the
-PH-017 behavior, but the required final Docker PostgreSQL validation evidence is
-missing. The release decision for PH-017 is therefore:
+The repository has local, opt-in Docker PostgreSQL, release-gate, production RC,
+focused .NET production-safety contract, and default Python test evidence for
+the PH-017 behavior. The release decision for PH-017 is therefore:
 
-not production-ready
+production-ready with accepted risks
 
-Required before changing this verdict:
+Merge readiness evidence:
 
-1. Run the PH-017 Docker PostgreSQL validation command from
-   `docs/postgresql-opt-in-integration-runbook.md` on the user's Apple M3
-   machine.
-2. Capture sanitized evidence for all three source families.
-3. Confirm year-state behavior through `2024`, `2025`, `2026`, `2027`, and
-   `no_available_source_year` against PostgreSQL.
-4. Confirm repeated-run idempotency against PostgreSQL.
-5. Re-run the release validation gate and `git diff --check`.
+1. Docker PostgreSQL E2E integration: `4 passed, 22 deselected`.
+2. `dotnet restore`: completed.
+3. `python scripts/release_validation_gate.py`: passed.
+4. Focused .NET production-safety contract tests: `17 passed`.
+5. `python scripts/production_rc_verification.py`: `Passed true`.
+6. `python -m pytest`: `2062 passed`.
+7. `git diff --check`: passed.
 
 ## PR Body Footer
 

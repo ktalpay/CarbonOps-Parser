@@ -138,7 +138,8 @@ Allowed status values:
 - `not_run`
 - `passed`
 - `failed_sanitized`
-- `blocked_environment`
+- `blocked_environment` for historical environment-unavailable smoke attempts
+  only; completed release records should use `passed` or `failed_sanitized`.
 
 Current execution record:
 
@@ -339,6 +340,28 @@ python scripts/production_rc_verification.py
 git diff --check
 ```
 
+PH-017 M3 execution record:
+
+- status: `passed`
+- Docker PostgreSQL E2E integration: `4 passed, 22 deselected`.
+- `dotnet restore`: completed.
+- `python scripts/release_validation_gate.py`: passed.
+- focused .NET production-safety contract tests: `17 passed`.
+- `python scripts/production_rc_verification.py`: `Passed true`.
+- `python -m pytest`: `2062 passed`.
+- `git diff --check`: passed.
+- result: PH-017 is `production-ready with accepted risks`.
+- secret handling: no DSN, password, credential, token, or secret value is
+  recorded in this runbook.
+
+Accepted risks remain explicit:
+
+- Live source URL/default discovery remains a release risk.
+- No source-owner correctness claim is made.
+- No factor correctness claim is made.
+- No legal correctness claim is made.
+- No compliance correctness claim is made.
+
 Expected PH-017 evidence shape:
 
 - GHG Protocol, DEFRA/DESNZ, and IPCC EFDB are all explicitly reported.
@@ -357,16 +380,21 @@ Expected PH-017 evidence shape:
 
 Current PH-017 execution record:
 
-- status: `blocked_environment`
+- status: `passed`
 - date: `2026-05-15`
-- observed architecture: `x86_64`
-- required architecture/environment: user's Apple M3 Docker PostgreSQL machine.
-- Docker CLI: installed.
-- Docker API access: blocked by socket permission.
-- opt-in PostgreSQL E2E command: not run.
+- environment: user's Apple M3 Docker PostgreSQL machine.
+- opt-in PostgreSQL E2E command: `4 passed, 22 deselected`.
+- release validation gate: passed.
+- production RC verification: `Passed true`.
+- default Python test suite: `2062 passed`.
+- focused .NET production-safety contract tests: `17 passed`.
+- `dotnet restore`: completed.
+- `git diff --check`: passed.
 - release verdict recorded in
   [PH-017 Production E2E Docker PostgreSQL Release Validation](ph-017-production-e2e-docker-postgresql-release-validation.md):
-  `not production-ready`.
+  `production-ready with accepted risks`.
+- accepted risks: live source URL/default discovery remains a release risk; no
+  source-owner, factor, legal, or compliance correctness claim is made.
 
 After the manual run, unset both integration controls:
 
