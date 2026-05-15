@@ -99,6 +99,26 @@ class DataQualityDiagnostic:
     provenance: DataQualityProvenanceContext | None = None
     context: tuple[tuple[str, object], ...] = ()
 
+    def __repr__(self) -> str:
+        safe_context = tuple(
+            (
+                REDACTED_DIAGNOSTIC_VALUE if _is_sensitive_field(key) else key,
+                _repr_safe_diagnostic_value(value),
+            )
+            for key, value in self.context
+        )
+        return (
+            "DataQualityDiagnostic("
+            f"code={self.code!r}, "
+            f"message={self.message!r}, "
+            f"severity={self.severity!r}, "
+            f"check={self.check!r}, "
+            f"field_name={self.field_name!r}, "
+            f"source_family={self.source_family!r}, "
+            f"provenance={self.provenance!r}, "
+            f"context={safe_context!r})"
+        )
+
 
 @dataclass(frozen=True)
 class DataQualityValidationResult:
@@ -489,6 +509,26 @@ def _safe_diagnostic_value(field_name: str, value: object) -> object:
         return REDACTED_DIAGNOSTIC_VALUE if value is not None else None
     if isinstance(value, str):
         return _safe_text_or_none(value)
+    return value
+
+
+def _repr_safe_diagnostic_value(value: object) -> object:
+    if isinstance(value, tuple):
+        if all(isinstance(item, tuple) and len(item) == 2 for item in value):
+            return tuple(
+                (
+                    (
+                        REDACTED_DIAGNOSTIC_VALUE
+                        if _is_sensitive_field(str(item[0]))
+                        else item[0]
+                    ),
+                    _repr_safe_diagnostic_value(item[1]),
+                )
+                for item in value
+            )
+        return tuple(_repr_safe_diagnostic_value(item) for item in value)
+    if isinstance(value, list):
+        return tuple(_repr_safe_diagnostic_value(item) for item in value)
     return value
 
 

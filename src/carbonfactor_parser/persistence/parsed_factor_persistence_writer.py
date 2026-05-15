@@ -283,11 +283,10 @@ def _rows_from_output(
     parsed_output: ParsedFactorOutput,
 ) -> tuple[tuple[_PersistenceRow, ...], tuple[ParsedFactorPersistenceIssue, ...]]:
     from carbonfactor_parser.parsers.normalized_output_row_contract import (
-        ParserNormalizedOutputBatch,
         validate_parser_normalized_output_batch,
     )
 
-    if isinstance(parsed_output, ParsedRawRecordPayload):
+    if _looks_like_raw_record_payload(parsed_output):
         validation = validate_parsed_raw_record_payload(parsed_output)
         issues = tuple(
             ParsedFactorPersistenceIssue(
@@ -303,7 +302,7 @@ def _rows_from_output(
             issues,
         )
 
-    if isinstance(parsed_output, ParserNormalizedOutputBatch):
+    if _looks_like_normalized_output_batch(parsed_output):
         validation = validate_parser_normalized_output_batch(parsed_output)
         issues = tuple(
             ParsedFactorPersistenceIssue(
@@ -331,6 +330,18 @@ def _rows_from_output(
                 field_name="parsed_output",
             ),
         ),
+    )
+
+
+def _looks_like_raw_record_payload(value: object) -> bool:
+    return hasattr(value, "records") and all(
+        hasattr(record, "raw_fields") for record in getattr(value, "records", ())
+    )
+
+
+def _looks_like_normalized_output_batch(value: object) -> bool:
+    return hasattr(value, "rows") and all(
+        hasattr(row, "normalized_fields") for row in getattr(value, "rows", ())
     )
 
 
