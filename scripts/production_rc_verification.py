@@ -527,7 +527,7 @@ class _DryRunSourceRuntime:
                 "source_version": "rc-fixture",
                 "factor_id": f"{source_family}-rc-factor",
                 "factor_value": Decimal("1.0"),
-                "factor_unit": "kgco2e",
+                "factor_unit": "kg CO2e",
             },
         )
         return create_parser_run_result(

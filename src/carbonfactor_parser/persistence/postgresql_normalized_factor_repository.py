@@ -455,13 +455,13 @@ def _rollback(connection: object) -> None:
 
 
 def _redact_sensitive_text(value: str) -> str:
-    redacted = _DSN_PATTERN.sub(r"\1//\2:***@", value)
+    redacted = _DSN_PATTERN.sub(r"\1***@", value)
     for pattern in _SECRET_PATTERNS:
         redacted = pattern.sub(r"\1=***", redacted)
     return redacted
 
 
-_DSN_PATTERN = re.compile(r"([a-z][a-z0-9+.-]*:)//([^:@/\s]+):([^@/\s]+)@")
+_DSN_PATTERN = re.compile(r"([a-z][a-z0-9+.-]*://)([^\s/?#]*@)")
 _SECRET_PATTERNS = (
     re.compile(r"(?i)\b(password|passwd|pwd|dsn|connection_string)=([^\s,;]+)"),
 )

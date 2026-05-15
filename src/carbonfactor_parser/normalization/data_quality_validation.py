@@ -505,7 +505,7 @@ def _redact_uri_userinfo(value: str) -> str:
 
 def _redact_uri_userinfo_pattern(value: str) -> str:
     return re.sub(
-        r"(?i)\b([a-z][a-z0-9+.-]*://)([^\s/?#]+@)",
+        r"(?i)\b([a-z][a-z0-9+.-]*://)([^\s/?#]*@)",
         lambda match: f"{match.group(1)}{REDACTED_DIAGNOSTIC_VALUE}@",
         value,
     )
