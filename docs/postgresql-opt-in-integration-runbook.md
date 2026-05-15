@@ -301,6 +301,80 @@ unset CARBONOPS_RUN_POSTGRESQL_INTEGRATION
 unset CARBONOPS_POSTGRESQL_TEST_DSN
 ```
 
+## PH-017 Production E2E Docker PostgreSQL Validation
+
+PH-017 is the final production E2E release-validation pass for the source
+families `ghg_protocol`, `defra_desnz`, and `ipcc_efdb`. Run it only on the
+user's isolated Apple M3 Docker PostgreSQL test machine with an externally
+supplied local test DSN.
+
+Start PostgreSQL locally:
+
+```bash
+docker run --rm --name carbonops-ph017-postgres \
+  -e POSTGRES_PASSWORD=carbonops_local_test \
+  -e POSTGRES_USER=carbonops \
+  -e POSTGRES_DB=carbonops_parser_integration_test \
+  -p 54329:5432 \
+  postgres:16
+```
+
+In a second shell, run the focused PH-017 integration tests:
+
+```bash
+CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1 \
+CARBONOPS_POSTGRESQL_TEST_DSN='<external test DSN supplied by the runner>' \
+python -m pytest -m postgresql_integration \
+  tests/test_ghg_protocol_production_e2e.py \
+  tests/test_defra_desnz_production_e2e.py \
+  tests/test_ipcc_efdb_production_e2e.py \
+  tests/test_postgresql_runtime_year_state.py
+```
+
+Then run the default release checks:
+
+```bash
+python scripts/release_validation_gate.py
+python scripts/production_rc_verification.py
+git diff --check
+```
+
+Expected PH-017 evidence shape:
+
+- GHG Protocol, DEFRA/DESNZ, and IPCC EFDB are all explicitly reported.
+- Schema bootstrap creates or verifies required tables additively.
+- No existing data selects target year `2024`.
+- Existing `2024` selects `2025`.
+- Existing `2025` selects `2026`.
+- Existing `2026` selects `2027`.
+- Unavailable target-year source data reports `no_available_source_year`
+  without inserts or year-state advancement.
+- Available target-year runs download, archive metadata, parse, validate,
+  insert, and advance latest year only after successful insert.
+- Repeated execution does not duplicate normalized factor records.
+- DB/config failures are sanitized and do not expose DSNs, passwords, tokens, or
+  raw configured values.
+
+Current PH-017 execution record:
+
+- status: `blocked_environment`
+- date: `2026-05-15`
+- observed architecture: `x86_64`
+- required architecture/environment: user's Apple M3 Docker PostgreSQL machine.
+- Docker CLI: installed.
+- Docker API access: blocked by socket permission.
+- opt-in PostgreSQL E2E command: not run.
+- release verdict recorded in
+  [PH-017 Production E2E Docker PostgreSQL Release Validation](ph-017-production-e2e-docker-postgresql-release-validation.md):
+  `not production-ready`.
+
+After the manual run, unset both integration controls:
+
+```bash
+unset CARBONOPS_RUN_POSTGRESQL_INTEGRATION
+unset CARBONOPS_POSTGRESQL_TEST_DSN
+```
+
 ## Verifying Default Tests Remain DB-Free
 
 Before and after future integration-test work, reviewers should run:
