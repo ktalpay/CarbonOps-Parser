@@ -196,6 +196,8 @@ def test_writer_persists_ghg_defra_and_ipcc_payloads_with_fake_repository() -> N
         assert result.final_status == "declared"
         assert result.issues == ()
         assert result.command is not None
+        assert len(result.command.master_records) == 1
+        assert len(result.command.detail_records) == len(payload.records)
         assert all(
             record.source_family is expected_family
             for record in result.command.master_records
@@ -216,7 +218,7 @@ def test_writer_deduplicates_identical_factor_identity_deterministically() -> No
     command = build_parsed_factor_persistence_command(payload)
 
     assert command.issues == ()
-    assert command.skipped_duplicate_count == 3
+    assert command.skipped_duplicate_count == 1
     assert len(command.master_records) == 1
     assert len(command.detail_records) == 1
 

@@ -172,9 +172,7 @@ def build_parsed_factor_persistence_command(
         existing_master = masters.get(master_key)
         if existing_master is None:
             masters[master_key] = mapped.master_record
-        elif existing_master == mapped.master_record:
-            skipped_duplicate_count += 1
-        else:
+        elif existing_master != mapped.master_record:
             issues.append(
                 ParsedFactorPersistenceIssue(
                     code="PARSED_FACTOR_PERSISTENCE_DUPLICATE_MASTER_CONFLICT",
@@ -468,7 +466,7 @@ def _map_row(
         f"{source_family.value}_detail_"
         f"{_stable_digest(source_family.value, master_id, detail_external_key)[:16]}"
     )
-    source_year = _int_or_none(_field(row.fields, "source_year", "reporting_year"))
+    source_year = _master_source_year(row)
     if source_year is None:
         issues.append(
             ParsedFactorPersistenceIssue(
@@ -577,7 +575,7 @@ def _source_document_id(
 
 
 def _default_master_external_key(row: _PersistenceRow) -> str:
-    source_year = _text_or_none(_field(row.fields, "source_year")) or "unknown-year"
+    source_year = _master_source_year_text(row)
     source_version = (
         _text_or_none(_field(row.fields, "source_version")) or "unknown-version"
     )
@@ -606,6 +604,34 @@ def _default_master_external_key(row: _PersistenceRow) -> str:
         or "checksum-unavailable"
     )
     return f"{source_year}:{source_version}:{artifact_reference}:{checksum}"
+
+
+def _master_source_year(row: _PersistenceRow) -> int | None:
+    return _int_or_none(_master_source_year_text(row))
+
+
+def _master_source_year_text(row: _PersistenceRow) -> str:
+    explicit_artifact_year = _text_or_none(
+        _field(row.fields, "source_artifact_year", "artifact_year", "reporting_year")
+    )
+    if explicit_artifact_year is not None:
+        return explicit_artifact_year
+
+    source_version = _text_or_none(_field(row.fields, "source_version"))
+    if source_version is not None:
+        version_year = _year_from_text(source_version)
+        if version_year is not None:
+            return version_year
+
+    return _text_or_none(_field(row.fields, "source_year")) or "unknown-year"
+
+
+def _year_from_text(value: str) -> str | None:
+    for index in range(0, len(value) - 3):
+        candidate = value[index : index + 4]
+        if candidate.isdecimal() and 1900 <= int(candidate) <= 2999:
+            return candidate
+    return None
 
 
 def _default_detail_external_key(row: _PersistenceRow) -> str:
