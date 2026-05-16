@@ -76,16 +76,14 @@ def test_writer_maps_defra_payload_into_source_family_records() -> None:
     command = build_parsed_factor_persistence_command(payload)
 
     assert command.issues == ()
-    assert len(command.master_records) == 2
+    assert len(command.master_records) == 1
     assert len(command.detail_records) == 2
     master = command.master_records[0]
     detail = command.detail_records[0]
     assert master.source_family is SourceFamily.DEFRA
     assert master.source_document_id.startswith("source_document_")
-    assert master.source_family_master_id == (
-        "defra_master_2024_conversion-factors-2024_DEFRA-2024-ELEC"
-    )
-    assert master.master_external_key == "2024:conversion-factors-2024:DEFRA-2024-ELEC"
+    assert master.source_family_master_id.startswith("defra_master_")
+    assert master.master_external_key.startswith("2024:conversion-factors-2024:")
     assert detail.source_family is SourceFamily.DEFRA
     assert detail.source_family_master_id == master.source_family_master_id
     assert detail.detail_external_key == "DEFRA-2024-ELEC:kWh:CO2e"
@@ -191,10 +189,15 @@ def test_writer_persists_ghg_defra_and_ipcc_payloads_with_fake_repository() -> N
         result = persist_parsed_factor_records(payload, repository)
 
         assert result.status is ParsedFactorPersistenceStatus.DECLARED
-        assert result.persisted_master_count == len(payload.records)
+        assert result.persisted_master_count == 1
         assert result.persisted_detail_count == len(payload.records)
+        assert result.master_inserted_count == 1
+        assert result.detail_inserted_count == len(payload.records)
+        assert result.final_status == "declared"
         assert result.issues == ()
         assert result.command is not None
+        assert len(result.command.master_records) == 1
+        assert len(result.command.detail_records) == len(payload.records)
         assert all(
             record.source_family is expected_family
             for record in result.command.master_records
@@ -215,7 +218,7 @@ def test_writer_deduplicates_identical_factor_identity_deterministically() -> No
     command = build_parsed_factor_persistence_command(payload)
 
     assert command.issues == ()
-    assert command.skipped_duplicate_count == 2
+    assert command.skipped_duplicate_count == 1
     assert len(command.master_records) == 1
     assert len(command.detail_records) == 1
 

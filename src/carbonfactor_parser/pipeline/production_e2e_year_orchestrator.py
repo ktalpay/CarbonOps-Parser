@@ -6,7 +6,7 @@ live source integrations, credentials, scheduling, or source-specific parsers.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Mapping, Protocol, Sequence, runtime_checkable
 
@@ -185,6 +185,10 @@ class ProductionE2EInsertSummary:
     skipped_duplicate: int = 0
     failed: int = 0
     validation_error_count: int = 0
+    master_inserted: int = 0
+    master_skipped: int = 0
+    detail_inserted: int = 0
+    detail_skipped: int = 0
 
     @property
     def is_success(self) -> bool:
@@ -493,8 +497,9 @@ def _run_source_family(
             validation_result=validation_result,
         )
 
+    insert_batch = _batch_with_run_id(batch, request.run_id)
     insert_summary = _coerce_insert_summary(
-        dependencies.insert_repository.insert_normalized_factor_records(batch),
+        dependencies.insert_repository.insert_normalized_factor_records(insert_batch),
     )
     if not insert_summary.is_success:
         return _failed_family(
@@ -583,7 +588,30 @@ def _coerce_insert_summary(result: object) -> ProductionE2EInsertSummary:
         skipped_duplicate=int(getattr(result, "skipped_duplicate", 0)),
         failed=int(getattr(result, "failed", 0)),
         validation_error_count=int(getattr(result, "validation_error_count", 0)),
+        master_inserted=int(getattr(result, "master_inserted", 0)),
+        master_skipped=int(getattr(result, "master_skipped", 0)),
+        detail_inserted=int(getattr(result, "detail_inserted", 0)),
+        detail_skipped=int(getattr(result, "detail_skipped", 0)),
     )
+
+
+def _batch_with_run_id(
+    batch: ParserNormalizedOutputBatch,
+    run_id: str,
+) -> ParserNormalizedOutputBatch:
+    rows = []
+    for row in batch.rows:
+        fields = dict(row.normalized_fields)
+        fields.setdefault("run_id", run_id)
+        rows.append(
+            replace(
+                row,
+                normalized_fields=tuple(
+                    sorted(fields.items(), key=lambda item: item[0])
+                ),
+            )
+        )
+    return ParserNormalizedOutputBatch(rows=tuple(rows))
 
 
 def _status_value(status: object) -> str:
