@@ -231,6 +231,17 @@ def test_runtime_schema_bootstrap_creates_missing_tables_idempotently() -> None:
         for statement, _parameters in connection.statements
     )
     assert any(
+        "CREATE TABLE IF NOT EXISTS ghg_emission_factor_masters" in statement
+        and "source_year integer NOT NULL" in statement
+        and "artifact_checksum_sha256 text" in statement
+        for statement, _parameters in connection.statements
+    )
+    assert any(
+        "CREATE TABLE IF NOT EXISTS ipcc_emission_factor_details" in statement
+        and "raw_fields jsonb NOT NULL" in statement
+        for statement, _parameters in connection.statements
+    )
+    assert any(
         "CREATE INDEX IF NOT EXISTS idx_source_family_year_states_family_year"
         in statement
         for statement, _parameters in connection.statements

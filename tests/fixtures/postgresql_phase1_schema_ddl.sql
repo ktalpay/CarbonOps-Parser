@@ -93,27 +93,48 @@ CREATE INDEX idx_normalized_factor_records_source_year ON normalized_factor_reco
 
 CREATE TABLE ghg_emission_factor_masters (
     ghg_emission_factor_master_id uuid NOT NULL,
+    source_family text NOT NULL,
+    source_year integer NOT NULL,
+    source_version text NOT NULL,
+    source_release text,
     source_document_id uuid NOT NULL,
+    ingestion_run_id uuid,
+    run_id text,
     master_external_key text NOT NULL,
-    lifecycle_status text NOT NULL,
+    status text NOT NULL,
+    artifact_reference text,
+    artifact_checksum_sha256 text,
+    archive_reference text,
+    archive_checksum_sha256 text,
     effective_from timestamp with time zone,
     effective_to timestamp with time zone,
     record_checksum_sha256 text NOT NULL,
+    metadata jsonb NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     CONSTRAINT pk_ghg_emission_factor_masters PRIMARY KEY (ghg_emission_factor_master_id),
-    CONSTRAINT uq_ghg_emission_factor_masters_external_key UNIQUE (master_external_key),
-    CONSTRAINT fk_ghg_emission_factor_masters_source_document_id FOREIGN KEY (source_document_id) REFERENCES source_documents (source_document_id)
+    CONSTRAINT uq_ghg_emission_factor_masters_family_year_version_key UNIQUE (source_family, source_year, source_version, master_external_key),
+    CONSTRAINT fk_ghg_emission_factor_masters_source_document_id FOREIGN KEY (source_document_id) REFERENCES source_documents (source_document_id),
+    CONSTRAINT fk_ghg_emission_factor_masters_ingestion_run_id FOREIGN KEY (ingestion_run_id) REFERENCES ingestion_runs (ingestion_run_id)
 );
+
+CREATE INDEX idx_ghg_emission_factor_masters_source_year ON ghg_emission_factor_masters (source_family, source_year, source_version);
+
+CREATE INDEX idx_ghg_emission_factor_masters_ingestion_run_id ON ghg_emission_factor_masters (ingestion_run_id);
 
 CREATE TABLE ghg_emission_factor_details (
     ghg_emission_factor_detail_id uuid NOT NULL,
     ghg_emission_factor_master_id uuid NOT NULL,
     detail_external_key text NOT NULL,
+    source_row_number integer,
+    factor_id text,
+    factor_name text,
     factor_value numeric NOT NULL,
     factor_unit text NOT NULL,
-    lifecycle_status text NOT NULL,
+    status text NOT NULL,
     record_checksum_sha256 text NOT NULL,
+    raw_fields jsonb NOT NULL,
+    normalized_fields jsonb NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     CONSTRAINT pk_ghg_emission_factor_details PRIMARY KEY (ghg_emission_factor_detail_id),
@@ -125,27 +146,48 @@ CREATE INDEX idx_ghg_emission_factor_details_ghg_emission_factor_master_id ON gh
 
 CREATE TABLE defra_emission_factor_masters (
     defra_emission_factor_master_id uuid NOT NULL,
+    source_family text NOT NULL,
+    source_year integer NOT NULL,
+    source_version text NOT NULL,
+    source_release text,
     source_document_id uuid NOT NULL,
+    ingestion_run_id uuid,
+    run_id text,
     master_external_key text NOT NULL,
-    lifecycle_status text NOT NULL,
+    status text NOT NULL,
+    artifact_reference text,
+    artifact_checksum_sha256 text,
+    archive_reference text,
+    archive_checksum_sha256 text,
     effective_from timestamp with time zone,
     effective_to timestamp with time zone,
     record_checksum_sha256 text NOT NULL,
+    metadata jsonb NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     CONSTRAINT pk_defra_emission_factor_masters PRIMARY KEY (defra_emission_factor_master_id),
-    CONSTRAINT uq_defra_emission_factor_masters_external_key UNIQUE (master_external_key),
-    CONSTRAINT fk_defra_emission_factor_masters_source_document_id FOREIGN KEY (source_document_id) REFERENCES source_documents (source_document_id)
+    CONSTRAINT uq_defra_emission_factor_masters_family_year_version_key UNIQUE (source_family, source_year, source_version, master_external_key),
+    CONSTRAINT fk_defra_emission_factor_masters_source_document_id FOREIGN KEY (source_document_id) REFERENCES source_documents (source_document_id),
+    CONSTRAINT fk_defra_emission_factor_masters_ingestion_run_id FOREIGN KEY (ingestion_run_id) REFERENCES ingestion_runs (ingestion_run_id)
 );
+
+CREATE INDEX idx_defra_emission_factor_masters_source_year ON defra_emission_factor_masters (source_family, source_year, source_version);
+
+CREATE INDEX idx_defra_emission_factor_masters_ingestion_run_id ON defra_emission_factor_masters (ingestion_run_id);
 
 CREATE TABLE defra_emission_factor_details (
     defra_emission_factor_detail_id uuid NOT NULL,
     defra_emission_factor_master_id uuid NOT NULL,
     detail_external_key text NOT NULL,
+    source_row_number integer,
+    factor_id text,
+    factor_name text,
     factor_value numeric NOT NULL,
     factor_unit text NOT NULL,
-    lifecycle_status text NOT NULL,
+    status text NOT NULL,
     record_checksum_sha256 text NOT NULL,
+    raw_fields jsonb NOT NULL,
+    normalized_fields jsonb NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     CONSTRAINT pk_defra_emission_factor_details PRIMARY KEY (defra_emission_factor_detail_id),
@@ -157,27 +199,48 @@ CREATE INDEX idx_defra_emission_factor_details_defra_emission_f_532bf4e61faf ON 
 
 CREATE TABLE ipcc_emission_factor_masters (
     ipcc_emission_factor_master_id uuid NOT NULL,
+    source_family text NOT NULL,
+    source_year integer NOT NULL,
+    source_version text NOT NULL,
+    source_release text,
     source_document_id uuid NOT NULL,
+    ingestion_run_id uuid,
+    run_id text,
     master_external_key text NOT NULL,
-    lifecycle_status text NOT NULL,
+    status text NOT NULL,
+    artifact_reference text,
+    artifact_checksum_sha256 text,
+    archive_reference text,
+    archive_checksum_sha256 text,
     effective_from timestamp with time zone,
     effective_to timestamp with time zone,
     record_checksum_sha256 text NOT NULL,
+    metadata jsonb NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     CONSTRAINT pk_ipcc_emission_factor_masters PRIMARY KEY (ipcc_emission_factor_master_id),
-    CONSTRAINT uq_ipcc_emission_factor_masters_external_key UNIQUE (master_external_key),
-    CONSTRAINT fk_ipcc_emission_factor_masters_source_document_id FOREIGN KEY (source_document_id) REFERENCES source_documents (source_document_id)
+    CONSTRAINT uq_ipcc_emission_factor_masters_family_year_version_key UNIQUE (source_family, source_year, source_version, master_external_key),
+    CONSTRAINT fk_ipcc_emission_factor_masters_source_document_id FOREIGN KEY (source_document_id) REFERENCES source_documents (source_document_id),
+    CONSTRAINT fk_ipcc_emission_factor_masters_ingestion_run_id FOREIGN KEY (ingestion_run_id) REFERENCES ingestion_runs (ingestion_run_id)
 );
+
+CREATE INDEX idx_ipcc_emission_factor_masters_source_year ON ipcc_emission_factor_masters (source_family, source_year, source_version);
+
+CREATE INDEX idx_ipcc_emission_factor_masters_ingestion_run_id ON ipcc_emission_factor_masters (ingestion_run_id);
 
 CREATE TABLE ipcc_emission_factor_details (
     ipcc_emission_factor_detail_id uuid NOT NULL,
     ipcc_emission_factor_master_id uuid NOT NULL,
     detail_external_key text NOT NULL,
+    source_row_number integer,
+    factor_id text,
+    factor_name text,
     factor_value numeric NOT NULL,
     factor_unit text NOT NULL,
-    lifecycle_status text NOT NULL,
+    status text NOT NULL,
     record_checksum_sha256 text NOT NULL,
+    raw_fields jsonb NOT NULL,
+    normalized_fields jsonb NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     CONSTRAINT pk_ipcc_emission_factor_details PRIMARY KEY (ipcc_emission_factor_detail_id),

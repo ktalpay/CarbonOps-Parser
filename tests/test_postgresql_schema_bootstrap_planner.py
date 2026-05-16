@@ -139,8 +139,14 @@ def test_schema_bootstrap_plan_orders_tables_deterministically() -> None:
         "parser_runs",
         "source_family_year_states",
         "normalized_factor_records",
+        "ghg_emission_factor_masters",
+        "ghg_emission_factor_masters",
         "ghg_emission_factor_details",
+        "defra_emission_factor_masters",
+        "defra_emission_factor_masters",
         "defra_emission_factor_details",
+        "ipcc_emission_factor_masters",
+        "ipcc_emission_factor_masters",
         "ipcc_emission_factor_details",
     )
 

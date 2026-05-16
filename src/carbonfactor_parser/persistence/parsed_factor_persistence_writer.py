@@ -269,6 +269,7 @@ class _PersistenceRow:
     row_id: str
     fields: Mapping[str, object]
     artifact_reference: str | None
+    artifact_checksum_sha256: str | None
     source_row_number: int | None
 
 
@@ -354,6 +355,9 @@ def _row_from_raw_record(record: ParsedRawRecord) -> _PersistenceRow:
         artifact_reference=_text_or_none(
             (record.source_context or {}).get("artifact_reference")
         ),
+        artifact_checksum_sha256=_text_or_none(
+            (record.source_context or {}).get("checksum_sha256")
+        ),
         source_row_number=record.row_number,
     )
 
@@ -365,6 +369,9 @@ def _row_from_normalized_row(row: "ParserNormalizedOutputRow") -> _PersistenceRo
         row_id=row.row_id,
         fields=dict(row.normalized_fields),
         artifact_reference=row.artifact_reference,
+        artifact_checksum_sha256=_text_or_none(
+            _field(row.normalized_fields, "source_checksum_sha256", "checksum_sha256")
+        ),
         source_row_number=row.source_row_number,
     )
 
@@ -426,13 +433,38 @@ def _map_row(
         f"{source_family.value}_detail_"
         f"{_stable_digest(source_family.value, master_id, detail_external_key)[:16]}"
     )
+    source_year = _int_or_none(_field(row.fields, "source_year", "reporting_year"))
+    if source_year is None:
+        issues.append(
+            ParsedFactorPersistenceIssue(
+                code="PARSED_FACTOR_PERSISTENCE_MISSING_REQUIRED_FIELD",
+                message="parsed factor persistence requires a source_year value.",
+                field_name=f"records[{position}].source_year",
+            ),
+        )
+        return _MappedRow(None, None, tuple(issues))
+    source_version = _text_or_none(_field(row.fields, "source_version")) or "unknown"
+    artifact_checksum_sha256 = row.artifact_checksum_sha256 or _text_or_none(
+        _field(row.fields, "provenance_checksum_value", "source_checksum_sha256")
+    )
 
     master_record = SourceFamilyMasterRecord(
         source_family=source_family,
         source_family_master_id=master_id,
+        source_year=source_year,
+        source_version=source_version,
+        source_release=_text_or_none(_field(row.fields, "source_release")),
         source_document_id=resolved_source_document_id or "",
+        ingestion_run_id=_text_or_none(_field(row.fields, "ingestion_run_id")),
+        run_id=_text_or_none(_field(row.fields, "run_id")),
         master_external_key=master_external_key,
-        lifecycle_status=lifecycle_status,
+        status=lifecycle_status,
+        artifact_reference=row.artifact_reference,
+        artifact_checksum_sha256=artifact_checksum_sha256,
+        archive_reference=_text_or_none(_field(row.fields, "archive_reference")),
+        archive_checksum_sha256=_text_or_none(
+            _field(row.fields, "archive_checksum_sha256")
+        ),
         effective_from=_text_or_none(_field(row.fields, "effective_from")),
         effective_to=_text_or_none(_field(row.fields, "effective_to")),
         record_checksum_sha256=_record_checksum(
@@ -442,6 +474,7 @@ def _map_row(
             master_external_key,
             lifecycle_status,
         ),
+        metadata={},
         created_at=timestamp_label,
         updated_at=timestamp_label,
     )
@@ -450,9 +483,12 @@ def _map_row(
         source_family_detail_id=detail_id,
         source_family_master_id=master_id,
         detail_external_key=detail_external_key,
+        source_row_number=row.source_row_number,
+        factor_id=_text_or_none(_field(row.fields, "factor_id")),
+        factor_name=_text_or_none(_field(row.fields, "factor_name")),
         factor_value=_text_or_none(required_values["factor_value"]) or "",
         factor_unit=_text_or_none(required_values["factor_unit"]) or "",
-        lifecycle_status=lifecycle_status,
+        status=lifecycle_status,
         record_checksum_sha256=_record_checksum(
             "detail",
             source_family.value,
@@ -461,6 +497,8 @@ def _map_row(
             required_values["factor_value"],
             required_values["factor_unit"],
         ),
+        raw_fields=dict(row.fields),
+        normalized_fields=dict(row.fields),
         created_at=timestamp_label,
         updated_at=timestamp_label,
     )
@@ -532,6 +570,20 @@ def _text_or_none(value: object | None) -> str | None:
         return None
     text = str(value).strip()
     return text or None
+
+
+def _int_or_none(value: object | None) -> int | None:
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    text = _text_or_none(value)
+    if text is None:
+        return None
+    try:
+        return int(text)
+    except ValueError:
+        return None
 
 
 def _record_checksum(*values: object) -> str:
