@@ -76,8 +76,41 @@ class ParsedFactorPersistenceWriterResult:
     persisted_master_count: int
     persisted_detail_count: int
     skipped_duplicate_count: int = 0
+    skipped_master_count: int = 0
+    skipped_detail_count: int = 0
+    validation_failure_count: int = 0
     issues: tuple[ParsedFactorPersistenceIssue, ...] = ()
     command: ParsedFactorPersistenceCommand | None = None
+
+    @property
+    def master_inserted_count(self) -> int:
+        """Return user-visible inserted master count."""
+
+        return self.persisted_master_count
+
+    @property
+    def detail_inserted_count(self) -> int:
+        """Return user-visible inserted detail count."""
+
+        return self.persisted_detail_count
+
+    @property
+    def master_skipped_count(self) -> int:
+        """Return user-visible skipped master count."""
+
+        return self.skipped_master_count
+
+    @property
+    def detail_skipped_count(self) -> int:
+        """Return user-visible skipped detail count."""
+
+        return self.skipped_detail_count
+
+    @property
+    def final_status(self) -> str:
+        """Return user-visible final persistence status."""
+
+        return self.status.value
 
 
 _SOURCE_FAMILY_ALIASES: Mapping[str, SourceFamily] = {
@@ -233,6 +266,7 @@ def persist_parsed_factor_records(
             persisted_master_count=0,
             persisted_detail_count=0,
             skipped_duplicate_count=command.skipped_duplicate_count,
+            validation_failure_count=len(command.issues),
             issues=command.issues,
             command=command,
         )
@@ -257,6 +291,9 @@ def persist_parsed_factor_records(
         persisted_master_count=repository_result.persisted_master_count,
         persisted_detail_count=repository_result.persisted_detail_count,
         skipped_duplicate_count=command.skipped_duplicate_count,
+        skipped_master_count=repository_result.skipped_master_count,
+        skipped_detail_count=repository_result.skipped_detail_count,
+        validation_failure_count=repository_result.validation_failure_count,
         issues=repository_issues,
         command=command,
     )
@@ -363,14 +400,16 @@ def _row_from_raw_record(record: ParsedRawRecord) -> _PersistenceRow:
 
 
 def _row_from_normalized_row(row: "ParserNormalizedOutputRow") -> _PersistenceRow:
+    fields = dict(row.normalized_fields)
+    fields.setdefault("parser_key", row.parser_key)
     return _PersistenceRow(
         source_family=row.source_family,
         source_id=row.source_key,
         row_id=row.row_id,
-        fields=dict(row.normalized_fields),
+        fields=fields,
         artifact_reference=row.artifact_reference,
         artifact_checksum_sha256=_text_or_none(
-            _field(row.normalized_fields, "source_checksum_sha256", "checksum_sha256")
+            _field(fields, "source_checksum_sha256", "checksum_sha256")
         ),
         source_row_number=row.source_row_number,
     )
@@ -415,15 +454,11 @@ def _map_row(
     if issues:
         return _MappedRow(None, None, tuple(issues))
 
-    master_external_key = _text_or_none(
-        _field(row.fields, "master_external_key")
-    ) or _default_master_external_key(row)
+    master_external_key = _default_master_external_key(row)
     detail_external_key = _text_or_none(
         _field(row.fields, "detail_external_key")
     ) or _default_detail_external_key(row)
-    master_id = _text_or_none(
-        _field(row.fields, "source_family_master_id")
-    ) or (
+    master_id = (
         f"{source_family.value}_master_"
         f"{_stable_digest(source_family.value, master_external_key)[:16]}"
     )
@@ -474,7 +509,10 @@ def _map_row(
             master_external_key,
             lifecycle_status,
         ),
-        metadata={},
+        metadata={
+            "parser_key": _text_or_none(_field(row.fields, "parser_key")),
+            "source_document_id": resolved_source_document_id,
+        },
         created_at=timestamp_label,
         updated_at=timestamp_label,
     )
@@ -543,8 +581,31 @@ def _default_master_external_key(row: _PersistenceRow) -> str:
     source_version = (
         _text_or_none(_field(row.fields, "source_version")) or "unknown-version"
     )
-    factor_id = _text_or_none(_field(row.fields, "factor_id")) or row.row_id
-    return f"{source_year}:{source_version}:{factor_id}"
+    artifact_reference = (
+        row.artifact_reference
+        or _text_or_none(
+            _field(
+                row.fields,
+                "source_artifact_reference",
+                "artifact_reference",
+                "provenance_artifact_reference",
+            )
+        )
+        or "artifact-unavailable"
+    )
+    checksum = (
+        row.artifact_checksum_sha256
+        or _text_or_none(
+            _field(
+                row.fields,
+                "source_checksum_sha256",
+                "checksum_sha256",
+                "provenance_checksum_value",
+            )
+        )
+        or "checksum-unavailable"
+    )
+    return f"{source_year}:{source_version}:{artifact_reference}:{checksum}"
 
 
 def _default_detail_external_key(row: _PersistenceRow) -> str:

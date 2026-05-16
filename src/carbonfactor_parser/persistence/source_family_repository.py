@@ -17,6 +17,7 @@ class SourceFamilyRepositoryPersistStatus(str, Enum):
 
     DECLARED = "declared"
     FAILED_VALIDATION = "failed_validation"
+    FAILED_DATABASE = "failed_database"
 
 
 @dataclass(frozen=True)
@@ -96,6 +97,9 @@ class SourceFamilyRepositoryPersistResult:
     status: SourceFamilyRepositoryPersistStatus
     persisted_master_count: int
     persisted_detail_count: int
+    skipped_master_count: int = 0
+    skipped_detail_count: int = 0
+    validation_failure_count: int = 0
     issues: tuple[SourceFamilyRepositoryIssue, ...] = ()
 
 
@@ -151,6 +155,7 @@ def create_source_family_repository_persist_result(
         status=status,
         persisted_master_count=0 if validation_issues else len(master_snapshot),
         persisted_detail_count=0 if validation_issues else len(detail_snapshot),
+        validation_failure_count=len(validation_issues),
         issues=tuple(validation_issues),
     )
 

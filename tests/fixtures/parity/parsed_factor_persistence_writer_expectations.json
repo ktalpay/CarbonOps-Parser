@@ -25,23 +25,23 @@
     "skipped_duplicate_count": 0,
     "master_record": {
       "source_family": "ghg",
-      "source_family_master_id": "ghg_master_5ebca809c257b701",
+      "source_family_master_id": "ghg_master_2fc8ecfc2a09b71e",
       "source_document_id": "source_document_d979c281dce2fa107de70d92",
-      "master_external_key": "2024:fixture-v1:GHG-001",
+      "master_external_key": "2024:fixture-v1:artifact://ghg/factors.csv:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
       "lifecycle_status": "active",
-      "record_checksum_sha256": "35dfd2ec45f7b5e377d264064a2e2ca6cc36b37f1d6fca5a0e45a9c6683308b8",
+      "record_checksum_sha256": "25d5fa4ed709861fb9eb7823c1ad1323ccb81690b54828aab891d9e2ac63ae66",
       "created_at": "dry_run_timestamp_unavailable",
       "updated_at": "dry_run_timestamp_unavailable"
     },
     "detail_record": {
       "source_family": "ghg",
-      "source_family_detail_id": "ghg_detail_e51dd21014b70f03",
-      "source_family_master_id": "ghg_master_5ebca809c257b701",
+      "source_family_detail_id": "ghg_detail_321df2543171bdb9",
+      "source_family_master_id": "ghg_master_2fc8ecfc2a09b71e",
       "detail_external_key": "GHG-001:kgco2e:CO2e",
       "factor_value": "1.25",
       "factor_unit": "kgco2e",
       "lifecycle_status": "active",
-      "record_checksum_sha256": "fcac1282d6dc4d117b0f4ce6ae2bb54da5b04a80bc30ca485ae180280bc7e681",
+      "record_checksum_sha256": "c33fe99c57afcfff4692950c3412b7aaae13e37e783f2c7dfe3136bf028f2809",
       "created_at": "dry_run_timestamp_unavailable",
       "updated_at": "dry_run_timestamp_unavailable"
     }
