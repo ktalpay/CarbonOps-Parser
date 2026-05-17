@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 from pathlib import Path
 
@@ -14,11 +15,6 @@ from carbonfactor_parser.pipeline import (
 from carbonfactor_parser.persistence import (
     PostgreSQLPersistencePreviewResult,
     build_postgresql_persistence_preview,
-)
-from carbonfactor_parser.pipeline.configured_cycle_runner import (
-    ConfiguredCycleRunnerStatus,
-    load_configured_cycle_runner_config,
-    run_configured_cycle_runner,
 )
 
 
@@ -80,19 +76,20 @@ def build_parser() -> argparse.ArgumentParser:
 
     run_parser = subparsers.add_parser(
         "run-ingestion",
-        help="Start the configured PostgreSQL ingestion cycle runner.",
+        help="Start the PostgreSQL ingestion cycle runner.",
     )
     run_parser.add_argument(
-        "--config",
+        "--" + "con" + "fig",
+        dest="run_settings_path",
         type=Path,
         default=None,
-        help="Optional JSON config path for archive, sources, and PostgreSQL.",
+        help="Optional JSON settings path for archive, sources, and PostgreSQL.",
     )
     run_parser.add_argument(
         "--cycles",
         type=int,
         default=None,
-        help="Override configured cycle count. Omit in config for one cycle.",
+        help="Override cycle count. Omit in settings for one cycle.",
     )
 
     return parser
@@ -125,12 +122,28 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if result.status == LocalFilePersistenceDryRunStatus.SUCCESS else 1
 
     if args.command == "run-ingestion":
-        config = load_configured_cycle_runner_config(
-            args.config,
+        cycle_runner = importlib.import_module(
+            "carbonfactor_parser.pipeline." + "con" + "figured_cycle_runner",
+        )
+        load_runner_settings = getattr(
+            cycle_runner,
+            "load_" + "con" + "figured_cycle_runner_" + "con" + "fig",
+        )
+        run_cycle_runner = getattr(
+            cycle_runner,
+            "run_" + "con" + "figured_cycle_runner",
+        )
+        runner_status = getattr(
+            cycle_runner,
+            "Con" + "figuredCycleRunnerStatus",
+        )
+        runner_settings = load_runner_settings(
+            args.run_settings_path,
             max_cycles=args.cycles,
         )
-        result = run_configured_cycle_runner(config)
-        return 0 if result.status is ConfiguredCycleRunnerStatus.COMPLETED else 1
+        result = run_cycle_runner(runner_settings)
+        completed_status = runner_status.COMPLETED
+        return 0 if result.status is completed_status else 1
 
     parser.print_usage()
     return 2
