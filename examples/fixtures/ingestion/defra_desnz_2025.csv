@@ -1,0 +1,2 @@
+source_year,source_version,category,subcategory,activity,factor_id,factor_name,factor_value,unit,greenhouse_gas,provenance
+2025,local-defra-2025,Energy,Electricity,Generated,DEFRA-2025-ELEC,Electricity generated,0.19842,kWh,CO2e,local fixture row 1

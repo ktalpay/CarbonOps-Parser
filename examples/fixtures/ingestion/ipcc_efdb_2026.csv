@@ -1,0 +1,2 @@
+record_type,source_year,source_version,factor_id,factor_name,factor_value,unit,category,subcategory,ipcc_sector,gas,region,technology,provenance
+emission_factor,2026,local-ipcc-2026,IPCC-2026-ENERGY-CO2,Stationary combustion CO2,55.4,t CO2/TJ,Energy,Stationary combustion,1A,CO2,Global,Default,local fixture row 1

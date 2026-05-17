@@ -1,0 +1,2 @@
+record_type,source_year,source_version,factor_id,factor_name,factor_value,unit,category,subcategory,scope,gas,provenance_note
+emission_factor,2025,local-ghg-2025,GHG-2025-ELEC,Grid electricity,0.221,kg CO2e/kWh,Stationary combustion,Electricity,Scope 2,CO2e,local fixture row 1

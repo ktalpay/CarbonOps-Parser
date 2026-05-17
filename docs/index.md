@@ -33,6 +33,7 @@ Discovery wording should stay conservative. The repository may describe source i
 - [Ingestion Contracts](ingestion-contracts.md)
 - [Engineering Standards](engineering-standards.md)
 - [Production Packaging And Operator Runbook](production-packaging-operator-runbook.md)
+- [Python Ingestion Local Runbook](python-ingestion-local-runbook.md)
 - [Source Support](source-support.md)
 - [Source Discovery](source-discovery.md)
 - [Source Ingestion Boundaries](source-ingestion-boundaries.md)
