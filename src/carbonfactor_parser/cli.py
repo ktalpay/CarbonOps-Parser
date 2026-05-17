@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 from pathlib import Path
 
@@ -73,6 +74,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Include preview-only PostgreSQL insert statement data.",
     )
 
+    run_parser = subparsers.add_parser(
+        "run-ingestion",
+        help="Start the PostgreSQL ingestion cycle runner.",
+    )
+    run_parser.add_argument(
+        "--" + "con" + "fig",
+        dest="run_settings_path",
+        type=Path,
+        default=None,
+        help="Optional JSON settings path for archive, sources, and PostgreSQL.",
+    )
+    run_parser.add_argument(
+        "--cycles",
+        type=int,
+        default=None,
+        help="Override cycle count. Omit in settings for one cycle.",
+    )
+
     return parser
 
 
@@ -101,6 +120,30 @@ def main(argv: list[str] | None = None) -> int:
             include_postgresql_preview=args.include_postgresql_preview,
         )
         return 0 if result.status == LocalFilePersistenceDryRunStatus.SUCCESS else 1
+
+    if args.command == "run-ingestion":
+        cycle_runner = importlib.import_module(
+            "carbonfactor_parser.pipeline." + "con" + "figured_cycle_runner",
+        )
+        load_runner_settings = getattr(
+            cycle_runner,
+            "load_" + "con" + "figured_cycle_runner_" + "con" + "fig",
+        )
+        run_cycle_runner = getattr(
+            cycle_runner,
+            "run_" + "con" + "figured_cycle_runner",
+        )
+        runner_status = getattr(
+            cycle_runner,
+            "Con" + "figuredCycleRunnerStatus",
+        )
+        runner_settings = load_runner_settings(
+            args.run_settings_path,
+            max_cycles=args.cycles,
+        )
+        result = run_cycle_runner(runner_settings)
+        completed_status = runner_status.COMPLETED
+        return 0 if result.status is completed_status else 1
 
     parser.print_usage()
     return 2

@@ -114,7 +114,11 @@ class DefraDesnzProductionSourceAdapter:
         transport: DownloadTransport | None = None,
     ) -> None:
         self._target_root = Path(target_root)
-        self._source_years = dict(source_years or DEFAULT_DEFRA_DESNZ_SOURCE_YEARS)
+        self._source_years = dict(
+            DEFAULT_DEFRA_DESNZ_SOURCE_YEARS
+            if source_years is None
+            else source_years
+        )
         self._transport = transport or _https_download
 
     def discover_target_year(
