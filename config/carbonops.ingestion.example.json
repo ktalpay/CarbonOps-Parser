@@ -1,0 +1,93 @@
+{
+  "archive_root": "./data/raw",
+  "enabled_source_families": [
+    "ghg_protocol",
+    "defra_desnz",
+    "ipcc_efdb"
+  ],
+  "initial_year": 2024,
+  "cycle": {
+    "interval_seconds": 0,
+    "max_cycles": 4
+  },
+  "source_years": {
+    "ghg_protocol": {
+      "2024": {
+        "artifact_url": "examples/fixtures/ingestion/ghg_protocol_2024.csv",
+        "publication_url": "examples/fixtures/ingestion/ghg_protocol_2024.csv",
+        "title": "Local GHG Protocol fixture 2024",
+        "version_label": "local-ghg-2024",
+        "content_type": "text/csv",
+        "format_hint": "csv"
+      },
+      "2025": {
+        "artifact_url": "examples/fixtures/ingestion/ghg_protocol_2025.csv",
+        "publication_url": "examples/fixtures/ingestion/ghg_protocol_2025.csv",
+        "title": "Local GHG Protocol fixture 2025",
+        "version_label": "local-ghg-2025",
+        "content_type": "text/csv",
+        "format_hint": "csv"
+      },
+      "2026": {
+        "artifact_url": "examples/fixtures/ingestion/ghg_protocol_2026.csv",
+        "publication_url": "examples/fixtures/ingestion/ghg_protocol_2026.csv",
+        "title": "Local GHG Protocol fixture 2026",
+        "version_label": "local-ghg-2026",
+        "content_type": "text/csv",
+        "format_hint": "csv"
+      }
+    },
+    "defra_desnz": {
+      "2024": {
+        "artifact_url": "examples/fixtures/ingestion/defra_desnz_2024.csv",
+        "publication_url": "examples/fixtures/ingestion/defra_desnz_2024.csv",
+        "title": "Local DEFRA/DESNZ fixture 2024",
+        "version_label": "local-defra-2024",
+        "content_type": "text/csv",
+        "format_hint": "csv"
+      },
+      "2025": {
+        "artifact_url": "examples/fixtures/ingestion/defra_desnz_2025.csv",
+        "publication_url": "examples/fixtures/ingestion/defra_desnz_2025.csv",
+        "title": "Local DEFRA/DESNZ fixture 2025",
+        "version_label": "local-defra-2025",
+        "content_type": "text/csv",
+        "format_hint": "csv"
+      },
+      "2026": {
+        "artifact_url": "examples/fixtures/ingestion/defra_desnz_2026.csv",
+        "publication_url": "examples/fixtures/ingestion/defra_desnz_2026.csv",
+        "title": "Local DEFRA/DESNZ fixture 2026",
+        "version_label": "local-defra-2026",
+        "content_type": "text/csv",
+        "format_hint": "csv"
+      }
+    },
+    "ipcc_efdb": {
+      "2024": {
+        "artifact_url": "examples/fixtures/ingestion/ipcc_efdb_2024.csv",
+        "publication_url": "examples/fixtures/ingestion/ipcc_efdb_2024.csv",
+        "title": "Local IPCC EFDB fixture 2024",
+        "version_label": "local-ipcc-2024",
+        "content_type": "text/csv",
+        "format_hint": "csv"
+      },
+      "2025": {
+        "artifact_url": "examples/fixtures/ingestion/ipcc_efdb_2025.csv",
+        "publication_url": "examples/fixtures/ingestion/ipcc_efdb_2025.csv",
+        "title": "Local IPCC EFDB fixture 2025",
+        "version_label": "local-ipcc-2025",
+        "content_type": "text/csv",
+        "format_hint": "csv"
+      },
+      "2026": {
+        "artifact_url": "examples/fixtures/ingestion/ipcc_efdb_2026.csv",
+        "publication_url": "examples/fixtures/ingestion/ipcc_efdb_2026.csv",
+        "title": "Local IPCC EFDB fixture 2026",
+        "version_label": "local-ipcc-2026",
+        "content_type": "text/csv",
+        "format_hint": "csv"
+      }
+    }
+  }
+}

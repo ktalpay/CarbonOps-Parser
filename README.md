@@ -241,6 +241,10 @@ This quickstart is local dry-run only. It does not connect to PostgreSQL, write 
 
 For boundary details, see [Local Dry-Run CLI Boundary](docs/local-dry-run-cli-boundary.md), [Local File Normalized Persistence Dry-Run Boundary](docs/local-file-normalized-persistence-dry-run-boundary.md), [PostgreSQL Persistence Preview Boundary](docs/postgresql-persistence-preview-boundary.md), and [Local Dry-Run Troubleshooting](docs/local-dry-run-troubleshooting.md).
 
+To run the packaged Python ingestion cycle against local Docker PostgreSQL with
+the three checked-in source fixture families, see
+[Python Ingestion Local Runbook](docs/python-ingestion-local-runbook.md).
+
 ## Developer Tests
 
 Run the lightweight Python test suite from the repository root:
