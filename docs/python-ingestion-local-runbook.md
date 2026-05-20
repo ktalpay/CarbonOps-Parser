@@ -60,6 +60,13 @@ settings, and local fixture paths for source years `2024`, `2025`, and `2026`.
 It does not contain a PostgreSQL password or any other secret. Runtime
 PostgreSQL settings come from environment variables.
 
+The `source_years` entries are explicit artifact configuration. They preserve
+the local fixture path for all three source families. Without explicit
+configuration, GHG Protocol and IPCC EFDB return `no_available_source_year`;
+DEFRA/DESNZ can additionally discover reviewed GOV.UK publication pages for
+mapped years. See [Source Discovery](source-discovery.md) for the live
+availability boundary.
+
 Set local environment variables:
 
 ```bash
@@ -177,4 +184,5 @@ Each `2027` count should be `0`.
 
 - [Production E2E Ingestion Readiness Contract](production-e2e-ingestion-readiness-contract.md)
 - [PH-018 Real Production-Ready Ingestion Contract](ph-018-real-production-ready-ingestion-contract.md)
+- [Source Discovery](source-discovery.md)
 - [PostgreSQL Phase 1 Schema Contract](postgresql-phase1-schema-contract.md)

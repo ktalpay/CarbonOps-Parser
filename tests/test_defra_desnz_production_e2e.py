@@ -28,6 +28,8 @@ from carbonfactor_parser.pipeline.defra_desnz_production_e2e import (
     DefraDesnzSourceYear,
 )
 from carbonfactor_parser.pipeline.production_e2e_year_orchestrator import (
+    ProductionE2ESourceYearDiscoveryRequest,
+    ProductionE2ESourceYearDiscoveryStatus,
     ProductionE2EYearFamilyStatus,
     ProductionE2EYearOrchestratorDependencies,
     ProductionE2EYearOrchestratorRequest,
@@ -119,6 +121,161 @@ def test_defra_desnz_2026_and_2027_unavailable_noop_safely(tmp_path: Path) -> No
     assert second.family_results[0].year_state.target_year == 2027
     assert insert_repository.inserted_batches == ()
     assert year_state.recorded_years == ()
+
+
+def test_defra_desnz_discovery_marks_unmapped_year_unavailable(
+    tmp_path: Path,
+) -> None:
+    adapter = DefraDesnzProductionSourceAdapter(
+        target_root=tmp_path / "archive",
+        source_years={},
+        transport=lambda _: pytest.fail("unavailable discovery must not download"),
+    )
+
+    result = adapter.discover_target_year(
+        ProductionE2ESourceYearDiscoveryRequest(
+            source_family=DEFRA_DESNZ_SOURCE_FAMILY,
+            target_year=2026,
+            run_id="ph-023-defra-unmapped",
+        ),
+    )
+
+    assert (
+        result.status
+        is ProductionE2ESourceYearDiscoveryStatus.NO_AVAILABLE_SOURCE_YEAR
+    )
+    assert result.artifact_reference is None
+    assert result.reason_code == "defra_desnz_target_year_not_in_availability_map"
+    assert result.metadata is not None
+    assert (
+        result.metadata["availability_strategy"]
+        == "govuk_publication_flat_file_link"
+    )
+
+
+def test_defra_desnz_live_discovery_returns_govuk_flat_file_artifact(
+    tmp_path: Path,
+) -> None:
+    page = (
+        '<html><body><a href="https://assets.publishing.service.gov.uk/'
+        'media/defra-2025-flat-file.xlsx">Conversion factors 2025: flat file</a>'
+        "</body></html>"
+    ).encode("utf-8")
+    adapter = DefraDesnzProductionSourceAdapter(
+        target_root=tmp_path / "archive",
+        source_years={
+            2025: DefraDesnzSourceYear(
+                year=2025,
+                publication_url="https://www.gov.uk/example/2025",
+                artifact_url="",
+                title="Conversion factors 2025: flat file",
+                version_label="2025-test",
+            ),
+        },
+        transport=lambda _: page,
+    )
+
+    result = adapter.discover_target_year(
+        ProductionE2ESourceYearDiscoveryRequest(
+            source_family=DEFRA_DESNZ_SOURCE_FAMILY,
+            target_year=2025,
+            run_id="ph-023-defra-available",
+        ),
+    )
+
+    assert (
+        result.status
+        is ProductionE2ESourceYearDiscoveryStatus.SOURCE_YEAR_AVAILABLE
+    )
+    assert result.artifact_reference == (
+        "https://assets.publishing.service.gov.uk/media/defra-2025-flat-file.xlsx"
+    )
+    assert result.metadata is not None
+    assert (
+        result.metadata["availability_strategy"]
+        == "govuk_publication_flat_file_link"
+    )
+    assert result.metadata["format_hint"] == "xlsx"
+
+
+def test_defra_desnz_live_discovery_failure_is_redacted_and_user_readable(
+    tmp_path: Path,
+) -> None:
+    def transport(_: str) -> bytes:
+        raise RuntimeError("GET https://token@example.invalid/private failed")
+
+    adapter = DefraDesnzProductionSourceAdapter(
+        target_root=tmp_path / "archive",
+        source_years={
+            2024: DefraDesnzSourceYear(
+                year=2024,
+                publication_url="https://www.gov.uk/example/2024",
+                artifact_url="",
+                title="Conversion factors 2024: flat file",
+                version_label="2024-test",
+            ),
+        },
+        transport=transport,
+    )
+
+    result = adapter.discover_target_year(
+        ProductionE2ESourceYearDiscoveryRequest(
+            source_family=DEFRA_DESNZ_SOURCE_FAMILY,
+            target_year=2024,
+            run_id="ph-023-defra-failure",
+        ),
+    )
+
+    assert (
+        result.status
+        is ProductionE2ESourceYearDiscoveryStatus.NO_AVAILABLE_SOURCE_YEAR
+    )
+    assert result.reason_code == "defra_desnz_flat_file_link_not_found"
+    assert result.metadata is not None
+    assert result.metadata["discovery_error_type"] == "RuntimeError"
+    assert "token@" not in str(result.metadata["discovery_error_message"])
+    assert "<redacted>@" in str(result.metadata["discovery_error_message"])
+    assert "user_message" in result.metadata
+
+
+def test_defra_desnz_live_discovery_plain_url_failure_redacts_userinfo(
+    tmp_path: Path,
+) -> None:
+    def transport(_: str) -> bytes:
+        raise RuntimeError("https://user:secret@example.invalid/private")
+
+    adapter = DefraDesnzProductionSourceAdapter(
+        target_root=tmp_path / "archive",
+        source_years={
+            2024: DefraDesnzSourceYear(
+                year=2024,
+                publication_url="https://www.gov.uk/example/2024",
+                artifact_url="",
+                title="Conversion factors 2024: flat file",
+                version_label="2024-test",
+            ),
+        },
+        transport=transport,
+    )
+
+    result = adapter.discover_target_year(
+        ProductionE2ESourceYearDiscoveryRequest(
+            source_family=DEFRA_DESNZ_SOURCE_FAMILY,
+            target_year=2024,
+            run_id="ph-023-defra-plain-url-failure",
+        ),
+    )
+
+    assert (
+        result.status
+        is ProductionE2ESourceYearDiscoveryStatus.NO_AVAILABLE_SOURCE_YEAR
+    )
+    assert result.metadata is not None
+    discovery_error_message = str(result.metadata["discovery_error_message"])
+    assert discovery_error_message == "https://example.invalid/..."
+    assert "user" not in discovery_error_message
+    assert "secret" not in discovery_error_message
+    assert "user:secret@" not in discovery_error_message
 
 
 def test_defra_desnz_repeated_run_is_insert_idempotent(tmp_path: Path) -> None:

@@ -96,6 +96,10 @@ DEFAULT_DEFRA_DESNZ_SOURCE_YEARS: Mapping[int, DefraDesnzSourceYear] = {
         version_label="2025",
     ),
 }
+DEFRA_DESNZ_DISCOVERY_STRATEGY = "govuk_publication_flat_file_link"
+DEFRA_DESNZ_DISCOVERY_AUTOMATION = (
+    "configured_artifact_url_or_govuk_publication_page"
+)
 
 
 DownloadTransport = Callable[[str], bytes]
@@ -135,16 +139,30 @@ class DefraDesnzProductionSourceAdapter:
                 ),
                 source_family=request.source_family,
                 target_year=request.target_year,
-                reason_code="defra_desnz_target_year_not_configured",
-                metadata={"configured_years": tuple(sorted(self._source_years))},
+                reason_code="defra_desnz_target_year_not_in_availability_map",
+                metadata={
+                    "availability_strategy": DEFRA_DESNZ_DISCOVERY_STRATEGY,
+                    "discovery_automation": DEFRA_DESNZ_DISCOVERY_AUTOMATION,
+                    "configured_years": tuple(sorted(self._source_years)),
+                    "user_message": (
+                        "DEFRA/DESNZ target year is not in the configured "
+                        "availability map. Add source_years configuration or "
+                        "update the reviewed default availability map."
+                    ),
+                },
             )
 
         try:
             artifact_url = source_year.artifact_url or self._discover_flat_file_url(
                 source_year,
             )
-        except Exception:  # noqa: BLE001 - discovery transport varies by runtime
+            discovery_failure_metadata: Mapping[str, object] = {}
+        except Exception as exc:  # noqa: BLE001 - discovery transport varies by runtime
             artifact_url = None
+            discovery_failure_metadata = {
+                "discovery_error_type": exc.__class__.__name__,
+                "discovery_error_message": _redacted_error_message(exc),
+            }
         if artifact_url is None:
             return ProductionE2ESourceYearDiscoveryResult(
                 status=(
@@ -154,8 +172,17 @@ class DefraDesnzProductionSourceAdapter:
                 target_year=request.target_year,
                 reason_code="defra_desnz_flat_file_link_not_found",
                 metadata={
+                    "availability_strategy": DEFRA_DESNZ_DISCOVERY_STRATEGY,
+                    "discovery_automation": DEFRA_DESNZ_DISCOVERY_AUTOMATION,
                     "publication_url": source_year.publication_url,
                     "title": source_year.title,
+                    "version_label": source_year.version_label,
+                    "user_message": (
+                        "DEFRA/DESNZ publication was configured for the target "
+                        "year, but no GOV.UK flat-file artifact link was "
+                        "resolved for download."
+                    ),
+                    **discovery_failure_metadata,
                 },
             )
 
@@ -165,6 +192,8 @@ class DefraDesnzProductionSourceAdapter:
             target_year=request.target_year,
             artifact_reference=artifact_url,
             metadata={
+                "availability_strategy": DEFRA_DESNZ_DISCOVERY_STRATEGY,
+                "discovery_automation": DEFRA_DESNZ_DISCOVERY_AUTOMATION,
                 "publication_url": source_year.publication_url,
                 "title": source_year.title,
                 "version_label": source_year.version_label,
@@ -370,6 +399,20 @@ def _https_download(uri: str) -> bytes:
     request = Request(uri, headers={"User-Agent": "carbonops-parser/0.1"})
     with urlopen(request, timeout=60) as response:  # noqa: S310 - HTTPS only above
         return bytes(response.read())
+
+
+def _redacted_error_message(exc: Exception) -> str:
+    raw = str(exc).strip() or exc.__class__.__name__
+    parsed = urlparse(raw)
+    if parsed.scheme in {"http", "https"} and parsed.hostname:
+        host = parsed.hostname
+        try:
+            port = parsed.port
+        except ValueError:
+            port = None
+        authority = f"{host}:{port}" if port is not None else host
+        return f"{parsed.scheme}://{authority}/..."
+    return re.sub(r"(://)[^/@\s]+@([^/\s]+)", r"\1<redacted>@\2", raw)
 
 
 def _read_csv_rows(path: Path) -> tuple[dict[str, object], ...]:

@@ -73,6 +73,7 @@ class IpccEfdbSourceYear:
 
 
 DEFAULT_IPCC_EFDB_SOURCE_YEARS: Mapping[int, IpccEfdbSourceYear] = {}
+IPCC_EFDB_DISCOVERY_STRATEGY = "configured_artifact_required"
 
 DownloadTransport = Callable[[str], bytes]
 
@@ -112,7 +113,16 @@ class IpccEfdbProductionSourceAdapter:
                 source_family=request.source_family,
                 target_year=request.target_year,
                 reason_code="ipcc_efdb_target_year_not_configured",
-                metadata={"configured_years": tuple(sorted(self._source_years))},
+                metadata={
+                    "availability_strategy": IPCC_EFDB_DISCOVERY_STRATEGY,
+                    "configured_years": tuple(sorted(self._source_years)),
+                    "requires_configured_artifact_url": True,
+                    "user_message": (
+                        "IPCC EFDB has no stable public year-index artifact "
+                        "discovery contract in this ingestion boundary; "
+                        "configure an artifact_url for the target source year."
+                    ),
+                },
             )
 
         return ProductionE2ESourceYearDiscoveryResult(
@@ -121,11 +131,13 @@ class IpccEfdbProductionSourceAdapter:
             target_year=request.target_year,
             artifact_reference=source_year.artifact_url,
             metadata={
+                "availability_strategy": IPCC_EFDB_DISCOVERY_STRATEGY,
                 "publication_url": source_year.publication_url,
                 "title": source_year.title,
                 "version_label": source_year.version_label,
                 "content_type": source_year.content_type,
                 "format_hint": source_year.format_hint,
+                "requires_configured_artifact_url": True,
             },
         )
 

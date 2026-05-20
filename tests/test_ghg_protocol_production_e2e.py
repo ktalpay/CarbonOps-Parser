@@ -27,6 +27,8 @@ from carbonfactor_parser.pipeline.ghg_protocol_production_e2e import (
     GHGProtocolSourceYear,
 )
 from carbonfactor_parser.pipeline.production_e2e_year_orchestrator import (
+    ProductionE2ESourceYearDiscoveryRequest,
+    ProductionE2ESourceYearDiscoveryStatus,
     ProductionE2EYearFamilyStatus,
     ProductionE2EYearOrchestratorDependencies,
     ProductionE2EYearOrchestratorRequest,
@@ -109,6 +111,57 @@ def test_ghg_protocol_future_year_unavailable_returns_safe_noop(
     assert family.year_state.target_year == 2026
     assert insert_repository.inserted_batches == ()
     assert year_state.recorded_years == ()
+
+
+def test_ghg_protocol_discovery_requires_configured_artifact_url(
+    tmp_path: Path,
+) -> None:
+    adapter = GHGProtocolProductionSourceAdapter(
+        target_root=tmp_path / "archive",
+        source_years={},
+        transport=lambda _: pytest.fail("unavailable discovery must not download"),
+    )
+
+    result = adapter.discover_target_year(
+        ProductionE2ESourceYearDiscoveryRequest(
+            source_family=GHG_PROTOCOL_SOURCE_FAMILY,
+            target_year=2026,
+            run_id="ph-023-ghg-unavailable",
+        ),
+    )
+
+    assert (
+        result.status
+        is ProductionE2ESourceYearDiscoveryStatus.NO_AVAILABLE_SOURCE_YEAR
+    )
+    assert result.artifact_reference is None
+    assert result.reason_code == "ghg_protocol_target_year_not_configured"
+    assert result.metadata is not None
+    assert result.metadata["availability_strategy"] == "configured_artifact_required"
+    assert result.metadata["requires_configured_artifact_url"] is True
+
+
+def test_ghg_protocol_discovery_returns_download_ready_configured_artifact(
+    tmp_path: Path,
+) -> None:
+    adapter = _adapter(tmp_path, {2024: _normalized_csv(year=2024)})
+
+    result = adapter.discover_target_year(
+        ProductionE2ESourceYearDiscoveryRequest(
+            source_family=GHG_PROTOCOL_SOURCE_FAMILY,
+            target_year=2024,
+            run_id="ph-023-ghg-available",
+        ),
+    )
+
+    assert (
+        result.status
+        is ProductionE2ESourceYearDiscoveryStatus.SOURCE_YEAR_AVAILABLE
+    )
+    assert result.artifact_reference == "https://example.invalid/ghg/2024.csv"
+    assert result.metadata is not None
+    assert result.metadata["availability_strategy"] == "configured_artifact_required"
+    assert result.metadata["format_hint"] == "csv"
 
 
 def test_ghg_protocol_repeated_run_is_insert_idempotent(tmp_path: Path) -> None:
