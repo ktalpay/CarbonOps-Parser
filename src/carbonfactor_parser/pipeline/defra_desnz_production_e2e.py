@@ -255,7 +255,7 @@ class DefraDesnzProductionSourceAdapter:
                     _failure(
                         "download",
                         "DEFRA_DESNZ_PRODUCTION_DOWNLOAD_FAILED",
-                        str(exc) or exc.__class__.__name__,
+                        _redacted_error_message(exc),
                         "artifact_reference",
                     ),
                 ),

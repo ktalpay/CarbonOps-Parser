@@ -23,6 +23,9 @@ The package installs the `carbonops-parser` command from
 [pyproject.toml](../pyproject.toml). The PostgreSQL extra installs the local
 `psycopg` driver dependency used by the runtime.
 
+For the controlled live/configured artifact smoke path, see
+[Real-Source Smoke Mode](real-source-smoke-mode.md).
+
 ## Start Docker PostgreSQL
 
 Start an isolated local PostgreSQL container:
@@ -64,8 +67,8 @@ The `source_years` entries are explicit artifact configuration. They preserve
 the local fixture path for all three source families. Without explicit
 configuration, GHG Protocol and IPCC EFDB return `no_available_source_year`;
 DEFRA/DESNZ can additionally discover reviewed GOV.UK publication pages for
-mapped years. See [Source Discovery](source-discovery.md) for the live
-availability boundary.
+mapped years only when live source access is explicitly enabled. See
+[Source Discovery](source-discovery.md) for the live availability boundary.
 
 Set local environment variables:
 
@@ -85,6 +88,17 @@ Run the packaged Python ingestion command:
 ```bash
 carbonops-parser run-ingestion --config config/carbonops.ingestion.example.json
 ```
+
+The dedicated real-source smoke command uses the same configured artifacts and
+PostgreSQL writes, but makes the smoke intent explicit:
+
+```bash
+carbonops-parser real-source-smoke --config config/carbonops.ingestion.example.json --cycles 1
+```
+
+HTTPS source access is disabled by default. To run against reviewed HTTPS
+artifact URLs, set `real_source_smoke.allow_live_source_access` to `true` in the
+config or pass `--allow-live-source-access`.
 
 For a single-line shell command without exported variables:
 

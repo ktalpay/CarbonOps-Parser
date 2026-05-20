@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from enum import Enum
+import re
 from typing import Mapping, Protocol, Sequence, runtime_checkable
 
 from carbonfactor_parser.parsers.normalized_output_row_contract import (
@@ -476,7 +477,21 @@ def _run_source_family(
             download_result=download_result,
         )
 
-    batch = parser.parse(download_result.artifact)
+    try:
+        batch = parser.parse(download_result.artifact)
+    except Exception as exc:  # noqa: BLE001 - parser boundaries vary by source
+        return _failed_family(
+            year_state,
+            _failure(
+                source_family,
+                "parser",
+                "PRODUCTION_E2E_PARSER_FAILED",
+                _redact_sensitive_text(str(exc) or exc.__class__.__name__),
+                "parser",
+            ),
+            discovery_result=discovery_result,
+            download_result=download_result,
+        )
     validation_result = dependencies.validation_boundary.validate(batch)
     if not validation_result.is_valid:
         failures = validation_result.issues or (
@@ -617,6 +632,17 @@ def _batch_with_run_id(
 def _status_value(status: object) -> str:
     value = getattr(status, "value", status)
     return str(value)
+
+
+def _redact_sensitive_text(value: str) -> str:
+    redacted = re.sub(r"postgresql://[^@\s]+@", "postgresql://***@", value)
+    redacted = re.sub(r"(://)[^/@\s]+@([^/\s]+)", r"\1***@\2", redacted)
+    redacted = re.sub(
+        r"(?i)(password|passwd|pwd|token|secret|key)=([^&\s]+)",
+        r"\1=***",
+        redacted,
+    )
+    return redacted
 
 
 def _summarize(
