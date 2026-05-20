@@ -404,8 +404,14 @@ def _https_download(uri: str) -> bytes:
 def _redacted_error_message(exc: Exception) -> str:
     raw = str(exc).strip() or exc.__class__.__name__
     parsed = urlparse(raw)
-    if parsed.scheme in {"http", "https"}:
-        return f"{parsed.scheme}://{parsed.netloc}/..."
+    if parsed.scheme in {"http", "https"} and parsed.hostname:
+        host = parsed.hostname
+        try:
+            port = parsed.port
+        except ValueError:
+            port = None
+        authority = f"{host}:{port}" if port is not None else host
+        return f"{parsed.scheme}://{authority}/..."
     return re.sub(r"(://)[^/@\s]+@([^/\s]+)", r"\1<redacted>@\2", raw)
 
 

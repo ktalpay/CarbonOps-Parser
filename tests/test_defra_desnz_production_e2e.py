@@ -238,6 +238,46 @@ def test_defra_desnz_live_discovery_failure_is_redacted_and_user_readable(
     assert "user_message" in result.metadata
 
 
+def test_defra_desnz_live_discovery_plain_url_failure_redacts_userinfo(
+    tmp_path: Path,
+) -> None:
+    def transport(_: str) -> bytes:
+        raise RuntimeError("https://user:secret@example.invalid/private")
+
+    adapter = DefraDesnzProductionSourceAdapter(
+        target_root=tmp_path / "archive",
+        source_years={
+            2024: DefraDesnzSourceYear(
+                year=2024,
+                publication_url="https://www.gov.uk/example/2024",
+                artifact_url="",
+                title="Conversion factors 2024: flat file",
+                version_label="2024-test",
+            ),
+        },
+        transport=transport,
+    )
+
+    result = adapter.discover_target_year(
+        ProductionE2ESourceYearDiscoveryRequest(
+            source_family=DEFRA_DESNZ_SOURCE_FAMILY,
+            target_year=2024,
+            run_id="ph-023-defra-plain-url-failure",
+        ),
+    )
+
+    assert (
+        result.status
+        is ProductionE2ESourceYearDiscoveryStatus.NO_AVAILABLE_SOURCE_YEAR
+    )
+    assert result.metadata is not None
+    discovery_error_message = str(result.metadata["discovery_error_message"])
+    assert discovery_error_message == "https://example.invalid/..."
+    assert "user" not in discovery_error_message
+    assert "secret" not in discovery_error_message
+    assert "user:secret@" not in discovery_error_message
+
+
 def test_defra_desnz_repeated_run_is_insert_idempotent(tmp_path: Path) -> None:
     adapter = _adapter(tmp_path, {2024: _flat_file_csv(year=2024)})
     insert_repository = _IdempotentInsertRepository()
