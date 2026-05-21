@@ -62,6 +62,64 @@ def test_configured_cycle_runner_loads_json_config(tmp_path: Path) -> None:
     assert config.source_years["ghg_protocol"][2024].version_label == "v2024"
 
 
+def test_configured_cycle_runner_rejects_conflicting_live_source_access_aliases(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "carbonops-cycle.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "postgresql": {"dsn": "postgresql://user:pass@localhost/db"},
+                "allow_live_source_access": False,
+                "real_source_smoke": {"allow_live_source_access": True},
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Conflicting live source access settings"):
+        load_configured_cycle_runner_config(config_path)
+
+
+def test_configured_cycle_runner_keeps_explicit_false_live_source_access_aliases(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "carbonops-cycle.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "postgresql": {"dsn": "postgresql://user:pass@localhost/db"},
+                "allow_live_source_access": False,
+                "real_source_smoke": {"allow_live_source_access": False},
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_configured_cycle_runner_config(config_path)
+
+    assert config.allow_live_source_access is False
+
+
+def test_configured_cycle_runner_loads_top_level_live_source_access_true(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "carbonops-cycle.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "postgresql": {"dsn": "postgresql://user:pass@localhost/db"},
+                "allow_live_source_access": True,
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_configured_cycle_runner_config(config_path)
+
+    assert config.allow_live_source_access is True
+
+
 def test_configured_cycle_runner_runs_2024_to_2027_and_is_idempotent(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
