@@ -19,7 +19,9 @@ REDACTED = "<redacted>"
 _CHECKSUM_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
 _USERINFO_URI_PATTERN = re.compile(r"(?i)\b([a-z][a-z0-9+.-]*://)[^\s/?#]*@")
 _SENSITIVE_ASSIGNMENT_PATTERN = re.compile(
-    r"(?i)\b(password|passwd|pwd|secret|token|dsn|connection[_-]?string)=([^\s;,]+)",
+    r"(?i)\b(api[_-]?key|authorization|credential|password|passwd|pwd|"
+    r"secret|token|dsn|connection[_-]?string|access[_-]?key|"
+    r"private[_-]?key)=([^\s;,]+)",
 )
 _SENSITIVE_KEY_PARTS = (
     "password",

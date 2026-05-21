@@ -10,6 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 import json
+import math
+import os
 from pathlib import Path
 import time
 import uuid
@@ -68,6 +70,9 @@ from carbonfactor_parser.pipeline.production_e2e_year_orchestrator import (
     ProductionE2EYearOrchestratorResult,
     ProductionE2EYearRunStatus,
     run_production_e2e_year_orchestrator,
+)
+from carbonfactor_parser.source_acquisition.phase1_observability import (
+    redact_diagnostic_value,
 )
 
 
@@ -164,6 +169,7 @@ def load_configured_cycle_runner_config(
 
     payload = _load_config_payload(config_path)
     postgresql_config_result = _load_postgresql_config(payload, environ)
+    _validate_postgresql_config_result(postgresql_config_result)
     archive_root = Path(
         str(
             _nested_get(payload, ("archive_root",))
@@ -172,6 +178,7 @@ def load_configured_cycle_runner_config(
             or "./data/raw"
         )
     )
+    archive_root = _validated_archive_root(archive_root)
     initial_year = _positive_int(
         _nested_get(payload, ("initial_year",))
         or _nested_get(payload, ("cycle", "initial_year"))
@@ -179,10 +186,11 @@ def load_configured_cycle_runner_config(
         or POSTGRESQL_RUNTIME_DEFAULT_INITIAL_YEAR,
         field_name="initial_year",
     )
-    interval_seconds = float(
+    interval_seconds = _non_negative_float(
         _nested_get(payload, ("cycle_interval_seconds",))
         or _nested_get(payload, ("cycle", "interval_seconds"))
-        or 0
+        or 0,
+        field_name="cycle_interval_seconds",
     )
     configured_max_cycles = _optional_positive_int(
         max_cycles
@@ -308,7 +316,8 @@ def emit_configured_cycle_summary(
             emit(
                 "issue "
                 f"family={failure.source_family} stage={failure.stage} "
-                f"code={failure.code} message={failure.message}"
+                f"code={failure.code} "
+                f"message={_safe_output_text(failure.message)}"
             )
 
 
@@ -453,30 +462,44 @@ def _load_postgresql_config(
 def _source_years_from_payload(
     payload: Mapping[str, object],
 ) -> Mapping[str, Mapping[int, ConfiguredSourceYearArtifact]]:
+    has_source_years, explicit_source_years = _nested_lookup(
+        payload,
+        ("source_years",),
+    )
+    if not has_source_years:
+        has_source_years, explicit_source_years = _nested_lookup(
+            payload,
+            ("sourceYears",),
+        )
     source_year_payload = (
-        _nested_get(payload, ("source_years",))
-        or _nested_get(payload, ("sourceYears",))
-        or _nested_get(payload, ("sources",))
-        or {}
+        explicit_source_years
+        if has_source_years
+        else (_nested_get(payload, ("sources",)) or {})
     )
     if not isinstance(source_year_payload, Mapping):
-        return {}
+        raise ValueError("source_years must be an object keyed by source family.")
 
     result: dict[str, dict[int, ConfiguredSourceYearArtifact]] = {}
     for raw_family, raw_years in source_year_payload.items():
-        family = _source_family_alias(str(raw_family))
-        if family is None:
+        family = _required_source_family_alias(
+            str(raw_family),
+            field_name="source_years",
+        )
+        if not has_source_years and _is_source_settings_without_years(raw_years):
             continue
         years_payload = _extract_years_payload(raw_years)
         if not isinstance(years_payload, Mapping):
-            continue
+            raise ValueError(
+                f"source_years.{family} must be an object keyed by source year.",
+            )
         years: dict[int, ConfiguredSourceYearArtifact] = {}
         for raw_year, raw_entry in years_payload.items():
-            entry = raw_entry if isinstance(raw_entry, Mapping) else {}
-            try:
-                year = _positive_int(raw_year, field_name="source_year")
-            except ValueError:
-                continue
+            if not isinstance(raw_entry, Mapping):
+                raise ValueError(
+                    f"source_years.{family}.{raw_year} must be an object.",
+                )
+            entry = raw_entry
+            year = _positive_int(raw_year, field_name=f"source_years.{family}.year")
             artifact_url = str(
                 entry.get("artifact_url")
                 or entry.get("artifactUrl")
@@ -486,15 +509,28 @@ def _source_years_from_payload(
                 or ""
             ).strip()
             if not artifact_url:
-                continue
+                raise ValueError(
+                    f"source_years.{family}.{year}.artifact_url is required.",
+                )
+            _validate_artifact_uri(
+                artifact_url,
+                field_name=f"source_years.{family}.{year}.artifact_url",
+            )
+            publication_url = str(
+                entry.get("publication_url")
+                or entry.get("publicationUrl")
+                or artifact_url
+            ).strip()
+            if publication_url:
+                _validate_artifact_uri(
+                    publication_url,
+                    field_name=f"source_years.{family}.{year}.publication_url",
+                    allow_empty=True,
+                )
             years[year] = ConfiguredSourceYearArtifact(
                 year=year,
                 artifact_url=artifact_url,
-                publication_url=str(
-                    entry.get("publication_url")
-                    or entry.get("publicationUrl")
-                    or artifact_url
-                ),
+                publication_url=publication_url,
                 title=str(entry.get("title") or f"{family} {year}"),
                 version_label=str(
                     entry.get("version_label")
@@ -517,7 +553,12 @@ def _source_years_from_payload(
 def _extract_years_payload(raw_value: object) -> object:
     if not isinstance(raw_value, Mapping):
         return raw_value
-    return raw_value.get("years") or raw_value.get("source_years") or raw_value
+    return (
+        raw_value.get("years")
+        or raw_value.get("source_years")
+        or raw_value.get("sourceYears")
+        or raw_value
+    )
 
 
 def _enabled_source_families(payload: Mapping[str, object]) -> tuple[str, ...]:
@@ -530,16 +571,28 @@ def _enabled_source_families(payload: Mapping[str, object]) -> tuple[str, ...]:
         raw_values: Sequence[object] = tuple(
             value.strip() for value in configured.split(",")
         )
-    elif isinstance(configured, Sequence):
+    elif isinstance(configured, Sequence) and not isinstance(
+        configured,
+        (bytes, bytearray),
+    ):
         raw_values = configured
+    elif configured is not None:
+        raise ValueError(
+            "enabled_source_families must be a comma-separated string or list.",
+        )
     else:
         raw_values = CONFIGURED_CYCLE_SOURCE_FAMILIES
     selected = []
     for raw_value in raw_values:
-        family = _source_family_alias(str(raw_value))
-        if family is not None and family not in selected:
+        family = _required_source_family_alias(
+            str(raw_value),
+            field_name="enabled_source_families",
+        )
+        if family not in selected:
             selected.append(family)
-    return tuple(selected) or CONFIGURED_CYCLE_SOURCE_FAMILIES
+    if not selected:
+        raise ValueError("enabled_source_families must include at least one family.")
+    return tuple(selected)
 
 
 def _source_family_alias(value: str) -> str | None:
@@ -557,6 +610,18 @@ def _source_family_alias(value: str) -> str | None:
         "ipccefdb": IPCC_EFDB_SOURCE_FAMILY,
     }
     return aliases.get(normalized)
+
+
+def _required_source_family_alias(value: str, *, field_name: str) -> str:
+    family = _source_family_alias(value)
+    if family is None:
+        supported = ", ".join(CONFIGURED_CYCLE_SOURCE_FAMILIES)
+        safe_value = _safe_output_text(value)
+        raise ValueError(
+            f"{field_name} contains unsupported source family '{safe_value}'. "
+            f"Supported families: {supported}.",
+        )
+    return family
 
 
 def _ghg_source_years(
@@ -631,7 +696,49 @@ def _nested_lookup(
     return True, current
 
 
+def _validate_postgresql_config_result(
+    result: PostgreSQLRuntimeConfigLoadResult,
+) -> None:
+    if result.is_ready:
+        return
+    if not result.issues:
+        raise ValueError("PostgreSQL runtime configuration is not ready.")
+    issue_text = "; ".join(
+        f"{issue.field_name}: {_safe_output_text(issue.message)}"
+        for issue in result.issues
+    )
+    raise ValueError(f"PostgreSQL runtime configuration is invalid: {issue_text}")
+
+
+def _validated_archive_root(path: Path) -> Path:
+    archive_root = path.expanduser()
+    if archive_root.exists() and not archive_root.is_dir():
+        raise ValueError("archive_root must be a directory path.")
+    if archive_root.exists() and not os.access(
+        archive_root,
+        os.R_OK | os.W_OK | os.X_OK,
+    ):
+        raise ValueError("archive_root must be readable, writable, and searchable.")
+    if not archive_root.exists():
+        existing_parent = archive_root.parent
+        while (
+            not existing_parent.exists()
+            and existing_parent != existing_parent.parent
+        ):
+            existing_parent = existing_parent.parent
+        if not existing_parent.is_dir() or not os.access(
+            existing_parent,
+            os.W_OK | os.X_OK,
+        ):
+            raise ValueError(
+                "archive_root parent directory must be writable and searchable.",
+            )
+    return archive_root
+
+
 def _positive_int(value: object, *, field_name: str) -> int:
+    if isinstance(value, bool):
+        raise ValueError(f"{field_name} must be a positive integer.")
     try:
         parsed = int(str(value))
     except (TypeError, ValueError) as exc:
@@ -645,6 +752,58 @@ def _optional_positive_int(value: object, *, field_name: str) -> int | None:
     if value is None or value == "":
         return None
     return _positive_int(value, field_name=field_name)
+
+
+def _non_negative_float(value: object, *, field_name: str) -> float:
+    if isinstance(value, bool):
+        raise ValueError(f"{field_name} must be a non-negative number.")
+    try:
+        parsed = float(str(value))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field_name} must be a non-negative number.") from exc
+    if parsed < 0 or not math.isfinite(parsed):
+        raise ValueError(f"{field_name} must be a non-negative finite number.")
+    return parsed
+
+
+def _validate_artifact_uri(
+    value: str,
+    *,
+    field_name: str,
+    allow_empty: bool = False,
+) -> None:
+    if allow_empty and not value:
+        return
+    parsed = urlparse(value)
+    if parsed.scheme in {"", "file", "local", "https"}:
+        return
+    raise ValueError(f"{field_name} must use a file, local path, or HTTPS URI.")
+
+
+def _is_source_settings_without_years(value: object) -> bool:
+    if not isinstance(value, Mapping):
+        return False
+    if "years" in value or "source_years" in value or "sourceYears" in value:
+        return False
+    source_settings_keys = {
+        "enabled",
+        "sourceCode",
+        "source_code",
+        "checkUrl",
+        "check_url",
+        "downloadUrl",
+        "download_url",
+        "schedule",
+        "import",
+    }
+    return any(
+        str(key) in source_settings_keys
+        for key in value
+    )
+
+
+def _safe_output_text(value: object) -> str:
+    return str(redact_diagnostic_value("message", str(value)))
 
 
 def _bool_value(value: object) -> bool:
@@ -690,7 +849,10 @@ def _parse_status_value(family: object) -> str:
     if any(getattr(failure, "stage", "") == "parser" for failure in failures):
         return "failed"
     download_result = getattr(family, "download_result", None)
-    if download_result is None or _download_status_value(download_result) != "downloaded":
+    if (
+        download_result is None
+        or _download_status_value(download_result) != "downloaded"
+    ):
         return "not_run"
     return "no_rows"
 

@@ -60,8 +60,9 @@ def test_redaction_removes_secret_fields_and_connection_userinfo() -> None:
         "nested": {
             "message": (
                 "failed dsn=postgresql://svc:secret@db.internal/carbonops "
-                "connectionString" + "=postgresql://svc:raw-secret@db.internal/carbonops "
-                "token" + "=" + "abc123"
+                "connectionString"
+                + "=postgresql://svc:raw-secret@db.internal/carbonops "
+                "token" + "=" + "abc123 api_key=raw-key"
             ),
         },
         "safe_count": 3,
@@ -75,7 +76,11 @@ def test_redaction_removes_secret_fields_and_connection_userinfo() -> None:
         "nested": {
             "message": (
                 f"failed dsn={REDACTED} "
-                "connectionString" + f"={REDACTED} token" + "=" + REDACTED
+                "connectionString"
+                + f"={REDACTED} token"
+                + "="
+                + REDACTED
+                + f" api_key={REDACTED}"
             ),
         },
         "password": REDACTED,

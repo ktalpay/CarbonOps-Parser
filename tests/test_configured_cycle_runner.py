@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+import carbonfactor_parser.cli as parser_cli
 from carbonfactor_parser.persistence.postgresql_runtime_config import (
     load_postgresql_runtime_config,
 )
@@ -120,6 +121,167 @@ def test_configured_cycle_runner_loads_top_level_live_source_access_true(
     assert config.allow_live_source_access is True
 
 
+def test_configured_cycle_runner_rejects_blocked_postgresql_config_safely(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "carbonops-cycle.json"
+    raw_password = "raw-secret"
+    config_path.write_text(
+        json.dumps(
+            {
+                "postgresql": {
+                    "host": "localhost",
+                    "database": "carbonops",
+                    "username": "user",
+                    "password": raw_password,
+                    "port": "not-a-port",
+                },
+                "archive_root": str(tmp_path / "archive"),
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError) as raised:
+        load_configured_cycle_runner_config(config_path)
+
+    message = str(raised.value)
+    assert "PostgreSQL runtime configuration is invalid" in message
+    assert "CARBONOPS_POSTGRESQL_PORT" in message
+    assert raw_password not in message
+
+
+def test_configured_cycle_runner_rejects_unsupported_source_family(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "carbonops-cycle.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "postgresql": {"dsn": "postgresql://user:pass@localhost/db"},
+                "archive_root": str(tmp_path / "archive"),
+                "enabled_source_families": ["ghg_protocol", "unknown_family"],
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="unsupported source family"):
+        load_configured_cycle_runner_config(config_path)
+
+
+def test_configured_cycle_runner_rejects_invalid_cycle_settings(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "carbonops-cycle.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "postgresql": {"dsn": "postgresql://user:pass@localhost/db"},
+                "archive_root": str(tmp_path / "archive"),
+                "cycle": {"interval_seconds": -1, "max_cycles": 1},
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="cycle_interval_seconds"):
+        load_configured_cycle_runner_config(config_path)
+
+    config_path.write_text(
+        json.dumps(
+            {
+                "postgresql": {"dsn": "postgresql://user:pass@localhost/db"},
+                "archive_root": str(tmp_path / "archive"),
+                "cycle": {"interval_seconds": 0, "max_cycles": 0},
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="max_cycles"):
+        load_configured_cycle_runner_config(config_path)
+
+
+def test_configured_cycle_runner_rejects_archive_root_file(
+    tmp_path: Path,
+) -> None:
+    archive_file = tmp_path / "archive-file"
+    archive_file.write_text("not a directory", encoding="utf-8")
+    config_path = tmp_path / "carbonops-cycle.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "postgresql": {"dsn": "postgresql://user:pass@localhost/db"},
+                "archive_root": str(archive_file),
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="archive_root must be a directory"):
+        load_configured_cycle_runner_config(config_path)
+
+
+def test_configured_cycle_runner_rejects_bad_source_artifact_definition_safely(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "carbonops-cycle.json"
+    raw_token = "raw-token"
+    config_path.write_text(
+        json.dumps(
+            {
+                "postgresql": {"dsn": "postgresql://user:pass@localhost/db"},
+                "archive_root": str(tmp_path / "archive"),
+                "source_years": {
+                    "ghg_protocol": {
+                        "2024": {
+                            "artifact_url": (
+                                "s3://bucket/factors.csv?token=" + raw_token
+                            ),
+                        },
+                    },
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError) as raised:
+        load_configured_cycle_runner_config(config_path)
+
+    message = str(raised.value)
+    assert "artifact_url must use a file, local path, or HTTPS URI" in message
+    assert raw_token not in message
+
+
+def test_run_ingestion_cli_reports_safe_actionable_config_errors(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    config_path = tmp_path / "carbonops-cycle.json"
+    raw_secret = "raw-secret"
+    config_path.write_text(
+        json.dumps(
+            {
+                "postgresql": {"dsn": "postgresql://user:" + raw_secret + "@db/app"},
+                "archive_root": str(tmp_path / "archive"),
+                "enabled_source_families": ["missing"],
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as raised:
+        parser_cli.main(["run-ingestion", "--config", str(config_path)])
+
+    captured = capsys.readouterr()
+    assert raised.value.code == 2
+    assert "unsupported source family" in captured.err
+    assert "Supported families:" in captured.err
+    assert raw_secret not in captured.err
+
+
 def test_configured_cycle_runner_runs_2024_to_2027_and_is_idempotent(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -222,6 +384,47 @@ def test_configured_cycle_runner_blocks_https_without_live_opt_in(
     assert "download_status=failed" in captured.out
     assert "parse_status=not_run" in captured.out
     assert "secret" not in family.failures[0].message
+
+
+def test_configured_cycle_runner_redacts_failure_messages(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    connection = _FakeConnection()
+    raw_token = "raw-token"
+    config = ConfiguredCycleRunnerConfig(
+        postgresql_config_result=load_postgresql_runtime_config(
+            {"CARBONOPS_POSTGRESQL_DSN": "postgresql://user:pass@localhost/db"},
+        ),
+        archive_root=tmp_path / "archive",
+        enabled_source_families=("ghg_protocol",),
+        initial_year=2024,
+        cycle_interval_seconds=0,
+        max_cycles=1,
+        source_years={
+            "ghg_protocol": {
+                2024: ConfiguredSourceYearArtifact(
+                    year=2024,
+                    artifact_url=str(
+                        tmp_path / ("missing.csv?api_key=" + raw_token),
+                    ),
+                    publication_url=str(tmp_path / "publication"),
+                    title="configured live artifact",
+                    version_label="live-2024",
+                )
+            }
+        },
+    )
+
+    run_configured_cycle_runner(
+        config,
+        startup=_startup(connection),
+        sleep=lambda _: None,
+    )
+
+    captured = capsys.readouterr()
+    assert raw_token not in captured.out
+    assert "api_key=<redacted>" in captured.out
 
 
 def _source_years(

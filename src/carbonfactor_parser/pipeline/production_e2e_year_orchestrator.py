@@ -638,7 +638,8 @@ def _redact_sensitive_text(value: str) -> str:
     redacted = re.sub(r"postgresql://[^@\s]+@", "postgresql://***@", value)
     redacted = re.sub(r"(://)[^/@\s]+@([^/\s]+)", r"\1***@\2", redacted)
     redacted = re.sub(
-        r"(?i)(password|passwd|pwd|token|secret|key)=([^&\s]+)",
+        r"(?i)(api[_-]?key|authorization|credential|password|passwd|pwd|"
+        r"token|secret|key|access[_-]?key|private[_-]?key)=([^&\s]+)",
         r"\1=***",
         redacted,
     )

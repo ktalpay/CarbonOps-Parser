@@ -8,6 +8,9 @@ import importlib
 import json
 from pathlib import Path
 
+from carbonfactor_parser.source_acquisition.phase1_observability import (
+    redact_diagnostic_value,
+)
 from carbonfactor_parser.pipeline import (
     LocalFilePersistenceDryRunResult,
     LocalFilePersistenceDryRunStatus,
@@ -161,11 +164,14 @@ def main(argv: list[str] | None = None) -> int:
             cycle_runner,
             "Con" + "figuredCycleRunnerStatus",
         )
-        runner_settings = load_runner_settings(
-            args.run_settings_path,
-            max_cycles=args.cycles,
-        )
-        result = run_cycle_runner(runner_settings)
+        try:
+            runner_settings = load_runner_settings(
+                args.run_settings_path,
+                max_cycles=args.cycles,
+            )
+            result = run_cycle_runner(runner_settings)
+        except ValueError as exc:
+            parser.error(_safe_cli_error(exc))
         completed_status = runner_status.COMPLETED
         return 0 if result.status is completed_status else 1
 
@@ -185,16 +191,19 @@ def main(argv: list[str] | None = None) -> int:
             cycle_runner,
             "Con" + "figuredCycleRunnerStatus",
         )
-        runner_settings = load_runner_settings(
-            args.run_settings_path,
-            max_cycles=args.cycles,
-        )
-        if args.allow_live_source_access:
-            runner_settings = replace(
-                runner_settings,
-                allow_live_source_access=True,
+        try:
+            runner_settings = load_runner_settings(
+                args.run_settings_path,
+                max_cycles=args.cycles,
             )
-        result = run_cycle_runner(runner_settings)
+            if args.allow_live_source_access:
+                runner_settings = replace(
+                    runner_settings,
+                    allow_live_source_access=True,
+                )
+            result = run_cycle_runner(runner_settings)
+        except ValueError as exc:
+            parser.error(_safe_cli_error(exc))
         completed_status = runner_status.COMPLETED
         return 0 if result.status is completed_status else 1
 
@@ -240,6 +249,10 @@ def _emit_local_dry_run_result(
         )
     if include_postgresql_preview:
         _emit_postgresql_preview_text(result)
+
+
+def _safe_cli_error(exc: Exception) -> str:
+    return str(redact_diagnostic_value("message", str(exc)))
 
 
 def _serialize_local_dry_run_result(

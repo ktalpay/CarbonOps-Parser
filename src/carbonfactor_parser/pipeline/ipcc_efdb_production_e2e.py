@@ -392,7 +392,8 @@ def _redacted_error_message(exc: Exception) -> str:
         return f"{parsed.scheme}://{authority}/..."
     redacted = re.sub(r"(://)[^/@\s]+@([^/\s]+)", r"\1***@\2", raw)
     return re.sub(
-        r"(?i)(password|passwd|pwd|token|secret|key)=([^&\s]+)",
+        r"(?i)(api[_-]?key|authorization|credential|password|passwd|pwd|"
+        r"token|secret|key|access[_-]?key|private[_-]?key)=([^&\s]+)",
         r"\1=***",
         redacted,
     )
