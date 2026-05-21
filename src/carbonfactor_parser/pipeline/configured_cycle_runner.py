@@ -164,33 +164,36 @@ def load_configured_cycle_runner_config(
 
     payload = _load_config_payload(config_path)
     postgresql_config_result = _load_postgresql_config(payload, environ)
-    archive_root = Path(
-        str(
-            _nested_get(payload, ("archive_root",))
-            or _nested_get(payload, ("storage", "rawArchivePath"))
-            or _nested_get(payload, ("storage", "raw_archive_path"))
-            or "./data/raw"
-        )
+    archive_root = _validated_archive_root(
+        _nested_get(payload, ("archive_root",))
+        or _nested_get(payload, ("storage", "rawArchivePath"))
+        or _nested_get(payload, ("storage", "raw_archive_path"))
+        or "./data/raw",
     )
     initial_year = _positive_int(
-        _nested_get(payload, ("initial_year",))
-        or _nested_get(payload, ("cycle", "initial_year"))
-        or _nested_get(payload, ("execution", "initialYear"))
-        or POSTGRESQL_RUNTIME_DEFAULT_INITIAL_YEAR,
+        _coalesce_config_values(
+            _nested_get(payload, ("initial_year",)),
+            _nested_get(payload, ("cycle", "initial_year")),
+            _nested_get(payload, ("execution", "initialYear")),
+            POSTGRESQL_RUNTIME_DEFAULT_INITIAL_YEAR,
+        ),
         field_name="initial_year",
     )
-    interval_seconds = float(
-        _nested_get(payload, ("cycle_interval_seconds",))
-        or _nested_get(payload, ("cycle", "interval_seconds"))
-        or 0
+    interval_seconds = _non_negative_float(
+        _coalesce_config_values(
+            _nested_get(payload, ("cycle_interval_seconds",)),
+            _nested_get(payload, ("cycle", "interval_seconds")),
+            0,
+        ),
+        field_name="cycle_interval_seconds",
     )
     configured_max_cycles = _optional_positive_int(
         max_cycles
         if max_cycles is not None
-        else (
-            _nested_get(payload, ("max_cycles",))
-            or _nested_get(payload, ("cycle", "max_cycles"))
-            or 1
+        else _coalesce_config_values(
+            _nested_get(payload, ("max_cycles",)),
+            _nested_get(payload, ("cycle", "max_cycles")),
+            1,
         ),
         field_name="max_cycles",
     )
@@ -305,10 +308,11 @@ def emit_configured_cycle_summary(
             f"detail_skipped={getattr(insert_summary, 'detail_skipped', 0)}"
         )
         for failure in family.failures:
+            safe_message = _redact_sensitive_text(str(failure.message))
             emit(
                 "issue "
                 f"family={failure.source_family} stage={failure.stage} "
-                f"code={failure.code} message={failure.message}"
+                f"code={failure.code} message={safe_message}"
             )
 
 
@@ -460,23 +464,27 @@ def _source_years_from_payload(
         or {}
     )
     if not isinstance(source_year_payload, Mapping):
-        return {}
+        raise ValueError("source_years must be an object keyed by source family.")
 
     result: dict[str, dict[int, ConfiguredSourceYearArtifact]] = {}
     for raw_family, raw_years in source_year_payload.items():
         family = _source_family_alias(str(raw_family))
         if family is None:
-            continue
+            raise ValueError(
+                f"Unsupported source family in source_years: {raw_family}.",
+            )
         years_payload = _extract_years_payload(raw_years)
         if not isinstance(years_payload, Mapping):
-            continue
+            raise ValueError(f"source_years.{family} must be an object keyed by year.")
         years: dict[int, ConfiguredSourceYearArtifact] = {}
         for raw_year, raw_entry in years_payload.items():
             entry = raw_entry if isinstance(raw_entry, Mapping) else {}
             try:
                 year = _positive_int(raw_year, field_name="source_year")
-            except ValueError:
-                continue
+            except ValueError as exc:
+                raise ValueError(
+                    f"source_years.{family} year key must be a positive integer.",
+                ) from exc
             artifact_url = str(
                 entry.get("artifact_url")
                 or entry.get("artifactUrl")
@@ -486,7 +494,9 @@ def _source_years_from_payload(
                 or ""
             ).strip()
             if not artifact_url:
-                continue
+                raise ValueError(
+                    f"source_years.{family}.{year} requires artifact_url.",
+                )
             years[year] = ConfiguredSourceYearArtifact(
                 year=year,
                 artifact_url=artifact_url,
@@ -537,9 +547,55 @@ def _enabled_source_families(payload: Mapping[str, object]) -> tuple[str, ...]:
     selected = []
     for raw_value in raw_values:
         family = _source_family_alias(str(raw_value))
-        if family is not None and family not in selected:
+        if family is None:
+            raise ValueError(f"Unsupported enabled source family: {raw_value}.")
+        if family not in selected:
             selected.append(family)
     return tuple(selected) or CONFIGURED_CYCLE_SOURCE_FAMILIES
+
+
+def _validated_archive_root(value: object) -> Path:
+    if not isinstance(value, (str, Path)):
+        raise ValueError("archive_root must be a string path.")
+    path = Path(str(value))
+    if path.exists() and not path.is_dir():
+        raise ValueError("archive_root must be a directory path.")
+    if not path.exists():
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            raise ValueError("archive_root could not be created.") from exc
+    if not path.is_dir():
+        raise ValueError("archive_root must resolve to a directory.")
+    if not path.exists() or not path.stat():
+        raise ValueError("archive_root is not accessible.")
+    return path
+
+
+def _non_negative_float(value: object, *, field_name: str) -> float:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field_name} must be a non-negative number.") from exc
+    if parsed < 0:
+        raise ValueError(f"{field_name} must be a non-negative number.")
+    return parsed
+
+
+def _redact_sensitive_text(text: str) -> str:
+    redacted = text
+    if "://" in redacted:
+        parsed = urlparse(redacted)
+        if parsed.scheme and (parsed.username or parsed.password or parsed.query):
+            netloc = parsed.hostname or ""
+            if parsed.port:
+                netloc = f"{netloc}:{parsed.port}"
+            redacted = parsed._replace(netloc=netloc, query="[redacted]").geturl()
+    lowered = redacted.lower()
+    for marker in ("password", "token", "secret", "key", "dsn"):
+        if marker in lowered and "=" in redacted:
+            return "[redacted sensitive value]"
+    return redacted
 
 
 def _source_family_alias(value: str) -> str | None:
@@ -629,6 +685,13 @@ def _nested_lookup(
             return False, None
         current = current[key]
     return True, current
+
+
+def _coalesce_config_values(*values: object) -> object:
+    for value in values:
+        if value is not None:
+            return value
+    return None
 
 
 def _positive_int(value: object, *, field_name: str) -> int:
