@@ -72,6 +72,14 @@ from carbonfactor_parser.pipeline.production_e2e_year_orchestrator import (
 
 
 CONFIGURED_CYCLE_SOURCE_FAMILIES = PRODUCTION_E2E_SOURCE_FAMILIES
+_LIVE_SOURCE_ACCESS_CONFIG_KEYS = (
+    ("allow_live_source_access",),
+    ("allowLiveSourceAccess",),
+    ("live_source_access", "enabled"),
+    ("liveSourceAccess", "enabled"),
+    ("real_source_smoke", "allow_live_source_access"),
+    ("realSourceSmoke", "allowLiveSourceAccess"),
+)
 
 
 class ConfiguredCycleRunnerStatus(str, Enum):
@@ -188,14 +196,7 @@ def load_configured_cycle_runner_config(
     )
     enabled_source_families = _enabled_source_families(payload)
     source_years = _source_years_from_payload(payload)
-    allow_live_source_access = _bool_value(
-        _nested_get(payload, ("allow_live_source_access",))
-        or _nested_get(payload, ("allowLiveSourceAccess",))
-        or _nested_get(payload, ("live_source_access", "enabled"))
-        or _nested_get(payload, ("liveSourceAccess", "enabled"))
-        or _nested_get(payload, ("real_source_smoke", "allow_live_source_access"))
-        or _nested_get(payload, ("realSourceSmoke", "allowLiveSourceAccess"))
-    )
+    allow_live_source_access = _allow_live_source_access_value(payload)
 
     return ConfiguredCycleRunnerConfig(
         postgresql_config_result=postgresql_config_result,
@@ -618,6 +619,18 @@ def _nested_get(payload: Mapping[str, object], keys: tuple[str, ...]) -> object 
     return current
 
 
+def _nested_lookup(
+    payload: Mapping[str, object],
+    keys: tuple[str, ...],
+) -> tuple[bool, object | None]:
+    current: object = payload
+    for key in keys:
+        if not isinstance(current, Mapping) or key not in current:
+            return False, None
+        current = current[key]
+    return True, current
+
+
 def _positive_int(value: object, *, field_name: str) -> int:
     try:
         parsed = int(str(value))
@@ -641,6 +654,27 @@ def _bool_value(value: object) -> bool:
         return False
     normalized = str(value).strip().lower()
     return normalized in {"1", "true", "yes", "y", "on"}
+
+
+def _allow_live_source_access_value(payload: Mapping[str, object]) -> bool:
+    resolved_values: list[tuple[str, bool]] = []
+    for key_path in _LIVE_SOURCE_ACCESS_CONFIG_KEYS:
+        found, value = _nested_lookup(payload, key_path)
+        if found:
+            resolved_values.append((".".join(key_path), _bool_value(value)))
+
+    if not resolved_values:
+        return False
+
+    unique_values = {value for _, value in resolved_values}
+    if len(unique_values) > 1:
+        configured_keys = ", ".join(key for key, _ in resolved_values)
+        raise ValueError(
+            "Conflicting live source access settings were provided: "
+            f"{configured_keys}.",
+        )
+
+    return resolved_values[0][1]
 
 
 def _download_status_value(download_result: object | None) -> str:
