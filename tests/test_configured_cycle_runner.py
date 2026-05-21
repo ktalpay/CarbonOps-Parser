@@ -222,6 +222,75 @@ def test_configured_cycle_runner_blocks_https_without_live_opt_in(
     assert "download_status=failed" in captured.out
     assert "parse_status=not_run" in captured.out
     assert "secret" not in family.failures[0].message
+    assert "token=secret" not in captured.out
+
+
+def test_invalid_archive_root_type_fails_clearly(tmp_path: Path) -> None:
+    config_path = tmp_path / "bad.json"
+    config_path.write_text(
+        json.dumps({"postgresql": {"dsn": "postgresql://u:p@h/db"}, "archive_root": 12}),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="archive_root must be a string path"):
+        load_configured_cycle_runner_config(config_path)
+
+
+def test_unsupported_enabled_source_family_fails_clearly(tmp_path: Path) -> None:
+    config_path = tmp_path / "bad-family.json"
+    config_path.write_text(
+        json.dumps(
+            {"postgresql": {"dsn": "postgresql://u:p@h/db"}, "enabled_source_families": ["unknown"]},
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="Unsupported enabled source family"):
+        load_configured_cycle_runner_config(config_path)
+
+
+@pytest.mark.parametrize("value,field", [("0", "initial_year"), ("x", "initial_year")])
+def test_invalid_initial_year_fails_clearly(tmp_path: Path, value: str, field: str) -> None:
+    config_path = tmp_path / "bad-year.json"
+    config_path.write_text(
+        json.dumps({"postgresql": {"dsn": "postgresql://u:p@h/db"}, "initial_year": value}),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match=field):
+        load_configured_cycle_runner_config(config_path)
+
+
+def test_invalid_cycle_interval_fails_clearly(tmp_path: Path) -> None:
+    config_path = tmp_path / "bad-interval.json"
+    config_path.write_text(
+        json.dumps({"postgresql": {"dsn": "postgresql://u:p@h/db"}, "cycle_interval_seconds": -1}),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="cycle_interval_seconds"):
+        load_configured_cycle_runner_config(config_path)
+
+
+def test_invalid_max_cycles_fails_clearly(tmp_path: Path) -> None:
+    config_path = tmp_path / "bad-max-cycles.json"
+    config_path.write_text(
+        json.dumps({"postgresql": {"dsn": "postgresql://u:p@h/db"}, "max_cycles": 0}),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="max_cycles"):
+        load_configured_cycle_runner_config(config_path)
+
+
+def test_invalid_source_artifact_definition_fails_clearly(tmp_path: Path) -> None:
+    config_path = tmp_path / "bad-source.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "postgresql": {"dsn": "postgresql://u:p@h/db"},
+                "source_years": {"ghg_protocol": {"2024": {"title": "missing artifact"}}},
+            },
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="requires artifact_url"):
+        load_configured_cycle_runner_config(config_path)
 
 
 def _source_years(

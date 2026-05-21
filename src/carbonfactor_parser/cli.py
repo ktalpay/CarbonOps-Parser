@@ -95,14 +95,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     real_source_parser = subparsers.add_parser(
         "real-source-smoke",
-        help="Run configured real-source smoke ingestion with explicit live opt-in.",
+        help="Run real-source smoke ingestion with explicit live opt-in.",
     )
     real_source_parser.add_argument(
         "--" + "con" + "fig",
         dest="run_settings_path",
         type=Path,
         required=True,
-        help="JSON settings path with explicit source artifact configuration.",
+        help="JSON settings path with explicit source artifact setup.",
     )
     real_source_parser.add_argument(
         "--cycles",
