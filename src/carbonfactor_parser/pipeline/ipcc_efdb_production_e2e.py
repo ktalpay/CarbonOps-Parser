@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from hashlib import sha256
 import json
 from pathlib import Path
+import re
 from typing import Callable, Mapping
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -173,7 +174,7 @@ class IpccEfdbProductionSourceAdapter:
                     _failure(
                         "download",
                         "IPCC_EFDB_PRODUCTION_DOWNLOAD_FAILED",
-                        str(exc) or exc.__class__.__name__,
+                        _redacted_error_message(exc),
                         "artifact_reference",
                     ),
                 ),
@@ -376,6 +377,25 @@ def _https_download(uri: str) -> bytes:
     request = Request(uri, headers={"User-Agent": "carbonops-parser/0.1"})
     with urlopen(request, timeout=60) as response:  # noqa: S310 - HTTPS only above
         return bytes(response.read())
+
+
+def _redacted_error_message(exc: Exception) -> str:
+    raw = str(exc).strip() or exc.__class__.__name__
+    parsed = urlparse(raw)
+    if parsed.scheme in {"http", "https"} and parsed.hostname:
+        host = parsed.hostname
+        try:
+            port = parsed.port
+        except ValueError:
+            port = None
+        authority = f"{host}:{port}" if port is not None else host
+        return f"{parsed.scheme}://{authority}/..."
+    redacted = re.sub(r"(://)[^/@\s]+@([^/\s]+)", r"\1***@\2", raw)
+    return re.sub(
+        r"(?i)(password|passwd|pwd|token|secret|key)=([^&\s]+)",
+        r"\1=***",
+        redacted,
+    )
 
 
 def _artifact_filename(uri: str, year: int, format_hint: str) -> str:

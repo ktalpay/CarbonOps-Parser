@@ -36,6 +36,7 @@ def test_configured_cycle_runner_loads_json_config(tmp_path: Path) -> None:
                 "enabled_source_families": ["ghg_protocol", "defra_desnz"],
                 "initial_year": 2024,
                 "cycle": {"interval_seconds": 0, "max_cycles": 2},
+                "real_source_smoke": {"allow_live_source_access": True},
                 "source_years": {
                     "ghg_protocol": {
                         "2024": {
@@ -56,8 +57,67 @@ def test_configured_cycle_runner_loads_json_config(tmp_path: Path) -> None:
     assert config.enabled_source_families == ("ghg_protocol", "defra_desnz")
     assert config.initial_year == 2024
     assert config.max_cycles == 2
+    assert config.allow_live_source_access is True
     assert config.source_years is not None
     assert config.source_years["ghg_protocol"][2024].version_label == "v2024"
+
+
+def test_configured_cycle_runner_rejects_conflicting_live_source_access_aliases(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "carbonops-cycle.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "postgresql": {"dsn": "postgresql://user:pass@localhost/db"},
+                "allow_live_source_access": False,
+                "real_source_smoke": {"allow_live_source_access": True},
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Conflicting live source access settings"):
+        load_configured_cycle_runner_config(config_path)
+
+
+def test_configured_cycle_runner_keeps_explicit_false_live_source_access_aliases(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "carbonops-cycle.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "postgresql": {"dsn": "postgresql://user:pass@localhost/db"},
+                "allow_live_source_access": False,
+                "real_source_smoke": {"allow_live_source_access": False},
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_configured_cycle_runner_config(config_path)
+
+    assert config.allow_live_source_access is False
+
+
+def test_configured_cycle_runner_loads_top_level_live_source_access_true(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "carbonops-cycle.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "postgresql": {"dsn": "postgresql://user:pass@localhost/db"},
+                "allow_live_source_access": True,
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_configured_cycle_runner_config(config_path)
+
+    assert config.allow_live_source_access is True
 
 
 def test_configured_cycle_runner_runs_2024_to_2027_and_is_idempotent(
@@ -113,6 +173,55 @@ def test_configured_cycle_runner_runs_2024_to_2027_and_is_idempotent(
 
     assert second.cycles[0].result.family_results[0].year_state.target_year == 2027
     assert connection.latest_years == {"ghg": 2026, "defra": 2026, "ipcc": 2026}
+
+
+def test_configured_cycle_runner_blocks_https_without_live_opt_in(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    connection = _FakeConnection()
+    config = ConfiguredCycleRunnerConfig(
+        postgresql_config_result=load_postgresql_runtime_config(
+            {"CARBONOPS_POSTGRESQL_DSN": "postgresql://user:pass@localhost/db"},
+        ),
+        archive_root=tmp_path / "archive",
+        enabled_source_families=("ghg_protocol",),
+        initial_year=2024,
+        cycle_interval_seconds=0,
+        max_cycles=1,
+        source_years={
+            "ghg_protocol": {
+                2024: ConfiguredSourceYearArtifact(
+                    year=2024,
+                    artifact_url="https://example.invalid/factors.csv?token=secret",
+                    publication_url="https://example.invalid/publication",
+                    title="configured live artifact",
+                    version_label="live-2024",
+                    content_type="text/csv",
+                    format_hint="csv",
+                )
+            }
+        },
+        allow_live_source_access=False,
+    )
+
+    result = run_configured_cycle_runner(
+        config,
+        startup=_startup(connection),
+        sleep=lambda _: None,
+    )
+
+    captured = capsys.readouterr()
+    family = result.cycles[0].result.family_results[0]
+    assert result.status is ConfiguredCycleRunnerStatus.COMPLETED_WITH_FAILURES
+    assert family.status.value == "failed"
+    assert family.failures[0].code == "GHG_PROTOCOL_PRODUCTION_DOWNLOAD_FAILED"
+    assert "Live HTTPS source access requires explicit real-source smoke opt-in" in (
+        family.failures[0].message
+    )
+    assert "download_status=failed" in captured.out
+    assert "parse_status=not_run" in captured.out
+    assert "secret" not in family.failures[0].message
 
 
 def _source_years(

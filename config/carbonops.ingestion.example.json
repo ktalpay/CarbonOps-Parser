@@ -10,6 +10,9 @@
     "interval_seconds": 0,
     "max_cycles": 4
   },
+  "real_source_smoke": {
+    "allow_live_source_access": false
+  },
   "source_years": {
     "ghg_protocol": {
       "2024": {

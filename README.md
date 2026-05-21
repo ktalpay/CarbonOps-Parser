@@ -502,6 +502,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [PostgreSQL Repository Disabled Execution Preview Boundary](docs/postgresql-repository-disabled-execution-preview-boundary.md)
 - [PostgreSQL Runtime Execution Gate Boundary](docs/postgresql-runtime-execution-gate-boundary.md)
 - [PostgreSQL Runtime Readiness Checklist](docs/postgresql-runtime-readiness-checklist.md)
+- [Real-Source Smoke Mode](docs/real-source-smoke-mode.md)
 - [Parser To Normalization Handoff Boundary](docs/parser-to-normalization-handoff-boundary.md)
 - [Parser To Normalization Integration Recap](docs/parser-to-normalization-integration-recap.md)
 - [Source To Normalization Pipeline Recap](docs/source-to-normalization-pipeline-recap.md)

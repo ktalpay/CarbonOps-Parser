@@ -72,6 +72,14 @@ from carbonfactor_parser.pipeline.production_e2e_year_orchestrator import (
 
 
 CONFIGURED_CYCLE_SOURCE_FAMILIES = PRODUCTION_E2E_SOURCE_FAMILIES
+_LIVE_SOURCE_ACCESS_CONFIG_KEYS = (
+    ("allow_live_source_access",),
+    ("allowLiveSourceAccess",),
+    ("live_source_access", "enabled"),
+    ("liveSourceAccess", "enabled"),
+    ("real_source_smoke", "allow_live_source_access"),
+    ("realSourceSmoke", "allowLiveSourceAccess"),
+)
 
 
 class ConfiguredCycleRunnerStatus(str, Enum):
@@ -105,6 +113,7 @@ class ConfiguredCycleRunnerConfig:
     cycle_interval_seconds: float = 0.0
     max_cycles: int | None = 1
     source_years: Mapping[str, Mapping[int, ConfiguredSourceYearArtifact]] | None = None
+    allow_live_source_access: bool = False
 
 
 @dataclass(frozen=True)
@@ -187,6 +196,7 @@ def load_configured_cycle_runner_config(
     )
     enabled_source_families = _enabled_source_families(payload)
     source_years = _source_years_from_payload(payload)
+    allow_live_source_access = _allow_live_source_access_value(payload)
 
     return ConfiguredCycleRunnerConfig(
         postgresql_config_result=postgresql_config_result,
@@ -196,6 +206,7 @@ def load_configured_cycle_runner_config(
         cycle_interval_seconds=interval_seconds,
         max_cycles=configured_max_cycles,
         source_years=source_years,
+        allow_live_source_access=allow_live_source_access,
     )
 
 
@@ -285,6 +296,8 @@ def emit_configured_cycle_summary(
             f"target_year={family.year_state.target_year} "
             f"latest_year={family.year_state.latest_year} "
             f"status={family.status.value} "
+            f"download_status={_download_status_value(family.download_result)} "
+            f"parse_status={_parse_status_value(family)} "
             f"parsed_rows={family.parsed_row_count} "
             f"master_inserted={getattr(insert_summary, 'master_inserted', 0)} "
             f"master_skipped={getattr(insert_summary, 'master_skipped', 0)} "
@@ -303,7 +316,9 @@ def _build_dependencies(
     config: ConfiguredCycleRunnerConfig,
     runtime: PostgreSQLRuntimeStartupResult,
 ) -> ProductionE2EYearOrchestratorDependencies:
-    transport = _configured_artifact_transport
+    transport = _build_configured_artifact_transport(
+        allow_live_source_access=config.allow_live_source_access,
+    )
     source_years = config.source_years or {}
     return ProductionE2EYearOrchestratorDependencies(
         year_state_repository=runtime.year_state_repository,
@@ -340,13 +355,34 @@ def _build_dependencies(
     )
 
 
-def _configured_artifact_transport(uri: str) -> bytes:
+def _build_configured_artifact_transport(
+    *,
+    allow_live_source_access: bool,
+) -> Callable[[str], bytes]:
+    def transport(uri: str) -> bytes:
+        return _configured_artifact_transport(
+            uri,
+            allow_live_source_access=allow_live_source_access,
+        )
+
+    return transport
+
+
+def _configured_artifact_transport(
+    uri: str,
+    *,
+    allow_live_source_access: bool = False,
+) -> bytes:
     parsed = urlparse(uri)
     if parsed.scheme == "file":
         return Path(parsed.path).read_bytes()
     if parsed.scheme in {"", "local"}:
         return Path(parsed.path if parsed.scheme == "local" else uri).read_bytes()
     if parsed.scheme == "https":
+        if not allow_live_source_access:
+            raise ValueError(
+                "Live HTTPS source access requires explicit real-source smoke opt-in.",
+            )
         request = Request(uri, headers={"User-Agent": "carbonops-parser/0.1"})
         with urlopen(request, timeout=60) as response:  # noqa: S310
             return bytes(response.read())
@@ -364,6 +400,7 @@ def _emit_startup_summary(
     emit(f"initial_year={config.initial_year}")
     emit(f"cycle_interval_seconds={config.cycle_interval_seconds:g}")
     emit(f"max_cycles={config.max_cycles}")
+    emit(f"allow_live_source_access={config.allow_live_source_access}")
     emit(
         "postgresql_schema "
         f"created={','.join(runtime.schema_bootstrap.created_table_names) or 'none'} "
@@ -582,6 +619,18 @@ def _nested_get(payload: Mapping[str, object], keys: tuple[str, ...]) -> object 
     return current
 
 
+def _nested_lookup(
+    payload: Mapping[str, object],
+    keys: tuple[str, ...],
+) -> tuple[bool, object | None]:
+    current: object = payload
+    for key in keys:
+        if not isinstance(current, Mapping) or key not in current:
+            return False, None
+        current = current[key]
+    return True, current
+
+
 def _positive_int(value: object, *, field_name: str) -> int:
     try:
         parsed = int(str(value))
@@ -596,6 +645,54 @@ def _optional_positive_int(value: object, *, field_name: str) -> int | None:
     if value is None or value == "":
         return None
     return _positive_int(value, field_name=field_name)
+
+
+def _bool_value(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    normalized = str(value).strip().lower()
+    return normalized in {"1", "true", "yes", "y", "on"}
+
+
+def _allow_live_source_access_value(payload: Mapping[str, object]) -> bool:
+    resolved_values: list[tuple[str, bool]] = []
+    for key_path in _LIVE_SOURCE_ACCESS_CONFIG_KEYS:
+        found, value = _nested_lookup(payload, key_path)
+        if found:
+            resolved_values.append((".".join(key_path), _bool_value(value)))
+
+    if not resolved_values:
+        return False
+
+    unique_values = {value for _, value in resolved_values}
+    if len(unique_values) > 1:
+        configured_keys = ", ".join(key for key, _ in resolved_values)
+        raise ValueError(
+            "Conflicting live source access settings were provided: "
+            f"{configured_keys}.",
+        )
+
+    return resolved_values[0][1]
+
+
+def _download_status_value(download_result: object | None) -> str:
+    if download_result is None:
+        return "not_run"
+    return str(getattr(getattr(download_result, "status", None), "value", "unknown"))
+
+
+def _parse_status_value(family: object) -> str:
+    if getattr(family, "parsed_row_count", 0) > 0:
+        return "parsed"
+    failures = tuple(getattr(family, "failures", ()))
+    if any(getattr(failure, "stage", "") == "parser" for failure in failures):
+        return "failed"
+    download_result = getattr(family, "download_result", None)
+    if download_result is None or _download_status_value(download_result) != "downloaded":
+        return "not_run"
+    return "no_rows"
 
 
 __all__ = (
