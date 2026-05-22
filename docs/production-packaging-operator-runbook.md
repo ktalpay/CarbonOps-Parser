@@ -8,6 +8,11 @@ editing Python source files.
 The production runtime path is Python only. The .NET solution remains a
 contract/test path and is not a production worker executable.
 
+This runbook does not make the whole project production-ready. Project-level
+production-ready requires Python and .NET runtime parity as defined in
+[Production Parity Contract](production-parity-contract.md). The .NET runtime is
+not production-ready yet.
+
 ## Runtime Surface
 
 | Surface | Current entrypoint | Production operation status |
@@ -414,7 +419,8 @@ private artifact URLs with credentials.
 
 ## Production Validation Checklist
 
-A deployment is production-ready only when every item is pass/fail recorded:
+A Python runtime deployment is ready for the supported operator path only when
+every item is pass/fail recorded:
 
 - PASS/FAIL: Clean install completed with `python -m pip install -e ".[postgresql]"`.
 - PASS/FAIL: `carbonops-parser validate-ingestion-config --config <production-json> --cycles 1` reports `status=ready`.
@@ -434,6 +440,7 @@ Task-Issue: #500
 ## Related Documents
 
 - [Python Ingestion Local Runbook](python-ingestion-local-runbook.md)
+- [Production Parity Contract](production-parity-contract.md)
 - [Real-Source Smoke Mode](real-source-smoke-mode.md)
 - [PostgreSQL Runtime Readiness Checklist](postgresql-runtime-readiness-checklist.md)
 - [PostgreSQL Opt-In Integration Runbook](postgresql-opt-in-integration-runbook.md)

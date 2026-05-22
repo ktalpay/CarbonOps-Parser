@@ -1,12 +1,22 @@
 # Production Readiness Sequencing Roadmap
 
-This roadmap orders future work that would be needed before CarbonOps-Parser could be reviewed for production use.
+This roadmap orders future work that would be needed before CarbonOps-Parser
+could be reviewed for project-level production use.
+
+PROD-002 supersedes any Python-only interpretation of project-level production
+readiness. The Python runtime has a production operator path; the .NET runtime
+is not production-ready yet; project-level production-ready is blocked until
+both runtimes pass the production parity contract.
 
 It is documentation-only. It does not implement production readiness, certify production readiness, or add runtime behavior.
 
 ## Purpose
 
-The repository currently has public documentation, contracts, artificial examples, skeletons, and governance smoke tests. Those artifacts help future contributors work in small, reviewable increments, but they do not make the repository ready for production use.
+The repository currently has public documentation, contracts, artificial
+examples, skeletons, governance smoke tests, and a Python runtime production
+operator path. Those artifacts help future contributors work in small,
+reviewable increments, but they do not make the repository project-level
+production-ready.
 
 This document proposes a safe order for future production readiness work. It does not prove parser, normalization, unit conversion, factor, compliance, legal, or carbon accounting correctness. Real behavior must be added only in future narrow tasks with tests and review gates.
 
@@ -52,7 +62,9 @@ Future tasks may scope:
 - Public API stability notes.
 - Test strategy for Python behavior that already has public contracts or artificial examples.
 
-This phase does not make the Python path ready for production use.
+This historical phase did not by itself make the Python path ready for
+production use. Later Python operator work established the current Python
+runtime production path.
 
 ### Phase 2: Source Acquisition And Local/Remote Source Boundaries
 

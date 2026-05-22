@@ -15,7 +15,7 @@ Auditable public carbon emission factor ingestion and validation for climate-tec
 ![Package](https://img.shields.io/badge/package-not%20published%20yet-lightgrey)
 ![License](https://img.shields.io/badge/license-Apache--2.0-green)
 
-CarbonOps-Parser is a public, reviewable climate-tech data ingestion project for carbon accounting source data. It focuses on auditable ingestion, parsing, validation, diagnostics, and PostgreSQL operation for public emission factors from GHG Protocol, DEFRA/DESNZ, and IPCC EFDB, with parallel Python and .NET contract paths. The Python package includes a configured PostgreSQL ingestion runtime for operator-managed deployments. The repository is intentionally conservative: default examples are deterministic and local-only, production runs require explicit configuration and credentials, and the project does not claim production carbon-accounting, legal, compliance, source-owner, or factor correctness.
+CarbonOps-Parser is a public, reviewable climate-tech data ingestion project for carbon accounting source data. It focuses on auditable ingestion, parsing, validation, diagnostics, and PostgreSQL operation for public emission factors from GHG Protocol, DEFRA/DESNZ, and IPCC EFDB, with parallel Python and .NET contract paths. The Python package includes a configured PostgreSQL ingestion runtime for operator-managed deployments. Project-level production-ready is not claimed yet: the Python runtime has a production operator path, while the .NET runtime is not production-ready and remains a contract/parity path. The repository is intentionally conservative: default examples are deterministic and local-only, production runs require explicit configuration and credentials, and the project does not claim production carbon-accounting, legal, compliance, source-owner, or factor correctness.
 
 The project is independent from `carbonops-assistant`. It is not a continuation, module, plugin, or dependency of that project.
 
@@ -25,7 +25,7 @@ Public carbon emissions workflows often depend on emission factor spreadsheets, 
 
 ## Current Status
 
-CarbonOps-Parser is in Phase 1. The repository contains Python implementation slices, .NET contract parity slices, PostgreSQL schema/runtime boundaries, deterministic examples, local dry-run validation, and a documented Python operator path. It is not a published package release.
+CarbonOps-Parser is in Phase 1. The repository contains Python implementation slices, .NET contract parity slices, PostgreSQL schema/runtime boundaries, deterministic examples, local dry-run validation, and a documented Python operator path. It is not a published package release and is not project-level production-ready until Python and .NET provide equivalent production behavior.
 
 | Area | Phase 1 completed capabilities | Phase 2 roadmap |
 | --- | --- | --- |
@@ -91,6 +91,10 @@ The initial Python source adapter contracts and in-memory registry live under `s
 ### .NET
 
 The .NET implementation is an independent contract and future Worker Service path that follows the same conceptual workflow with .NET-oriented application structure.
+
+The .NET runtime is not production-ready yet. It does not currently provide an
+operator-supported service or scheduled-worker entrypoint equivalent to the
+Python runtime.
 
 See [src/dotnet/README.md](src/dotnet/README.md).
 
@@ -262,6 +266,10 @@ carbonops-parser validate-ingestion-config \
 See [Production Packaging And Operator Runbook](docs/production-packaging-operator-runbook.md)
 for install, configuration, PostgreSQL readiness, cron scheduling,
 verification SQL, rerun/idempotency checks, and troubleshooting.
+
+This is a Python runtime production operator path only. Project-level
+production-ready requires Python and .NET runtime parity as defined in
+[Production Parity Contract](docs/production-parity-contract.md).
 
 For boundary details, see [Local Dry-Run CLI Boundary](docs/local-dry-run-cli-boundary.md), [Local File Normalized Persistence Dry-Run Boundary](docs/local-file-normalized-persistence-dry-run-boundary.md), [PostgreSQL Persistence Preview Boundary](docs/postgresql-persistence-preview-boundary.md), and [Local Dry-Run Troubleshooting](docs/local-dry-run-troubleshooting.md).
 
@@ -442,6 +450,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Codex-Assisted Runs](docs/codex-runs/README.md)
 - [Engineering Standards](docs/engineering-standards.md)
 - [Production Packaging And Operator Runbook](docs/production-packaging-operator-runbook.md)
+- [Production Parity Contract](docs/production-parity-contract.md)
 - [Legacy Linux Service Planning - not supported production scheduling](docs/linux-service-setup.md)
 - [Source Support](docs/source-support.md)
 - [Source Discovery](docs/source-discovery.md)
@@ -555,7 +564,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 
 ## Roadmap Summary
 
-Near-term work moves from documentation polish to schema scripts, Python source discovery, PostgreSQL startup checks, raw archive handling, and the first DEFRA/DESNZ ingestion slice. The .NET Worker Service path follows as an independent implementation option.
+Near-term work keeps the Python operator path documented while moving .NET from contracts toward an equivalent production runtime. Project-level production-ready remains blocked until Python and .NET both satisfy the production parity contract.
 
 See [docs/roadmap.md](docs/roadmap.md) and [docs/task-breakdown.md](docs/task-breakdown.md).
 

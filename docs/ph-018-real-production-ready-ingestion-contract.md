@@ -1,17 +1,20 @@
 # PH-018 Real Production-Ready Ingestion Contract
 
-This document replaces the previous test-harness-oriented production-ready
-interpretation with the project owner's required production-ready definition.
+This document replaced the previous test-harness-oriented production-ready
+interpretation with the project owner's runtime ingestion-loop definition.
+PROD-002 clarifies that project-level production-ready also requires Python and
+.NET runtime parity. See
+[Production Parity Contract](production-parity-contract.md).
 
 It is documentation only. It does not implement runtime code, add credentials,
 connect to PostgreSQL, download source files, parse live data, write records,
 start a scheduler, merge pull requests, approve pull requests, close issues,
 delete branches, delete worktrees, or claim unrelated product tasks.
 
-## Production-Ready Definition
+## Runtime Production-Ready Definition
 
-CarbonOps-Parser is production-ready only when the application can perform this
-complete operational loop:
+For a selected runtime, the production ingestion loop is ready only when that
+runtime can perform this complete operational loop:
 
 1. Start the application.
 2. Load approved runtime configuration.
@@ -44,8 +47,14 @@ must not update latest-year state, and must be visible in run output.
 
 ## Current Status
 
-The repository must not be described as production-ready under this definition
-until the follow-up implementation tasks below and final validation are complete.
+The repository must not be described as project-level production-ready under
+this definition until both the Python and .NET runtimes pass the production
+parity contract and final validation is complete.
+
+PROD-001 completed the Python operator-run production baseline only. The Python
+runtime has a production operator path. The .NET runtime is not production-ready
+yet and remains a contract/parity path without an equivalent production service
+or scheduled-worker entrypoint.
 
 PH-017 Docker PostgreSQL validation evidence is useful test-harness evidence,
 but it is not sufficient for this production-ready definition because this
@@ -453,10 +462,11 @@ Repeated cycles must be idempotent.
 
 ## Follow-Up Implementation Tasks
 
-PH-018 is complete only when this contract is documented. Implementation remains
-future work.
+PH-018 is complete only when this contract is documented. PROD-001 completed the
+Python operator-run baseline. Project-level production-ready remains future
+work until the .NET runtime reaches parity and cross-runtime validation passes.
 
-Required follow-up tasks:
+Required follow-up tasks for project-level production readiness:
 
 1. Replace the current normalized-only PostgreSQL runtime schema with the
    source-specific master/detail schema in this contract.
@@ -481,7 +491,16 @@ Required follow-up tasks:
 12. Add Docker PostgreSQL integration tests for startup bootstrap, 2024 initial
     ingestion, 2025/2026 next-year progression, 2027 unavailable no-op,
     idempotent replay, and conflict handling.
-13. Add final validation before any production-ready claim is restored.
+13. Implement the .NET service/scheduled-worker entrypoint.
+14. Implement the .NET production config loader and redaction behavior.
+15. Implement .NET PostgreSQL schema bootstrap and year-state behavior.
+16. Implement .NET source discovery/download/parsing orchestration.
+17. Implement .NET source-specific master/detail inserts.
+18. Implement .NET idempotency and rerun behavior.
+19. Add .NET Docker PostgreSQL E2E tests.
+20. Add Python/.NET parity validation.
+21. Add final validation before any project-level production-ready claim is
+    restored.
 
 ## Non-Goals
 

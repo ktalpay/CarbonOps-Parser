@@ -1,12 +1,17 @@
 # Production Readiness Gap Analysis
 
-This document records the gap between the current public CarbonOps-Parser artifact and a future implementation that could be reviewed for production use.
+This document records the historical gap between the early public
+CarbonOps-Parser artifact and a future implementation that could be reviewed for
+production use. PROD-002 supersedes any project-level production-ready reading:
+the Python runtime now has a production operator path, the .NET runtime is not
+production-ready yet, and project-level production-ready is blocked until both
+runtimes pass the production parity contract.
 
 It adds no code, contracts, examples, tests, runtime behavior, source acquisition, persistence, scheduling, configuration loading, unit conversion, factor correctness logic, or deployment workflow.
 
 ## Purpose
 
-The current repository is not ready for production use.
+The current repository is not project-level production-ready.
 
 This gap analysis gives reviewers and contributors a conservative map of what is missing before any Python or .NET implementation can be considered for production use. It keeps current documentation-first work separate from future implementation tasks.
 

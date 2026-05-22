@@ -9,9 +9,10 @@ This document is a non-installing template for operator planning. It does not
 install a service, enable a service, start a service, create a user, read
 configuration, load credentials, connect to PostgreSQL, run SQL, or download
 sources. It must not be used to imply daemon, system service, or installer
-support for production operation. Implementation-specific service files should
-be added only after a future task explicitly scopes and reviews service support
-for the selected implementation.
+support for production operation. It also does not imply that the .NET runtime
+has a production service path. Implementation-specific service files should be
+added only after a future task explicitly scopes and reviews service support for
+the selected implementation.
 
 ## Service Responsibilities
 
@@ -79,3 +80,5 @@ steps.
 For the supported production install, configure, validate, run, stop, diagnose,
 and rollback flow, see
 [Production Packaging And Operator Runbook](production-packaging-operator-runbook.md).
+For project-level Python/.NET parity requirements, see
+[Production Parity Contract](production-parity-contract.md).

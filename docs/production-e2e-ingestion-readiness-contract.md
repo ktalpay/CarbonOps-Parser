@@ -3,9 +3,12 @@
 This document defines the production end-to-end ingestion readiness contract for
 CarbonOps-Parser.
 
-PH-018 supersedes any earlier test-harness-oriented production-ready
-interpretation. The authoritative production-ready definition is
-[PH-018 Real Production-Ready Ingestion Contract](ph-018-real-production-ready-ingestion-contract.md).
+PH-018 superseded earlier test-harness-oriented production-ready
+interpretations. PROD-002 further clarifies that project-level production-ready
+requires Python and .NET runtime parity. The authoritative parity definition is
+[Production Parity Contract](production-parity-contract.md), with
+[PH-018 Real Production-Ready Ingestion Contract](ph-018-real-production-ready-ingestion-contract.md)
+retained as the runtime ingestion loop contract.
 
 It is documentation only. It does not implement runtime code, call live
 endpoints, execute database operations, create credentials, download source
@@ -14,7 +17,7 @@ production carbon-accounting correctness.
 
 ## Production Definition
 
-For this project, production E2E ingestion means one run performs this
+For either runtime, production E2E ingestion means one run performs this
 operational sequence:
 
 1. Check PostgreSQL connectivity, schema state, and required tables.
@@ -258,6 +261,16 @@ Future work should be split into focused tasks:
 10. Add Docker PostgreSQL integration tests for first run, next-year selection,
     no-op availability, idempotency, and rollback behavior on Apple M3.
 11. Add operator runbook updates after implementation behavior exists.
+
+## Runtime Parity
+
+The Python runtime currently has a documented production operator path. The .NET
+runtime is not production-ready yet. Project-level production-ready is blocked
+until both runtimes implement this ingestion behavior against the same
+PostgreSQL schema with equivalent idempotency, redaction, no-op, and operator
+behavior.
+
+See [Production Parity Contract](production-parity-contract.md).
 
 ## PR Footer Requirement
 

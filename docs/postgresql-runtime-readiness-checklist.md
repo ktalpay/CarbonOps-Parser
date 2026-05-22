@@ -1,10 +1,15 @@
 # PostgreSQL Runtime Readiness Checklist
 
 This checklist defines the operator checks that must pass before a
-CarbonOps-Parser Python ingestion deployment is treated as production-ready.
+CarbonOps-Parser Python ingestion deployment is treated as ready for the
+supported production operator path.
 It reflects the current packaged runtime: `carbonops-parser run-ingestion`
 opens PostgreSQL, runs additive schema bootstrap, ingests configured source
 families, and writes source-family master/detail tables.
+
+This checklist does not claim project-level production-ready. The .NET runtime
+is not production-ready yet, and project-level production-ready is blocked until
+Python and .NET runtimes satisfy the same production parity contract.
 
 ## Supported Runtime Boundary
 
@@ -209,6 +214,7 @@ All items must be PASS:
 ## Related Documents
 
 - [Production Packaging And Operator Runbook](production-packaging-operator-runbook.md)
+- [Production Parity Contract](production-parity-contract.md)
 - [Python Ingestion Local Runbook](python-ingestion-local-runbook.md)
 - [Real-Source Smoke Mode](real-source-smoke-mode.md)
 - [PostgreSQL Opt-In Integration Runbook](postgresql-opt-in-integration-runbook.md)
