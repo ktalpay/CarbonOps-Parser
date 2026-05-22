@@ -10,9 +10,10 @@ families, and writes source-family master/detail tables.
 This checklist does not claim project-level production-ready. The .NET runtime
 is not production-ready yet, and project-level production-ready is blocked until
 Python and .NET runtimes satisfy the same production parity contract.
-PROD-005 adds the .NET PostgreSQL schema bootstrap/year-state baseline only; it
-does not add .NET source discovery, source download, parser orchestration, or
-source-family master/detail insert execution.
+PROD-008 adds an opt-in .NET Docker PostgreSQL E2E/idempotency validation
+baseline for one checked-in local source fixture. It does not make the .NET
+service `run-once` command production-ready and does not complete project-level
+production readiness.
 
 ## Supported Runtime Boundary
 
@@ -34,8 +35,18 @@ Python production path:
   `CREATE INDEX IF NOT EXISTS` statements for the Phase 1 runtime catalog.
 - Year-state baseline: latest successful year lookup, default initial year
   `2024`, next-year calculation, and idempotent successful-year recording.
-- Unsupported in .NET today: source discovery, source download, parser
-  orchestration, and source-family master/detail insert execution.
+- Source-cycle preview baseline: configured local CSV/text artifacts only; no
+  live network calls.
+- Source-specific persistence baseline: additive source-family master/detail
+  inserts with duplicate skip counts and year-state update after successful
+  persistence.
+- Opt-in E2E baseline: Docker PostgreSQL contract tests validate schema
+  bootstrap, DEFRA/DESNZ local fixture parsing, first insert, duplicate rerun
+  skips, year-state progression, `no_available_source_year`, failure rollback,
+  and redaction.
+- Unsupported in .NET today: production `run-once` ingestion execution,
+  uncontrolled live source access, all-three-source Docker E2E, and Python/.NET
+  persisted parity validation.
 
 The older preview-only `PostgreSQLPersistenceRepository.persist()` boundary is
 still unsupported. Production ingestion uses
@@ -196,6 +207,56 @@ requires:
   inserted again.
 - Latest-year state does not advance when the source year is unavailable.
 - Logs remain redacted.
+
+## .NET Docker PostgreSQL E2E Check
+
+The .NET Docker PostgreSQL E2E path is opt-in and test-only. The default test
+suite must not require PostgreSQL or credentials.
+
+Enable it only against an operator-owned disposable PostgreSQL database or a
+local Docker PostgreSQL instance:
+
+```bash
+export CARBONOPS_RUN_DOTNET_POSTGRESQL_INTEGRATION=1
+export CARBONOPS_DOTNET_POSTGRESQL_TEST_DSN='<redacted-postgresql-dsn>'
+
+dotnet test tests/dotnet/CarbonOps.Parser.Contracts.Tests/CarbonOps.Parser.Contracts.Tests.csproj \
+  --configuration Release \
+  --no-restore \
+  --filter "FullyQualifiedName~DotNetPostgreSQLIntegrationE2ETests"
+```
+
+Instead of a DSN, the tests may use externally supplied split
+`CARBONOPS_PARSER_POSTGRES_*` settings accepted by the .NET production config
+boundary. Do not put credentials in repository files. Do not paste raw DSNs into
+logs or tickets.
+
+The test path creates a generated PostgreSQL-safe schema name when possible so
+first-run and rerun counts are deterministic without destructive SQL. The
+runtime role therefore needs permission to create an isolated test schema, or
+the operator must provide a disposable pre-approved schema through
+`CARBONOPS_DOTNET_POSTGRESQL_TEST_SCHEMA`.
+
+PASS requires:
+
+- PostgreSQL is not contacted unless
+  `CARBONOPS_RUN_DOTNET_POSTGRESQL_INTEGRATION=1` is set.
+- Missing DSN/split config fails closed before a connection attempt.
+- Schema bootstrap succeeds twice and the second run creates no tables.
+- The checked-in DEFRA/DESNZ local CSV fixture parses and inserts
+  source-specific master/detail rows.
+- Rerunning the same fixture reports `inserted=0` and duplicate skipped counts
+  greater than zero.
+- `source_family_year_states` records one logical successful year for
+  `defra_desnz`/`2024`, with next target year `2025`.
+- Missing target-year artifacts report `no_available_source_year` and do not
+  advance year-state.
+- A persistence failure rolls back and does not advance year-state.
+- Diagnostics redact passwords, connection strings, and DSNs.
+
+This check does not prove project-level production readiness, .NET service
+`run-once` readiness, all three source families, live source handling, or
+Python/.NET persisted parity.
 
 ## Failure Blocks
 

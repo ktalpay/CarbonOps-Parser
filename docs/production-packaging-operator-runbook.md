@@ -35,8 +35,10 @@ lock, or system service wrapper in this repository.
 The .NET scheduled-worker command surface added by PROD-003 is directly
 runnable and suitable for future cron/manual scheduling, but `run-once` returns
 `ingestion_status=not_implemented` and a non-zero exit code until later .NET
-production parity tasks complete idempotency/rerun E2E, Docker PostgreSQL E2E,
-and Python/.NET persisted parity validation.
+production parity tasks complete service execution, all-source Docker
+PostgreSQL E2E, and Python/.NET persisted parity validation. PROD-008 adds only
+an opt-in Docker PostgreSQL contract-test baseline for one local fixture-backed
+source family.
 
 ## Safety Modes
 
@@ -240,6 +242,28 @@ Expected baseline result includes `schema_bootstrap_available=True`,
 `project_level_production_ready=False`. This PostgreSQL validation command is
 not the source-cycle preview command, so it still reports production ingestion
 source download and parser orchestration as incomplete.
+
+Optionally validate the .NET Docker PostgreSQL E2E/idempotency baseline against
+a disposable Docker PostgreSQL database. This path is disabled by default and
+must use externally supplied credentials:
+
+```bash
+export CARBONOPS_RUN_DOTNET_POSTGRESQL_INTEGRATION=1
+export CARBONOPS_DOTNET_POSTGRESQL_TEST_DSN='<redacted-postgresql-dsn>'
+
+dotnet test tests/dotnet/CarbonOps.Parser.Contracts.Tests/CarbonOps.Parser.Contracts.Tests.csproj \
+  --configuration Release \
+  --no-restore \
+  --filter "FullyQualifiedName~DotNetPostgreSQLIntegrationE2ETests"
+```
+
+The tests may also use split `CARBONOPS_PARSER_POSTGRES_*` settings. They do
+not print passwords, DSNs, or connection strings. They validate additive schema
+bootstrap, DEFRA/DESNZ local fixture parsing, source-specific master/detail
+insert, same-year rerun duplicate skips, successful year-state progression,
+`no_available_source_year`, failure rollback, and redacted diagnostics. They do
+not make `.NET run-once` a production ingestion command and do not prove
+Python/.NET persisted parity.
 
 Preview the .NET source-cycle orchestration baseline without opening PostgreSQL
 or writing source-family records:
