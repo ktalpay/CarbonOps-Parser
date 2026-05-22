@@ -7,8 +7,18 @@ CarbonOps-Parser is a public climate-tech data infrastructure project for audita
 - [README](../README.md) - project positioning, safe quickstart, supported sources, status, and roadmap summary.
 - [Examples](../examples/README.md) - deterministic local examples and fixture entry points.
 - [Architecture](architecture.md) - Python, .NET, PostgreSQL, validation, diagnostics, and dry-run boundaries.
+- [Contributing](../CONTRIBUTING.md) - contribution scope, validation expectations, and maintainer-only merge policy.
+- [Branch And Pull Request Workflow](branch-pr-workflow.md) - issue, branch, pull request, validation, review, and merge workflow.
 - [Phase 2 Roadmap And Execution Boundary](phase2-roadmap.md) - next-stage roadmap and safety gates.
 - [Release Notes Draft](release-notes-draft.md) - draft notes for a first public alpha/review release.
+
+## Runtime Paths
+
+- Python implementation: [src/python/README.md](../src/python/README.md) and the active package under `src/carbonfactor_parser`.
+- Python local ingestion runbook: [Python Ingestion Local Runbook](python-ingestion-local-runbook.md).
+- Python operator runbook: [Production Packaging And Operator Runbook](production-packaging-operator-runbook.md).
+- .NET implementation: [src/dotnet/README.md](../src/dotnet/README.md).
+- .NET parity and readiness scope: [Production Parity Contract](production-parity-contract.md) and [Final Project Production-Ready Verdict](final-project-production-ready-verdict.md).
 
 ## Public Discoverability
 
@@ -32,6 +42,8 @@ Discovery wording should stay conservative. The repository may describe source i
 - [Ingestion Metadata Model](ingestion-metadata-model.md)
 - [Ingestion Contracts](ingestion-contracts.md)
 - [Engineering Standards](engineering-standards.md)
+- [Contributing](../CONTRIBUTING.md)
+- [Branch And Pull Request Workflow](branch-pr-workflow.md)
 - [Production Packaging And Operator Runbook](production-packaging-operator-runbook.md)
 - [Python Ingestion Local Runbook](python-ingestion-local-runbook.md)
 - [Source Support](source-support.md)

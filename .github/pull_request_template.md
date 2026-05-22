@@ -10,6 +10,7 @@ Briefly describe the task and outcome.
 
 - [ ] Tests/checks run and listed:
 - [ ] `git diff --check` passed
+- [ ] Documentation updated when behavior, scope, validation, or operator expectations changed
 
 ## Scope Guard Checklist
 
@@ -19,6 +20,7 @@ Briefly describe the task and outcome.
 - [ ] No parser/database/scheduler/downloader coupling unless requested
 - [ ] No external dependencies unless requested
 - [ ] One commit only
+- [ ] Maintainer-only merge expectation preserved
 - [ ] Tests/checks run and listed
 
 ## Deferred Items

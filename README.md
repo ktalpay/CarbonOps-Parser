@@ -88,6 +88,10 @@ The Python implementation is the active Phase 1 path for source discovery contra
 
 The initial Python source adapter contracts and in-memory registry live under `src/carbonfactor_parser/source_adapters`.
 
+See [src/python/README.md](src/python/README.md) for the Python implementation
+path and [Python Ingestion Local Runbook](docs/python-ingestion-local-runbook.md)
+for the local fixture-backed ingestion runbook.
+
 ### .NET
 
 The .NET implementation is an independent Worker Service path that follows the
@@ -98,6 +102,18 @@ source-cycle orchestration, source-specific persistence, Docker PostgreSQL E2E,
 and persisted parity baselines.
 
 See [src/dotnet/README.md](src/dotnet/README.md).
+
+## Contributing
+
+Contributors may open issues, create branches in forks, and submit pull
+requests for review. Only the maintainer merges upstream changes.
+
+Start with [CONTRIBUTING.md](CONTRIBUTING.md) and
+[Branch And Pull Request Workflow](docs/branch-pr-workflow.md). Use the issue
+templates for bug reports, feature requests, documentation requests,
+production-readiness questions, and source mapping notes. Pull requests should
+stay scoped to one task, list validation results, and preserve the documented
+production-readiness boundaries unless a task explicitly changes them.
 
 ## Install And Local Dry-Run Quickstart
 
