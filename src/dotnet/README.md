@@ -32,9 +32,14 @@ does not open PostgreSQL, run SQL, or print secret values.
 `validate-postgresql-runtime` validates the same explicit configuration and
 reports the .NET PostgreSQL schema/year-state baseline without opening
 PostgreSQL or running SQL. It reports that schema bootstrap and year-state
-primitives exist. Production source download, parser orchestration,
-master/detail inserts, .NET production readiness, and project-level production
-readiness are still false in this PostgreSQL validation command.
+primitives exist and that the source-specific master/detail insert baseline is
+available through `source_specific_master_detail_insert_baseline=True`. It also
+reports `master_detail_insert_e2e_validated=False` and
+`production_ingestion_ready=False` because Docker PostgreSQL E2E,
+idempotency/rerun E2E, and Python/.NET persisted parity validation remain
+incomplete. Production source download, full parser orchestration E2E, .NET
+production readiness, and project-level production readiness are still false in
+this PostgreSQL validation command.
 
 `preview-source-cycle` and `validate-source-cycle` provide the PROD-006 safe
 source-cycle orchestration baseline. They select enabled source families from
@@ -74,6 +79,16 @@ strings. The schema bootstrap DDL is limited to `CREATE TABLE IF NOT EXISTS`
 and `CREATE INDEX IF NOT EXISTS` style statements for the shared/source-family
 Phase 1 tables.
 
+The .NET contracts project also includes a PROD-007 source-specific
+master/detail insert boundary. It maps normalized parser output into
+`ghg_emission_factor_masters/details`, `defra_emission_factor_masters/details`,
+and `ipcc_emission_factor_masters/details`, uses additive
+`INSERT ... ON CONFLICT DO NOTHING` SQL, returns explicit inserted/skipped
+duplicate/validation-failed counts, and updates source-family year-state only
+inside the successful source-family persistence transaction. This is a baseline
+only; Docker PostgreSQL E2E, idempotency/rerun E2E, and Python/.NET persisted
+parity validation remain blockers.
+
 `run-once` is intentionally fail-closed. It may reuse the same config
 validation boundary, but it reports
 `ingestion_status=not_implemented`, opens no PostgreSQL connection, inserts no
@@ -104,5 +119,5 @@ PROD-004 adds only the .NET production config loader and redaction baseline on
 top of the scheduled-worker command surface. PROD-005 adds only the .NET
 PostgreSQL schema bootstrap/year-state item from the production parity map.
 PROD-006 adds only the .NET source discovery/load/parsing orchestration item.
-It does not add source-family master/detail insert execution or complete .NET
-production ingestion.
+PROD-007 adds only the .NET source-specific master/detail insert runtime item.
+It does not complete .NET production ingestion.

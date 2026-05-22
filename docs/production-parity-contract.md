@@ -17,9 +17,11 @@ Project-level production-ready is blocked.
   scheduled-worker entrypoint baseline, and a production config
   loader/redaction baseline. It also has a .NET PostgreSQL schema
   bootstrap/year-state baseline for the shared/source-family runtime tables,
-  plus a source-family target-year/source-artifact/parser preview orchestration
-  baseline. Its ingestion command remains a safe not-yet-implemented
-  placeholder because source-specific master/detail inserts are not implemented.
+  a source-family target-year/source-artifact/parser preview orchestration
+  baseline, and a .NET source-specific master/detail insert baseline. Its
+  ingestion command remains a safe not-yet-implemented placeholder because full
+  .NET idempotency/rerun E2E, Docker PostgreSQL E2E, and Python/.NET persisted
+  parity validation remain incomplete.
 - Project-level production-ready: no. The project cannot claim this until a
   user can choose either runtime and receive equivalent production behavior.
 
@@ -40,8 +42,9 @@ be:
 The Python runtime currently has this documented operator path. The .NET runtime
 has the scheduled-worker entrypoint shape plus real file/environment config
 loading and redaction for `validate-config`, plus PostgreSQL schema
-bootstrap/year-state runtime primitives and a safe local source-cycle preview
-command; it does not yet provide equivalent production ingestion behavior.
+bootstrap/year-state runtime primitives, a safe local source-cycle preview
+command, and source-specific master/detail insert primitives; it does not yet
+provide equivalent production ingestion behavior.
 
 ## Equivalent Data Contract
 
@@ -198,8 +201,15 @@ The implementation sequence for .NET production readiness is:
    It does not insert source-specific master/detail records, update year-state
    after parsing alone, enable uncontrolled network access, or make .NET
    production ingestion complete.
-5. .NET source-specific master/detail insert.
-6. .NET idempotency and rerun behavior.
+5. .NET source-specific master/detail insert. Satisfied by PROD-007 for
+   parser-output mapping into `ghg_*`, `defra_*`, and `ipcc_*`
+   master/detail tables, source-family/year transaction scope, duplicate skip
+   counts, additive `INSERT ... ON CONFLICT DO NOTHING` SQL shape, redacted
+   database diagnostics, and year-state update only after successful
+   source-family persistence. This does not make `run-once` production-ready,
+   does not add uncontrolled network access, and does not complete Docker
+   PostgreSQL E2E or Python/.NET persisted parity validation.
+6. .NET idempotency and rerun behavior E2E.
 7. .NET Docker PostgreSQL E2E tests.
 8. Python/.NET parity validation.
 9. Final project production-ready verdict.
