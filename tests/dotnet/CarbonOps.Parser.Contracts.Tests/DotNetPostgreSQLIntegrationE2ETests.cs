@@ -62,8 +62,10 @@ public sealed class DotNetPostgreSQLIntegrationE2ETests
         Assert.Empty(second.CreatedTableNames);
     }
 
-    [Fact]
-    public async Task DefraSourceCycleInsertRerunAndYearStateAreIdempotentWhenEnabled()
+    [Theory]
+    [MemberData(nameof(SourceFamilyFixtureCases))]
+    public async Task SourceFamilyFixtureInsertRerunAndYearStateAreIdempotentWhenEnabled(
+        SourceFamily sourceFamily)
     {
         var gate = ResolveIntegrationSettingsFromEnvironment();
         if (!gate.Enabled)
@@ -73,11 +75,17 @@ public sealed class DotNetPostgreSQLIntegrationE2ETests
 
         Assert.True(gate.HasSettings, gate.Reason);
         var settings = gate.Settings!;
-        await new PostgreSQLRuntimeSchemaBootstrapper().BootstrapAsync(settings);
+        var bootstrapper = new PostgreSQLRuntimeSchemaBootstrapper();
+        var firstBootstrap = await bootstrapper.BootstrapAsync(settings);
+        var secondBootstrap = await bootstrapper.BootstrapAsync(settings);
+        Assert.Empty(firstBootstrap.MissingTableNames);
+        Assert.Empty(secondBootstrap.MissingTableNames);
+        Assert.Empty(secondBootstrap.CreatedTableNames);
+
         await using var dataSource = NpgsqlDataSource.Create(
             PostgreSQLRuntimeConnectionBoundary.BuildConnectionString(settings));
 
-        var parsed = ParseDefraFixture(settings.Schema);
+        var parsed = ParseFixture(sourceFamily, settings.Schema, targetYear: 2024);
         var repository = new PostgreSQLSourceSpecificFactorPersistenceRepository(
             new NpgsqlSourceSpecificFactorPersistenceSession(dataSource));
         var yearState = new PostgreSQLSourceFamilyYearStateRepository(
@@ -85,8 +93,8 @@ public sealed class DotNetPostgreSQLIntegrationE2ETests
 
         var first = await repository.PersistAsync(parsed);
         var second = await repository.PersistAsync(parsed);
-        var state = await yearState.GetYearStateAsync(SourceFamily.DefraDesnz);
-        var counts = await CountDefraRowsAsync(dataSource, "prod008-" + settings.Schema);
+        var state = await yearState.GetYearStateAsync(sourceFamily);
+        var counts = await CountSourceFamilyRowsAsync(dataSource, sourceFamily, "prod009-" + settings.Schema);
 
         Assert.Equal(PostgreSQLSourceSpecificFactorPersistenceStatus.Inserted, first.Status);
         Assert.True(first.MasterInserted > 0);
@@ -104,11 +112,13 @@ public sealed class DotNetPostgreSQLIntegrationE2ETests
         Assert.Equal(first.DetailInserted, counts.DetailRows);
         Assert.Equal(2024, state.LatestYear);
         Assert.Equal(2025, state.NextYear);
-        Assert.Equal(1, await CountYearStateRowsAsync(dataSource, SourceFamily.DefraDesnz, 2024));
+        Assert.Equal(1, await CountYearStateRowsAsync(dataSource, sourceFamily, 2024));
     }
 
-    [Fact]
-    public async Task NoAvailableSourceYearDoesNotAdvanceYearStateWhenEnabled()
+    [Theory]
+    [MemberData(nameof(SourceFamilyFixtureCases))]
+    public async Task NoAvailableSourceYearDoesNotAdvanceYearStateWhenEnabled(
+        SourceFamily sourceFamily)
     {
         var gate = ResolveIntegrationSettingsFromEnvironment();
         if (!gate.Enabled)
@@ -122,22 +132,22 @@ public sealed class DotNetPostgreSQLIntegrationE2ETests
             PostgreSQLRuntimeConnectionBoundary.BuildConnectionString(gate.Settings!));
         var yearState = new PostgreSQLSourceFamilyYearStateRepository(
             new NpgsqlSourceFamilyYearStateSession(dataSource));
-        await yearState.RecordSuccessfulYearAsync(SourceFamily.GhgProtocol, 2024);
+        await yearState.RecordSuccessfulYearAsync(sourceFamily, 2024);
         var orchestrator = new SourceCycleOrchestrator(
             yearState,
-            [SourceFamily.GhgProtocol],
+            [sourceFamily],
             artifacts: []);
 
         var result = await orchestrator.PreviewAsync();
         var run = Assert.Single(result.Runs);
-        var after = await yearState.GetYearStateAsync(SourceFamily.GhgProtocol);
+        var after = await yearState.GetYearStateAsync(sourceFamily);
 
         Assert.Equal(SourceCycleRunStatus.NoAvailableSourceYear, run.Status);
         Assert.Equal(2024, run.LatestSuccessfulYear);
         Assert.Equal(2025, run.TargetYear);
         Assert.Equal(2024, after.LatestYear);
         Assert.Equal(2025, after.NextYear);
-        Assert.Equal(1, await CountYearStateRowsAsync(dataSource, SourceFamily.GhgProtocol, 2024));
+        Assert.Equal(1, await CountYearStateRowsAsync(dataSource, sourceFamily, 2024));
     }
 
     [Fact]
@@ -154,7 +164,7 @@ public sealed class DotNetPostgreSQLIntegrationE2ETests
         await new PostgreSQLRuntimeSchemaBootstrapper().BootstrapAsync(settings);
         await using var dataSource = NpgsqlDataSource.Create(
             PostgreSQLRuntimeConnectionBoundary.BuildConnectionString(settings));
-        var parsed = ParseDefraFixture(settings.Schema);
+        var parsed = ParseFixture(SourceFamily.DefraDesnz, settings.Schema, targetYear: 2024);
         var mapped = PostgreSQLSourceSpecificFactorPersistenceMapper.Map(parsed);
         var validBatch = Assert.Single(mapped.Batches);
         var invalidDetail = validBatch.DetailRecords[0] with
@@ -189,7 +199,7 @@ public sealed class DotNetPostgreSQLIntegrationE2ETests
                 ["CARBONOPS_PARSER_POSTGRES_DATABASE"] = "carbonops_parser",
                 ["CARBONOPS_PARSER_POSTGRES_USERNAME"] = "carbonops_runtime",
                 ["CARBONOPS_PARSER_POSTGRES_PASSWORD"] = secret,
-                ["CARBONOPS_PARSER_POSTGRES_SCHEMA"] = "carbonops_prod008_redaction",
+                ["CARBONOPS_PARSER_POSTGRES_SCHEMA"] = "carbonops_prod009_redaction",
                 ["CARBONOPS_PARSER_RAW_ARCHIVE_PATH"] = "/tmp/carbonops-parser",
                 ["CARBONOPS_PARSER_LOG_LEVEL"] = "info",
             },
@@ -233,7 +243,7 @@ public sealed class DotNetPostgreSQLIntegrationE2ETests
         var schema = Get(environment, "CARBONOPS_DOTNET_POSTGRESQL_TEST_SCHEMA");
         if (string.IsNullOrWhiteSpace(schema) && allowGeneratedSchema)
         {
-            schema = "carbonops_prod008_" + Guid.NewGuid().ToString("N");
+            schema = "carbonops_prod009_" + Guid.NewGuid().ToString("N");
         }
 
         var dsn = Get(environment, DotNetTestDsnEnvironmentVariable) ?? Get(environment, SharedTestDsnEnvironmentVariable);
@@ -283,7 +293,7 @@ public sealed class DotNetPostgreSQLIntegrationE2ETests
                 builder.Password ?? string.Empty,
                 resolvedSchema ?? string.Empty,
                 string.IsNullOrWhiteSpace(builder.ApplicationName)
-                    ? "carbonops-parser-dotnet-prod008-tests"
+                    ? "carbonops-parser-dotnet-prod009-tests"
                     : builder.ApplicationName,
                 builder.Timeout <= 0 ? 15 : builder.Timeout);
             var validation = PostgreSQLRuntimeConnectionBoundary.Validate(settings);
@@ -312,7 +322,7 @@ public sealed class DotNetPostgreSQLIntegrationE2ETests
             userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty,
             userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty,
             schema ?? string.Empty,
-            "carbonops-parser-dotnet-prod008-tests");
+            "carbonops-parser-dotnet-prod009-tests");
         var validation = PostgreSQLRuntimeConnectionBoundary.Validate(settings);
         return validation.IsValid
             ? new IntegrationGate(true, false, true, settings, "ready")
@@ -324,15 +334,26 @@ public sealed class DotNetPostgreSQLIntegrationE2ETests
                 string.Join(",", validation.Issues.Select(issue => issue.Code)));
     }
 
-    private static ParserNormalizedOutputBatch ParseDefraFixture(string uniqueLabel)
+    public static IEnumerable<object[]> SourceFamilyFixtureCases()
     {
-        var artifactPath = FixturePath("defra_desnz", "defra_desnz_normalized_factors.csv");
+        yield return [SourceFamily.GhgProtocol];
+        yield return [SourceFamily.DefraDesnz];
+        yield return [SourceFamily.IpccEfdb];
+    }
+
+    private static ParserNormalizedOutputBatch ParseFixture(
+        SourceFamily sourceFamily,
+        string uniqueLabel,
+        int targetYear)
+    {
+        var fixture = Fixture(sourceFamily);
+        var artifactPath = FixturePath(fixture.FamilyDirectory, fixture.FileName);
         var content = File.ReadAllText(artifactPath);
         var artifactChecksum = Sha256Hex(content);
-        var parserKey = ParserSelectionRegistry.GetParserKey(SourceFamily.DefraDesnz);
+        var parserKey = ParserSelectionRegistry.GetParserKey(sourceFamily);
         var artifact = new ParserInputArtifact(
-            SourceFamily.DefraDesnz,
-            SourceFamily.DefraDesnz.ToWireName(),
+            sourceFamily,
+            sourceFamily.ToWireName(),
             parserKey,
             ParserSourceFormat.DiscoveryReference,
             artifactPath,
@@ -342,40 +363,60 @@ public sealed class DotNetPostgreSQLIntegrationE2ETests
             isDryRunChecksum: false,
             "text/csv",
             ".csv",
-            reportingYear: 2024);
+            reportingYear: targetYear);
         var request = new ParserAdapterRunRequest(
-            SourceFamily.DefraDesnz,
-            SourceFamily.DefraDesnz.ToWireName(),
+            sourceFamily,
+            sourceFamily.ToWireName(),
             parserKey,
             [artifact],
-            runId: "prod008-" + uniqueLabel,
-            requestedReportingYear: 2024);
-        var parsed = DefraDesnzNormalizedContentParser.Parse(
-            request,
-            new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                [artifactPath] = content,
-            });
+            runId: "prod009-" + uniqueLabel,
+            requestedReportingYear: targetYear);
+        var contentByArtifactReference = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [artifactPath] = content,
+        };
+        var parsed = sourceFamily switch
+        {
+            SourceFamily.GhgProtocol => GhgProtocolNormalizedContentParser.Parse(request, contentByArtifactReference),
+            SourceFamily.DefraDesnz => DefraDesnzNormalizedContentParser.Parse(request, contentByArtifactReference),
+            SourceFamily.IpccEfdb => IpccEfdbNormalizedContentParser.Parse(request, contentByArtifactReference),
+            _ => throw new ArgumentOutOfRangeException(nameof(sourceFamily), sourceFamily, "Unknown source family."),
+        };
 
         Assert.Equal(ParserRunStatus.Completed, parsed.Status);
         Assert.True(parsed.RowCount > 0);
 
         return new ParserNormalizedOutputBatch(
-            parsed.Rows.Select(row => RewriteForIsolatedE2E(row, uniqueLabel, artifactChecksum)));
+            parsed.Rows.Select(row => RewriteForIsolatedE2E(row, uniqueLabel, artifactChecksum, targetYear)));
     }
 
     private static ParserNormalizedOutputRow RewriteForIsolatedE2E(
         ParserNormalizedOutputRow row,
         string uniqueLabel,
-        string artifactChecksum)
+        string artifactChecksum,
+        int targetYear)
     {
+        var sourceVersion = "prod009-" + uniqueLabel;
+        var factorId = row.Fields
+            .Where(field => field.Key == "factor_id")
+            .Select(field => field.Value)
+            .FirstOrDefault() ?? row.RowIdentifier;
         var replacementFields = row.Fields
-            .Where(field => field.Key is not ("source_version" or "run_id" or "provenance_checksum_value"))
+            .Where(field => field.Key is not (
+                "source_year" or
+                "source_version" or
+                "run_id" or
+                "provenance_checksum_value" or
+                "master_external_key" or
+                "source_family_master_id" or
+                "source_family_detail_id"))
             .Concat(
             [
-                new ParserNormalizedField("source_version", "prod008-" + uniqueLabel),
-                new ParserNormalizedField("run_id", "prod008-" + uniqueLabel),
+                new ParserNormalizedField("source_year", targetYear.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                new ParserNormalizedField("source_version", sourceVersion),
+                new ParserNormalizedField("run_id", "prod009-" + uniqueLabel),
                 new ParserNormalizedField("provenance_checksum_value", artifactChecksum),
+                new ParserNormalizedField("master_external_key", $"{targetYear}:{sourceVersion}:{factorId}"),
             ]);
 
         return new ParserNormalizedOutputRow(
@@ -387,19 +428,22 @@ public sealed class DotNetPostgreSQLIntegrationE2ETests
             row.SourceRowNumber,
             replacementFields,
             row.Issues,
-            row.ReportingYear);
+            targetYear);
     }
 
-    private static async Task<(int MasterRows, int DetailRows)> CountDefraRowsAsync(
+    private static async Task<(int MasterRows, int DetailRows)> CountSourceFamilyRowsAsync(
         NpgsqlDataSource dataSource,
+        SourceFamily sourceFamily,
         string sourceVersion)
     {
-        await using var command = dataSource.CreateCommand("""
+        var names = SourceFamilyRepositoryRegistry.GetTableNames(sourceFamily);
+        var masterIdColumn = SourceFamilyMasterIdColumn(sourceFamily);
+        await using var command = dataSource.CreateCommand($$"""
             SELECT
-              (SELECT count(*) FROM defra_emission_factor_masters WHERE source_version = $1),
-              (SELECT count(*) FROM defra_emission_factor_details d
-               JOIN defra_emission_factor_masters m
-                 ON m.defra_emission_factor_master_id = d.defra_emission_factor_master_id
+              (SELECT count(*) FROM {{names.MasterTableName}} WHERE source_version = $1),
+              (SELECT count(*) FROM {{names.DetailTableName}} d
+               JOIN {{names.MasterTableName}} m
+                 ON m.{{masterIdColumn}} = d.{{masterIdColumn}}
                WHERE m.source_version = $1)
             """);
         command.Parameters.AddWithValue(sourceVersion);
@@ -408,6 +452,24 @@ public sealed class DotNetPostgreSQLIntegrationE2ETests
         Assert.True(await reader.ReadAsync());
         return (Convert.ToInt32(reader.GetInt64(0)), Convert.ToInt32(reader.GetInt64(1)));
     }
+
+    private static (string FamilyDirectory, string FileName) Fixture(SourceFamily sourceFamily) =>
+        sourceFamily switch
+        {
+            SourceFamily.GhgProtocol => ("ghg_protocol", "ghg_protocol_sample_factors.csv"),
+            SourceFamily.DefraDesnz => ("defra_desnz", "defra_desnz_normalized_factors.csv"),
+            SourceFamily.IpccEfdb => ("ipcc_efdb", "ipcc_efdb_sample_factors.csv"),
+            _ => throw new ArgumentOutOfRangeException(nameof(sourceFamily), sourceFamily, "Unknown source family."),
+        };
+
+    private static string SourceFamilyMasterIdColumn(SourceFamily sourceFamily) =>
+        sourceFamily switch
+        {
+            SourceFamily.GhgProtocol => "ghg_emission_factor_master_id",
+            SourceFamily.DefraDesnz => "defra_emission_factor_master_id",
+            SourceFamily.IpccEfdb => "ipcc_emission_factor_master_id",
+            _ => throw new ArgumentOutOfRangeException(nameof(sourceFamily), sourceFamily, "Unknown source family."),
+        };
 
     private static async Task<int> CountYearStateRowsAsync(
         NpgsqlDataSource dataSource,

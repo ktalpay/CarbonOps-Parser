@@ -10,10 +10,10 @@ families, and writes source-family master/detail tables.
 This checklist does not claim project-level production-ready. The .NET runtime
 is not production-ready yet, and project-level production-ready is blocked until
 Python and .NET runtimes satisfy the same production parity contract.
-PROD-008 adds an opt-in .NET Docker PostgreSQL E2E/idempotency validation
-baseline for one checked-in local source fixture. It does not make the .NET
-service `run-once` command production-ready and does not complete project-level
-production readiness.
+PROD-009 adds an opt-in .NET Docker PostgreSQL E2E/idempotency validation
+baseline for all three Phase 1 source families using checked-in local source
+fixtures. It does not make the .NET service `run-once` command production-ready
+and does not complete project-level production readiness.
 
 ## Supported Runtime Boundary
 
@@ -41,12 +41,11 @@ Python production path:
   inserts with duplicate skip counts and year-state update after successful
   persistence.
 - Opt-in E2E baseline: Docker PostgreSQL contract tests validate schema
-  bootstrap, DEFRA/DESNZ local fixture parsing, first insert, duplicate rerun
-  skips, year-state progression, `no_available_source_year`, failure rollback,
-  and redaction.
+  bootstrap, GHG Protocol, DEFRA/DESNZ, and IPCC EFDB local fixture parsing,
+  first insert, duplicate rerun skips, year-state progression,
+  `no_available_source_year`, failure rollback, and redaction.
 - Unsupported in .NET today: production `run-once` ingestion execution,
-  uncontrolled live source access, all-three-source Docker E2E, and Python/.NET
-  persisted parity validation.
+  uncontrolled live source access and Python/.NET persisted parity validation.
 
 The older preview-only `PostgreSQLPersistenceRepository.persist()` boundary is
 still unsupported. Production ingestion uses
@@ -243,20 +242,19 @@ PASS requires:
   `CARBONOPS_RUN_DOTNET_POSTGRESQL_INTEGRATION=1` is set.
 - Missing DSN/split config fails closed before a connection attempt.
 - Schema bootstrap succeeds twice and the second run creates no tables.
-- The checked-in DEFRA/DESNZ local CSV fixture parses and inserts
-  source-specific master/detail rows.
-- Rerunning the same fixture reports `inserted=0` and duplicate skipped counts
-  greater than zero.
-- `source_family_year_states` records one logical successful year for
-  `defra_desnz`/`2024`, with next target year `2025`.
+- The checked-in GHG Protocol, DEFRA/DESNZ, and IPCC EFDB local CSV fixtures
+  parse and insert source-specific master/detail rows.
+- Rerunning each same source-family/year/artifact reports `inserted=0` and
+  duplicate skipped counts greater than zero.
+- `source_family_year_states` records one logical successful year for each
+  source family at `2024`, with next target year `2025`.
 - Missing target-year artifacts report `no_available_source_year` and do not
   advance year-state.
 - A persistence failure rolls back and does not advance year-state.
 - Diagnostics redact passwords, connection strings, and DSNs.
 
 This check does not prove project-level production readiness, .NET service
-`run-once` readiness, all three source families, live source handling, or
-Python/.NET persisted parity.
+`run-once` readiness, live source handling, or Python/.NET persisted parity.
 
 ## Failure Blocks
 

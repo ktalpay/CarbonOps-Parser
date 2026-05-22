@@ -35,10 +35,9 @@ lock, or system service wrapper in this repository.
 The .NET scheduled-worker command surface added by PROD-003 is directly
 runnable and suitable for future cron/manual scheduling, but `run-once` returns
 `ingestion_status=not_implemented` and a non-zero exit code until later .NET
-production parity tasks complete service execution, all-source Docker
-PostgreSQL E2E, and Python/.NET persisted parity validation. PROD-008 adds only
-an opt-in Docker PostgreSQL contract-test baseline for one local fixture-backed
-source family.
+production parity tasks complete service execution and Python/.NET persisted
+parity validation. PROD-009 adds an opt-in Docker PostgreSQL contract-test
+baseline for all three local fixture-backed Phase 1 source families.
 
 ## Safety Modes
 
@@ -259,11 +258,11 @@ dotnet test tests/dotnet/CarbonOps.Parser.Contracts.Tests/CarbonOps.Parser.Contr
 
 The tests may also use split `CARBONOPS_PARSER_POSTGRES_*` settings. They do
 not print passwords, DSNs, or connection strings. They validate additive schema
-bootstrap, DEFRA/DESNZ local fixture parsing, source-specific master/detail
-insert, same-year rerun duplicate skips, successful year-state progression,
-`no_available_source_year`, failure rollback, and redacted diagnostics. They do
-not make `.NET run-once` a production ingestion command and do not prove
-Python/.NET persisted parity.
+bootstrap, GHG Protocol, DEFRA/DESNZ, and IPCC EFDB local fixture parsing,
+source-specific master/detail insert, same-year rerun duplicate skips,
+successful year-state progression, `no_available_source_year`, failure
+rollback, and redacted diagnostics. They do not make `.NET run-once` a
+production ingestion command and do not prove Python/.NET persisted parity.
 
 Preview the .NET source-cycle orchestration baseline without opening PostgreSQL
 or writing source-family records:
@@ -305,7 +304,7 @@ The PROD-006 .NET boundary satisfies only the source discovery/load/parsing
 orchestration item from the production parity map. The PROD-007 .NET boundary
 satisfies only the source-specific master/detail insert runtime item from the
 production parity map. .NET production ingestion remains incomplete until
-idempotency/rerun E2E, Docker PostgreSQL E2E, and Python/.NET persisted parity
+service run-once ingestion execution and Python/.NET persisted parity
 validation are complete.
 
 Validate DB connectivity and schema bootstrap with an isolated local or
@@ -383,8 +382,8 @@ dotnet run --project src/dotnet/CarbonOps.Parser.Service -- run-once
 Expected behavior remains fail-closed: `status=blocked`,
 `ingestion_status=not_implemented`, `postgresql_connection_opened=False`, and
 `records_inserted=0`. This command must not be treated as production ingestion
-until later tasks complete .NET idempotency/rerun E2E, Docker PostgreSQL E2E,
-and Python/.NET persisted parity validation. The .NET runtime is still not
+until later tasks complete .NET service run-once ingestion execution and
+Python/.NET persisted parity validation. The .NET runtime is still not
 production-ready.
 
 ## PostgreSQL Readiness

@@ -35,11 +35,11 @@ PostgreSQL or running SQL. It reports that schema bootstrap and year-state
 primitives exist and that the source-specific master/detail insert baseline is
 available through `source_specific_master_detail_insert_baseline=True`. It also
 reports `master_detail_insert_e2e_validated=False` and
-`production_ingestion_ready=False` because Docker PostgreSQL E2E,
-idempotency/rerun E2E, and Python/.NET persisted parity validation remain
-incomplete. Production source download, full parser orchestration E2E, .NET
-production readiness, and project-level production readiness are still false in
-this PostgreSQL validation command.
+`production_ingestion_ready=False` because this command is not the opt-in
+Docker PostgreSQL E2E path and Python/.NET persisted parity validation remains
+incomplete. Production source download, service run-once ingestion execution,
+.NET production readiness, and project-level production readiness are still
+false in this PostgreSQL validation command.
 
 `preview-source-cycle` and `validate-source-cycle` provide the PROD-006 safe
 source-cycle orchestration baseline. They select enabled source families from
@@ -86,10 +86,11 @@ and `ipcc_emission_factor_masters/details`, uses additive
 `INSERT ... ON CONFLICT DO NOTHING` SQL, returns explicit inserted/skipped
 duplicate/validation-failed counts, and updates source-family year-state only
 inside the successful source-family persistence transaction. This is a baseline
-only; Docker PostgreSQL E2E, idempotency/rerun E2E, and Python/.NET persisted
-parity validation remain blockers.
+only; the opt-in Docker PostgreSQL E2E path exercises it with local fixtures,
+but service run-once ingestion execution and Python/.NET persisted parity
+validation remain blockers.
 
-PROD-008 adds an opt-in .NET Docker PostgreSQL E2E validation path in the
+PROD-009 extends the opt-in .NET Docker PostgreSQL E2E validation path in the
 contract tests. The default .NET test suite does not open PostgreSQL. Enable the
 E2E path only with `CARBONOPS_RUN_DOTNET_POSTGRESQL_INTEGRATION=1` and
 externally supplied PostgreSQL settings:
@@ -108,9 +109,10 @@ The tests also accept split `CARBONOPS_PARSER_POSTGRES_*` settings through the
 existing .NET production config boundary. They create a generated
 PostgreSQL-safe schema name for deterministic idempotency checks and do not
 print DSNs, passwords, or connection strings. The E2E path bootstraps schema
-idempotently, parses the checked-in DEFRA/DESNZ local CSV fixture, writes
-source-specific master/detail rows, reruns the same source-family/year/artifact
-to verify duplicate skips, verifies successful year-state progression, verifies
+idempotently, parses the checked-in GHG Protocol, DEFRA/DESNZ, and IPCC EFDB
+local CSV fixtures, writes source-specific master/detail rows, reruns the same
+source-family/year/artifact to verify duplicate skips, verifies successful
+2024 year-state progression to target year 2025, verifies
 `no_available_source_year` does not advance state, and verifies transaction
 rollback keeps year-state unchanged when persistence fails.
 
