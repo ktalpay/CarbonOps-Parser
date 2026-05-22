@@ -81,6 +81,12 @@ export CARBONOPS_POSTGRESQL_PASSWORD=carbonops_local_password
 export CARBONOPS_POSTGRESQL_APPLICATION_NAME=carbonops-parser-local
 ```
 
+Validate the local ingestion config without opening PostgreSQL:
+
+```bash
+carbonops-parser validate-ingestion-config --config config/carbonops.ingestion.example.json --cycles 1
+```
+
 ## Run Ingestion
 
 Run the packaged Python ingestion command:
@@ -190,9 +196,9 @@ Each `2027` count should be `0`.
 - The Python runner is the only packaged ingestion path covered here. This task
   does not implement .NET runtime parity.
 - The local run demonstrates packaging, configuration, source-specific
-  master/detail persistence, and cycle behavior. It does not claim production
-  readiness, compliance correctness, legal correctness, carbon-accounting
-  correctness, or source-owner correctness.
+  master/detail persistence, and cycle behavior. Use
+  [Production Packaging And Operator Runbook](production-packaging-operator-runbook.md)
+  for production operation.
 
 ## Related Documents
 

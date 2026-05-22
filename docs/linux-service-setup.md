@@ -1,17 +1,21 @@
 # Linux Service Setup
 
-CarbonOps-Parser is intended to run as a Linux background service in either the
-Python or .NET implementation path.
+This document is legacy planning material for a possible future Linux service.
+It is not the supported production scheduling mode for PROD-001. Supported
+production scheduling is cron or manual one-cycle execution of the packaged
+Python command documented in the production operator runbook.
 
 This document is a non-installing template for operator planning. It does not
 install a service, enable a service, start a service, create a user, read
 configuration, load credentials, connect to PostgreSQL, run SQL, or download
-sources. Implementation-specific service files should be added only after the
-runtime entry point is explicitly published for the selected implementation.
+sources. It must not be used to imply daemon, system service, or installer
+support for production operation. Implementation-specific service files should
+be added only after a future task explicitly scopes and reviews service support
+for the selected implementation.
 
 ## Service Responsibilities
 
-A Linux service setup should define:
+A future Linux service setup would need to define:
 
 - Working directory
 - Environment variables
@@ -24,10 +28,10 @@ A Linux service setup should define:
 
 ## Conceptual systemd Unit
 
-The exact command depends on the selected implementation. A future Python
-service may run an approved Python host module. A future .NET service may run an
-approved Worker Service binary. Until that executable exists, keep `ExecStart`
-as an operator-owned placeholder.
+The example below is conceptual and not a supported production unit. The exact
+command would depend on a future reviewed service implementation. Until that
+implementation exists, keep `ExecStart` as an operator-owned placeholder and use
+cron or manual one-cycle execution for supported production scheduling.
 
 ```ini
 [Unit]
@@ -54,7 +58,7 @@ values.
 
 ## Management Commands
 
-Typical service management commands after a reviewed unit is installed:
+Typical service management commands after a future reviewed unit is installed:
 
 ```bash
 sudo systemctl daemon-reload
@@ -72,5 +76,6 @@ Do not add automatic enablement, destructive cleanup, branch or worktree
 cleanup, schema deletion, or ad hoc database mutation to service management
 steps.
 
-For the full install, configure, validate, run, stop, diagnose, and rollback
-flow, see [Production Packaging And Operator Runbook](production-packaging-operator-runbook.md).
+For the supported production install, configure, validate, run, stop, diagnose,
+and rollback flow, see
+[Production Packaging And Operator Runbook](production-packaging-operator-runbook.md).

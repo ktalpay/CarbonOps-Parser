@@ -1,146 +1,215 @@
 # PostgreSQL Runtime Readiness Checklist
 
-This document defines the go/no-go checklist before any future task enables real
-PostgreSQL runtime execution.
+This checklist defines the operator checks that must pass before a
+CarbonOps-Parser Python ingestion deployment is treated as production-ready.
+It reflects the current packaged runtime: `carbonops-parser run-ingestion`
+opens PostgreSQL, runs additive schema bootstrap, ingests configured source
+families, and writes source-family master/detail tables.
 
-It is checklist documentation only. It does not create a PostgreSQL connection,
-create a cursor, run SQL, write records, start a transaction, finish a
-transaction, roll back a transaction, create tables, run migrations, load
-environment variables, load configuration files, load credentials, perform HTTP
-or network calls, schedule work, or claim production persistence readiness.
+## Supported Runtime Boundary
 
-## Current Boundary
+- Entrypoint: `carbonops-parser run-ingestion --config <ingestion-json> --cycles 1`.
+- Configuration validation: `carbonops-parser validate-ingestion-config --config <ingestion-json> --cycles 1`.
+- Scheduling: cron or manual scheduled execution of a one-cycle command.
+- Source families: `ghg_protocol`, `defra_desnz`, and `ipcc_efdb`.
+- Source access: local paths, `file:` URIs, `local:` URIs, or reviewed HTTPS
+  artifacts when live access is explicitly enabled.
+- PostgreSQL driver: psycopg through the `postgresql` Python extra.
 
-Runtime PostgreSQL execution remains disabled. The current implementation
-supports planning, preview, and diagnostic metadata only:
+The older preview-only `PostgreSQLPersistenceRepository.persist()` boundary is
+still unsupported. Production ingestion uses
+`PostgreSQLSourceFamilyRuntimeRepository` through the configured cycle runner.
 
-- `PostgreSQLPersistenceRepository.persist()` remains unsupported/no-execution.
-- The insert SQL builder produces deterministic parameterized metadata only.
-- The persistence preview and local dry-run preview are deterministic and
-  no-execution.
-- The disabled runtime execution adapter returns no-execution metadata.
-- The repository disabled execution preview composes diagnostics only.
-- The runtime execution gate is disabled by default and does not enable
-  persistence when requested.
+## Required PostgreSQL Privileges
 
-## Go/No-Go Criteria
+The runtime role needs the minimum privileges below on the target database and
+schema:
 
-A future real runtime execution task is blocked until all of these are true:
+- `CONNECT` on the configured database.
+- `USAGE` on the target schema.
+- `CREATE` on the target schema for additive bootstrap.
+- `SELECT`, `INSERT`, and `UPDATE` on the Phase 1 runtime tables.
+- Sequence privileges if the operator changes table definitions to use
+  sequences.
 
-- Dependency boundary verified: `psycopg` is the approved PostgreSQL driver and
-  no competing driver or ORM is introduced for Phase 1.
-- `psycopg` imports isolated: pure preview/domain modules, local dry-run code,
-  insert builder, schema descriptor, and repository skeleton remain driver-free.
-- Caller-provided session contract ready: future execution consumes a
-  caller-provided session boundary and does not create implicit connections.
-- psycopg session adapter skeleton isolated: the dedicated skeleton remains the
-  only psycopg-specific boundary until a scoped runtime adapter task.
-- Transaction policy agreed: single-batch, caller-provided-session,
-  no-partial-success policy is explicitly accepted or replaced by a reviewed
-  policy.
-- Idempotency/conflict strategy agreed: Phase 1 duplicate handling is explicit
-  and not ambiguous.
-- Runtime execution gate default disabled: default gate decision remains
-  disabled/no-execution.
-- Repository disabled preview available: repository-level diagnostics can be
-  reviewed without runtime persistence.
-- Disabled runtime execution result available: future execution metadata can be
-  inspected without connecting or running SQL.
-- Public safety checks pass without weakening rules.
-- Integration test opt-in plan exists, the opt-in integration runbook is
-  reviewed, marker enforcement tests pass, the connection smoke skeleton remains
-  default-skipped, and normal test runs do not touch PostgreSQL.
-- No credentials, config files, or environment variables are loaded by library
-  code.
-- No secrets appear in docs, tests, logs, fixtures, examples, exceptions, or
-  result metadata.
-- No production persistence readiness claim is made.
-- Repository `persist()` remains unsupported until an explicit future runtime
-  task changes it with tests and safety review.
+Do not grant destructive privileges just to run the parser. Backup/restore,
+monitoring, retention, audit export, and credential rotation are owned by the
+operator's production platform unless this repository later implements a
+specific integration.
 
-## Must Not Proceed If
+## Schema Bootstrap
 
-Do not begin a real execution task if any of these are true:
+Schema bootstrap is additive and idempotent:
 
-- DB credentials are not isolated.
-- Schema, table creation, or migration lifecycle ownership is unclear.
-- PostgreSQL integration tests are not opt-in and disabled by default.
-- Duplicate or conflict policy is ambiguous.
-- Transaction rollback policy is ambiguous.
-- The public safety script would need weakening to pass.
-- Repository `persist()` would imply success without integration and rollback
-  tests.
-- Real source parser correctness is assumed but unverified.
-- Local dry-run default behavior would change.
-- Preview output would become nondeterministic.
+- Tables use `CREATE TABLE IF NOT EXISTS`.
+- Indexes use `CREATE INDEX IF NOT EXISTS`.
+- Bootstrap commits after the DDL batch.
+- Bootstrap reports required, present, created, and still-missing table names.
+- Bootstrap does not drop, truncate, rename, or destructively migrate tables.
 
-## Future Task Sequence
+Required Phase 1 tables:
 
-Suggested follow-up sequence after this checklist:
+- `source_family_year_states`
+- `ghg_emission_factor_masters`
+- `ghg_emission_factor_details`
+- `defra_emission_factor_masters`
+- `defra_emission_factor_details`
+- `ipcc_emission_factor_masters`
+- `ipcc_emission_factor_details`
 
-1. CO-103A: opt-in PostgreSQL integration test environment and runbook, with no
-   default execution.
-2. CO-103B: PostgreSQL integration marker enforcement with no DB connection.
-3. CO-103C: opt-in connection smoke skeleton, default-skipped and no SQL.
-4. CO-103D: runtime session adapter execution smoke behind an explicit test
-   fixture, opt-in only.
-5. CO-103E: repository execution adapter implementation behind the runtime
-   execution gate, opt-in only.
-6. CO-103F: transaction rollback integration tests.
-7. CO-103G: conflict and idempotency runtime behavior tests.
-8. CO-103H: CLI/config ownership for local PostgreSQL validation if needed.
+## Before First Run
 
-Each task should remain separately scoped, reviewed, and validated. None should
-silently convert default repository behavior into runtime persistence.
+Every item must be recorded as PASS or FAIL:
 
-## First Real Execution Task Acceptance Criteria
+- PASS/FAIL: Clean install completed with `python -m pip install -e ".[postgresql]"`.
+- PASS/FAIL: `carbonops-parser --help` works in the deployment environment.
+- PASS/FAIL: Production JSON is present outside the repository and contains
+  `archive_root`, `enabled_source_families`, `initial_year`, `cycle.max_cycles`,
+  `cycle.interval_seconds`, `real_source_smoke.allow_live_source_access`, and
+  explicit `source_years` entries for enabled families.
+- PASS/FAIL: Required `CARBONOPS_POSTGRESQL_*` environment variables are
+  supplied externally, including `CARBONOPS_POSTGRESQL_PASSWORD`.
+- PASS/FAIL: `carbonops-parser validate-ingestion-config --config <production-json> --cycles 1`
+  reports `status=ready`.
+- PASS/FAIL: Archive root exists or can be created by the runtime user.
+- PASS/FAIL: Source artifact paths exist, or reviewed HTTPS live source access
+  is explicitly enabled.
+- PASS/FAIL: The target database and schema are correct.
+- PASS/FAIL: A backup/restore point exists according to operator policy.
+- PASS/FAIL: Runtime role privileges match the minimum privilege list.
+- PASS/FAIL: DB connectivity passed with an isolated/pre-production smoke.
+- PASS/FAIL: Logs and validation output do not contain passwords, tokens, or
+  private DSNs.
 
-The first task that adds real PostgreSQL execution must satisfy all of these:
+## First Run Command
 
-- It is opt-in.
-- It uses a caller-provided session.
-- It does not read environment variables or config files in library code.
-- It does not run in the default test suite.
-- It reports sanitized errors.
-- It proves secrets do not appear in logs, docs, fixtures, exceptions, or result
-  metadata.
-- It proves rollback behavior or explicitly defers rollback to a named
-  follow-up before any broad execution path exists.
-- It shows the exact PostgreSQL table and schema expectation.
-- It does not change local dry-run default behavior.
-- It keeps preview behavior deterministic.
-- It keeps `PostgreSQLPersistenceRepository.persist()` unsupported unless the
-  task explicitly changes repository runtime behavior with gate checks and
-  opt-in tests.
+Use one cycle for production scheduling:
 
-## Risk Register
+```bash
+export CARBONOPS_POSTGRESQL_HOST='<postgresql-host>'
+export CARBONOPS_POSTGRESQL_PORT='5432'
+export CARBONOPS_POSTGRESQL_DATABASE='<postgresql-database>'
+export CARBONOPS_POSTGRESQL_USERNAME='<postgresql-runtime-role>'
+export CARBONOPS_POSTGRESQL_PASSWORD='<external-secret-value>'
+export CARBONOPS_POSTGRESQL_APPLICATION_NAME='carbonops-parser-prod'
+export CARBONOPS_POSTGRESQL_SSL_MODE='require'
+export CARBONOPS_POSTGRESQL_INITIAL_YEAR='2024'
 
-- Credential leakage: require redacted metadata, no committed credentials, and
-  no secret values in logs or exceptions.
-- Accidental default execution: keep the runtime execution gate disabled by
-  default and require explicit opt-in.
-- Partial writes: start with one batch transaction policy and deterministic
-  rollback reporting.
-- Schema drift: compare schema descriptor, DDL review text, and insert builder
-  columns before runtime execution.
-- Duplicate inserts: require an approved conflict policy and explicit counts.
-- Placeholder incompatibility: verify psycopg placeholder behavior against
-  insert-builder output before runtime execution.
-- Test DB pollution: isolate opt-in test databases and document cleanup.
-- Production misuse: avoid default DB targets and production-readiness claims.
-- Dependency footprint: keep database imports inside runtime adapter boundaries.
-- Unclear operational ownership: document who owns migrations, config, rollback,
-  logging, and audit metadata.
+carbonops-parser run-ingestion \
+  --config /etc/carbonops-parser/ingestion.production.json \
+  --cycles 1
+```
+
+## SQL Verification
+
+Required schema/table presence:
+
+```sql
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = current_schema()
+  AND table_name IN (
+    'source_family_year_states',
+    'ghg_emission_factor_masters',
+    'ghg_emission_factor_details',
+    'defra_emission_factor_masters',
+    'defra_emission_factor_details',
+    'ipcc_emission_factor_masters',
+    'ipcc_emission_factor_details'
+  )
+ORDER BY table_name;
+```
+
+GHG Protocol counts:
+
+```sql
+SELECT 'ghg_emission_factor_masters' AS table_name, count(*) AS records
+FROM ghg_emission_factor_masters
+UNION ALL
+SELECT 'ghg_emission_factor_details', count(*)
+FROM ghg_emission_factor_details;
+```
+
+DEFRA/DESNZ counts:
+
+```sql
+SELECT 'defra_emission_factor_masters' AS table_name, count(*) AS records
+FROM defra_emission_factor_masters
+UNION ALL
+SELECT 'defra_emission_factor_details', count(*)
+FROM defra_emission_factor_details;
+```
+
+IPCC EFDB counts:
+
+```sql
+SELECT 'ipcc_emission_factor_masters' AS table_name, count(*) AS records
+FROM ipcc_emission_factor_masters
+UNION ALL
+SELECT 'ipcc_emission_factor_details', count(*)
+FROM ipcc_emission_factor_details;
+```
+
+Latest ingested year / year-state:
+
+```sql
+SELECT source_family, max(ingested_year) AS latest_ingested_year
+FROM source_family_year_states
+GROUP BY source_family
+ORDER BY source_family;
+```
+
+## Idempotent Rerun Check
+
+Run the same one-cycle command again against the same database/schema. PASS
+requires:
+
+- The command exits successfully, or reports only expected
+  `no_available_source_year` outcomes.
+- Duplicate source-family master/detail rows are reported as skipped, not
+  inserted again.
+- Latest-year state does not advance when the source year is unavailable.
+- Logs remain redacted.
+
+## Failure Blocks
+
+Treat any item below as a production-readiness failure until resolved:
+
+- Missing DB config such as `POSTGRESQL_RUNTIME_CONFIG_MISSING_HOST`,
+  `POSTGRESQL_RUNTIME_CONFIG_MISSING_DATABASE`,
+  `POSTGRESQL_RUNTIME_CONFIG_MISSING_USERNAME`, or
+  `POSTGRESQL_RUNTIME_CONFIG_MISSING_PASSWORD`.
+- Bad DB credentials, unreachable host, invalid port, wrong database, or
+  rejected SSL mode.
+- Missing or unwritable `archive_root`.
+- Unsupported source family outside `ghg_protocol`, `defra_desnz`, and
+  `ipcc_efdb`.
+- Missing `source_years.<family>.<year>.artifact_url`.
+- HTTPS artifact configured without explicit live source access.
+- Unexpected `no_available_source_year` for a planned source family/year.
+- Schema bootstrap reports missing required tables after execution.
+- Any log, ticket, artifact, or test output exposes a password, token, private
+  DSN, or real secret value.
+
+## Production Checklist
+
+All items must be PASS:
+
+- PASS/FAIL: Clean install.
+- PASS/FAIL: Config loaded and validated.
+- PASS/FAIL: DB connectivity.
+- PASS/FAIL: Schema bootstrap.
+- PASS/FAIL: One source-family smoke or full three-source smoke.
+- PASS/FAIL: Idempotent rerun.
+- PASS/FAIL: Redaction check.
+- PASS/FAIL: Full Python test baseline with `python -m pytest`.
+- PASS/FAIL: `git diff --check`.
+- PASS/FAIL: `git status --short` clean after validation.
 
 ## Related Documents
 
-- [PostgreSQL Implementation Safety Gate](postgresql-implementation-safety-gate.md)
-- [PostgreSQL Runtime Execution Gate Boundary](postgresql-runtime-execution-gate-boundary.md)
-- [PostgreSQL Runtime Persistence Implementation Plan](postgresql-runtime-persistence-implementation-plan.md)
-- [PostgreSQL Driver Dependency Decision](postgresql-driver-dependency-decision.md)
-- [PostgreSQL Connection Session Contract Boundary](postgresql-connection-session-contract-boundary.md)
-- [PostgreSQL psycopg Session Adapter Boundary](postgresql-psycopg-session-adapter-boundary.md)
-- [PostgreSQL Disabled Runtime Execution Adapter Boundary](postgresql-disabled-runtime-execution-adapter-boundary.md)
-- [PostgreSQL Repository Disabled Execution Preview Boundary](postgresql-repository-disabled-execution-preview-boundary.md)
-- [PostgreSQL Integration Test Boundary](postgresql-integration-test-boundary.md)
+- [Production Packaging And Operator Runbook](production-packaging-operator-runbook.md)
+- [Python Ingestion Local Runbook](python-ingestion-local-runbook.md)
+- [Real-Source Smoke Mode](real-source-smoke-mode.md)
 - [PostgreSQL Opt-In Integration Runbook](postgresql-opt-in-integration-runbook.md)
+- [PostgreSQL Phase 1 Schema Contract](postgresql-phase1-schema-contract.md)

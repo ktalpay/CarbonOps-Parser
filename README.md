@@ -15,7 +15,7 @@ Auditable public carbon emission factor ingestion and validation for climate-tec
 ![Package](https://img.shields.io/badge/package-not%20published%20yet-lightgrey)
 ![License](https://img.shields.io/badge/license-Apache--2.0-green)
 
-CarbonOps-Parser is a public, reviewable climate-tech data ingestion project for carbon accounting source data. It focuses on auditable ingestion, parsing, validation, diagnostics, and PostgreSQL readiness for public emission factors from GHG Protocol, DEFRA/DESNZ, and IPCC EFDB, with parallel Python and .NET contract paths. The repository is intentionally conservative: default examples are deterministic and local-only, database writes are disabled or preview-only unless explicitly enabled by a future reviewed task, and the project does not claim production carbon-accounting, legal, compliance, source-owner, or factor correctness.
+CarbonOps-Parser is a public, reviewable climate-tech data ingestion project for carbon accounting source data. It focuses on auditable ingestion, parsing, validation, diagnostics, and PostgreSQL operation for public emission factors from GHG Protocol, DEFRA/DESNZ, and IPCC EFDB, with parallel Python and .NET contract paths. The Python package includes a configured PostgreSQL ingestion runtime for operator-managed deployments. The repository is intentionally conservative: default examples are deterministic and local-only, production runs require explicit configuration and credentials, and the project does not claim production carbon-accounting, legal, compliance, source-owner, or factor correctness.
 
 The project is independent from `carbonops-assistant`. It is not a continuation, module, plugin, or dependency of that project.
 
@@ -25,14 +25,14 @@ Public carbon emissions workflows often depend on emission factor spreadsheets, 
 
 ## Current Status
 
-CarbonOps-Parser is in Phase 1. The repository contains Python implementation slices, .NET contract parity slices, PostgreSQL schema and readiness boundaries, deterministic examples, and local dry-run validation. It is not a published production release.
+CarbonOps-Parser is in Phase 1. The repository contains Python implementation slices, .NET contract parity slices, PostgreSQL schema/runtime boundaries, deterministic examples, local dry-run validation, and a documented Python operator path. It is not a published package release.
 
 | Area | Phase 1 completed capabilities | Phase 2 roadmap |
 | --- | --- | --- |
 | Source families | Local fixture and contract coverage for GHG Protocol, DEFRA/DESNZ, and IPCC EFDB boundaries. | Broader source onboarding rules, fixture policy, and source-family hardening slices. |
 | Python | Source acquisition contracts, parser contracts, DEFRA/DESNZ fixture parser path, normalization handoff, persistence previews, diagnostics, and local dry-run CLI. | Runtime hardening, richer validation, controlled source expansion, and opt-in execution boundaries. |
-| .NET | Contract records and tests for shared ingestion, parser, validation, diagnostics, and PostgreSQL readiness concepts. | Worker-service/runtime slices and continued parity review where shared contract behavior changes. |
-| PostgreSQL | Schema descriptors, DDL preview, bootstrap/readiness contracts, disabled execution adapters, and opt-in integration boundaries. | Transaction, conflict, migration, rollback, recovery, and execution hardening before any production write claims. |
+| .NET | Contract records and tests for shared ingestion, parser, validation, diagnostics, and PostgreSQL readiness concepts. | Contract/runtime parity review where shared behavior changes; no production service command is implied. |
+| PostgreSQL | Schema descriptors, DDL preview, additive runtime bootstrap, configured Python source-family writes, idempotent duplicate skipping, and opt-in integration boundaries. | Broader migration, rollback, recovery, and operational hardening slices. |
 | Safety posture | Local-only examples, non-destructive dry runs, preview-only SQL, no default network calls, and no production credentials. | Release-gate expansion and production-readiness reviews before live source or write-path promotion. |
 
 Users who clone or fork the repository should be able to inspect either implementation path without relying on production infrastructure.
@@ -78,7 +78,7 @@ source schedule
 
 Phase 1 uses shared ingestion metadata tables plus source-specific master/detail tables. It does not force GHG Protocol, DEFRA/DESNZ, and IPCC EFDB into one canonical factor table. A normalized or search-oriented projection may be considered in a later phase.
 
-The Python path under `src/carbonfactor_parser` holds the current implementation boundaries for source acquisition, parser execution, normalization, PostgreSQL persistence previews, local dry-run composition, and diagnostics. The .NET path under `src/dotnet` holds shared contract records and parity tests for the same public concepts. PostgreSQL support is deliberately staged through schema descriptors, bootstrap/readiness checks, DDL previews, disabled execution adapters, and opt-in integration boundaries. Parity, validation, diagnostics, and non-destructive dry-run behavior are part of the public architecture so reviewers can inspect the handoff from source artifact to parser output to persistence input without connecting to a database or making network calls.
+The Python path under `src/carbonfactor_parser` holds the current implementation boundaries for source acquisition, parser execution, normalization, PostgreSQL persistence previews, configured PostgreSQL ingestion, local dry-run composition, and diagnostics. The .NET path under `src/dotnet` holds shared contract records and parity tests for the same public concepts. PostgreSQL support includes schema descriptors, bootstrap/readiness checks, DDL previews, opt-in integration boundaries, and the Python configured cycle runner. Parity, validation, diagnostics, and non-destructive dry-run behavior are part of the public architecture so reviewers can inspect the handoff from source artifact to parser output to persistence input without connecting to a database or making network calls.
 
 ## Implementation Options
 
@@ -238,6 +238,30 @@ records. No PostgreSQL server, database configuration, or credentials are
 required.
 
 This quickstart is local dry-run only. It does not connect to PostgreSQL, write records, execute SQL, run migrations, perform network calls, trigger source acquisition, load config files, or require credentials. It does not make production DEFRA/DESNZ correctness claims.
+
+## Production Operator Command
+
+The supported Python production entrypoint is:
+
+```bash
+carbonops-parser run-ingestion \
+  --config /etc/carbonops-parser/ingestion.production.json \
+  --cycles 1
+```
+
+Before running it, operators must provide explicit `CARBONOPS_POSTGRESQL_*`
+environment values, including the password through an external secret boundary,
+and validate the config:
+
+```bash
+carbonops-parser validate-ingestion-config \
+  --config /etc/carbonops-parser/ingestion.production.json \
+  --cycles 1
+```
+
+See [Production Packaging And Operator Runbook](docs/production-packaging-operator-runbook.md)
+for install, configuration, PostgreSQL readiness, cron scheduling,
+verification SQL, rerun/idempotency checks, and troubleshooting.
 
 For boundary details, see [Local Dry-Run CLI Boundary](docs/local-dry-run-cli-boundary.md), [Local File Normalized Persistence Dry-Run Boundary](docs/local-file-normalized-persistence-dry-run-boundary.md), [PostgreSQL Persistence Preview Boundary](docs/postgresql-persistence-preview-boundary.md), and [Local Dry-Run Troubleshooting](docs/local-dry-run-troubleshooting.md).
 
@@ -418,7 +442,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Codex-Assisted Runs](docs/codex-runs/README.md)
 - [Engineering Standards](docs/engineering-standards.md)
 - [Production Packaging And Operator Runbook](docs/production-packaging-operator-runbook.md)
-- [Linux Service Setup](docs/linux-service-setup.md)
+- [Legacy Linux Service Planning - not supported production scheduling](docs/linux-service-setup.md)
 - [Source Support](docs/source-support.md)
 - [Source Discovery](docs/source-discovery.md)
 - [Source Ingestion Boundaries](docs/source-ingestion-boundaries.md)

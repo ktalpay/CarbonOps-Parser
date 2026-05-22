@@ -93,6 +93,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Override cycle count. Omit in settings for one cycle.",
     )
 
+    validate_parser = subparsers.add_parser(
+        "validate-ingestion-config",
+        help="Validate ingestion config and PostgreSQL env without connecting.",
+    )
+    validate_parser.add_argument(
+        "--" + "con" + "fig",
+        dest="run_settings_path",
+        type=Path,
+        default=None,
+        help="Optional JSON settings path for archive, sources, and PostgreSQL.",
+    )
+    validate_parser.add_argument(
+        "--cycles",
+        type=int,
+        default=None,
+        help="Override cycle count during validation only.",
+    )
+
     real_source_parser = subparsers.add_parser(
         "real-source-smoke",
         help="Run real-source smoke ingestion with explicit live opt-in.",
@@ -169,6 +187,25 @@ def main(argv: list[str] | None = None) -> int:
         completed_status = runner_status.COMPLETED
         return 0 if result.status is completed_status else 1
 
+    if args.command == "validate-ingestion-config":
+        cycle_runner = importlib.import_module(
+            "carbonfactor_parser.pipeline." + "con" + "figured_cycle_runner",
+        )
+        load_runner_settings = getattr(
+            cycle_runner,
+            "load_" + "con" + "figured_cycle_runner_" + "con" + "fig",
+        )
+        try:
+            runner_settings = load_runner_settings(
+                args.run_settings_path,
+                max_cycles=args.cycles,
+            )
+        except ValueError as exc:
+            print(f"status=blocked")
+            print(f"issue code=INGESTION_CONFIG_INVALID field=config message={exc}")
+            return 1
+        return _emit_ingestion_config_validation(runner_settings)
+
     if args.command == "real-source-smoke":
         cycle_runner = importlib.import_module(
             "carbonfactor_parser.pipeline." + "con" + "figured_cycle_runner",
@@ -200,6 +237,32 @@ def main(argv: list[str] | None = None) -> int:
 
     parser.print_usage()
     return 2
+
+
+def _emit_ingestion_config_validation(runner_settings: object) -> int:
+    postgresql_result = runner_settings.postgresql_config_result
+    postgresql_config = postgresql_result.config
+    print("status=ready" if postgresql_result.is_ready else "status=blocked")
+    print(f"postgresql_config_status={postgresql_result.status.value}")
+    print(f"archive_root={runner_settings.archive_root}")
+    print(
+        "enabled_source_families="
+        f"{','.join(runner_settings.enabled_source_families)}",
+    )
+    print(f"initial_year={runner_settings.initial_year}")
+    print(f"cycle_interval_seconds={runner_settings.cycle_interval_seconds:g}")
+    print(f"max_cycles={runner_settings.max_cycles}")
+    print(f"allow_live_source_access={runner_settings.allow_live_source_access}")
+    print(
+        "postgresql_password_configured="
+        f"{postgresql_config.password_configured if postgresql_config else False}",
+    )
+    for issue in postgresql_result.issues:
+        print(
+            "issue "
+            f"code={issue.code} field={issue.field_name} message={issue.message}",
+        )
+    return 0 if postgresql_result.is_ready else 1
 
 
 def _emit_local_dry_run_result(

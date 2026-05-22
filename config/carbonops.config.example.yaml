@@ -10,12 +10,14 @@ database:
   # Phase 1 implements PostgreSQL only.
   # mysql and mssql are reserved for future configuration compatibility.
   provider: postgres
-  host: "${CARBONOPS_PARSER_POSTGRES_HOST}"
+  host: "${CARBONOPS_POSTGRESQL_HOST}"
   port: 5432
-  database: "${CARBONOPS_PARSER_POSTGRES_DATABASE}"
-  username: "${CARBONOPS_PARSER_POSTGRES_USERNAME}"
+  database: "${CARBONOPS_POSTGRESQL_DATABASE}"
+  username: "${CARBONOPS_POSTGRESQL_USERNAME}"
   # Secret value must be supplied by the environment or secret manager, not this file.
-  passwordEnvVar: CARBONOPS_PARSER_POSTGRES_PASSWORD
+  passwordEnvVar: CARBONOPS_POSTGRESQL_PASSWORD
+  applicationName: "${CARBONOPS_POSTGRESQL_APPLICATION_NAME}"
+  initialYear: "${CARBONOPS_POSTGRESQL_INITIAL_YEAR}"
   schema: carbonops
 
 storage:
