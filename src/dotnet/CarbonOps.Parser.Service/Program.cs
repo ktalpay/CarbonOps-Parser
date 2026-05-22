@@ -44,6 +44,12 @@ public static class CarbonOpsParserServiceCommand
             return ValidatePostgreSQLRuntime(args.Skip(1).ToArray(), output, environment);
         }
 
+        if (string.Equals(command, "preview-source-cycle", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(command, "validate-source-cycle", StringComparison.OrdinalIgnoreCase))
+        {
+            return PreviewSourceCycle(args.Skip(1).ToArray(), output, environment);
+        }
+
         if (string.Equals(command, "run-once", StringComparison.OrdinalIgnoreCase))
         {
             return RunOnce(args.Skip(1).ToArray(), output, environment);
@@ -140,6 +146,60 @@ public static class CarbonOpsParserServiceCommand
         WriteIssues(output, result.Validation.Issues);
 
         return result.Validation.IsValid ? SuccessExitCode : ValidationFailedExitCode;
+    }
+
+    private static int PreviewSourceCycle(
+        string[] args,
+        TextWriter output,
+        IReadOnlyDictionary<string, string?> environment)
+    {
+        var commandOptions = ParseCommandOptions(args);
+        var result = LoadAndValidate(commandOptions.ConfigPath, environment, commandOptions.Issues);
+        var artifacts = SourceCycleConfiguration.LoadArtifacts(commandOptions.ConfigPath);
+        var enabledSourceFamilies = SourceCycleConfiguration.LoadEnabledSourceFamilies(commandOptions.ConfigPath);
+        var yearStateRepository = new PostgreSQLSourceFamilyYearStateRepository(
+            new PreviewSourceFamilyYearStateSession(),
+            PostgreSQLSourceFamilyYearStateRepository.DefaultInitialYear);
+        var orchestrator = new SourceCycleOrchestrator(
+            yearStateRepository,
+            enabledSourceFamilies,
+            artifacts);
+        var preview = orchestrator.PreviewAsync().GetAwaiter().GetResult();
+
+        output.WriteLine(result.Validation.IsValid ? "status=ready" : "status=blocked");
+        output.WriteLine(".net_runtime_production_ready=False");
+        output.WriteLine("project_level_production_ready=False");
+        output.WriteLine("source_cycle_orchestration_available=True");
+        output.WriteLine("source_discovery_load_behavior=configured_local_artifacts_only");
+        output.WriteLine("live_network_access_supported=False");
+        output.WriteLine("postgresql_connection_opened=False");
+        output.WriteLine("postgresql_sql_executed=False");
+        output.WriteLine("records_inserted=0");
+        output.WriteLine("year_state_advanced=False");
+        output.WriteLine("secret_values_printed=False");
+        output.WriteLine("master_detail_inserts_implemented=False");
+        output.WriteLine("persistence_status=persistence_not_implemented");
+        output.WriteLine($"source_family_run_count={preview.RunCount}");
+
+        foreach (var run in preview.Runs.OrderBy(item => item.SourceFamily.ToWireName(), StringComparer.Ordinal))
+        {
+            var prefix = $"source_family={run.SourceFamily.ToWireName()}";
+            output.WriteLine(
+                $"{prefix} latest_successful_year={FormatNullableYear(run.LatestSuccessfulYear)} target_year={run.TargetYear} " +
+                $"status={run.Status.ToWireName()} parser_status={run.ParserStatus.ToWireName()} " +
+                $"persistence_status={run.PersistenceStatus.ToWireName()} artifact_count={run.ArtifactCount} " +
+                $"parsed_row_count={run.ParsedRowCount} parser_issue_count={run.ParserIssueCount}");
+        }
+
+        if (!result.Validation.IsValid)
+        {
+            output.WriteLine("config_status=blocked");
+            WriteIssues(output, result.Validation.Issues);
+            return ValidationFailedExitCode;
+        }
+
+        output.WriteLine("config_status=ready");
+        return SuccessExitCode;
     }
 
     private static int RunOnce(
@@ -264,8 +324,13 @@ public static class CarbonOpsParserServiceCommand
         writer.WriteLine("  help                         Show this command surface.");
         writer.WriteLine("  validate-config              Validate required .NET runtime configuration shape without opening PostgreSQL.");
         writer.WriteLine("  validate-postgresql-runtime  Report .NET PostgreSQL schema/year-state readiness without opening PostgreSQL.");
+        writer.WriteLine("  preview-source-cycle         Preview source-family target years and local parser handoff without PostgreSQL writes.");
+        writer.WriteLine("  validate-source-cycle        Alias for preview-source-cycle.");
         writer.WriteLine("  run-once                     Run one scheduled-worker cycle placeholder; fails closed until .NET ingestion is implemented.");
     }
+
+    private static string FormatNullableYear(int? value) =>
+        value?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "none";
 
     private sealed record ProductionConfigCommandOptions(
         string? ConfigPath,
@@ -274,4 +339,18 @@ public static class CarbonOpsParserServiceCommand
     private sealed record ProductionConfigCommandValidation(
         ProductionConfigLoadResult Load,
         ProductionConfigValidationResult Validation);
+
+    private sealed class PreviewSourceFamilyYearStateSession : IPostgreSQLSourceFamilyYearStateSession
+    {
+        public Task<int?> LatestSuccessfulYearAsync(
+            SourceFamily sourceFamily,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<int?>(null);
+
+        public Task RecordSuccessfulYearAsync(
+            SourceFamily sourceFamily,
+            int ingestedYear,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException("Source-cycle preview must not advance year-state.");
+    }
 }
