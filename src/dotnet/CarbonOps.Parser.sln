@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarbonOps.Parser.Contracts"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarbonOps.Parser.Contracts.Tests", "..\..\tests\dotnet\CarbonOps.Parser.Contracts.Tests\CarbonOps.Parser.Contracts.Tests.csproj", "{F3B9FC9B-48B1-489A-A042-8C97A02DFEE9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarbonOps.Parser.Service", "CarbonOps.Parser.Service\CarbonOps.Parser.Service.csproj", "{168E9BE0-30B8-442D-8FC2-C9F23DE4A969}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{F3B9FC9B-48B1-489A-A042-8C97A02DFEE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F3B9FC9B-48B1-489A-A042-8C97A02DFEE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F3B9FC9B-48B1-489A-A042-8C97A02DFEE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{168E9BE0-30B8-442D-8FC2-C9F23DE4A969}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{168E9BE0-30B8-442D-8FC2-C9F23DE4A969}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{168E9BE0-30B8-442D-8FC2-C9F23DE4A969}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{168E9BE0-30B8-442D-8FC2-C9F23DE4A969}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

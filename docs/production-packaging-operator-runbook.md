@@ -5,8 +5,9 @@ It documents the commands an operator can run today to install, configure,
 validate, execute, rerun, stop, and troubleshoot CarbonOps-Parser without
 editing Python source files.
 
-The production runtime path is Python only. The .NET solution remains a
-contract/test path and is not a production worker executable.
+The production ingestion runtime path is Python only. The .NET solution now has
+a scheduled-worker executable baseline, but its ingestion command is a safe
+not-yet-implemented placeholder and is not a production ingestion path.
 
 This runbook does not make the whole project production-ready. Project-level
 production-ready requires Python and .NET runtime parity as defined in
@@ -19,11 +20,16 @@ not production-ready yet.
 | --- | --- | --- |
 | Python package | `carbonops-parser` from `pyproject.toml` | Supported for configured PostgreSQL ingestion |
 | Source acquisition CLI | `carbonops-source-acquisition` | Supported for local dry-run/source planning checks |
-| .NET contracts | `src/dotnet/CarbonOps.Parser.sln` | Contracts/tests only; no deployed worker command |
+| .NET scheduled-worker baseline | `dotnet run --project src/dotnet/CarbonOps.Parser.Service -- <command>` | Entrypoint/config-validation shape only; ingestion parity incomplete |
 
 Supported scheduling is cron or manual scheduled execution of the packaged
 Python command. There is no daemon, long-running service installer, distributed
 lock, or system service wrapper in this repository.
+
+The .NET scheduled-worker command surface added by PROD-003 is directly
+runnable and suitable for future cron/manual scheduling, but `run-once` returns
+`ingestion_status=not_implemented` and a non-zero exit code until later .NET
+production parity tasks implement database/source behavior.
 
 ## Safety Modes
 
@@ -168,7 +174,8 @@ carbonops-parser local-dry-run \
 dotnet test tests/dotnet/CarbonOps.Parser.Contracts.Tests/CarbonOps.Parser.Contracts.Tests.csproj \
   --configuration Release \
   --no-restore \
-  --filter "FullyQualifiedName~ProductionConfigBoundaryTests|FullyQualifiedName~Phase1OperationalDiagnosticsTests|FullyQualifiedName~PostgreSQLRuntimeConfigGateContractTests"
+  --filter "FullyQualifiedName~ProductionConfigBoundaryTests|FullyQualifiedName~Phase1OperationalDiagnosticsTests|FullyQualifiedName~PostgreSQLRuntimeConfigGateContractTests|FullyQualifiedName~CarbonOpsParserServiceCommandTests"
+dotnet run --project src/dotnet/CarbonOps.Parser.Service -- help
 ```
 
 The commands above must not require production configuration or credentials.
@@ -189,6 +196,15 @@ export CARBONOPS_POSTGRESQL_INITIAL_YEAR='2024'
 carbonops-parser validate-ingestion-config \
   --config /etc/carbonops-parser/ingestion.production.json \
   --cycles 1
+```
+
+The .NET entrypoint has a separate shape-only validation command. It validates
+presence and basic value shape for the expected `.NET` `CARBONOPS_PARSER_*`
+environment keys, reports required key presence, does not connect to
+PostgreSQL, and does not print secret values:
+
+```bash
+dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-config
 ```
 
 Expected validation result:
@@ -271,6 +287,18 @@ tables additively, ingests the next target year per source family, records
 year-state after successful source-family inserts, and reports inserted/skipped
 counts. Re-running safely skips duplicate master/detail records and does not
 advance year-state for `no_available_source_year` runs.
+
+.NET scheduled-worker placeholder:
+
+```bash
+dotnet run --project src/dotnet/CarbonOps.Parser.Service -- run-once
+```
+
+Expected PROD-003 behavior is fail-closed: `status=blocked`,
+`ingestion_status=not_implemented`, `postgresql_connection_opened=False`, and
+`records_inserted=0`. This command must not be treated as production ingestion
+until later tasks implement .NET config loading, PostgreSQL schema/year-state
+behavior, source orchestration, and inserts.
 
 ## PostgreSQL Readiness
 
