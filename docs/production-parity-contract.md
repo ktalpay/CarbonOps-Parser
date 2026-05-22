@@ -18,11 +18,13 @@ Project-level production-ready is blocked.
   loader/redaction baseline. It also has a .NET PostgreSQL schema
   bootstrap/year-state baseline for the shared/source-family runtime tables,
   a source-family target-year/source-artifact/parser preview orchestration
-  baseline, a .NET source-specific master/detail insert baseline, and an
+  baseline, a .NET source-specific master/detail insert baseline, an
   opt-in Docker PostgreSQL E2E/idempotency validation baseline for all three
-  Phase 1 source families using local fixtures. Its ingestion command remains a
-  safe not-yet-implemented placeholder because service execution and
-  Python/.NET persisted parity validation remain incomplete.
+  Phase 1 source families using local fixtures, and an opt-in Python/.NET
+  persisted parity validation baseline for fixture-backed source-specific
+  master/detail output. Its ingestion command remains a safe
+  not-yet-implemented placeholder because service execution and a final
+  production-ready verdict remain incomplete.
 - Project-level production-ready: no. The project cannot claim this until a
   user can choose either runtime and receive equivalent production behavior.
 
@@ -180,6 +182,32 @@ and cross-runtime parity evidence:
 - Python/.NET parity validation proving equivalent persisted rows, counts,
   statuses, and operator-visible behavior against the same schema.
 
+## Persisted Parity Validation Baseline
+
+PROD-010 adds an opt-in PostgreSQL persisted parity validation path. The default
+test suite still does not require PostgreSQL, credentials, Docker, or live
+network access.
+
+When explicitly enabled with an externally supplied PostgreSQL test DSN, the
+baseline creates isolated PostgreSQL schemas for the Python and .NET runtime
+paths, loads the same checked-in GHG Protocol, DEFRA/DESNZ, and IPCC EFDB
+fixtures, persists source-specific master/detail rows, reruns the same
+fixture-backed inserts to prove duplicate skips, records successful `2024`
+year-state, and compares stable persisted output. The comparison includes
+  source-family identifiers, latest-year and next-target-year state,
+  master/detail row counts, source-year/source-version values, master/detail
+  external keys, factor fields, and statuses. It intentionally excludes
+  volatile timestamps and generated UUIDs.
+
+The Python PostgreSQL runtime now persists the same source-family identifiers
+required by this contract: `ghg_protocol`, `defra_desnz`, and `ipcc_efdb`, while
+preserving the established `ghg_*`, `defra_*`, and `ipcc_*` table families.
+
+This baseline is parity evidence for the fixture-backed persisted PostgreSQL
+surface only. It does not make the .NET `run-once` service command production
+ingestion ready and does not issue the final project-level production-ready
+verdict.
+
 ## Follow-Up .NET Task Map
 
 The implementation sequence for .NET production readiness is:
@@ -221,7 +249,13 @@ The implementation sequence for .NET production readiness is:
    Python/.NET persisted parity.
 7. .NET Docker PostgreSQL E2E tests. Satisfied as a fixture-backed, explicit
    opt-in Docker PostgreSQL test baseline for all three Phase 1 source families.
-8. Python/.NET parity validation.
+8. Python/.NET parity validation. PROD-010 adds an opt-in persisted PostgreSQL
+   parity baseline for all three Phase 1 source families using local fixtures,
+   stable source-family identifiers, year-state comparison, idempotent rerun
+   duplicate-skip comparison, and source-specific master/detail row comparison
+   without volatile timestamps. It does not make `.NET run-once` production
+   ingestion ready and does not issue the final project-level production-ready
+   verdict.
 9. Final project production-ready verdict.
 
 Each task must remain narrow, tested, and reviewable. None of these follow-up

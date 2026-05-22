@@ -12,8 +12,10 @@ is not production-ready yet, and project-level production-ready is blocked until
 Python and .NET runtimes satisfy the same production parity contract.
 PROD-009 adds an opt-in .NET Docker PostgreSQL E2E/idempotency validation
 baseline for all three Phase 1 source families using checked-in local source
-fixtures. It does not make the .NET service `run-once` command production-ready
-and does not complete project-level production readiness.
+fixtures. PROD-010 adds an opt-in Python/.NET persisted PostgreSQL parity
+baseline for the same fixture-backed source-specific output. These baselines do
+not make the .NET service `run-once` command production-ready and do not
+complete project-level production readiness.
 
 ## Supported Runtime Boundary
 
@@ -44,8 +46,14 @@ Python production path:
   bootstrap, GHG Protocol, DEFRA/DESNZ, and IPCC EFDB local fixture parsing,
   first insert, duplicate rerun skips, year-state progression,
   `no_available_source_year`, failure rollback, and redaction.
+- Opt-in persisted parity baseline: Python and .NET test paths write the same
+  checked-in local fixtures into isolated PostgreSQL schemas and compare stable
+  source-specific master/detail output, year-state, idempotent rerun behavior,
+  source-family identifiers, core row counts, and deterministic external keys
+  without comparing volatile timestamps.
 - Unsupported in .NET today: production `run-once` ingestion execution,
-  uncontrolled live source access and Python/.NET persisted parity validation.
+  uncontrolled live source access, and final project-level production-ready
+  verdict.
 
 The older preview-only `PostgreSQLPersistenceRepository.persist()` boundary is
 still unsupported. Production ingestion uses
@@ -255,6 +263,46 @@ PASS requires:
 
 This check does not prove project-level production readiness, .NET service
 `run-once` readiness, live source handling, or Python/.NET persisted parity.
+
+## Python/.NET Persisted Parity Check
+
+The persisted parity check is opt-in and test-only. It must run only against an
+operator-owned disposable PostgreSQL database or local Docker PostgreSQL
+instance:
+
+```bash
+export CARBONOPS_RUN_PERSISTED_PARITY_VALIDATION=1
+export CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1
+export CARBONOPS_POSTGRESQL_TEST_DSN='<redacted-postgresql-dsn>'
+
+dotnet restore src/dotnet/CarbonOps.Parser.sln
+python -m pytest -q tests/test_postgresql_persisted_parity_validation.py
+```
+
+The test creates isolated generated schemas for Python and .NET, invokes the
+.NET fixture persistence baseline with an externally supplied schema, and
+compares stable persisted output only. It does not print DSNs or credentials.
+It does not drop, truncate, or destructively clean shared database objects.
+
+PASS requires:
+
+- PostgreSQL is not contacted unless
+  `CARBONOPS_RUN_PERSISTED_PARITY_VALIDATION=1` and
+  `CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1` are set with an external test DSN.
+- GHG Protocol, DEFRA/DESNZ, and IPCC EFDB fixtures all persist in both runtime
+  paths.
+- Persisted source-family identifiers are `ghg_protocol`, `defra_desnz`, and
+  `ipcc_efdb`.
+- Master/detail row counts, source years, source versions, external keys,
+  factor fields, statuses, latest successful year `2024`, and next target year
+  `2025` match.
+- Same-fixture reruns skip duplicate master/detail records instead of inserting
+  duplicates.
+- Volatile timestamps and generated UUIDs are not compared.
+
+This check is fixture-backed persisted parity evidence only. It does not make
+the `.NET run-once` command production-ready and does not issue the final
+project-level production-ready verdict.
 
 ## Failure Blocks
 

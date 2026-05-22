@@ -115,6 +115,41 @@ public sealed class DotNetPostgreSQLIntegrationE2ETests
         Assert.Equal(1, await CountYearStateRowsAsync(dataSource, sourceFamily, 2024));
     }
 
+    [Fact]
+    public async Task PersistedParityFixtureBaselineWhenEnabled()
+    {
+        var gate = ResolveIntegrationSettingsFromEnvironment();
+        if (!gate.Enabled)
+        {
+            return;
+        }
+
+        Assert.True(gate.HasSettings, gate.Reason);
+        var settings = gate.Settings!;
+        await new PostgreSQLRuntimeSchemaBootstrapper().BootstrapAsync(settings);
+        await using var dataSource = NpgsqlDataSource.Create(
+            PostgreSQLRuntimeConnectionBoundary.BuildConnectionString(settings));
+        var repository = new PostgreSQLSourceSpecificFactorPersistenceRepository(
+            new NpgsqlSourceSpecificFactorPersistenceSession(dataSource));
+
+        foreach (var sourceFamily in SourceFamilyFixtureCases().Select(item => (SourceFamily)item[0]))
+        {
+            var parsed = ParseFixture(sourceFamily, "prod010-parity", targetYear: 2024);
+            var first = await repository.PersistAsync(parsed);
+            var second = await repository.PersistAsync(parsed);
+
+            Assert.Equal(PostgreSQLSourceSpecificFactorPersistenceStatus.Inserted, first.Status);
+            Assert.True(first.MasterInserted > 0);
+            Assert.True(first.DetailInserted > 0);
+            Assert.Equal(PostgreSQLSourceSpecificFactorPersistenceStatus.Inserted, second.Status);
+            Assert.Equal(0, second.MasterInserted);
+            Assert.Equal(0, second.DetailInserted);
+            Assert.True(second.MasterSkippedDuplicate > 0);
+            Assert.True(second.DetailSkippedDuplicate > 0);
+            Assert.Equal(1, await CountYearStateRowsAsync(dataSource, sourceFamily, 2024));
+        }
+    }
+
     [Theory]
     [MemberData(nameof(SourceFamilyFixtureCases))]
     public async Task NoAvailableSourceYearDoesNotAdvanceYearStateWhenEnabled(
