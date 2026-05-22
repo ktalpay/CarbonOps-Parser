@@ -13,9 +13,10 @@ Project-level production-ready is blocked.
 - Python runtime production path: yes, through the packaged
   `carbonops-parser run-ingestion` operator path.
 - .NET runtime production path: no. The .NET runtime is not production-ready
-  yet. The .NET tree now provides contracts, parity tests, and a directly
-  runnable scheduled-worker entrypoint baseline whose ingestion command is a
-  safe not-yet-implemented placeholder.
+  yet. The .NET tree now provides contracts, parity tests, a directly runnable
+  scheduled-worker entrypoint baseline, and a production config
+  loader/redaction baseline. Its ingestion command remains a safe
+  not-yet-implemented placeholder.
 - Project-level production-ready: no. The project cannot claim this until a
   user can choose either runtime and receive equivalent production behavior.
 
@@ -34,8 +35,9 @@ be:
   modes.
 
 The Python runtime currently has this documented operator path. The .NET runtime
-has only the first scheduled-worker entrypoint shape; it does not yet provide
-equivalent production ingestion behavior.
+has the scheduled-worker entrypoint shape plus real file/environment config
+loading and redaction for `validate-config`; it does not yet provide equivalent
+production ingestion behavior.
 
 ## Equivalent Data Contract
 
@@ -175,7 +177,10 @@ The implementation sequence for .NET production readiness is:
 
 1. .NET service/scheduled-worker entrypoint. Satisfied by PROD-003 as an
    executable command-surface baseline only; ingestion parity remains incomplete.
-2. .NET production config loader and redaction.
+2. .NET production config loader and redaction. Satisfied by PROD-004 for
+   `validate-config` file/environment loading, deterministic environment
+   override behavior, fail-closed diagnostics, and redaction only. Ingestion,
+   PostgreSQL writes, and project-level production readiness remain incomplete.
 3. .NET PostgreSQL schema bootstrap and year-state.
 4. .NET source discovery/download/parsing orchestration.
 5. .NET source-specific master/detail insert.

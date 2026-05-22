@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace CarbonOps.Parser.Contracts;
 
 public sealed record ProductionConfigValidationIssue(
@@ -31,6 +33,8 @@ public sealed record ProductionConfigBoundaryDescription(
 
 public static class ProductionConfigBoundary
 {
+    public const string RawPostgreSQLConnectionStringKey = "CARBONOPS_PARSER_POSTGRES_CONNECTION_STRING";
+
     public static readonly IReadOnlyList<string> RequiredEnvironmentVariables = Array.AsReadOnly(new[]
     {
         "CARBONOPS_PARSER_ENV",
@@ -50,6 +54,11 @@ public static class ProductionConfigBoundary
         "CARBONOPS_PARSER_POSTGRES_PASSWORD",
     });
 
+    public static readonly IReadOnlyList<string> KnownConfigurationKeys = Array.AsReadOnly(
+        RequiredEnvironmentVariables
+            .Append(RawPostgreSQLConnectionStringKey)
+            .ToArray());
+
     private static readonly HashSet<string> ValidLogLevels = new(StringComparer.OrdinalIgnoreCase)
     {
         "debug",
@@ -64,12 +73,13 @@ public static class ProductionConfigBoundary
             RequiredEnvironmentVariables,
             SecretEnvironmentVariables,
             "postgres",
-            LoadsEnvironment: false,
-            LoadsConfigFiles: false,
-            LoadsCredentials: false,
+            LoadsEnvironment: true,
+            LoadsConfigFiles: true,
+            LoadsCredentials: true,
             LogsSecretValues: false,
             [
-                "Callers pass an explicit mapping for validation.",
+                "The .NET service entrypoint loads an optional explicit JSON config file and process environment.",
+                "Environment values override config file values for known production keys.",
                 "CARBONOPS_PARSER_POSTGRES_PASSWORD is required but never returned.",
                 "Connection strings are not accepted as production config values.",
                 "Validation messages name keys only and do not echo configured values.",
@@ -92,7 +102,9 @@ public static class ProductionConfigBoundary
         }
 
         var provider = Get(values, "CARBONOPS_PARSER_DATABASE_PROVIDER");
-        if (HasText(provider) && !string.Equals(provider.Trim(), "postgres", StringComparison.OrdinalIgnoreCase))
+        if (provider is not null &&
+            HasText(provider) &&
+            !string.Equals(provider.Trim(), "postgres", StringComparison.OrdinalIgnoreCase))
         {
             issues.Add(new ProductionConfigValidationIssue(
                 "PRODUCTION_CONFIG_UNSUPPORTED_DATABASE_PROVIDER",
@@ -103,12 +115,12 @@ public static class ProductionConfigBoundary
         ValidatePort(Get(values, "CARBONOPS_PARSER_POSTGRES_PORT"), issues);
         ValidateLogLevel(Get(values, "CARBONOPS_PARSER_LOG_LEVEL"), issues);
 
-        if (HasText(Get(values, "CARBONOPS_PARSER_POSTGRES_CONNECTION_STRING")))
+        if (HasText(Get(values, RawPostgreSQLConnectionStringKey)))
         {
             issues.Add(new ProductionConfigValidationIssue(
                 "PRODUCTION_CONFIG_RAW_CONNECTION_STRING_NOT_ALLOWED",
                 "Raw PostgreSQL connection strings are not accepted; use split non-secret fields and CARBONOPS_PARSER_POSTGRES_PASSWORD.",
-                "CARBONOPS_PARSER_POSTGRES_CONNECTION_STRING"));
+                RawPostgreSQLConnectionStringKey));
         }
 
         return new ProductionConfigValidationResult(issues);
@@ -141,7 +153,7 @@ public static class ProductionConfigBoundary
             return;
         }
 
-        if (!ValidLogLevels.Contains(rawValue.Trim()))
+        if (rawValue is not null && !ValidLogLevels.Contains(rawValue.Trim()))
         {
             issues.Add(new ProductionConfigValidationIssue(
                 "PRODUCTION_CONFIG_INVALID_LOG_LEVEL",
@@ -154,4 +166,142 @@ public static class ProductionConfigBoundary
 
     private static string? Get(IReadOnlyDictionary<string, string?> values, string key) =>
         values.TryGetValue(key, out var value) ? value : null;
+}
+
+public sealed record ProductionConfigLoadResult(
+    IReadOnlyDictionary<string, string?> Values,
+    IReadOnlyList<ProductionConfigValidationIssue> Issues,
+    bool ConfigFileLoaded,
+    bool EnvironmentLoaded);
+
+public static class ProductionConfigLoader
+{
+    public static ProductionConfigLoadResult Load(
+        string? configPath,
+        IReadOnlyDictionary<string, string?> environment)
+    {
+        var values = new Dictionary<string, string?>(StringComparer.Ordinal);
+        var issues = new List<ProductionConfigValidationIssue>();
+        var configFileLoaded = false;
+
+        foreach (var key in ProductionConfigBoundary.KnownConfigurationKeys)
+        {
+            values[key] = null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(configPath))
+        {
+            configFileLoaded = LoadFileValues(configPath, values, issues);
+        }
+
+        foreach (var key in ProductionConfigBoundary.KnownConfigurationKeys)
+        {
+            if (environment.TryGetValue(key, out var value))
+            {
+                values[key] = value;
+            }
+        }
+
+        return new ProductionConfigLoadResult(
+            values,
+            Array.AsReadOnly(issues.ToArray()),
+            configFileLoaded,
+            EnvironmentLoaded: true);
+    }
+
+    private static bool LoadFileValues(
+        string configPath,
+        IDictionary<string, string?> values,
+        ICollection<ProductionConfigValidationIssue> issues)
+    {
+        if (!File.Exists(configPath))
+        {
+            issues.Add(new ProductionConfigValidationIssue(
+                "PRODUCTION_CONFIG_FILE_NOT_FOUND",
+                "Config file was not found.",
+                "config"));
+            return false;
+        }
+
+        try
+        {
+            using var stream = File.OpenRead(configPath);
+            using var document = JsonDocument.Parse(stream);
+
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                issues.Add(new ProductionConfigValidationIssue(
+                    "PRODUCTION_CONFIG_FILE_INVALID_SHAPE",
+                    "Config file root must be a JSON object.",
+                    "config"));
+                return false;
+            }
+
+            foreach (var property in document.RootElement.EnumerateObject().OrderBy(item => item.Name, StringComparer.Ordinal))
+            {
+                if (!values.ContainsKey(property.Name))
+                {
+                    continue;
+                }
+
+                if (!TryReadScalar(property.Value, out var value))
+                {
+                    issues.Add(new ProductionConfigValidationIssue(
+                        "PRODUCTION_CONFIG_FILE_INVALID_VALUE",
+                        "Config file values must be scalar strings, numbers, booleans, or null.",
+                        property.Name));
+                    continue;
+                }
+
+                values[property.Name] = value;
+            }
+
+            return true;
+        }
+        catch (JsonException)
+        {
+            issues.Add(new ProductionConfigValidationIssue(
+                "PRODUCTION_CONFIG_FILE_INVALID_JSON",
+                "Config file must be valid JSON.",
+                "config"));
+            return false;
+        }
+        catch (IOException)
+        {
+            issues.Add(new ProductionConfigValidationIssue(
+                "PRODUCTION_CONFIG_FILE_READ_FAILED",
+                "Config file could not be read.",
+                "config"));
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            issues.Add(new ProductionConfigValidationIssue(
+                "PRODUCTION_CONFIG_FILE_READ_FAILED",
+                "Config file could not be read.",
+                "config"));
+            return false;
+        }
+    }
+
+    private static bool TryReadScalar(JsonElement element, out string? value)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.String:
+                value = element.GetString();
+                return true;
+            case JsonValueKind.Number:
+            case JsonValueKind.True:
+            case JsonValueKind.False:
+                value = element.GetRawText();
+                return true;
+            case JsonValueKind.Null:
+                value = null;
+                return true;
+            default:
+                value = null;
+                return false;
+        }
+    }
 }

@@ -36,12 +36,12 @@ public static class CarbonOpsParserServiceCommand
 
         if (string.Equals(command, "validate-config", StringComparison.OrdinalIgnoreCase))
         {
-            return ValidateConfig(output, environment);
+            return ValidateConfig(args.Skip(1).ToArray(), output, environment);
         }
 
         if (string.Equals(command, "run-once", StringComparison.OrdinalIgnoreCase))
         {
-            return RunOnce(output, environment);
+            return RunOnce(args.Skip(1).ToArray(), output, environment);
         }
 
         error.WriteLine($"Unknown command: {command}");
@@ -50,49 +50,55 @@ public static class CarbonOpsParserServiceCommand
     }
 
     private static int ValidateConfig(
+        string[] args,
         TextWriter output,
         IReadOnlyDictionary<string, string?> environment)
     {
-        var values = ReadKnownEnvironment(environment);
-        var result = ProductionConfigBoundary.Validate(values);
+        var commandOptions = ParseCommandOptions(args);
+        var result = LoadAndValidate(commandOptions.ConfigPath, environment, commandOptions.Issues);
 
-        output.WriteLine(result.IsValid ? "status=ready" : "status=blocked");
+        output.WriteLine(result.Validation.IsValid ? "status=ready" : "status=blocked");
+        output.WriteLine($"config_file_loaded={result.Load.ConfigFileLoaded}");
+        output.WriteLine($"environment_loaded={result.Load.EnvironmentLoaded}");
         output.WriteLine("postgresql_connection_opened=False");
         output.WriteLine("secret_values_printed=False");
 
         foreach (var required in ProductionConfigBoundary.RequiredEnvironmentVariables)
         {
-            output.WriteLine($"{required}_present={HasText(values[required])}");
+            if (ProductionConfigBoundary.SecretEnvironmentVariables.Contains(required, StringComparer.Ordinal))
+            {
+                output.WriteLine($"{required}_present={HasText(result.Load.Values[required])}");
+                output.WriteLine("postgresql_password_configured=" + HasText(result.Load.Values[required]));
+            }
+            else
+            {
+                output.WriteLine($"{required}_present={HasText(result.Load.Values[required])}");
+            }
         }
 
-        foreach (var issue in result.Issues)
-        {
-            output.WriteLine($"issue={issue.Code} field={issue.FieldName} severity={issue.Severity}");
-        }
+        WriteIssues(output, result.Validation.Issues);
 
-        return result.IsValid ? SuccessExitCode : ValidationFailedExitCode;
+        return result.Validation.IsValid ? SuccessExitCode : ValidationFailedExitCode;
     }
 
     private static int RunOnce(
+        string[] args,
         TextWriter output,
         IReadOnlyDictionary<string, string?> environment)
     {
-        var values = ReadKnownEnvironment(environment);
-        var result = ProductionConfigBoundary.Validate(values);
+        var commandOptions = ParseCommandOptions(args);
+        var result = LoadAndValidate(commandOptions.ConfigPath, environment, commandOptions.Issues);
 
         output.WriteLine("status=blocked");
         output.WriteLine($"ingestion_status={NotImplementedStatus}");
         output.WriteLine("postgresql_connection_opened=False");
         output.WriteLine("records_inserted=0");
-        output.WriteLine("message=.NET ingestion execution is not implemented in PROD-003.");
+        output.WriteLine("message=.NET ingestion execution is not implemented in PROD-004.");
 
-        if (!result.IsValid)
+        if (!result.Validation.IsValid)
         {
             output.WriteLine("config_status=blocked");
-            foreach (var issue in result.Issues)
-            {
-                output.WriteLine($"issue={issue.Code} field={issue.FieldName} severity={issue.Severity}");
-            }
+            WriteIssues(output, result.Validation.Issues);
         }
         else
         {
@@ -100,6 +106,56 @@ public static class CarbonOpsParserServiceCommand
         }
 
         return NotImplementedExitCode;
+    }
+
+    private static ProductionConfigCommandValidation LoadAndValidate(
+        string? configPath,
+        IReadOnlyDictionary<string, string?> environment,
+        IReadOnlyList<ProductionConfigValidationIssue> commandIssues)
+    {
+        var load = ProductionConfigLoader.Load(configPath, environment);
+        var issues = new List<ProductionConfigValidationIssue>();
+        issues.AddRange(commandIssues);
+        issues.AddRange(load.Issues);
+        issues.AddRange(ProductionConfigBoundary.Validate(load.Values).Issues);
+
+        return new ProductionConfigCommandValidation(
+            load,
+            new ProductionConfigValidationResult(issues));
+    }
+
+    private static ProductionConfigCommandOptions ParseCommandOptions(string[] args)
+    {
+        var issues = new List<ProductionConfigValidationIssue>();
+        string? configPath = null;
+
+        for (var index = 0; index < args.Length; index++)
+        {
+            var arg = args[index];
+            if (string.Equals(arg, "--config", StringComparison.OrdinalIgnoreCase))
+            {
+                if (index + 1 >= args.Length || string.IsNullOrWhiteSpace(args[index + 1]))
+                {
+                    issues.Add(new ProductionConfigValidationIssue(
+                        "PRODUCTION_CONFIG_COMMAND_MISSING_CONFIG_PATH",
+                        "--config requires a file path.",
+                        "config"));
+                    continue;
+                }
+
+                configPath = args[++index];
+                continue;
+            }
+
+            issues.Add(new ProductionConfigValidationIssue(
+                "PRODUCTION_CONFIG_COMMAND_UNKNOWN_ARGUMENT",
+                "Unknown command argument.",
+                "argument"));
+        }
+
+        return new ProductionConfigCommandOptions(
+            configPath,
+            Array.AsReadOnly(issues.ToArray()));
     }
 
     public static IReadOnlyDictionary<string, string?> ReadProcessEnvironment()
@@ -117,22 +173,16 @@ public static class CarbonOpsParserServiceCommand
         return values;
     }
 
-    private static IReadOnlyDictionary<string, string?> ReadKnownEnvironment(
-        IReadOnlyDictionary<string, string?> environment)
+    private static void WriteIssues(
+        TextWriter output,
+        IReadOnlyList<ProductionConfigValidationIssue> issues)
     {
-        var values = new Dictionary<string, string?>(StringComparer.Ordinal);
-
-        foreach (var required in ProductionConfigBoundary.RequiredEnvironmentVariables)
+        foreach (var issue in issues)
         {
-            values[required] = environment.TryGetValue(required, out var value) ? value : null;
+            var safeMessage = Phase1OperationalDiagnostics.RedactDiagnosticValue("message", issue.Message);
+            output.WriteLine(
+                $"issue={issue.Code} field={issue.FieldName} severity={issue.Severity} message={safeMessage}");
         }
-
-        values["CARBONOPS_PARSER_POSTGRES_CONNECTION_STRING"] =
-            environment.TryGetValue("CARBONOPS_PARSER_POSTGRES_CONNECTION_STRING", out var connectionString)
-                ? connectionString
-                : null;
-
-        return values;
     }
 
     private static bool IsHelp(string command) =>
@@ -147,11 +197,19 @@ public static class CarbonOpsParserServiceCommand
         writer.WriteLine("CarbonOps.Parser.Service");
         writer.WriteLine();
         writer.WriteLine("Usage:");
-        writer.WriteLine("  dotnet run --project src/dotnet/CarbonOps.Parser.Service -- <command>");
+        writer.WriteLine("  dotnet run --project src/dotnet/CarbonOps.Parser.Service -- <command> [--config <path>]");
         writer.WriteLine();
         writer.WriteLine("Commands:");
         writer.WriteLine("  help             Show this command surface.");
         writer.WriteLine("  validate-config  Validate required .NET runtime configuration shape without opening PostgreSQL.");
         writer.WriteLine("  run-once         Run one scheduled-worker cycle placeholder; fails closed until .NET ingestion is implemented.");
     }
+
+    private sealed record ProductionConfigCommandOptions(
+        string? ConfigPath,
+        IReadOnlyList<ProductionConfigValidationIssue> Issues);
+
+    private sealed record ProductionConfigCommandValidation(
+        ProductionConfigLoadResult Load,
+        ProductionConfigValidationResult Validation);
 }

@@ -25,9 +25,9 @@ public sealed class ProductionConfigBoundaryTests
             description.RequiredEnvironmentVariables);
         Assert.Equal(["CARBONOPS_PARSER_POSTGRES_PASSWORD"], description.SecretEnvironmentVariables);
         Assert.Equal("postgres", description.Provider);
-        Assert.False(description.LoadsEnvironment);
-        Assert.False(description.LoadsConfigFiles);
-        Assert.False(description.LoadsCredentials);
+        Assert.True(description.LoadsEnvironment);
+        Assert.True(description.LoadsConfigFiles);
+        Assert.True(description.LoadsCredentials);
         Assert.False(description.LogsSecretValues);
     }
 
@@ -83,6 +83,82 @@ public sealed class ProductionConfigBoundaryTests
         Assert.DoesNotContain("raw-secret", rendered, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void LoaderAcceptsValidConfigFileOnlyShape()
+    {
+        var configPath = WriteConfigFile(ValidConfig());
+
+        var load = ProductionConfigLoader.Load(configPath, new Dictionary<string, string?>());
+        var result = ProductionConfigBoundary.Validate(load.Values);
+
+        Assert.True(load.ConfigFileLoaded);
+        Assert.True(load.EnvironmentLoaded);
+        Assert.Empty(load.Issues);
+        Assert.True(result.IsValid);
+        Assert.Equal("db.internal.example", load.Values["CARBONOPS_PARSER_POSTGRES_HOST"]);
+    }
+
+    [Fact]
+    public void LoaderAcceptsValidEnvironmentOnlyShape()
+    {
+        var load = ProductionConfigLoader.Load(null, ValidConfig());
+        var result = ProductionConfigBoundary.Validate(load.Values);
+
+        Assert.False(load.ConfigFileLoaded);
+        Assert.True(load.EnvironmentLoaded);
+        Assert.Empty(load.Issues);
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void LoaderEnvironmentValuesOverrideConfigFileValues()
+    {
+        var fileValues = ValidConfig();
+        fileValues["CARBONOPS_PARSER_POSTGRES_HOST"] = "file-db.internal.example";
+        fileValues["CARBONOPS_PARSER_POSTGRES_PORT"] = "1111";
+        var configPath = WriteConfigFile(fileValues);
+        var environment = new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            ["CARBONOPS_PARSER_POSTGRES_HOST"] = "env-db.internal.example",
+            ["CARBONOPS_PARSER_POSTGRES_PORT"] = "5433",
+        };
+
+        var load = ProductionConfigLoader.Load(configPath, environment);
+
+        Assert.Equal("env-db.internal.example", load.Values["CARBONOPS_PARSER_POSTGRES_HOST"]);
+        Assert.Equal("5433", load.Values["CARBONOPS_PARSER_POSTGRES_PORT"]);
+    }
+
+    [Fact]
+    public void LoaderMissingRequiredValuesFailClosed()
+    {
+        var values = ValidConfig();
+        values.Remove("CARBONOPS_PARSER_POSTGRES_HOST");
+        var configPath = WriteConfigFile(values);
+
+        var load = ProductionConfigLoader.Load(configPath, new Dictionary<string, string?>());
+        var result = ProductionConfigBoundary.Validate(load.Values);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Issues, issue =>
+            issue.Code == "PRODUCTION_CONFIG_MISSING_REQUIRED_ENV_VAR" &&
+            issue.FieldName == "CARBONOPS_PARSER_POSTGRES_HOST");
+    }
+
+    [Fact]
+    public void LoaderInvalidPortFailsClosed()
+    {
+        var values = ValidConfig();
+        values["CARBONOPS_PARSER_POSTGRES_PORT"] = "70000";
+        var configPath = WriteConfigFile(values);
+
+        var load = ProductionConfigLoader.Load(configPath, new Dictionary<string, string?>());
+        var result = ProductionConfigBoundary.Validate(load.Values);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Issues, issue => issue.Code == "PRODUCTION_CONFIG_INVALID_POSTGRES_PORT");
+    }
+
     private static Dictionary<string, string?> ValidConfig() => new()
     {
         ["CARBONOPS_PARSER_ENV"] = "production",
@@ -96,4 +172,12 @@ public sealed class ProductionConfigBoundaryTests
         ["CARBONOPS_PARSER_RAW_ARCHIVE_PATH"] = "/var/lib/carbonops/raw",
         ["CARBONOPS_PARSER_LOG_LEVEL"] = "info",
     };
+
+    private static string WriteConfigFile(IReadOnlyDictionary<string, string?> values)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"carbonops-production-config-{Guid.NewGuid():N}.json");
+        var json = System.Text.Json.JsonSerializer.Serialize(values);
+        File.WriteAllText(path, json);
+        return path;
+    }
 }
