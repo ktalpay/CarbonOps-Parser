@@ -17,6 +17,8 @@ dotnet run --project src/dotnet/CarbonOps.Parser.Service -- help
 dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-config
 dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-config --config /etc/carbonops-parser/dotnet.production.json
 dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-postgresql-runtime --config /etc/carbonops-parser/dotnet.production.json
+dotnet run --project src/dotnet/CarbonOps.Parser.Service -- preview-source-cycle --config /etc/carbonops-parser/dotnet.production.json
+dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-source-cycle --config /etc/carbonops-parser/dotnet.production.json
 dotnet run --project src/dotnet/CarbonOps.Parser.Service -- run-once
 ```
 
@@ -30,9 +32,39 @@ does not open PostgreSQL, run SQL, or print secret values.
 `validate-postgresql-runtime` validates the same explicit configuration and
 reports the .NET PostgreSQL schema/year-state baseline without opening
 PostgreSQL or running SQL. It reports that schema bootstrap and year-state
-primitives exist, and also reports that source download, parser orchestration,
+primitives exist. Production source download, parser orchestration,
 master/detail inserts, .NET production readiness, and project-level production
-readiness are still false.
+readiness are still false in this PostgreSQL validation command.
+
+`preview-source-cycle` and `validate-source-cycle` provide the PROD-006 safe
+source-cycle orchestration baseline. They select enabled source families from
+the optional JSON config, calculate each target year through the year-state
+contract with default initial year `2024`, check configured local artifacts, and
+hand supported local CSV/text artifacts to the existing normalized parser
+contracts. The commands do not open PostgreSQL, run SQL, insert source-specific
+master/detail records, update year-state, print secrets, or make uncontrolled
+network calls. Missing configured target-year artifacts report
+`no_available_source_year`; unsupported artifact shapes report
+`parser_not_available`; completed parser handoff reports `parsed` and
+`persistence_not_implemented`.
+
+The optional .NET source-cycle config extension is intentionally narrow:
+
+```json
+{
+  "enabled_source_families": ["ghg_protocol", "defra_desnz", "ipcc_efdb"],
+  "source_artifacts": {
+    "ghg_protocol": {
+      "2024": {
+        "path": "/var/lib/carbonops-parser/sources/ghg_protocol_2024.csv",
+        "content_type": "text/csv",
+        "extension": ".csv",
+        "version_label": "v1"
+      }
+    }
+  }
+}
+```
 
 The .NET contracts project now includes an explicit Npgsql runtime boundary for
 additive schema bootstrap and source-family year-state behavior. Construction
@@ -70,6 +102,7 @@ The .NET implementation should not depend on the Python implementation.
 
 PROD-004 adds only the .NET production config loader and redaction baseline on
 top of the scheduled-worker command surface. PROD-005 adds only the .NET
-PostgreSQL schema bootstrap/year-state item from the production parity map. It
-does not add source discovery, source download, parser orchestration, or
-source-family master/detail insert execution.
+PostgreSQL schema bootstrap/year-state item from the production parity map.
+PROD-006 adds only the .NET source discovery/load/parsing orchestration item.
+It does not add source-family master/detail insert execution or complete .NET
+production ingestion.

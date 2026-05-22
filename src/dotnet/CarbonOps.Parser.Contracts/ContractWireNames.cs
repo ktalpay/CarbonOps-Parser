@@ -190,6 +190,19 @@ public static class ContractWireNames
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown parser dry-run status."),
         };
 
+    public static string ToWireName(this SourceCycleRunStatus value) =>
+        value switch
+        {
+            SourceCycleRunStatus.Ready => "ready",
+            SourceCycleRunStatus.Blocked => "blocked",
+            SourceCycleRunStatus.NoAvailableSourceYear => "no_available_source_year",
+            SourceCycleRunStatus.ParserNotAvailable => "parser_not_available",
+            SourceCycleRunStatus.Parsed => "parsed",
+            SourceCycleRunStatus.PersistenceNotImplemented => "persistence_not_implemented",
+            SourceCycleRunStatus.NotImplemented => "not_implemented",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown source cycle run status."),
+        };
+
     public static string ToWireName(this PostgreSQLRuntimeConfigGateStatus value) =>
         value switch
         {
@@ -478,6 +491,24 @@ public static class ContractWireNames
         };
 
         return wireName is "planned" or "invalid_request" or "execution_not_implemented";
+    }
+
+    public static bool TryParseSourceCycleRunStatusWireName(string? wireName, out SourceCycleRunStatus value)
+    {
+        value = wireName switch
+        {
+            "ready" => SourceCycleRunStatus.Ready,
+            "blocked" => SourceCycleRunStatus.Blocked,
+            "no_available_source_year" => SourceCycleRunStatus.NoAvailableSourceYear,
+            "parser_not_available" => SourceCycleRunStatus.ParserNotAvailable,
+            "parsed" => SourceCycleRunStatus.Parsed,
+            "persistence_not_implemented" => SourceCycleRunStatus.PersistenceNotImplemented,
+            "not_implemented" => SourceCycleRunStatus.NotImplemented,
+            _ => default,
+        };
+
+        return wireName is "ready" or "blocked" or "no_available_source_year" or "parser_not_available" or
+            "parsed" or "persistence_not_implemented" or "not_implemented";
     }
 
     public static bool TryParsePostgreSQLRuntimeConfigGateStatusWireName(

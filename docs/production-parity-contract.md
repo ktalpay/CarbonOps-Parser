@@ -16,8 +16,10 @@ Project-level production-ready is blocked.
   yet. The .NET tree now provides contracts, parity tests, a directly runnable
   scheduled-worker entrypoint baseline, and a production config
   loader/redaction baseline. It also has a .NET PostgreSQL schema
-  bootstrap/year-state baseline for the shared/source-family runtime tables.
-  Its ingestion command remains a safe not-yet-implemented placeholder.
+  bootstrap/year-state baseline for the shared/source-family runtime tables,
+  plus a source-family target-year/source-artifact/parser preview orchestration
+  baseline. Its ingestion command remains a safe not-yet-implemented
+  placeholder because source-specific master/detail inserts are not implemented.
 - Project-level production-ready: no. The project cannot claim this until a
   user can choose either runtime and receive equivalent production behavior.
 
@@ -38,8 +40,8 @@ be:
 The Python runtime currently has this documented operator path. The .NET runtime
 has the scheduled-worker entrypoint shape plus real file/environment config
 loading and redaction for `validate-config`, plus PostgreSQL schema
-bootstrap/year-state runtime primitives; it does not yet provide equivalent
-production ingestion behavior.
+bootstrap/year-state runtime primitives and a safe local source-cycle preview
+command; it does not yet provide equivalent production ingestion behavior.
 
 ## Equivalent Data Contract
 
@@ -189,7 +191,13 @@ The implementation sequence for .NET production readiness is:
    year-state recording, and redacted diagnostics only. .NET source
    discovery/download/parsing and source-specific master/detail inserts remain
    incomplete.
-4. .NET source discovery/download/parsing orchestration.
+4. .NET source discovery/download/parsing orchestration. Satisfied by PROD-006
+   for enabled source-family selection, year-state target-year calculation,
+   configured local artifact availability checks, normalized parser handoff for
+   supported local CSV artifacts, and deterministic operator summaries only.
+   It does not insert source-specific master/detail records, update year-state
+   after parsing alone, enable uncontrolled network access, or make .NET
+   production ingestion complete.
 5. .NET source-specific master/detail insert.
 6. .NET idempotency and rerun behavior.
 7. .NET Docker PostgreSQL E2E tests.
