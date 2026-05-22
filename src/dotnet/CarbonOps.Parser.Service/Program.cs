@@ -109,7 +109,9 @@ public static class CarbonOpsParserServiceCommand
         output.WriteLine("year_state_available=True");
         output.WriteLine("source_download_implemented=False");
         output.WriteLine("parser_orchestration_implemented=False");
-        output.WriteLine("master_detail_inserts_implemented=False");
+        output.WriteLine("source_specific_master_detail_insert_baseline=True");
+        output.WriteLine("master_detail_insert_e2e_validated=False");
+        output.WriteLine("production_ingestion_ready=False");
 
         if (result.Validation.IsValid &&
             PostgreSQLRuntimeConnectionBoundary.TryCreateFromProductionConfig(
@@ -177,7 +179,9 @@ public static class CarbonOpsParserServiceCommand
         output.WriteLine("records_inserted=0");
         output.WriteLine("year_state_advanced=False");
         output.WriteLine("secret_values_printed=False");
-        output.WriteLine("master_detail_inserts_implemented=False");
+        output.WriteLine("source_specific_master_detail_insert_baseline=True");
+        output.WriteLine("master_detail_insert_e2e_validated=False");
+        output.WriteLine("production_ingestion_ready=False");
         output.WriteLine("persistence_status=persistence_not_implemented");
         output.WriteLine($"source_family_run_count={preview.RunCount}");
 

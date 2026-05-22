@@ -86,7 +86,10 @@ public sealed class CarbonOpsParserServiceCommandTests
         Assert.Contains("year_state_available=True", rendered, StringComparison.Ordinal);
         Assert.Contains("source_download_implemented=False", rendered, StringComparison.Ordinal);
         Assert.Contains("parser_orchestration_implemented=False", rendered, StringComparison.Ordinal);
-        Assert.Contains("master_detail_inserts_implemented=False", rendered, StringComparison.Ordinal);
+        Assert.Contains("source_specific_master_detail_insert_baseline=True", rendered, StringComparison.Ordinal);
+        Assert.Contains("master_detail_insert_e2e_validated=False", rendered, StringComparison.Ordinal);
+        Assert.Contains("production_ingestion_ready=False", rendered, StringComparison.Ordinal);
+        Assert.DoesNotContain("master_detail_inserts_implemented=True", rendered, StringComparison.Ordinal);
         Assert.Contains("source_family_year_states", rendered, StringComparison.Ordinal);
         Assert.DoesNotContain("runtime-secret-not-returned", rendered, StringComparison.Ordinal);
     }
@@ -138,6 +141,10 @@ public sealed class CarbonOpsParserServiceCommandTests
         Assert.Contains("records_inserted=0", rendered, StringComparison.Ordinal);
         Assert.Contains("year_state_advanced=False", rendered, StringComparison.Ordinal);
         Assert.Contains("secret_values_printed=False", rendered, StringComparison.Ordinal);
+        Assert.Contains("source_specific_master_detail_insert_baseline=True", rendered, StringComparison.Ordinal);
+        Assert.Contains("master_detail_insert_e2e_validated=False", rendered, StringComparison.Ordinal);
+        Assert.Contains("production_ingestion_ready=False", rendered, StringComparison.Ordinal);
+        Assert.DoesNotContain("master_detail_inserts_implemented=True", rendered, StringComparison.Ordinal);
         Assert.DoesNotContain("runtime-secret-not-returned", rendered, StringComparison.Ordinal);
     }
 
