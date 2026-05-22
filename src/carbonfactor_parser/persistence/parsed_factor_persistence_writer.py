@@ -306,6 +306,7 @@ class _PersistenceRow:
     artifact_reference: str | None
     artifact_checksum_sha256: str | None
     source_row_number: int | None
+    honor_explicit_master_external_key: bool = False
 
 
 @dataclass(frozen=True)
@@ -410,6 +411,7 @@ def _row_from_normalized_row(row: "ParserNormalizedOutputRow") -> _PersistenceRo
             _field(fields, "source_checksum_sha256", "checksum_sha256")
         ),
         source_row_number=row.source_row_number,
+        honor_explicit_master_external_key=True,
     )
 
 
@@ -452,7 +454,12 @@ def _map_row(
     if issues:
         return _MappedRow(None, None, tuple(issues))
 
-    master_external_key = _default_master_external_key(row)
+    explicit_master_external_key = (
+        _text_or_none(_field(row.fields, "master_external_key"))
+        if row.honor_explicit_master_external_key
+        else None
+    )
+    master_external_key = explicit_master_external_key or _default_master_external_key(row)
     detail_external_key = _text_or_none(
         _field(row.fields, "detail_external_key")
     ) or _default_detail_external_key(row)

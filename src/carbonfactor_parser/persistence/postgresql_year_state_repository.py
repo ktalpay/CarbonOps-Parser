@@ -8,7 +8,11 @@ from dataclasses import dataclass
 from carbonfactor_parser.persistence.postgresql_runtime_config import (
     POSTGRESQL_RUNTIME_DEFAULT_INITIAL_YEAR,
 )
-from carbonfactor_parser.persistence.postgresql_schema_catalog import SourceFamily
+from carbonfactor_parser.persistence.postgresql_schema_catalog import (
+    SourceFamily,
+    coerce_source_family,
+    source_family_postgresql_value,
+)
 
 
 SOURCE_FAMILY_YEAR_STATE_TABLE_NAME = "source_family_year_states"
@@ -53,7 +57,7 @@ class PostgreSQLSourceFamilyYearStateRepository:
     def latest_ingested_year(self, source_family: SourceFamily | str) -> int | None:
         """Return the latest ingested year for a source family, if present."""
 
-        family = SourceFamily(source_family)
+        family = coerce_source_family(source_family)
         cursor = _execute(
             self._connection,
             """
@@ -61,12 +65,25 @@ class PostgreSQLSourceFamilyYearStateRepository:
             FROM source_family_year_states
             WHERE source_family = %s
             """,
-            (family.value,),
+            (source_family_postgresql_value(family),),
         )
         row = _fetchone(cursor)
-        if row is None or row[0] is None:
-            return None
-        return int(row[0])
+        if row is not None and row[0] is not None:
+            return int(row[0])
+        if source_family_postgresql_value(family) != family.value:
+            legacy_cursor = _execute(
+                self._connection,
+                """
+                SELECT MAX(ingested_year)
+                FROM source_family_year_states
+                WHERE source_family = %s
+                """,
+                (family.value,),
+            )
+            legacy_row = _fetchone(legacy_cursor)
+            if legacy_row is not None and legacy_row[0] is not None:
+                return int(legacy_row[0])
+        return None
 
     def next_target_year(self, source_family: SourceFamily | str) -> int:
         """Return initial year for no data or latest ingested year plus one."""
@@ -82,7 +99,7 @@ class PostgreSQLSourceFamilyYearStateRepository:
     ) -> SourceFamilyYearState:
         """Return latest and next target year for a source family."""
 
-        family = SourceFamily(source_family)
+        family = coerce_source_family(source_family)
         latest_year = self.latest_ingested_year(family)
         return SourceFamilyYearState(
             source_family=family,
@@ -100,7 +117,7 @@ class PostgreSQLSourceFamilyYearStateRepository:
 
         if ingested_year < 1:
             raise ValueError("ingested_year must be positive.")
-        family = SourceFamily(source_family)
+        family = coerce_source_family(source_family)
         _execute(
             self._connection,
             """
@@ -115,7 +132,7 @@ class PostgreSQLSourceFamilyYearStateRepository:
             ON CONFLICT (source_family, ingested_year)
             DO UPDATE SET updated_at = EXCLUDED.updated_at
             """,
-            (str(uuid.uuid4()), family.value, ingested_year),
+            (str(uuid.uuid4()), source_family_postgresql_value(family), ingested_year),
         )
         _commit(self._connection)
 
