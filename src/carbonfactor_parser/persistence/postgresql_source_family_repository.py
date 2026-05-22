@@ -13,7 +13,11 @@ from typing import Mapping
 from carbonfactor_parser.persistence.parsed_factor_persistence_writer import (
     persist_parsed_factor_records,
 )
-from carbonfactor_parser.persistence.postgresql_schema_catalog import SourceFamily
+from carbonfactor_parser.persistence.postgresql_schema_catalog import (
+    SourceFamily,
+    source_family_postgresql_value,
+    source_family_table_prefix,
+)
 from carbonfactor_parser.persistence.source_family_repository import (
     SourceFamilyDetailRecord,
     SourceFamilyMasterRecord,
@@ -223,7 +227,7 @@ class PostgreSQLSourceFamilyRuntimeRepository:
             (
                 str(_source_document_uuid(master)),
                 str(_ingestion_run_uuid(master)),
-                master.source_family.value,
+                source_family_postgresql_value(master.source_family),
                 master.artifact_reference or master.source_document_id,
                 master.artifact_checksum_sha256 or "checksum-unavailable",
                 "downloaded",
@@ -233,7 +237,8 @@ class PostgreSQLSourceFamilyRuntimeRepository:
 
 def _master_insert_sql(source_family: SourceFamily) -> str:
     master_table, _detail_table = source_family_repository_table_names(source_family)
-    master_id = f"{source_family.value}_emission_factor_master_id"
+    family_prefix = source_family_table_prefix(source_family)
+    master_id = f"{family_prefix}_emission_factor_master_id"
     return f"""
         INSERT INTO {master_table} (
             {master_id},
@@ -270,8 +275,9 @@ def _master_insert_sql(source_family: SourceFamily) -> str:
 def _detail_insert_sql(source_family: SourceFamily) -> str:
     master_table, detail_table = source_family_repository_table_names(source_family)
     del master_table
-    master_id = f"{source_family.value}_emission_factor_master_id"
-    detail_id = f"{source_family.value}_emission_factor_detail_id"
+    family_prefix = source_family_table_prefix(source_family)
+    master_id = f"{family_prefix}_emission_factor_master_id"
+    detail_id = f"{family_prefix}_emission_factor_detail_id"
     return f"""
         INSERT INTO {detail_table} (
             {detail_id},
@@ -302,7 +308,7 @@ def _detail_insert_sql(source_family: SourceFamily) -> str:
 def _master_parameters(record: SourceFamilyMasterRecord) -> tuple[object, ...]:
     return (
         str(_master_uuid(record.source_family, record.source_family_master_id)),
-        record.source_family.value,
+        source_family_postgresql_value(record.source_family),
         record.source_year,
         record.source_version,
         record.source_release,
@@ -342,7 +348,7 @@ def _detail_parameters(record: SourceFamilyDetailRecord) -> tuple[object, ...]:
 def _source_document_uuid(record: SourceFamilyMasterRecord) -> uuid.UUID:
     return _stable_uuid(
         "source_document",
-        record.source_family.value,
+        source_family_postgresql_value(record.source_family),
         record.source_document_id,
     )
 
@@ -351,19 +357,23 @@ def _ingestion_run_uuid(record: SourceFamilyMasterRecord) -> uuid.UUID | None:
     source = record.ingestion_run_id or record.run_id
     if source is None:
         source = (
-            f"{record.source_family.value}:"
+            f"{source_family_postgresql_value(record.source_family)}:"
             f"{record.source_year}:"
             f"{record.source_version}"
         )
-    return _stable_uuid("ingestion_run", record.source_family.value, source)
+    return _stable_uuid(
+        "ingestion_run",
+        source_family_postgresql_value(record.source_family),
+        source,
+    )
 
 
 def _master_uuid(source_family: SourceFamily, master_id: str) -> uuid.UUID:
-    return _stable_uuid("master", source_family.value, master_id)
+    return _stable_uuid("master", source_family_postgresql_value(source_family), master_id)
 
 
 def _detail_uuid(source_family: SourceFamily, detail_id: str) -> uuid.UUID:
-    return _stable_uuid("detail", source_family.value, detail_id)
+    return _stable_uuid("detail", source_family_postgresql_value(source_family), detail_id)
 
 
 def _stable_uuid(*values: object) -> uuid.UUID:

@@ -156,7 +156,11 @@ def test_configured_cycle_runner_runs_2024_to_2027_and_is_idempotent(
     )
     assert "target_year=2027" in captured.out
     assert "status=no_available_source_year" in captured.out
-    assert connection.latest_years == {"ghg": 2026, "defra": 2026, "ipcc": 2026}
+    assert connection.latest_years == {
+        "ghg_protocol": 2026,
+        "defra_desnz": 2026,
+        "ipcc_efdb": 2026,
+    }
     assert all(
         connection.table_counts[table_name] > 0
         for table_name in (
@@ -172,7 +176,11 @@ def test_configured_cycle_runner_runs_2024_to_2027_and_is_idempotent(
     second = run_configured_cycle_runner(config, startup=startup, sleep=lambda _: None)
 
     assert second.cycles[0].result.family_results[0].year_state.target_year == 2027
-    assert connection.latest_years == {"ghg": 2026, "defra": 2026, "ipcc": 2026}
+    assert connection.latest_years == {
+        "ghg_protocol": 2026,
+        "defra_desnz": 2026,
+        "ipcc_efdb": 2026,
+    }
 
 
 def test_configured_cycle_runner_blocks_https_without_live_opt_in(

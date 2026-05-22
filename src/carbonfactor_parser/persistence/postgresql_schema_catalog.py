@@ -15,6 +15,29 @@ class SourceFamily(str, Enum):
     IPCC = "ipcc"
 
 
+_SOURCE_FAMILY_ALIASES: Mapping[str, SourceFamily] = {
+    SourceFamily.GHG.value: SourceFamily.GHG,
+    "ghg_protocol": SourceFamily.GHG,
+    SourceFamily.DEFRA.value: SourceFamily.DEFRA,
+    "defra_desnz": SourceFamily.DEFRA,
+    "desnz": SourceFamily.DEFRA,
+    SourceFamily.IPCC.value: SourceFamily.IPCC,
+    "ipcc_efdb": SourceFamily.IPCC,
+}
+
+_SOURCE_FAMILY_POSTGRESQL_VALUES: Mapping[SourceFamily, str] = {
+    SourceFamily.GHG: "ghg_protocol",
+    SourceFamily.DEFRA: "defra_desnz",
+    SourceFamily.IPCC: "ipcc_efdb",
+}
+
+_SOURCE_FAMILY_TABLE_PREFIXES: Mapping[SourceFamily, str] = {
+    SourceFamily.GHG: "ghg",
+    SourceFamily.DEFRA: "defra",
+    SourceFamily.IPCC: "ipcc",
+}
+
+
 class PostgreSQLDataType(str, Enum):
     """Conceptual PostgreSQL-oriented data types used by catalog definitions."""
 
@@ -278,7 +301,7 @@ def _build_shared_tables() -> tuple[TableDefinition, ...]:
 
 
 def _build_source_family_tables(source_family: SourceFamily) -> tuple[TableDefinition, TableDefinition]:
-    family = source_family.value
+    family = source_family_table_prefix(source_family)
     master_table_name = f"{family}_emission_factor_masters"
     detail_table_name = f"{family}_emission_factor_details"
     master_id = f"{family}_emission_factor_master_id"
@@ -399,5 +422,28 @@ def get_required_table_names() -> tuple[str, ...]:
 def get_source_family_table_names(source_family: SourceFamily | str) -> tuple[str, ...]:
     """Return deterministic master/detail table names for a source family."""
 
-    family = SourceFamily(source_family)
+    family = coerce_source_family(source_family)
     return get_postgresql_phase1_schema_catalog().source_family_tables[family]
+
+
+def coerce_source_family(source_family: SourceFamily | str) -> SourceFamily:
+    """Return the internal table-prefix enum for any supported family alias."""
+
+    if isinstance(source_family, SourceFamily):
+        return source_family
+    try:
+        return _SOURCE_FAMILY_ALIASES[source_family.strip().lower()]
+    except KeyError as exc:
+        raise ValueError(f"Unsupported source family: {source_family}") from exc
+
+
+def source_family_postgresql_value(source_family: SourceFamily | str) -> str:
+    """Return the persisted PostgreSQL source-family identifier."""
+
+    return _SOURCE_FAMILY_POSTGRESQL_VALUES[coerce_source_family(source_family)]
+
+
+def source_family_table_prefix(source_family: SourceFamily | str) -> str:
+    """Return the source-family table/id prefix."""
+
+    return _SOURCE_FAMILY_TABLE_PREFIXES[coerce_source_family(source_family)]
