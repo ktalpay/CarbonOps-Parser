@@ -1,177 +1,157 @@
 # Production Packaging And Operator Runbook
 
-This runbook defines the Phase 1 operator flow for installing, configuring,
-validating, running, stopping, and diagnosing CarbonOps-Parser across the Python
-and .NET implementation paths.
+This runbook is the supported operator path for the Python ingestion runtime.
+It documents the commands an operator can run today to install, configure,
+validate, execute, rerun, stop, and troubleshoot CarbonOps-Parser without
+editing Python source files.
 
-It is operator documentation and packaging guidance only. It does not add a
-daemon installer, start a service, connect to PostgreSQL, run SQL, download real
-sources, create tables, mutate deployed systems, load credentials, or claim
-carbon-accounting correctness.
+The production runtime path is Python only. The .NET solution remains a
+contract/test path and is not a production worker executable.
 
 ## Runtime Surface
 
-| Surface | Current entrypoint | Packaging status | Production operation status |
-| --- | --- | --- | --- |
-| Python package | `carbonops-parser` and `carbonops-source-acquisition` from `pyproject.toml` | Editable install supported for local checks | Service-host contract exists, but no packaged daemon command is published yet |
-| .NET package | `src/dotnet/CarbonOps.Parser.sln` | Contracts project can be restored, built, and tested | Service-host contract exists, but no Worker Service executable is published yet |
+| Surface | Current entrypoint | Production operation status |
+| --- | --- | --- |
+| Python package | `carbonops-parser` from `pyproject.toml` | Supported for configured PostgreSQL ingestion |
+| Source acquisition CLI | `carbonops-source-acquisition` | Supported for local dry-run/source planning checks |
+| .NET contracts | `src/dotnet/CarbonOps.Parser.sln` | Contracts/tests only; no deployed worker command |
 
-The two paths are intentionally aligned at the contract level: both use
-PostgreSQL-only Phase 1 configuration, split non-secret database fields,
-`CARBONOPS_PARSER_POSTGRES_PASSWORD` as the secret boundary, fail-closed startup
-validation, schema-bootstrap readiness checks, sequential scheduled execution,
-overlap skipping, and graceful stop semantics.
-
-The current difference is packaging shape. Python exposes installed console
-scripts for local validation and dry-run boundaries. .NET exposes a contracts
-solution and tests, not a deployed Worker Service binary. Operators must not
-invent a production wrapper that bypasses the documented validation gates.
+Supported scheduling is cron or manual scheduled execution of the packaged
+Python command. There is no daemon, long-running service installer, distributed
+lock, or system service wrapper in this repository.
 
 ## Safety Modes
 
-Use these mode labels in operator notes, release checklists, and PR bodies:
-
-| Mode | Purpose | Safe default | May mutate external systems |
+| Mode | Command shape | Purpose | External mutation |
 | --- | --- | --- | --- |
-| Dry-run | Plan targets or render preview metadata | Yes | No |
-| Local fixture | Parse checked-in local fixture data | Yes | No |
-| Isolated integration | Validate opt-in infrastructure using isolated local resources | No, explicit opt-in only | Only the isolated resource named by the operator |
-| Production | Run the deployed service with approved environment configuration | No, requires release approval | Yes, within the approved deployment boundary |
+| Local fixture/dry-run | `carbonops-parser local-dry-run ...` | Parse deterministic checked-in fixture data and render preview metadata | No |
+| Local PostgreSQL smoke | `carbonops-parser real-source-smoke --config config/carbonops.ingestion.example.json --cycles 1` | Validate the packaged Python runtime against an operator-owned local PostgreSQL database | Yes, local DB only |
+| Production PostgreSQL | `carbonops-parser run-ingestion --config /etc/carbonops-parser/ingestion.production.json --cycles 1` | Run configured source-family ingestion against the approved production PostgreSQL database | Yes, production DB |
 
-Dry-run and local fixture commands must remain deterministic and credential-free.
-Isolated integration and production commands must be documented separately from
-safe defaults, with an explicit operator approval step before use.
+HTTPS source access is blocked unless the operator explicitly sets
+`real_source_smoke.allow_live_source_access` or passes
+`--allow-live-source-access` to the smoke command. Production configs must use
+reviewed artifact URLs or local artifact paths under `source_years`.
 
 ## Install
 
-### Python
-
-From a clean checkout:
-
-```bash
-python -m pip install -e .
-```
-
-Optional PostgreSQL driver packaging smoke:
+From a clean checkout or packaged deployment directory:
 
 ```bash
 python -m pip install -e ".[postgresql]"
+carbonops-parser --help
 ```
 
-The optional extra validates installability only. It does not enable repository
-persistence or open a PostgreSQL connection.
-
-### .NET
-
-From the repository root:
-
-```bash
-dotnet restore src/dotnet/CarbonOps.Parser.sln
-dotnet build src/dotnet/CarbonOps.Parser.sln --configuration Release
-```
-
-This builds the contracts and tests projects. It does not publish or install a
-Worker Service executable.
+The `postgresql` extra installs the psycopg binary wrapper used by the runtime.
+Do not commit virtual environments, package caches, or machine-local install
+artifacts.
 
 ## Configure
 
-Production configuration is supplied outside the repository. Do not commit
-environment-specific host names, database names, usernames, raw connection
-strings, or secret values.
+Use JSON for the Python ingestion runtime. Production configuration is split:
+non-secret ingestion settings live in an operator-managed JSON file, while
+PostgreSQL credentials and connection fields are supplied by environment or the
+deployment secret mechanism.
 
-Required Phase 1 keys:
+Example production JSON file:
 
-- `CARBONOPS_PARSER_ENV`
-- `CARBONOPS_PARSER_DATABASE_PROVIDER`
-- `CARBONOPS_PARSER_POSTGRES_HOST`
-- `CARBONOPS_PARSER_POSTGRES_PORT`
-- `CARBONOPS_PARSER_POSTGRES_DATABASE`
-- `CARBONOPS_PARSER_POSTGRES_USERNAME`
-- `CARBONOPS_PARSER_POSTGRES_PASSWORD`
-- `CARBONOPS_PARSER_POSTGRES_SCHEMA`
-- `CARBONOPS_PARSER_RAW_ARCHIVE_PATH`
-- `CARBONOPS_PARSER_LOG_LEVEL`
+```json
+{
+  "archive_root": "/var/lib/carbonops-parser/raw-archive",
+  "enabled_source_families": ["ghg_protocol", "defra_desnz", "ipcc_efdb"],
+  "initial_year": 2024,
+  "cycle": {
+    "interval_seconds": 0,
+    "max_cycles": 1
+  },
+  "real_source_smoke": {
+    "allow_live_source_access": false
+  },
+  "source_years": {
+    "ghg_protocol": {
+      "2024": {
+        "artifact_url": "/var/lib/carbonops-parser/sources/ghg_protocol_2024.csv",
+        "publication_url": "https://<reviewed-publication-url>",
+        "title": "GHG Protocol reviewed artifact 2024",
+        "version_label": "<reviewed-version-label>",
+        "content_type": "text/csv",
+        "format_hint": "csv"
+      }
+    },
+    "defra_desnz": {
+      "2024": {
+        "artifact_url": "/var/lib/carbonops-parser/sources/defra_desnz_2024.csv",
+        "publication_url": "https://<reviewed-publication-url>",
+        "title": "DEFRA/DESNZ reviewed artifact 2024",
+        "version_label": "<reviewed-version-label>",
+        "content_type": "text/csv",
+        "format_hint": "csv"
+      }
+    },
+    "ipcc_efdb": {
+      "2024": {
+        "artifact_url": "/var/lib/carbonops-parser/sources/ipcc_efdb_2024.csv",
+        "publication_url": "https://<reviewed-publication-url>",
+        "title": "IPCC EFDB reviewed artifact 2024",
+        "version_label": "<reviewed-version-label>",
+        "content_type": "text/csv",
+        "format_hint": "csv"
+      }
+    }
+  }
+}
+```
 
-Operator rules:
+A placeholder copy of this shape is checked in at
+[../config/carbonops.ingestion.production.example.json](../config/carbonops.ingestion.production.example.json).
+It contains no credentials and is not directly runnable until the operator
+replaces placeholder artifact paths and source metadata.
 
-- `CARBONOPS_PARSER_DATABASE_PROVIDER` must be `postgres`.
-- `CARBONOPS_PARSER_POSTGRES_PORT` must be an integer from 1 to 65535.
-- `CARBONOPS_PARSER_LOG_LEVEL` must be `debug`, `info`, `warning`, `error`, or
-  `critical`.
-- The password key may be checked for presence, but its value must not be
-  printed, logged, copied into examples, or added to diagnostics.
-- Raw PostgreSQL connection strings are rejected; use split non-secret fields
-  plus the password key above.
-- `CARBONOPS_PARSER_RAW_ARCHIVE_PATH` must point to an operator-managed
-  directory with enough free space and backup policy for raw source archives.
+Required runtime environment:
 
-The shared conceptual template is
-[../config/carbonops.config.example.yaml](../config/carbonops.config.example.yaml).
-It contains placeholders only.
+| Name | Required | Secret | Purpose |
+| --- | --- | --- | --- |
+| `CARBONOPS_POSTGRESQL_HOST` | Yes, unless DSN is used | No | PostgreSQL host |
+| `CARBONOPS_POSTGRESQL_PORT` | Yes | No | PostgreSQL port, normally `5432` |
+| `CARBONOPS_POSTGRESQL_DATABASE` | Yes, unless DSN is used | No | Database name |
+| `CARBONOPS_POSTGRESQL_USERNAME` | Yes, unless DSN is used | No | Runtime database role |
+| `CARBONOPS_POSTGRESQL_PASSWORD` | Yes, unless DSN is used | Yes | Runtime database password supplied externally |
+| `CARBONOPS_POSTGRESQL_APPLICATION_NAME` | Yes for production operations | No | PostgreSQL application name, for example `carbonops-parser-prod` |
+| `CARBONOPS_POSTGRESQL_SSL_MODE` | Deployment-specific | No | psycopg SSL mode, for example `require` |
+| `CARBONOPS_POSTGRESQL_INITIAL_YEAR` | Yes for production operations | No | Initial year for empty year-state tables; keep aligned with JSON `initial_year` |
+| `CARBONOPS_POSTGRESQL_DSN` | No | Yes if it embeds credentials | Alternative connection input; avoid in production because it is easier to leak |
+
+Required JSON keys:
+
+| Key | Required | Purpose |
+| --- | --- | --- |
+| `archive_root` | Yes | Operator-managed raw archive directory |
+| `enabled_source_families` | Yes | Explicit subset of `ghg_protocol`, `defra_desnz`, `ipcc_efdb` |
+| `initial_year` | Yes | First target year when no year-state exists |
+| `cycle.max_cycles` | Yes | Use `1` for cron/manual scheduled production runs |
+| `cycle.interval_seconds` | Yes | Use `0` for cron/manual scheduled production runs |
+| `real_source_smoke.allow_live_source_access` | Yes | Must be explicit; default production recommendation is `false` with staged local artifacts |
+| `source_years.<family>.<year>.artifact_url` | Yes for each enabled family/year | Local path, `file:` URI, `local:` URI, or reviewed HTTPS URL |
+| `source_years.<family>.<year>.publication_url` | Yes | Source publication reference for audit metadata |
+| `source_years.<family>.<year>.title` | Yes | Human-readable source artifact title |
+| `source_years.<family>.<year>.version_label` | Yes | Reviewed version label |
+| `source_years.<family>.<year>.content_type` | Yes | Usually `text/csv` |
+| `source_years.<family>.<year>.format_hint` | Yes | Usually `csv` |
+
+The only required secret in the split environment path is
+`CARBONOPS_POSTGRESQL_PASSWORD`. Provide it through the deployment secret
+manager or protected shell environment. Do not put passwords, tokens, private
+DSNs, or real credentials in repository files, runbooks, tickets, command
+history examples, or logs.
 
 ## Validate
 
-Run validation in this order before any production start attempt.
-
-Combined CI/release gate:
+Run local package and fixture checks first:
 
 ```bash
-python scripts/release_validation_gate.py
-```
-
-Production release-candidate dry-run verification:
-
-```bash
-python scripts/production_rc_verification.py
-```
-
-The combined gate runs a focused Phase 1 Python release-validation test set,
-local source acquisition and parser fixture checks, focused stable .NET
-production-safety contract checks, parity fixture presence checks, sample config
-safety checks, static workflow/runbook safety checks, and whitespace validation.
-The full Python test suite, full .NET contract suite, and full repository
-public-safety validation remain separate tracked hardening items until
-baseline/noise cleanup, allowlist support, and parser fixture determinism cleanup
-are available. The full .NET contract suite is outside the default release gate
-until known deterministic parser assertion failures are resolved. PostgreSQL
-integration validation remains opt-in only through
-`CARBONOPS_RELEASE_GATE_RUN_INTEGRATION=1`,
-`CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1`, and an externally supplied
-`CARBONOPS_POSTGRESQL_TEST_DSN`.
-
-Default combined gate command coverage includes:
-
-```bash
-python -m pytest \
-  tests/test_release_validation_gate.py \
-  tests/test_production_rc_verification.py \
-  tests/test_production_config_boundary.py \
-  tests/test_phase1_observability.py \
-  tests/test_production_packaging_operator_runbook.py \
-  tests/test_postgresql_runtime_config_gate.py \
-  tests/test_agent_task_watcher.py \
-  tests/test_agent_dispatch_handoff_reporter.py
+python -m pytest
 git diff --check
-```
-
-Focused stable .NET production-safety contract coverage:
-
-```bash
-dotnet test tests/dotnet/CarbonOps.Parser.Contracts.Tests/CarbonOps.Parser.Contracts.Tests.csproj \
-  --configuration Release \
-  --no-restore \
-  --filter "FullyQualifiedName~ProductionConfigBoundaryTests|FullyQualifiedName~Phase1OperationalDiagnosticsTests|FullyQualifiedName~PostgreSQLRuntimeConfigGateContractTests"
-```
-
-Repository checks outside the default combined gate:
-
-```bash
-python scripts/check_public_safety.py
-```
-
-Python package smoke:
-
-```bash
+python scripts/production_rc_verification.py
 carbonops-source-acquisition validate
 carbonops-source-acquisition run --dry-run --base-directory ./data/source-acquisition
 carbonops-parser local-dry-run \
@@ -180,160 +160,281 @@ carbonops-parser local-dry-run \
   --source-id defra-desnz-minimal-fixture \
   --content-type text/csv \
   --format-hint csv
+dotnet test tests/dotnet/CarbonOps.Parser.Contracts.Tests/CarbonOps.Parser.Contracts.Tests.csproj \
+  --configuration Release \
+  --no-restore \
+  --filter "FullyQualifiedName~ProductionConfigBoundaryTests|FullyQualifiedName~Phase1OperationalDiagnosticsTests|FullyQualifiedName~PostgreSQLRuntimeConfigGateContractTests"
 ```
-
-Python preview-only persistence smoke:
-
-```bash
-carbonops-parser local-dry-run \
-  --local-path examples/fixtures/defra_desnz_minimal.csv \
-  --source-family defra_desnz \
-  --source-id defra-desnz-minimal-fixture \
-  --content-type text/csv \
-  --format-hint csv \
-  --include-postgresql-preview
-```
-
-.NET checks outside the default combined gate:
-
-```bash
-dotnet test src/dotnet/CarbonOps.Parser.sln --configuration Release
-```
-
-The full .NET contract suite currently includes known deterministic parser
-assertion failures and must stay outside the default release gate until those
-parser contract failures are resolved.
 
 The commands above must not require production configuration or credentials.
-Treat any prompt for production values during these checks as a release blocker.
-The production RC verifier defaults to `--mode dry-run`, does not connect to
-PostgreSQL, does not call live source endpoints, and does not run destructive
-database commands. `--mode integration` and `--mode live` are separate opt-in
-paths and must not be used as the default release-candidate check.
+The focused .NET command is the default release-gate contract subset; the full .NET contract suite is outside the default release gate and remains a separate reviewer/operator validation choice when broader parity evidence is needed.
+
+Validate production configuration without opening PostgreSQL:
+
+```bash
+export CARBONOPS_POSTGRESQL_HOST='<postgresql-host>'
+export CARBONOPS_POSTGRESQL_PORT='5432'
+export CARBONOPS_POSTGRESQL_DATABASE='<postgresql-database>'
+export CARBONOPS_POSTGRESQL_USERNAME='<postgresql-runtime-role>'
+export CARBONOPS_POSTGRESQL_PASSWORD='<external-secret-value>'
+export CARBONOPS_POSTGRESQL_APPLICATION_NAME='carbonops-parser-prod'
+export CARBONOPS_POSTGRESQL_SSL_MODE='require'
+export CARBONOPS_POSTGRESQL_INITIAL_YEAR='2024'
+
+carbonops-parser validate-ingestion-config \
+  --config /etc/carbonops-parser/ingestion.production.json \
+  --cycles 1
+```
+
+Expected validation result:
+
+```text
+status=ready
+postgresql_config_status=ready
+postgresql_password_configured=True
+```
+
+If validation prints `status=blocked`, fix the named field before opening a DB
+connection.
+
+Raw PostgreSQL connection strings are rejected by the committed configuration
+boundary. Use split `CARBONOPS_POSTGRESQL_*` fields and provide
+`CARBONOPS_POSTGRESQL_PASSWORD` through the external secret boundary.
+
+Validate DB connectivity and schema bootstrap with an isolated local or
+pre-production database before production. The integration-test DSN is external
+test-runner input and must not be printed:
+
+```bash
+CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1 \
+CARBONOPS_POSTGRESQL_TEST_DSN='<external test DSN supplied by operator>' \
+python -m pytest -q \
+  tests/test_postgresql_connection_smoke_boundary.py::test_postgresql_opt_in_connection_open_close_smoke \
+  tests/test_postgresql_runtime_year_state.py::test_docker_postgresql_schema_bootstrap_and_year_state_integration \
+  tests/test_postgresql_source_family_repository.py::test_docker_postgresql_source_specific_master_detail_tables_integration
+```
 
 ## Run
 
-Current repository entrypoints are safe local boundaries, not deployed service
-commands. A production service process may be started only after a future task
-adds or approves an explicit host executable or deployment wrapper that preserves
-the service-host gates.
-
-Minimum run requirements for either implementation path:
-
-1. Configuration validation succeeds before source checks, downloads, parsing,
-   imports, or database execution.
-2. PostgreSQL provider is `postgres`.
-3. The password value is present through the deployment secret mechanism but is
-   never stored in repository files or emitted in diagnostics.
-4. Schema-bootstrap readiness is checked before scheduled source execution.
-5. Scheduled execution remains sequential with one active run per host instance.
-6. The selected source families are explicit.
-7. Logs include run IDs and sanitized issue codes, not raw configured values.
-
-For Linux service shape and a non-installing systemd template, see
-[linux-service-setup.md](linux-service-setup.md).
-
-## Stop
-
-Use the process supervisor or hosting platform stop action for the deployed
-process. The Phase 1 service-host contract treats stop as graceful:
-
-- new scheduled triggers are skipped after shutdown is requested;
-- an active run is allowed to unwind;
-- the host reports stopped after the active runner exits;
-- shutdown does not delete worktrees, branches, raw archives, or database data.
-
-Do not use cleanup commands that delete branches, worktrees, archives, schemas,
-tables, or production data as part of normal stop.
-
-## Diagnose
-
-Start with safe, non-mutating evidence:
+Local fixture/dry-run mode:
 
 ```bash
-carbonops-source-acquisition validate --output-format json
-carbonops-source-acquisition list --output-format json
-carbonops-source-acquisition run --dry-run --base-directory ./data/source-acquisition --output-format json
 carbonops-parser local-dry-run \
   --local-path examples/fixtures/defra_desnz_minimal.csv \
   --source-family defra_desnz \
   --source-id defra-desnz-minimal-fixture \
   --content-type text/csv \
   --format-hint csv \
-  --json \
   --include-postgresql-preview
 ```
 
-Troubleshooting checklist:
+Local PostgreSQL smoke mode:
 
-- Startup blocked: review issue codes and field names; do not paste configured
-  values into tickets.
-- Missing schema: compare the schema-bootstrap report with the PostgreSQL Phase
-  1 schema contract before enabling any create-missing behavior.
-- Already running: wait for the active run to finish; do not start a second host
-  against the same production target without an approved lock strategy.
-- Source acquisition failure: identify whether the run was noop, dry-run, HTTP
-  without persistence, or HTTP with explicit content persistence.
-- Parser or normalization issue: reproduce with the local fixture path first if
-  the failure shape applies to checked-in deterministic data.
-- Database execution issue: confirm that runtime execution was explicitly
-  enabled by a reviewed future task; the current default repository boundary is
-  no-execution.
-- Suspected credential exposure: rotate the affected runtime credential through
-  the deployment secret mechanism and remove the exposed diagnostic artifact
-  from normal operator channels.
+```bash
+export CARBONOPS_POSTGRESQL_HOST='127.0.0.1'
+export CARBONOPS_POSTGRESQL_PORT='5432'
+export CARBONOPS_POSTGRESQL_DATABASE='carbonops'
+export CARBONOPS_POSTGRESQL_USERNAME='carbonops'
+export CARBONOPS_POSTGRESQL_PASSWORD='<local-test-password>'
+export CARBONOPS_POSTGRESQL_APPLICATION_NAME='carbonops-parser-local'
+export CARBONOPS_POSTGRESQL_INITIAL_YEAR='2024'
 
-## Failure Recovery
-
-Use least-mutating recovery first:
-
-1. Stop or pause new triggers.
-2. Capture sanitized run ID, source family, status, issue codes, and timestamps.
-3. Preserve raw archive files for inspection unless an approved data-retention
-   policy says otherwise.
-4. Re-run dry-run or local fixture commands to separate packaging/config issues
-   from source-specific runtime behavior.
-5. If a production deployment changed, roll back the package or deployment
-   pointer to the last known reviewed version.
-6. If database writes were enabled by a future task, follow that task's
-   transaction and rollback runbook; do not run ad hoc destructive SQL.
-7. Resume triggers only after validation commands pass and the operator records
-   the resolved cause.
-
-Rollback must not delete Codex worktrees, delete branches, close issues, merge
-pull requests, approve pull requests, or remove raw archives unless a separate
-human-approved retention process requires it.
-
-## PR Body Footer
-
-OPS-032 pull request bodies must end with:
-
-```text
-Task-ID: OPS-032
-Task-Issue: #499
+carbonops-parser real-source-smoke \
+  --config config/carbonops.ingestion.example.json \
+  --cycles 1
 ```
 
-OPS-033 pull request bodies must end with:
+Production PostgreSQL mode:
 
-```text
+```bash
+export CARBONOPS_POSTGRESQL_HOST='<postgresql-host>'
+export CARBONOPS_POSTGRESQL_PORT='5432'
+export CARBONOPS_POSTGRESQL_DATABASE='<postgresql-database>'
+export CARBONOPS_POSTGRESQL_USERNAME='<postgresql-runtime-role>'
+export CARBONOPS_POSTGRESQL_PASSWORD='<external-secret-value>'
+export CARBONOPS_POSTGRESQL_APPLICATION_NAME='carbonops-parser-prod'
+export CARBONOPS_POSTGRESQL_SSL_MODE='require'
+export CARBONOPS_POSTGRESQL_INITIAL_YEAR='2024'
+
+carbonops-parser run-ingestion \
+  --config /etc/carbonops-parser/ingestion.production.json \
+  --cycles 1
+```
+
+Use `--cycles 1` for production scheduling. The command creates missing Phase 1
+tables additively, ingests the next target year per source family, records
+year-state after successful source-family inserts, and reports inserted/skipped
+counts. Re-running safely skips duplicate master/detail records and does not
+advance year-state for `no_available_source_year` runs.
+
+## PostgreSQL Readiness
+
+Minimum database privileges for the runtime role:
+
+- `CONNECT` on the configured database.
+- `USAGE` on the target schema.
+- `CREATE` on the target schema for additive schema bootstrap.
+- `SELECT`, `INSERT`, and `UPDATE` on Phase 1 tables created or owned by the
+  runtime schema.
+- Sequence privileges if the deployment changes table definitions to use
+  sequences.
+
+Schema bootstrap is additive and idempotent. It uses `CREATE TABLE IF NOT
+EXISTS` and `CREATE INDEX IF NOT EXISTS` for required Phase 1 tables; it does
+not drop, truncate, or destructively migrate existing tables.
+
+Before the first production run, the operator must verify:
+
+- The target database and schema are correct.
+- A backup/restore point exists according to the operator's production policy.
+- Monitoring, alerting, retention, and credential rotation are owned outside
+  this repository.
+- The runtime role has the minimum privileges listed above.
+- The archive root exists, is writable by the runtime user, and has enough
+  storage.
+- The configured source artifacts exist or reviewed live access is explicitly
+  enabled.
+
+After the first run, verify required tables:
+
+```sql
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = current_schema()
+  AND table_name IN (
+    'source_family_year_states',
+    'ghg_emission_factor_masters',
+    'ghg_emission_factor_details',
+    'defra_emission_factor_masters',
+    'defra_emission_factor_details',
+    'ipcc_emission_factor_masters',
+    'ipcc_emission_factor_details'
+  )
+ORDER BY table_name;
+```
+
+Verify GHG Protocol master/detail counts:
+
+```sql
+SELECT 'ghg_emission_factor_masters' AS table_name, count(*) AS records
+FROM ghg_emission_factor_masters
+UNION ALL
+SELECT 'ghg_emission_factor_details', count(*)
+FROM ghg_emission_factor_details;
+```
+
+Verify DEFRA/DESNZ master/detail counts:
+
+```sql
+SELECT 'defra_emission_factor_masters' AS table_name, count(*) AS records
+FROM defra_emission_factor_masters
+UNION ALL
+SELECT 'defra_emission_factor_details', count(*)
+FROM defra_emission_factor_details;
+```
+
+Verify IPCC EFDB master/detail counts:
+
+```sql
+SELECT 'ipcc_emission_factor_masters' AS table_name, count(*) AS records
+FROM ipcc_emission_factor_masters
+UNION ALL
+SELECT 'ipcc_emission_factor_details', count(*)
+FROM ipcc_emission_factor_details;
+```
+
+Verify latest ingested year / year-state:
+
+```sql
+SELECT source_family, max(ingested_year) AS latest_ingested_year
+FROM source_family_year_states
+GROUP BY source_family
+ORDER BY source_family;
+```
+
+Production database backup/restore, database monitoring, storage monitoring,
+credential rotation, and audit-log retention are operator responsibilities
+unless a future repository task implements a specific supported integration.
+
+## Scheduling
+
+Supported production scheduling is cron or manual scheduled execution of a
+single-cycle command. Do not run overlapping production invocations for the same
+database/schema unless an external scheduler lock is in place.
+
+Safe cron shape:
+
+```cron
+SHELL=/bin/sh
+CARBONOPS_POSTGRESQL_HOST=<postgresql-host>
+CARBONOPS_POSTGRESQL_PORT=5432
+CARBONOPS_POSTGRESQL_DATABASE=<postgresql-database>
+CARBONOPS_POSTGRESQL_USERNAME=<postgresql-runtime-role>
+CARBONOPS_POSTGRESQL_PASSWORD_FILE=/run/secrets/carbonops-postgresql-password
+CARBONOPS_POSTGRESQL_APPLICATION_NAME=carbonops-parser-prod
+CARBONOPS_POSTGRESQL_SSL_MODE=require
+CARBONOPS_POSTGRESQL_INITIAL_YEAR=2024
+
+15 4 * * * CARBONOPS_POSTGRESQL_PASSWORD="$(cat "$CARBONOPS_POSTGRESQL_PASSWORD_FILE")" /opt/carbonops-parser/.venv/bin/carbonops-parser run-ingestion --config /etc/carbonops-parser/ingestion.production.json --cycles 1 >> /var/log/carbonops-parser/ingestion.log 2>&1
+```
+
+The cron example uses placeholders and an external secret file. Ensure the
+secret file and log file permissions are managed by the operator. Logs must not
+include the password value.
+
+## Stop And Rerun
+
+Stop a running command with the process supervisor, scheduler cancellation, or
+terminal interrupt. Normal stop/cancel must not delete archives, schemas,
+tables, branches, worktrees, or source artifacts.
+
+Rerun the same command after fixing an operator-visible issue. Duplicate
+master/detail rows are skipped by the source-family repositories. If a run
+reports `no_available_source_year`, add the missing configured year artifact or
+reviewed live source access before rerunning.
+
+## Troubleshooting
+
+Common failures and operator actions:
+
+| Symptom | Likely cause | Action |
+| --- | --- | --- |
+| `POSTGRESQL_RUNTIME_CONFIG_MISSING_HOST` or related config issue | Missing DB env | Set the named `CARBONOPS_POSTGRESQL_*` value through the deployment environment |
+| Connection failure before startup summary | Bad DB credentials, host, port, SSL mode, network route, or database name | Verify externally with `psql` using redacted operator procedures; rotate secrets if exposure is suspected |
+| `archive_root could not be created` or `archive_root must be a directory path` | Missing or invalid archive root | Create the directory and set runtime-user permissions |
+| `Unsupported enabled source family` | Unsupported family key | Use only `ghg_protocol`, `defra_desnz`, or `ipcc_efdb` |
+| `requires artifact_url` | Missing configured source artifact | Add `source_years.<family>.<year>.artifact_url` |
+| Live HTTPS source access error | HTTPS artifact configured without explicit live opt-in | Stage the artifact locally or explicitly enable reviewed live access |
+| `no_available_source_year` | No configured artifact for the target year | Add the target year artifact or confirm the no-op is expected |
+| Duplicate rows skipped | Idempotent rerun | Confirm skipped counts match prior successful run |
+
+When reporting failures, include run ID, source family, target year, status,
+issue code, and sanitized message. Do not include passwords, DSNs, tokens, or
+private artifact URLs with credentials.
+
+## Production Validation Checklist
+
+A deployment is production-ready only when every item is pass/fail recorded:
+
+- PASS/FAIL: Clean install completed with `python -m pip install -e ".[postgresql]"`.
+- PASS/FAIL: `carbonops-parser validate-ingestion-config --config <production-json> --cycles 1` reports `status=ready`.
+- PASS/FAIL: DB connectivity passed against an isolated pre-production or approved production target.
+- PASS/FAIL: Schema bootstrap created or verified all required Phase 1 tables.
+- PASS/FAIL: One source-family smoke passed, or the full three-source smoke passed.
+- PASS/FAIL: Idempotent rerun skipped duplicate master/detail rows.
+- PASS/FAIL: Redaction check found no passwords, tokens, private DSNs, or secrets in logs and tickets.
+- PASS/FAIL: Full Python test baseline passed with `python -m pytest`.
+- PASS/FAIL: `git diff --check` passed.
+- PASS/FAIL: `git status --short` is clean or contains only the reviewed deployment change.
+
+Historical release-gate trace retained for reviewer continuity:
 Task-ID: OPS-033
 Task-Issue: #500
-```
-
-OPS-036 pull request bodies must end with:
-
-```text
-Task-ID: OPS-036
-Task-Issue: #498
-```
 
 ## Related Documents
 
-- [Configuration Model](configuration-model.md)
-- [Linux Service Setup](linux-service-setup.md)
+- [Python Ingestion Local Runbook](python-ingestion-local-runbook.md)
+- [Real-Source Smoke Mode](real-source-smoke-mode.md)
 - [PostgreSQL Runtime Readiness Checklist](postgresql-runtime-readiness-checklist.md)
 - [PostgreSQL Opt-In Integration Runbook](postgresql-opt-in-integration-runbook.md)
-- [PostgreSQL Config Contract Boundary](postgresql-config-contract-boundary.md)
-- [Local Dry-Run CLI Boundary](local-dry-run-cli-boundary.md)
-- [Source Acquisition CLI Boundary](source-acquisition-cli-boundary.md)
-- [Public Safety](public-safety.md)
+- [PostgreSQL Phase 1 Schema Contract](postgresql-phase1-schema-contract.md)

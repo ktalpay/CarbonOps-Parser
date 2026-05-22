@@ -1,14 +1,14 @@
 # PostgreSQL Opt-In Integration Runbook
 
-This runbook defines how future PostgreSQL integration tests should be prepared
-and run safely.
+This runbook defines how PostgreSQL integration tests should be prepared and
+run safely. The default test suite remains deterministic and DB-free; real
+PostgreSQL checks require explicit opt-in controls and an externally supplied
+test DSN.
 
-It is documentation and test-harness guidance only. It does not create a
-PostgreSQL connection, create a cursor, run SQL, write records, start a
-transaction, finish a transaction, roll back a transaction, create tables, run
-migrations, load environment variables in library code, load configuration
-files in library code, load credentials, perform HTTP or network calls, schedule
-work, or claim production persistence readiness.
+The current Python production runtime is documented in
+[Production Packaging And Operator Runbook](production-packaging-operator-runbook.md).
+This integration runbook is test-harness guidance; it must not be used to store
+production DSNs, passwords, tokens, or database dumps.
 
 ## Why Integration Tests Are Opt-In
 
@@ -16,10 +16,10 @@ The default test suite must remain deterministic and local-only. Normal
 `python -m pytest` runs must not require PostgreSQL, credentials, network
 access, a local database, migrations, or table setup.
 
-PostgreSQL integration tests are reserved for future runtime tasks that
-explicitly add database behavior behind the runtime execution gate. Until then,
-the repository remains unsupported/no-execution and integration test behavior is
-represented only by metadata.
+PostgreSQL integration tests are opt-in because they can open external
+connections, create isolated schemas, bootstrap Phase 1 tables, and write test
+rows. They must not run unless the operator provides the canonical controls
+described below.
 
 ## Existing Boundary
 
@@ -350,7 +350,7 @@ PH-017 M3 execution record:
 - `python scripts/production_rc_verification.py`: `Passed true`.
 - `python -m pytest`: `2062 passed`.
 - `git diff --check`: passed.
-- result: PH-017 is `production-ready with accepted risks`.
+- result: PH-017 source-family Docker PostgreSQL E2E validation passed.
 - secret handling: no DSN, password, credential, token, or secret value is
   recorded in this runbook.
 
@@ -390,10 +390,9 @@ Current PH-017 execution record:
 - focused .NET production-safety contract tests: `17 passed`.
 - `dotnet restore`: completed.
 - `git diff --check`: passed.
-- release verdict recorded in
-  [PH-017 Production E2E Docker PostgreSQL Release Validation](ph-017-production-e2e-docker-postgresql-release-validation.md):
-  `production-ready with accepted risks`.
-- accepted risks: live source URL/default discovery remains a release risk; no
+- validation record:
+  [PH-017 Production E2E Docker PostgreSQL Release Validation](ph-017-production-e2e-docker-postgresql-release-validation.md).
+- boundaries: live source URL/default discovery remains operator-reviewed; no
   source-owner, factor, legal, or compliance correctness claim is made.
 
 After the manual run, unset both integration controls:

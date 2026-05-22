@@ -78,21 +78,27 @@ REQUIRED_RUNBOOK_MARKERS = (
     "carbonops-source-acquisition validate",
     "carbonops-source-acquisition run --dry-run",
     "carbonops-parser local-dry-run",
+    "carbonops-parser validate-ingestion-config",
+    "carbonops-parser run-ingestion",
     "dotnet test tests/dotnet/CarbonOps.Parser.Contracts.Tests/CarbonOps.Parser.Contracts.Tests.csproj",
     "--filter \"FullyQualifiedName~ProductionConfigBoundaryTests|FullyQualifiedName~Phase1OperationalDiagnosticsTests|FullyQualifiedName~PostgreSQLRuntimeConfigGateContractTests\"",
     "full .NET contract suite is outside the default release gate",
     "The commands above must not require production configuration or credentials.",
     "Raw PostgreSQL connection strings are rejected",
+    "CARBONOPS_POSTGRESQL_PASSWORD",
+    "PostgreSQL Readiness",
+    "Supported production scheduling is cron",
+    "Production Validation Checklist",
     "Task-ID: OPS-033",
     "Task-Issue: #500",
 )
 
 REQUIRED_CONFIG_MARKERS = (
     "provider: postgres",
-    'host: "${CARBONOPS_PARSER_POSTGRES_HOST}"',
-    'database: "${CARBONOPS_PARSER_POSTGRES_DATABASE}"',
-    'username: "${CARBONOPS_PARSER_POSTGRES_USERNAME}"',
-    "passwordEnvVar: CARBONOPS_PARSER_POSTGRES_PASSWORD",
+    'host: "${CARBONOPS_POSTGRESQL_HOST}"',
+    'database: "${CARBONOPS_POSTGRESQL_DATABASE}"',
+    'username: "${CARBONOPS_POSTGRESQL_USERNAME}"',
+    "passwordEnvVar: CARBONOPS_POSTGRESQL_PASSWORD",
 )
 
 
@@ -232,7 +238,7 @@ def validate_sample_config(root: Path = REPOSITORY_ROOT) -> list[GateCheck]:
     ]
     forbidden_patterns = (
         r"postgres(?:ql)?://",
-        r"(?i)\bpassword\s*[:=]\s*(?!CARBONOPS_PARSER_POSTGRES_PASSWORD\b|\$\{)",
+        r"(?i)\bpassword\s*[:=]\s*(?!CARBONOPS_POSTGRESQL_PASSWORD\b|\$\{)",
         r"(?i)\btoken\s*[:=]",
         r"(?i)\bsecret\s*[:=]",
     )

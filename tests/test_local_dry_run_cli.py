@@ -574,6 +574,80 @@ def test_local_dry_run_cli_requires_content_type_or_format_hint(
     assert excinfo.value.code == 2
 
 
+def test_validate_ingestion_config_reports_ready_without_connecting(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    archive_root = tmp_path / "archive"
+    config_path = tmp_path / "ingestion.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "archive_root": str(archive_root),
+                "enabled_source_families": ["ghg_protocol"],
+                "initial_year": 2024,
+                "cycle": {"interval_seconds": 0, "max_cycles": 1},
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    def fail_connect(*args: object, **kwargs: object) -> None:
+        raise AssertionError("validation must not connect to a database")
+
+    monkeypatch.setattr(sqlite3, "connect", fail_connect)
+    monkeypatch.setenv("CARBONOPS_POSTGRESQL_HOST", "localhost")
+    monkeypatch.setenv("CARBONOPS_POSTGRESQL_PORT", "5432")
+    monkeypatch.setenv("CARBONOPS_POSTGRESQL_DATABASE", "carbonops")
+    monkeypatch.setenv("CARBONOPS_POSTGRESQL_USERNAME", "carbonops")
+    monkeypatch.setenv("CARBONOPS_POSTGRESQL_PASSWORD", "secret-value")
+    monkeypatch.setenv("CARBONOPS_POSTGRESQL_APPLICATION_NAME", "carbonops-test")
+
+    exit_code = parser_cli.main(
+        ["validate-ingestion-config", "--config", str(config_path)],
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "status=ready" in captured.out
+    assert "postgresql_config_status=ready" in captured.out
+    assert "enabled_source_families=ghg_protocol" in captured.out
+    assert "postgresql_password_configured=True" in captured.out
+    assert "secret-value" not in captured.out
+
+
+def test_validate_ingestion_config_reports_missing_db_env(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = tmp_path / "ingestion.json"
+    config_path.write_text(
+        json.dumps({"archive_root": str(tmp_path / "archive")}),
+        encoding="utf-8",
+    )
+    for env_name in (
+        "CARBONOPS_POSTGRESQL_HOST",
+        "CARBONOPS_POSTGRESQL_PORT",
+        "CARBONOPS_POSTGRESQL_DATABASE",
+        "CARBONOPS_POSTGRESQL_USERNAME",
+        "CARBONOPS_POSTGRESQL_PASSWORD",
+        "CARBONOPS_POSTGRESQL_APPLICATION_NAME",
+    ):
+        monkeypatch.delenv(env_name, raising=False)
+
+    exit_code = parser_cli.main(
+        ["validate-ingestion-config", "--config", str(config_path)],
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "status=blocked" in captured.out
+    assert "POSTGRESQL_RUNTIME_CONFIG_MISSING_HOST" in captured.out
+    assert "POSTGRESQL_RUNTIME_CONFIG_MISSING_PASSWORD" in captured.out
+
+
 def test_local_dry_run_cli_has_no_db_sql_or_network_behavior(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -610,11 +684,10 @@ def test_local_dry_run_cli_has_no_db_sql_or_network_behavior(
     assert exit_code == 0
 
 
-def test_local_dry_run_cli_does_not_scan_directories_or_load_config() -> None:
+def test_local_dry_run_cli_does_not_scan_directories() -> None:
     module_source = inspect.getsource(parser_cli).lower()
 
     assert "source_acquisition" not in module_source
-    assert "config" not in module_source
     assert "glob(" not in module_source
     assert "rglob(" not in module_source
     assert "iterdir(" not in module_source

@@ -17,6 +17,12 @@ Use the dedicated command with an explicit JSON config:
 carbonops-parser real-source-smoke --config config/carbonops.ingestion.example.json --cycles 1
 ```
 
+Validate the same config without opening PostgreSQL first:
+
+```bash
+carbonops-parser validate-ingestion-config --config config/carbonops.ingestion.example.json --cycles 1
+```
+
 The command supports local files by default. Local artifact references may be
 plain paths, `file:` URIs, or `local:` paths. HTTPS source access is blocked
 unless the operator opts in with either:
@@ -106,3 +112,6 @@ ORDER BY table_name;"
 
 Re-running the same smoke against the same database should report skipped
 duplicates instead of duplicate inserts for already persisted source rows.
+
+For production scheduling and the `run-ingestion` command, see
+[Production Packaging And Operator Runbook](production-packaging-operator-runbook.md).
