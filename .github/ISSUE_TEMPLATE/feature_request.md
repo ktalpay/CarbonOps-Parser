@@ -15,6 +15,7 @@ Describe the proposed improvement.
 - [ ] I have not included confidential data, credentials, or private source files.
 - [ ] I included the source name and version or file name when relevant.
 - [ ] I selected the implementation target below.
+- [ ] I understand source-specific ingestion, parser, database, scheduler, downloader, package publishing, or production promotion work must be explicitly scoped.
 
 ## Implementation Target
 
@@ -31,3 +32,8 @@ Describe the proposed improvement.
 
 
 ## Out Of Scope
+
+
+## Production-Ready Scope
+
+Describe how this feature preserves the current narrow production-ready scope.
