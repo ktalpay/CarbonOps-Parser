@@ -43,6 +43,22 @@ This roadmap organizes the path from the documentation baseline to a `v0.1.0` re
 - Add database startup check design.
 - Add background schedule skeleton.
 
+## Production Parity Sequence
+
+Project-level production-ready is not claimed in this roadmap. The Python
+runtime has a production operator path; the .NET runtime is not
+production-ready yet. The required .NET sequence is:
+
+- Add .NET service/scheduled-worker entrypoint.
+- Add .NET production config loader and redaction.
+- Add .NET PostgreSQL schema bootstrap and year-state.
+- Add .NET source discovery/download/parsing orchestration.
+- Add .NET source-specific master/detail insert.
+- Add .NET idempotency and rerun behavior.
+- Add .NET Docker PostgreSQL E2E tests.
+- Add Python/.NET parity validation.
+- Record the final project production-ready verdict.
+
 ## Sprint 7: GHG Protocol and IPCC Preparation
 
 - Add source discovery outputs for GHG Protocol.

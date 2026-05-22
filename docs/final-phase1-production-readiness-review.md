@@ -2,22 +2,22 @@
 
 ## Executive Summary
 
-This review is the final Phase 1 production readiness checkpoint for
+This review is a historical Phase 1 production readiness checkpoint for
 CarbonOps-Parser. It consolidates the prior Phase 1 readiness reviews, the
 production packaging/operator runbook, the release validation gate, and the
 production release-candidate dry-run verification path.
 
-The reviewed state is production-ready with accepted risks for the Phase 1
-contract and operator boundary. The repository now has a focused release
-validation gate and a production RC dry-run verifier that exercise local-only,
-non-destructive validation without credentials, raw connection strings, live
-source calls, or destructive database operations.
+PROD-002 narrows this verdict: it applies to the Python Phase 1 contract and
+operator boundary, not to project-level production-ready. The repository now has
+a focused release validation gate and a production RC dry-run verifier that
+exercise local-only, non-destructive validation without credentials, raw
+connection strings, live source calls, or destructive database operations.
 
-This verdict does not claim full production source correctness,
-carbon-accounting correctness, live-source availability, complete parser
-coverage for arbitrary upstream formats, or completed database runtime write
-operation hardening. Those remain explicit accepted risks or Phase 2 backlog
-items.
+This verdict does not claim project-level production-ready, .NET production
+runtime readiness, full production source correctness, carbon-accounting
+correctness, live-source availability, complete parser coverage for arbitrary
+upstream formats, or completed database runtime write operation hardening. Those
+remain explicit accepted risks or backlog items.
 
 ## Scope Reviewed
 
@@ -135,11 +135,17 @@ Phase 1 production readiness review scope.
 
 ## Final Production Readiness Verdict
 
-production-ready with accepted risks
+Python runtime production path: yes, with accepted risks under the documented
+operator boundary.
 
-The Phase 1 contract, operator, validation, and dry-run verification path is
-ready for release with the accepted risks above. No release-blocking issue was
-found in the documentation or validation path during this review.
+.NET runtime production path: no.
+
+Project-level production-ready: no.
+
+The Phase 1 Python contract, operator, validation, and dry-run verification path
+is ready for release with the accepted risks above. Project-level
+production-ready remains blocked until Python and .NET runtime parity is
+implemented and validated.
 
 ## Release Recommendation
 

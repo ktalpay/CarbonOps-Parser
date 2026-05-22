@@ -4,10 +4,16 @@ PH-018 supersedes the production-ready interpretation in this PH-017 review.
 The PH-017 evidence remains useful Docker PostgreSQL test-harness validation,
 but it is not sufficient for the real production-ready definition documented in
 [PH-018 Real Production-Ready Ingestion Contract](ph-018-real-production-ready-ingestion-contract.md).
+PROD-002 further narrows the historical verdict below: it is not a current
+project-level production-ready claim. The Python runtime has a production
+operator path, while the .NET runtime is not production-ready yet. Project-level
+production-ready is blocked until both runtimes satisfy
+[Production Parity Contract](production-parity-contract.md).
 
 ## Verdict
 
-production-ready with accepted risks
+Historical PH-017 verdict: production-ready with accepted risks for the Docker
+PostgreSQL validation boundary. Current project-level production-ready: no.
 
 PH-017 requires final production E2E validation against Docker PostgreSQL on the
 user's Apple M3 machine. M3 Docker PostgreSQL validation is now complete.
@@ -184,7 +190,8 @@ The repository has local, opt-in Docker PostgreSQL, release-gate, production RC,
 focused .NET production-safety contract, and default Python test evidence for
 the PH-017 behavior. The release decision for PH-017 is therefore:
 
-production-ready with accepted risks
+Historical PH-017 verdict: production-ready with accepted risks for the Docker
+PostgreSQL validation boundary. Current project-level production-ready: no.
 
 Merge readiness evidence:
 

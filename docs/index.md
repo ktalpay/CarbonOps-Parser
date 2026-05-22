@@ -144,6 +144,7 @@ Discovery wording should stay conservative. The repository may describe source i
 - [Stabilization Checkpoint](stabilization-checkpoint.md)
 - [Production Readiness Gap Analysis](production-readiness-gap-analysis.md)
 - [Production Readiness Sequencing Roadmap](production-readiness-sequencing-roadmap.md)
+- [Production Parity Contract](production-parity-contract.md)
 - [Production E2E Ingestion Readiness Contract](production-e2e-ingestion-readiness-contract.md)
 - [PH-017 Production E2E Docker PostgreSQL Release Validation](ph-017-production-e2e-docker-postgresql-release-validation.md)
 - [PH-018 Real Production-Ready Ingestion Contract](ph-018-real-production-ready-ingestion-contract.md)
