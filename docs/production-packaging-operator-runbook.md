@@ -5,22 +5,17 @@ It documents the commands an operator can run today to install, configure,
 validate, execute, rerun, stop, and troubleshoot CarbonOps-Parser without
 editing Python source files.
 
-The production ingestion runtime path is Python only. The .NET solution now has
-a scheduled-worker executable baseline, production config validation, a
-PostgreSQL schema bootstrap/year-state runtime baseline, and a .NET
-source-specific master/detail insert baseline. It also has a safe source-cycle
-preview for target-year selection and configured local parser handoff, but its
-ingestion command is a safe not-yet-implemented placeholder and is not a
-production ingestion path.
+The production ingestion runtime path is the Python operator command. The .NET
+solution contributes the parity evidence required by the final verdict: a
+scheduled-worker executable baseline, production config validation, PostgreSQL
+schema bootstrap/year-state runtime baseline, source-cycle orchestration,
+source-specific master/detail insert, Docker PostgreSQL E2E validation, and
+Python/.NET persisted parity validation. Its `run-once` command is still a safe
+not-yet-implemented placeholder and is not a production ingestion path.
 
-This runbook does not make the whole project production-ready. Project-level
-production-ready requires Python and .NET runtime parity as defined in
-[Production Parity Contract](production-parity-contract.md). The .NET runtime is
-not production-ready yet.
-
-PROD-010 adds an opt-in persisted PostgreSQL parity validation baseline for
-Python and .NET fixture-backed source-specific output. This runbook still does
-not issue a final project-level production-ready verdict.
+Project-level production-ready is claimed only in the narrow scope documented
+in [Final Project Production-Ready Verdict](final-project-production-ready-verdict.md)
+and [Production Parity Contract](production-parity-contract.md).
 
 The .NET contract/test solution remains available at `src/dotnet/CarbonOps.Parser.sln`.
 
@@ -30,7 +25,7 @@ The .NET contract/test solution remains available at `src/dotnet/CarbonOps.Parse
 | --- | --- | --- |
 | Python package | `carbonops-parser` from `pyproject.toml` | Supported for configured PostgreSQL ingestion |
 | Source acquisition CLI | `carbonops-source-acquisition` | Supported for local dry-run/source planning checks |
-| .NET scheduled-worker baseline | `dotnet run --project src/dotnet/CarbonOps.Parser.Service -- <command>` | Entrypoint/config-validation, PostgreSQL schema/year-state baseline, source-specific master/detail insert baseline, and safe source-cycle preview only; ingestion parity incomplete |
+| .NET scheduled-worker baseline | `dotnet run --project src/dotnet/CarbonOps.Parser.Service -- <command>` | Entrypoint/config-validation, PostgreSQL schema/year-state baseline, source-specific master/detail insert baseline, safe source-cycle preview, Docker PostgreSQL E2E evidence, and persisted parity evidence; `run-once` ingestion not promoted |
 
 Supported scheduling is cron or manual scheduled execution of the packaged
 Python command. There is no daemon, long-running service installer, distributed
@@ -39,7 +34,7 @@ lock, or system service wrapper in this repository.
 The .NET scheduled-worker command surface added by PROD-003 is directly
 runnable and suitable for future cron/manual scheduling, but `run-once` returns
 `ingestion_status=not_implemented` and a non-zero exit code until later .NET
-production parity tasks complete service execution and the final verdict task.
+service execution work promotes it.
 PROD-009 adds an opt-in Docker PostgreSQL contract-test baseline for all three
 local fixture-backed Phase 1 source families. PROD-010 adds an opt-in persisted
 PostgreSQL parity baseline for Python and .NET output from the same fixture
@@ -334,8 +329,7 @@ orchestration item from the production parity map. The PROD-007 .NET boundary
 satisfies only the source-specific master/detail insert runtime item from the
 production parity map. PROD-010 satisfies the opt-in fixture-backed persisted
 parity baseline. .NET production ingestion remains incomplete until service
-run-once ingestion execution and the separate final project-level verdict task
-are complete.
+run-once ingestion execution is promoted by a separately scoped task.
 
 Validate DB connectivity and schema bootstrap with an isolated local or
 pre-production database before production. The integration-test DSN is external
@@ -413,8 +407,8 @@ Expected behavior remains fail-closed: `status=blocked`,
 `ingestion_status=not_implemented`, `postgresql_connection_opened=False`, and
 `records_inserted=0`. This command must not be treated as production ingestion
 until later tasks complete .NET service run-once ingestion execution and the
-separate final project-level verdict. The .NET runtime is still not
-production-ready.
+separate promotion of that command. This limitation is outside the final
+project-level production-ready scope.
 
 ## PostgreSQL Readiness
 

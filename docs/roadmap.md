@@ -45,9 +45,9 @@ This roadmap organizes the path from the documentation baseline to a `v0.1.0` re
 
 ## Production Parity Sequence
 
-Project-level production-ready is not claimed in this roadmap. The Python
-runtime has a production operator path; the .NET runtime is not
-production-ready yet. The required .NET sequence is:
+Project-level production-ready is claimed only in the narrow scope documented
+by the final verdict. The Python runtime has a production operator path; the
+.NET runtime contributes parity evidence through the sequence below:
 
 - Add .NET service/scheduled-worker entrypoint. Added by PROD-003 as a
   scheduled-worker command-surface baseline only.
@@ -58,7 +58,7 @@ production-ready yet. The required .NET sequence is:
 - Add .NET idempotency and rerun behavior.
 - Add .NET Docker PostgreSQL E2E tests.
 - Add Python/.NET parity validation.
-- Record the final project production-ready verdict.
+- Record the final project production-ready verdict. Completed by PROD-011.
 
 ## Sprint 7: GHG Protocol and IPCC Preparation
 

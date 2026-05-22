@@ -1,19 +1,22 @@
 # Production Readiness Gap Analysis
 
 This document records the historical gap between the early public
-CarbonOps-Parser artifact and a future implementation that could be reviewed for
-production use. PROD-002 supersedes any project-level production-ready reading:
-the Python runtime now has a production operator path, the .NET runtime is not
-production-ready yet, and project-level production-ready is blocked until both
-runtimes pass the production parity contract.
+CarbonOps-Parser artifact and the implementation later reviewed for production
+use. PROD-002 superseded the earlier project-level production-ready reading.
+PROD-011 now issues the final project-level production-ready verdict for the
+narrow supported scope.
 
 It adds no code, contracts, examples, tests, runtime behavior, source acquisition, persistence, scheduling, configuration loading, unit conversion, factor correctness logic, or deployment workflow.
 
 ## Purpose
 
-The current repository is not project-level production-ready.
+The current repository is project-level production-ready only in the narrow
+scope documented by
+[Final Project Production-Ready Verdict](final-project-production-ready-verdict.md).
 
-This gap analysis gives reviewers and contributors a conservative map of what is missing before any Python or .NET implementation can be considered for production use. It keeps current documentation-first work separate from future implementation tasks.
+This gap analysis gives reviewers and contributors a conservative map of the
+historical gaps that had to be closed before the final verdict. It keeps
+documentation-first work separate from future implementation tasks.
 
 The existing artificial examples and skeletons do not prove real-world correctness. Existing smoke tests protect import/export and documentation governance only. Production readiness requires explicit future implementation tasks with narrow scope, tests, and review gates.
 

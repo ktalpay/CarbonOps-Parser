@@ -36,9 +36,8 @@ primitives exist and that the source-specific master/detail insert baseline is
 available through `source_specific_master_detail_insert_baseline=True`. It also
 reports `master_detail_insert_e2e_validated=False` and
 `production_ingestion_ready=False` because this command is not the opt-in
-Docker PostgreSQL E2E path and Python/.NET persisted parity validation remains
-incomplete. Production source download, service run-once ingestion execution,
-.NET production readiness, and project-level production readiness are still
+Docker PostgreSQL E2E path or the Python/.NET persisted parity validation path.
+Production source download and service run-once ingestion execution are still
 false in this PostgreSQL validation command.
 
 `preview-source-cycle` and `validate-source-cycle` provide the PROD-006 safe
@@ -87,8 +86,8 @@ and `ipcc_emission_factor_masters/details`, uses additive
 duplicate/validation-failed counts, and updates source-family year-state only
 inside the successful source-family persistence transaction. This is a baseline
 only; the opt-in Docker PostgreSQL E2E path exercises it with local fixtures,
-but service run-once ingestion execution and Python/.NET persisted parity
-validation remain blockers.
+and Python/.NET persisted parity validation is covered by a separate opt-in
+path. Service run-once ingestion execution remains separately scoped.
 
 PROD-009 extends the opt-in .NET Docker PostgreSQL E2E validation path in the
 contract tests. The default .NET test suite does not open PostgreSQL. Enable the
@@ -118,8 +117,8 @@ rollback keeps year-state unchanged when persistence fails.
 
 This validation is still not a production ingestion command. `run-once` remains
 fail-closed, no live network source access is enabled, Python/.NET persisted
-parity validation remains incomplete, and .NET production readiness remains
-false.
+parity validation is separate, and final project-level readiness is limited to
+the supported scope in the verdict document.
 
 `run-once` is intentionally fail-closed. It may reuse the same config
 validation boundary, but it reports
@@ -127,7 +126,8 @@ validation boundary, but it reports
 records, and returns a non-zero exit code until later .NET parity tasks
 implement PostgreSQL orchestration, source behavior, and inserts.
 
-This entrypoint does not make the .NET runtime production-ready.
+This entrypoint by itself does not make `run-once` a production ingestion
+command.
 
 ## Role
 
