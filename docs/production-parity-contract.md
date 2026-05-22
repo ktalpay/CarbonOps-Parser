@@ -15,8 +15,9 @@ Project-level production-ready is blocked.
 - .NET runtime production path: no. The .NET runtime is not production-ready
   yet. The .NET tree now provides contracts, parity tests, a directly runnable
   scheduled-worker entrypoint baseline, and a production config
-  loader/redaction baseline. Its ingestion command remains a safe
-  not-yet-implemented placeholder.
+  loader/redaction baseline. It also has a .NET PostgreSQL schema
+  bootstrap/year-state baseline for the shared/source-family runtime tables.
+  Its ingestion command remains a safe not-yet-implemented placeholder.
 - Project-level production-ready: no. The project cannot claim this until a
   user can choose either runtime and receive equivalent production behavior.
 
@@ -36,7 +37,8 @@ be:
 
 The Python runtime currently has this documented operator path. The .NET runtime
 has the scheduled-worker entrypoint shape plus real file/environment config
-loading and redaction for `validate-config`; it does not yet provide equivalent
+loading and redaction for `validate-config`, plus PostgreSQL schema
+bootstrap/year-state runtime primitives; it does not yet provide equivalent
 production ingestion behavior.
 
 ## Equivalent Data Contract
@@ -181,7 +183,12 @@ The implementation sequence for .NET production readiness is:
    `validate-config` file/environment loading, deterministic environment
    override behavior, fail-closed diagnostics, and redaction only. Ingestion,
    PostgreSQL writes, and project-level production readiness remain incomplete.
-3. .NET PostgreSQL schema bootstrap and year-state.
+3. .NET PostgreSQL schema bootstrap and year-state. Satisfied by PROD-005 for
+   additive/idempotent DDL generation, explicit Npgsql runtime boundary,
+   latest-successful-year lookup, next-year calculation, idempotent successful
+   year-state recording, and redacted diagnostics only. .NET source
+   discovery/download/parsing and source-specific master/detail inserts remain
+   incomplete.
 4. .NET source discovery/download/parsing orchestration.
 5. .NET source-specific master/detail insert.
 6. .NET idempotency and rerun behavior.

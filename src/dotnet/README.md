@@ -16,6 +16,7 @@ Command shape:
 dotnet run --project src/dotnet/CarbonOps.Parser.Service -- help
 dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-config
 dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-config --config /etc/carbonops-parser/dotnet.production.json
+dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-postgresql-runtime --config /etc/carbonops-parser/dotnet.production.json
 dotnet run --project src/dotnet/CarbonOps.Parser.Service -- run-once
 ```
 
@@ -25,6 +26,21 @@ the process environment, then deterministically lets `CARBONOPS_PARSER_*`
 environment values override file values. The command validates required key
 presence and basic shape, reports secret presence, and redacts diagnostics. It
 does not open PostgreSQL, run SQL, or print secret values.
+
+`validate-postgresql-runtime` validates the same explicit configuration and
+reports the .NET PostgreSQL schema/year-state baseline without opening
+PostgreSQL or running SQL. It reports that schema bootstrap and year-state
+primitives exist, and also reports that source download, parser orchestration,
+master/detail inserts, .NET production readiness, and project-level production
+readiness are still false.
+
+The .NET contracts project now includes an explicit Npgsql runtime boundary for
+additive schema bootstrap and source-family year-state behavior. Construction
+and validation do not connect to PostgreSQL. DB connections are opened only by
+explicit runtime methods, and diagnostics redact passwords and connection
+strings. The schema bootstrap DDL is limited to `CREATE TABLE IF NOT EXISTS`
+and `CREATE INDEX IF NOT EXISTS` style statements for the shared/source-family
+Phase 1 tables.
 
 `run-once` is intentionally fail-closed. It may reuse the same config
 validation boundary, but it reports
@@ -53,5 +69,7 @@ The .NET path should focus on:
 The .NET implementation should not depend on the Python implementation.
 
 PROD-004 adds only the .NET production config loader and redaction baseline on
-top of the scheduled-worker command surface. It does not add source ingestion
-logic, database runtime behavior, or external dependencies.
+top of the scheduled-worker command surface. PROD-005 adds only the .NET
+PostgreSQL schema bootstrap/year-state item from the production parity map. It
+does not add source discovery, source download, parser orchestration, or
+source-family master/detail insert execution.

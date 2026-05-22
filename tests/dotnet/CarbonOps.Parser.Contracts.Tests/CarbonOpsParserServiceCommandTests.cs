@@ -15,6 +15,7 @@ public sealed class CarbonOpsParserServiceCommandTests
         Assert.Equal(0, exitCode);
         var rendered = output.ToString();
         Assert.Contains("validate-config", rendered, StringComparison.Ordinal);
+        Assert.Contains("validate-postgresql-runtime", rendered, StringComparison.Ordinal);
         Assert.Contains("run-once", rendered, StringComparison.Ordinal);
         Assert.Contains("scheduled-worker", rendered, StringComparison.Ordinal);
         Assert.Equal(string.Empty, error.ToString());
@@ -60,6 +61,51 @@ public sealed class CarbonOpsParserServiceCommandTests
         Assert.Contains("environment_loaded=True", rendered, StringComparison.Ordinal);
         Assert.Contains("postgresql_connection_opened=False", rendered, StringComparison.Ordinal);
         Assert.DoesNotContain("runtime-secret-not-returned", rendered, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ValidatePostgreSqlRuntimeReportsReadinessWithoutClaimingProductionReady()
+    {
+        var output = new StringWriter();
+
+        var exitCode = CarbonOpsParserServiceCommand.Run(
+            ["validate-postgresql-runtime"],
+            output,
+            TextWriter.Null,
+            ValidEnvironment());
+
+        Assert.Equal(0, exitCode);
+        var rendered = output.ToString();
+        Assert.Contains("status=ready", rendered, StringComparison.Ordinal);
+        Assert.Contains(".net_runtime_production_ready=False", rendered, StringComparison.Ordinal);
+        Assert.Contains("project_level_production_ready=False", rendered, StringComparison.Ordinal);
+        Assert.Contains("postgresql_connection_opened=False", rendered, StringComparison.Ordinal);
+        Assert.Contains("schema_bootstrap_available=True", rendered, StringComparison.Ordinal);
+        Assert.Contains("year_state_available=True", rendered, StringComparison.Ordinal);
+        Assert.Contains("source_download_implemented=False", rendered, StringComparison.Ordinal);
+        Assert.Contains("parser_orchestration_implemented=False", rendered, StringComparison.Ordinal);
+        Assert.Contains("master_detail_inserts_implemented=False", rendered, StringComparison.Ordinal);
+        Assert.Contains("source_family_year_states", rendered, StringComparison.Ordinal);
+        Assert.DoesNotContain("runtime-secret-not-returned", rendered, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ValidatePostgreSqlRuntimeFailsClosedWhenConfigIsMissing()
+    {
+        var output = new StringWriter();
+
+        var exitCode = CarbonOpsParserServiceCommand.Run(
+            ["validate-postgresql-runtime"],
+            output,
+            TextWriter.Null,
+            new Dictionary<string, string?>());
+
+        Assert.Equal(2, exitCode);
+        var rendered = output.ToString();
+        Assert.Contains("status=blocked", rendered, StringComparison.Ordinal);
+        Assert.Contains(".net_runtime_production_ready=False", rendered, StringComparison.Ordinal);
+        Assert.Contains("postgresql_connection_opened=False", rendered, StringComparison.Ordinal);
+        Assert.Contains("PRODUCTION_CONFIG_MISSING_REQUIRED_ENV_VAR", rendered, StringComparison.Ordinal);
     }
 
     [Fact]

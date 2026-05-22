@@ -10,8 +10,13 @@ families, and writes source-family master/detail tables.
 This checklist does not claim project-level production-ready. The .NET runtime
 is not production-ready yet, and project-level production-ready is blocked until
 Python and .NET runtimes satisfy the same production parity contract.
+PROD-005 adds the .NET PostgreSQL schema bootstrap/year-state baseline only; it
+does not add .NET source discovery, source download, parser orchestration, or
+source-family master/detail insert execution.
 
 ## Supported Runtime Boundary
+
+Python production path:
 
 - Entrypoint: `carbonops-parser run-ingestion --config <ingestion-json> --cycles 1`.
 - Configuration validation: `carbonops-parser validate-ingestion-config --config <ingestion-json> --cycles 1`.
@@ -20,6 +25,17 @@ Python and .NET runtimes satisfy the same production parity contract.
 - Source access: local paths, `file:` URIs, `local:` URIs, or reviewed HTTPS
   artifacts when live access is explicitly enabled.
 - PostgreSQL driver: psycopg through the `postgresql` Python extra.
+
+.NET non-production baseline:
+
+- Entrypoint/status: `dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-postgresql-runtime`.
+- PostgreSQL driver boundary: Npgsql, opened only by explicit runtime methods.
+- Schema baseline: additive `CREATE TABLE IF NOT EXISTS` and
+  `CREATE INDEX IF NOT EXISTS` statements for the Phase 1 runtime catalog.
+- Year-state baseline: latest successful year lookup, default initial year
+  `2024`, next-year calculation, and idempotent successful-year recording.
+- Unsupported in .NET today: source discovery, source download, parser
+  orchestration, and source-family master/detail insert execution.
 
 The older preview-only `PostgreSQLPersistenceRepository.persist()` boundary is
 still unsupported. Production ingestion uses
@@ -55,6 +71,11 @@ Schema bootstrap is additive and idempotent:
 Required Phase 1 tables:
 
 - `source_family_year_states`
+- `ingestion_runs`
+- `source_documents`
+- `parser_runs`
+- `schema_bootstrap_states`
+- `normalized_factor_records`
 - `ghg_emission_factor_masters`
 - `ghg_emission_factor_details`
 - `defra_emission_factor_masters`

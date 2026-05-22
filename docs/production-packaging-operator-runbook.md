@@ -6,8 +6,10 @@ validate, execute, rerun, stop, and troubleshoot CarbonOps-Parser without
 editing Python source files.
 
 The production ingestion runtime path is Python only. The .NET solution now has
-a scheduled-worker executable baseline, but its ingestion command is a safe
-not-yet-implemented placeholder and is not a production ingestion path.
+a scheduled-worker executable baseline, production config validation, and a
+PostgreSQL schema bootstrap/year-state runtime baseline, but its ingestion
+command is a safe not-yet-implemented placeholder and is not a production
+ingestion path.
 
 This runbook does not make the whole project production-ready. Project-level
 production-ready requires Python and .NET runtime parity as defined in
@@ -22,7 +24,7 @@ The .NET contract/test solution remains available at `src/dotnet/CarbonOps.Parse
 | --- | --- | --- |
 | Python package | `carbonops-parser` from `pyproject.toml` | Supported for configured PostgreSQL ingestion |
 | Source acquisition CLI | `carbonops-source-acquisition` | Supported for local dry-run/source planning checks |
-| .NET scheduled-worker baseline | `dotnet run --project src/dotnet/CarbonOps.Parser.Service -- <command>` | Entrypoint/config-validation shape only; ingestion parity incomplete |
+| .NET scheduled-worker baseline | `dotnet run --project src/dotnet/CarbonOps.Parser.Service -- <command>` | Entrypoint/config-validation and PostgreSQL schema/year-state baseline only; ingestion parity incomplete |
 
 Supported scheduling is cron or manual scheduled execution of the packaged
 Python command. There is no daemon, long-running service installer, distributed
@@ -31,7 +33,8 @@ lock, or system service wrapper in this repository.
 The .NET scheduled-worker command surface added by PROD-003 is directly
 runnable and suitable for future cron/manual scheduling, but `run-once` returns
 `ingestion_status=not_implemented` and a non-zero exit code until later .NET
-production parity tasks implement database/source behavior.
+production parity tasks implement source discovery/download/parsing
+orchestration and source-specific master/detail inserts.
 
 ## Safety Modes
 
@@ -177,6 +180,10 @@ dotnet test tests/dotnet/CarbonOps.Parser.Contracts.Tests/CarbonOps.Parser.Contr
   --configuration Release \
   --no-restore \
   --filter "FullyQualifiedName~ProductionConfigBoundaryTests|FullyQualifiedName~Phase1OperationalDiagnosticsTests|FullyQualifiedName~PostgreSQLRuntimeConfigGateContractTests|FullyQualifiedName~CarbonOpsParserServiceCommandTests"
+dotnet test tests/dotnet/CarbonOps.Parser.Contracts.Tests/CarbonOps.Parser.Contracts.Tests.csproj \
+  --configuration Release \
+  --no-restore \
+  --filter "FullyQualifiedName~PostgreSQLRuntimeSchemaAndYearStateTests|FullyQualifiedName~CarbonOpsParserServiceCommandTests"
 dotnet run --project src/dotnet/CarbonOps.Parser.Service -- help
 ```
 
@@ -211,6 +218,17 @@ connect to PostgreSQL, and does not print secret values:
 dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-config --config /etc/carbonops-parser/dotnet.production.json
 ```
 
+Validate the .NET PostgreSQL runtime baseline without opening PostgreSQL:
+
+```bash
+dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-postgresql-runtime --config /etc/carbonops-parser/dotnet.production.json
+```
+
+Expected baseline result includes `schema_bootstrap_available=True`,
+`year_state_available=True`, `postgresql_connection_opened=False`,
+`.net_runtime_production_ready=False`, and
+`project_level_production_ready=False`.
+
 Expected validation result:
 
 ```text
@@ -227,8 +245,10 @@ Raw PostgreSQL connection strings are rejected by the committed configuration
 boundary. Use split `.NET` `CARBONOPS_PARSER_*` fields for the .NET entrypoint
 and keep production secret values in environment or an operator-managed secret
 source rather than committed files. The PROD-004 .NET boundary satisfies only
-the config loader/redaction item from the production parity map; .NET ingestion
-and DB writes are still not implemented.
+the config loader/redaction item from the production parity map. The PROD-005
+.NET boundary satisfies only the PostgreSQL schema bootstrap/year-state item.
+.NET source discovery/download/parsing and source-family master/detail inserts
+are still not implemented.
 
 Validate DB connectivity and schema bootstrap with an isolated local or
 pre-production database before production. The integration-test DSN is external
@@ -305,8 +325,8 @@ dotnet run --project src/dotnet/CarbonOps.Parser.Service -- run-once
 Expected behavior remains fail-closed: `status=blocked`,
 `ingestion_status=not_implemented`, `postgresql_connection_opened=False`, and
 `records_inserted=0`. This command must not be treated as production ingestion
-until later tasks implement .NET PostgreSQL schema/year-state behavior, source
-orchestration, and inserts. The .NET runtime is still not production-ready.
+until later tasks implement .NET source orchestration and inserts. The .NET
+runtime is still not production-ready.
 
 ## PostgreSQL Readiness
 

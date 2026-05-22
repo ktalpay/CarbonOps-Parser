@@ -39,6 +39,11 @@ public static class CarbonOpsParserServiceCommand
             return ValidateConfig(args.Skip(1).ToArray(), output, environment);
         }
 
+        if (string.Equals(command, "validate-postgresql-runtime", StringComparison.OrdinalIgnoreCase))
+        {
+            return ValidatePostgreSQLRuntime(args.Skip(1).ToArray(), output, environment);
+        }
+
         if (string.Equals(command, "run-once", StringComparison.OrdinalIgnoreCase))
         {
             return RunOnce(args.Skip(1).ToArray(), output, environment);
@@ -73,6 +78,62 @@ public static class CarbonOpsParserServiceCommand
             else
             {
                 output.WriteLine($"{required}_present={HasText(result.Load.Values[required])}");
+            }
+        }
+
+        WriteIssues(output, result.Validation.Issues);
+
+        return result.Validation.IsValid ? SuccessExitCode : ValidationFailedExitCode;
+    }
+
+    private static int ValidatePostgreSQLRuntime(
+        string[] args,
+        TextWriter output,
+        IReadOnlyDictionary<string, string?> environment)
+    {
+        var commandOptions = ParseCommandOptions(args);
+        var result = LoadAndValidate(commandOptions.ConfigPath, environment, commandOptions.Issues);
+
+        output.WriteLine(result.Validation.IsValid ? "status=ready" : "status=blocked");
+        output.WriteLine(".net_runtime_production_ready=False");
+        output.WriteLine("project_level_production_ready=False");
+        output.WriteLine("postgresql_connection_opened=False");
+        output.WriteLine("postgresql_sql_executed=False");
+        output.WriteLine("schema_bootstrap_available=True");
+        output.WriteLine("year_state_available=True");
+        output.WriteLine("source_download_implemented=False");
+        output.WriteLine("parser_orchestration_implemented=False");
+        output.WriteLine("master_detail_inserts_implemented=False");
+
+        if (result.Validation.IsValid &&
+            PostgreSQLRuntimeConnectionBoundary.TryCreateFromProductionConfig(
+                result.Load.Values,
+                out var settings,
+                out var runtimeIssues) &&
+            settings is not null)
+        {
+            foreach (var diagnostic in PostgreSQLRuntimeConnectionBoundary.BuildSafeDiagnostics(settings))
+            {
+                output.WriteLine($"{diagnostic.Key}={diagnostic.Value}");
+            }
+
+            output.WriteLine($"required_table_count={PostgreSQLRuntimeSchemaCatalog.RequiredTableNames.Count}");
+            output.WriteLine("required_tables=" + string.Join(",", PostgreSQLRuntimeSchemaCatalog.RequiredTableNames));
+        }
+        else
+        {
+            if (result.Validation.IsValid)
+            {
+                PostgreSQLRuntimeConnectionBoundary.TryCreateFromProductionConfig(
+                    result.Load.Values,
+                    out _,
+                    out var runtimeValidationIssues);
+                foreach (var issue in runtimeValidationIssues)
+                {
+                    var safeMessage = Phase1OperationalDiagnostics.RedactDiagnosticValue("message", issue.Message);
+                    output.WriteLine(
+                        $"issue={issue.Code} field={issue.FieldName} severity={issue.Severity} message={safeMessage}");
+                }
             }
         }
 
@@ -200,9 +261,10 @@ public static class CarbonOpsParserServiceCommand
         writer.WriteLine("  dotnet run --project src/dotnet/CarbonOps.Parser.Service -- <command> [--config <path>]");
         writer.WriteLine();
         writer.WriteLine("Commands:");
-        writer.WriteLine("  help             Show this command surface.");
-        writer.WriteLine("  validate-config  Validate required .NET runtime configuration shape without opening PostgreSQL.");
-        writer.WriteLine("  run-once         Run one scheduled-worker cycle placeholder; fails closed until .NET ingestion is implemented.");
+        writer.WriteLine("  help                         Show this command surface.");
+        writer.WriteLine("  validate-config              Validate required .NET runtime configuration shape without opening PostgreSQL.");
+        writer.WriteLine("  validate-postgresql-runtime  Report .NET PostgreSQL schema/year-state readiness without opening PostgreSQL.");
+        writer.WriteLine("  run-once                     Run one scheduled-worker cycle placeholder; fails closed until .NET ingestion is implemented.");
     }
 
     private sealed record ProductionConfigCommandOptions(
