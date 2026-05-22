@@ -19,8 +19,10 @@ production-ready requires Python and .NET runtime parity as defined in
 not production-ready yet.
 
 PROD-010 adds an opt-in persisted PostgreSQL parity validation baseline for
-Python and .NET fixture-backed source-specific output. This runbook still does
-not issue a final project-level production-ready verdict.
+Python and .NET fixture-backed source-specific output. PROD-011 records the
+final project-level verdict in
+[Final Project Production-Ready Verdict](final-project-production-ready-verdict.md):
+project-level production-ready remains no.
 
 The .NET contract/test solution remains available at `src/dotnet/CarbonOps.Parser.sln`.
 
@@ -585,6 +587,7 @@ Task-Issue: #500
 
 - [Python Ingestion Local Runbook](python-ingestion-local-runbook.md)
 - [Production Parity Contract](production-parity-contract.md)
+- [Final Project Production-Ready Verdict](final-project-production-ready-verdict.md)
 - [Real-Source Smoke Mode](real-source-smoke-mode.md)
 - [PostgreSQL Runtime Readiness Checklist](postgresql-runtime-readiness-checklist.md)
 - [PostgreSQL Opt-In Integration Runbook](postgresql-opt-in-integration-runbook.md)

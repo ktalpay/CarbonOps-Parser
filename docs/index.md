@@ -149,6 +149,7 @@ Discovery wording should stay conservative. The repository may describe source i
 - [PH-017 Production E2E Docker PostgreSQL Release Validation](ph-017-production-e2e-docker-postgresql-release-validation.md)
 - [PH-018 Real Production-Ready Ingestion Contract](ph-018-real-production-ready-ingestion-contract.md)
 - [Final Phase 1 Production Readiness Review](final-phase1-production-readiness-review.md)
+- [Final Project Production-Ready Verdict](final-project-production-ready-verdict.md)
 - [Phase 2 Roadmap And Execution Boundary](phase2-roadmap.md)
 - [Phase 2 Runtime And Source Expansion Review Gate](phase2-review-gate.md)
 - [Release Notes Draft](release-notes-draft.md)

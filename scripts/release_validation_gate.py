@@ -31,6 +31,7 @@ RELEASE_GATE_PYTHON_TEST_TARGETS = (
     "tests/test_postgresql_runtime_config_gate.py",
     "tests/test_agent_task_watcher.py",
     "tests/test_agent_dispatch_handoff_reporter.py",
+    "tests/test_final_project_production_ready_verdict.py",
 )
 
 RELEASE_GATE_DOTNET_TEST_PROJECT = (

@@ -552,6 +552,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Stabilization Checkpoint](docs/stabilization-checkpoint.md)
 - [Production Readiness Gap Analysis](docs/production-readiness-gap-analysis.md)
 - [Production Readiness Sequencing Roadmap](docs/production-readiness-sequencing-roadmap.md)
+- [Final Project Production-Ready Verdict](docs/final-project-production-ready-verdict.md)
 - [Repository Navigation Guide](docs/repository-navigation-guide.md)
 - [Review Readiness Checklist](docs/review-readiness-checklist.md)
 - [Documentation Map Consistency Checklist](docs/documentation-map-consistency-checklist.md)
@@ -564,7 +565,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 
 ## Roadmap Summary
 
-Near-term work keeps the Python operator path documented while moving .NET from contracts toward an equivalent production runtime. Project-level production-ready remains blocked until Python and .NET both satisfy the production parity contract.
+Near-term work keeps the Python operator path documented while moving .NET from contracts toward an equivalent production runtime. Project-level production-ready remains blocked until Python and .NET both satisfy the production parity contract. See the [Final Project Production-Ready Verdict](docs/final-project-production-ready-verdict.md).
 
 See [docs/roadmap.md](docs/roadmap.md) and [docs/task-breakdown.md](docs/task-breakdown.md).
 
