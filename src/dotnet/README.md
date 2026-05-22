@@ -89,6 +89,36 @@ inside the successful source-family persistence transaction. This is a baseline
 only; Docker PostgreSQL E2E, idempotency/rerun E2E, and Python/.NET persisted
 parity validation remain blockers.
 
+PROD-008 adds an opt-in .NET Docker PostgreSQL E2E validation path in the
+contract tests. The default .NET test suite does not open PostgreSQL. Enable the
+E2E path only with `CARBONOPS_RUN_DOTNET_POSTGRESQL_INTEGRATION=1` and
+externally supplied PostgreSQL settings:
+
+```bash
+export CARBONOPS_RUN_DOTNET_POSTGRESQL_INTEGRATION=1
+export CARBONOPS_DOTNET_POSTGRESQL_TEST_DSN='<redacted-postgresql-dsn>'
+
+dotnet test tests/dotnet/CarbonOps.Parser.Contracts.Tests/CarbonOps.Parser.Contracts.Tests.csproj \
+  --configuration Release \
+  --no-restore \
+  --filter "FullyQualifiedName~DotNetPostgreSQLIntegrationE2ETests"
+```
+
+The tests also accept split `CARBONOPS_PARSER_POSTGRES_*` settings through the
+existing .NET production config boundary. They create a generated
+PostgreSQL-safe schema name for deterministic idempotency checks and do not
+print DSNs, passwords, or connection strings. The E2E path bootstraps schema
+idempotently, parses the checked-in DEFRA/DESNZ local CSV fixture, writes
+source-specific master/detail rows, reruns the same source-family/year/artifact
+to verify duplicate skips, verifies successful year-state progression, verifies
+`no_available_source_year` does not advance state, and verifies transaction
+rollback keeps year-state unchanged when persistence fails.
+
+This validation is still not a production ingestion command. `run-once` remains
+fail-closed, no live network source access is enabled, Python/.NET persisted
+parity validation remains incomplete, and .NET production readiness remains
+false.
+
 `run-once` is intentionally fail-closed. It may reuse the same config
 validation boundary, but it reports
 `ingestion_status=not_implemented`, opens no PostgreSQL connection, inserts no
