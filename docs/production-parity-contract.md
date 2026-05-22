@@ -19,11 +19,10 @@ Project-level production-ready is blocked.
   bootstrap/year-state baseline for the shared/source-family runtime tables,
   a source-family target-year/source-artifact/parser preview orchestration
   baseline, a .NET source-specific master/detail insert baseline, and an
-  opt-in Docker PostgreSQL E2E/idempotency validation baseline for one local
-  source-family fixture. Its ingestion command remains a safe
-  not-yet-implemented placeholder because full three-source .NET E2E execution,
-  service execution, and Python/.NET persisted parity validation remain
-  incomplete.
+  opt-in Docker PostgreSQL E2E/idempotency validation baseline for all three
+  Phase 1 source families using local fixtures. Its ingestion command remains a
+  safe not-yet-implemented placeholder because service execution and
+  Python/.NET persisted parity validation remain incomplete.
 - Project-level production-ready: no. The project cannot claim this until a
   user can choose either runtime and receive equivalent production behavior.
 
@@ -46,7 +45,7 @@ has the scheduled-worker entrypoint shape plus real file/environment config
 loading and redaction for `validate-config`, plus PostgreSQL schema
 bootstrap/year-state runtime primitives, a safe local source-cycle preview
 command, source-specific master/detail insert primitives, and opt-in Docker
-PostgreSQL E2E evidence for one fixture-backed source family; it does not yet
+PostgreSQL E2E evidence for three fixture-backed source families; it does not yet
 provide equivalent production ingestion behavior.
 
 ## Equivalent Data Contract
@@ -212,14 +211,16 @@ The implementation sequence for .NET production readiness is:
    source-family persistence. This does not make `run-once` production-ready,
    does not add uncontrolled network access, and does not complete Docker
    PostgreSQL E2E or Python/.NET persisted parity validation.
-6. .NET idempotency and rerun behavior E2E. PROD-008 adds an opt-in Docker
-   PostgreSQL contract-test baseline for DEFRA/DESNZ local fixture parsing,
-   first insert, duplicate rerun skips, successful year-state progression,
+6. .NET idempotency and rerun behavior E2E. PROD-008 added an opt-in Docker
+   PostgreSQL contract-test baseline for DEFRA/DESNZ local fixture parsing.
+   PROD-009 extends that opt-in path to GHG Protocol, DEFRA/DESNZ, and IPCC
+   EFDB local fixture parsing, first insert, duplicate rerun skips, successful
+   year-state progression to next target year `2025`,
    `no_available_source_year` no-op behavior, failure rollback, and redaction.
-   This does not make `run-once` production-ready and does not prove all three
-   source families or Python/.NET persisted parity.
-7. .NET Docker PostgreSQL E2E tests. Partially satisfied by PROD-008 for one
-   source family through an explicit opt-in test path only.
+   This does not make `run-once` production-ready and does not prove
+   Python/.NET persisted parity.
+7. .NET Docker PostgreSQL E2E tests. Satisfied as a fixture-backed, explicit
+   opt-in Docker PostgreSQL test baseline for all three Phase 1 source families.
 8. Python/.NET parity validation.
 9. Final project production-ready verdict.
 
