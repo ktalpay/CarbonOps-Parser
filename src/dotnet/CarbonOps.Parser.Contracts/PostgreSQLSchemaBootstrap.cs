@@ -121,19 +121,7 @@ public sealed record PostgreSQLSchemaBootstrapReport
 public static class PostgreSQLSchemaBootstrapBoundary
 {
     public static IReadOnlyList<string> RequiredPhase1TableNames { get; } = Array.AsReadOnly(
-        new[]
-        {
-            "defra_emission_factor_details",
-            "defra_emission_factor_masters",
-            "ghg_emission_factor_details",
-            "ghg_emission_factor_masters",
-            "ingestion_runs",
-            "ipcc_emission_factor_details",
-            "ipcc_emission_factor_masters",
-            "parser_runs",
-            "schema_bootstrap_states",
-            "source_documents",
-        });
+        PostgreSQLRuntimeSchemaCatalog.RequiredTableNames.ToArray());
 
     public static PostgreSQLSchemaBootstrapRequest CreateRequest(
         PostgreSQLSchemaBootstrapMode mode = PostgreSQLSchemaBootstrapMode.CheckOnly,
