@@ -15,18 +15,22 @@ Command shape:
 ```bash
 dotnet run --project src/dotnet/CarbonOps.Parser.Service -- help
 dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-config
+dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-config --config /etc/carbonops-parser/dotnet.production.json
 dotnet run --project src/dotnet/CarbonOps.Parser.Service -- run-once
 ```
 
-`validate-config` validates required environment key presence and basic shape
-through the shared .NET production config boundary. It does not open
-PostgreSQL, run SQL, load secrets, or print secret values.
+`validate-config` now loads production configuration through the shared .NET
+production config loader. It accepts an optional explicit JSON config file and
+the process environment, then deterministically lets `CARBONOPS_PARSER_*`
+environment values override file values. The command validates required key
+presence and basic shape, reports secret presence, and redacts diagnostics. It
+does not open PostgreSQL, run SQL, or print secret values.
 
-`run-once` is intentionally fail-closed for PROD-003. It reports
+`run-once` is intentionally fail-closed. It may reuse the same config
+validation boundary, but it reports
 `ingestion_status=not_implemented`, opens no PostgreSQL connection, inserts no
 records, and returns a non-zero exit code until later .NET parity tasks
-implement configuration loading, PostgreSQL orchestration, source behavior, and
-inserts.
+implement PostgreSQL orchestration, source behavior, and inserts.
 
 This entrypoint does not make the .NET runtime production-ready.
 
@@ -48,6 +52,6 @@ The .NET path should focus on:
 
 The .NET implementation should not depend on the Python implementation.
 
-PROD-003 adds only the installable/directly runnable scheduled-worker command
-surface. It does not add source ingestion logic, database runtime behavior, or
-external dependencies.
+PROD-004 adds only the .NET production config loader and redaction baseline on
+top of the scheduled-worker command surface. It does not add source ingestion
+logic, database runtime behavior, or external dependencies.

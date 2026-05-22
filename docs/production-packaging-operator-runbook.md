@@ -200,29 +200,35 @@ carbonops-parser validate-ingestion-config \
   --cycles 1
 ```
 
-The .NET entrypoint has a separate shape-only validation command. It validates
-presence and basic value shape for the expected `.NET` `CARBONOPS_PARSER_*`
-environment keys, reports required key presence, does not connect to
-PostgreSQL, and does not print secret values:
+The .NET entrypoint has a separate validation command. It now loads a flat JSON
+config file when `--config <path>` is supplied, loads the process environment,
+and lets `CARBONOPS_PARSER_*` environment values override file values. It
+validates presence and basic value shape for the expected `.NET`
+`CARBONOPS_PARSER_*` keys, reports required key and password presence, does not
+connect to PostgreSQL, and does not print secret values:
 
 ```bash
-dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-config
+dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-config --config /etc/carbonops-parser/dotnet.production.json
 ```
 
 Expected validation result:
 
 ```text
 status=ready
-postgresql_config_status=ready
 postgresql_password_configured=True
+postgresql_connection_opened=False
+secret_values_printed=False
 ```
 
 If validation prints `status=blocked`, fix the named field before opening a DB
 connection.
 
 Raw PostgreSQL connection strings are rejected by the committed configuration
-boundary. Use split `CARBONOPS_POSTGRESQL_*` fields and provide
-`CARBONOPS_POSTGRESQL_PASSWORD` through the external secret boundary.
+boundary. Use split `.NET` `CARBONOPS_PARSER_*` fields for the .NET entrypoint
+and keep production secret values in environment or an operator-managed secret
+source rather than committed files. The PROD-004 .NET boundary satisfies only
+the config loader/redaction item from the production parity map; .NET ingestion
+and DB writes are still not implemented.
 
 Validate DB connectivity and schema bootstrap with an isolated local or
 pre-production database before production. The integration-test DSN is external
@@ -296,11 +302,11 @@ advance year-state for `no_available_source_year` runs.
 dotnet run --project src/dotnet/CarbonOps.Parser.Service -- run-once
 ```
 
-Expected PROD-003 behavior is fail-closed: `status=blocked`,
+Expected behavior remains fail-closed: `status=blocked`,
 `ingestion_status=not_implemented`, `postgresql_connection_opened=False`, and
 `records_inserted=0`. This command must not be treated as production ingestion
-until later tasks implement .NET config loading, PostgreSQL schema/year-state
-behavior, source orchestration, and inserts.
+until later tasks implement .NET PostgreSQL schema/year-state behavior, source
+orchestration, and inserts. The .NET runtime is still not production-ready.
 
 ## PostgreSQL Readiness
 
