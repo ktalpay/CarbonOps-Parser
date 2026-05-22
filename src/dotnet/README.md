@@ -48,6 +48,22 @@ network calls. Missing configured target-year artifacts report
 `parser_not_available`; completed parser handoff reports `parsed` and
 `persistence_not_implemented`.
 
+PROD-007 adds the .NET source-family master/detail insert runtime boundary for
+parsed output that has already passed through the source-cycle parsers. The
+runtime maps GHG Protocol, DEFRA/DESNZ, and IPCC EFDB normalized rows into the
+family-specific master/detail tables declared by the PostgreSQL schema
+catalog. Inserts are idempotent through the table uniqueness rules and use
+duplicate-safe conflict handling. Source-family year-state is recorded only
+after the master/detail repository reports a successful insert result. Runtime
+diagnostics are intentionally redacted.
+
+Docker PostgreSQL validation remains opt-in. A local operator can run the
+existing Docker PostgreSQL setup from the repository runbooks, bootstrap the
+schema explicitly, then invoke the .NET runtime repository from a test harness
+or follow-on command with `CARBONOPS_PARSER_POSTGRES_*` values set. The default
+.NET tests and service preview commands do not open PostgreSQL and do not
+require Docker.
+
 The optional .NET source-cycle config extension is intentionally narrow:
 
 ```json
@@ -78,7 +94,7 @@ Phase 1 tables.
 validation boundary, but it reports
 `ingestion_status=not_implemented`, opens no PostgreSQL connection, inserts no
 records, and returns a non-zero exit code until later .NET parity tasks
-implement PostgreSQL orchestration, source behavior, and inserts.
+connect the guarded runtime pieces into complete E2E orchestration.
 
 This entrypoint does not make the .NET runtime production-ready.
 
@@ -104,5 +120,6 @@ PROD-004 adds only the .NET production config loader and redaction baseline on
 top of the scheduled-worker command surface. PROD-005 adds only the .NET
 PostgreSQL schema bootstrap/year-state item from the production parity map.
 PROD-006 adds only the .NET source discovery/load/parsing orchestration item.
-It does not add source-family master/detail insert execution or complete .NET
+PROD-007 adds only the source-family master/detail insert runtime boundary. It
+does not make `run-once` E2E-complete and does not claim complete .NET
 production ingestion.
