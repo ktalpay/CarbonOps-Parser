@@ -51,6 +51,7 @@ def test_default_release_gate_commands_are_local_only() -> None:
     assert "ProductionConfigBoundaryTests" in release_validation_gate.RELEASE_GATE_DOTNET_TEST_FILTER
     assert "Phase1OperationalDiagnosticsTests" in release_validation_gate.RELEASE_GATE_DOTNET_TEST_FILTER
     assert "PostgreSQLRuntimeConfigGateContractTests" in release_validation_gate.RELEASE_GATE_DOTNET_TEST_FILTER
+    assert "CarbonOpsParserServiceCommandTests" in release_validation_gate.RELEASE_GATE_DOTNET_TEST_FILTER
     assert not any(
         "dotnet test src/dotnet/CarbonOps.Parser.sln" in command
         for command in rendered_commands

@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\dotnet\CarbonOps.Parser.Contracts\CarbonOps.Parser.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\dotnet\CarbonOps.Parser.Service\CarbonOps.Parser.Service.csproj" />
   </ItemGroup>
 
 </Project>

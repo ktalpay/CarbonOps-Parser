@@ -13,8 +13,9 @@ Project-level production-ready is blocked.
 - Python runtime production path: yes, through the packaged
   `carbonops-parser run-ingestion` operator path.
 - .NET runtime production path: no. The .NET runtime is not production-ready
-  yet. The .NET tree currently provides contracts and parity tests, not an
-  installable production worker.
+  yet. The .NET tree now provides contracts, parity tests, and a directly
+  runnable scheduled-worker entrypoint baseline whose ingestion command is a
+  safe not-yet-implemented placeholder.
 - Project-level production-ready: no. The project cannot claim this until a
   user can choose either runtime and receive equivalent production behavior.
 
@@ -33,7 +34,8 @@ be:
   modes.
 
 The Python runtime currently has this documented operator path. The .NET runtime
-does not yet have a production service or scheduled-worker path.
+has only the first scheduled-worker entrypoint shape; it does not yet provide
+equivalent production ingestion behavior.
 
 ## Equivalent Data Contract
 
@@ -171,7 +173,8 @@ and cross-runtime parity evidence:
 
 The implementation sequence for .NET production readiness is:
 
-1. .NET service/scheduled-worker entrypoint.
+1. .NET service/scheduled-worker entrypoint. Satisfied by PROD-003 as an
+   executable command-surface baseline only; ingestion parity remains incomplete.
 2. .NET production config loader and redaction.
 3. .NET PostgreSQL schema bootstrap and year-state.
 4. .NET source discovery/download/parsing orchestration.

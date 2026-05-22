@@ -9,10 +9,11 @@ This document is a non-installing template for operator planning. It does not
 install a service, enable a service, start a service, create a user, read
 configuration, load credentials, connect to PostgreSQL, run SQL, or download
 sources. It must not be used to imply daemon, system service, or installer
-support for production operation. It also does not imply that the .NET runtime
-has a production service path. Implementation-specific service files should be
-added only after a future task explicitly scopes and reviews service support for
-the selected implementation.
+support for production operation. The .NET runtime has a directly runnable
+scheduled-worker entrypoint baseline, but its run command remains a
+not-yet-implemented placeholder and does not make .NET production-ready.
+Implementation-specific service files should be added only after a future task
+explicitly scopes and reviews service support for the selected implementation.
 
 ## Service Responsibilities
 
@@ -32,7 +33,9 @@ A future Linux service setup would need to define:
 The example below is conceptual and not a supported production unit. The exact
 command would depend on a future reviewed service implementation. Until that
 implementation exists, keep `ExecStart` as an operator-owned placeholder and use
-cron or manual one-cycle execution for supported production scheduling.
+cron or manual one-cycle execution for supported production scheduling. Do not
+point production systemd units at the PROD-003 .NET `run-once` placeholder for
+real ingestion.
 
 ```ini
 [Unit]

@@ -40,7 +40,8 @@ RELEASE_GATE_DOTNET_TEST_PROJECT = (
 RELEASE_GATE_DOTNET_TEST_FILTER = (
     "FullyQualifiedName~ProductionConfigBoundaryTests|"
     "FullyQualifiedName~Phase1OperationalDiagnosticsTests|"
-    "FullyQualifiedName~PostgreSQLRuntimeConfigGateContractTests"
+    "FullyQualifiedName~PostgreSQLRuntimeConfigGateContractTests|"
+    "FullyQualifiedName~CarbonOpsParserServiceCommandTests"
 )
 
 SECRET_PATTERNS = (
@@ -81,7 +82,7 @@ REQUIRED_RUNBOOK_MARKERS = (
     "carbonops-parser validate-ingestion-config",
     "carbonops-parser run-ingestion",
     "dotnet test tests/dotnet/CarbonOps.Parser.Contracts.Tests/CarbonOps.Parser.Contracts.Tests.csproj",
-    "--filter \"FullyQualifiedName~ProductionConfigBoundaryTests|FullyQualifiedName~Phase1OperationalDiagnosticsTests|FullyQualifiedName~PostgreSQLRuntimeConfigGateContractTests\"",
+    "--filter \"FullyQualifiedName~ProductionConfigBoundaryTests|FullyQualifiedName~Phase1OperationalDiagnosticsTests|FullyQualifiedName~PostgreSQLRuntimeConfigGateContractTests|FullyQualifiedName~CarbonOpsParserServiceCommandTests\"",
     "full .NET contract suite is outside the default release gate",
     "The commands above must not require production configuration or credentials.",
     "Raw PostgreSQL connection strings are rejected",

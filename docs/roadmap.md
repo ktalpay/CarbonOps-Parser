@@ -49,7 +49,8 @@ Project-level production-ready is not claimed in this roadmap. The Python
 runtime has a production operator path; the .NET runtime is not
 production-ready yet. The required .NET sequence is:
 
-- Add .NET service/scheduled-worker entrypoint.
+- Add .NET service/scheduled-worker entrypoint. Added by PROD-003 as a
+  scheduled-worker command-surface baseline only.
 - Add .NET production config loader and redaction.
 - Add .NET PostgreSQL schema bootstrap and year-state.
 - Add .NET source discovery/download/parsing orchestration.
