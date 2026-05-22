@@ -7,15 +7,15 @@ It reflects the current packaged runtime: `carbonops-parser run-ingestion`
 opens PostgreSQL, runs additive schema bootstrap, ingests configured source
 families, and writes source-family master/detail tables.
 
-This checklist does not claim project-level production-ready. The .NET runtime
-is not production-ready yet, and project-level production-ready is blocked until
-Python and .NET runtimes satisfy the same production parity contract.
+This checklist supports the final project-level production-ready verdict only
+inside the narrow scope documented in
+[Final Project Production-Ready Verdict](final-project-production-ready-verdict.md).
 PROD-009 adds an opt-in .NET Docker PostgreSQL E2E/idempotency validation
 baseline for all three Phase 1 source families using checked-in local source
 fixtures. PROD-010 adds an opt-in Python/.NET persisted PostgreSQL parity
-baseline for the same fixture-backed source-specific output. These baselines do
-not make the .NET service `run-once` command production-ready and do not
-complete project-level production readiness.
+baseline for the same fixture-backed source-specific output. These baselines are
+final readiness evidence for the supported scope, but they do not make the .NET
+service `run-once` command a production ingestion command.
 
 ## Supported Runtime Boundary
 
@@ -29,7 +29,7 @@ Python production path:
   artifacts when live access is explicitly enabled.
 - PostgreSQL driver: psycopg through the `postgresql` Python extra.
 
-.NET non-production baseline:
+.NET parity baseline:
 
 - Entrypoint/status: `dotnet run --project src/dotnet/CarbonOps.Parser.Service -- validate-postgresql-runtime`.
 - PostgreSQL driver boundary: Npgsql, opened only by explicit runtime methods.
@@ -51,9 +51,8 @@ Python production path:
   source-specific master/detail output, year-state, idempotent rerun behavior,
   source-family identifiers, core row counts, and deterministic external keys
   without comparing volatile timestamps.
-- Unsupported in .NET today: production `run-once` ingestion execution,
-  uncontrolled live source access, and final project-level production-ready
-  verdict.
+- Unsupported in .NET today: production `run-once` ingestion execution and
+  uncontrolled live source access.
 
 The older preview-only `PostgreSQLPersistenceRepository.persist()` boundary is
 still unsupported. Production ingestion uses
@@ -261,8 +260,9 @@ PASS requires:
 - A persistence failure rolls back and does not advance year-state.
 - Diagnostics redact passwords, connection strings, and DSNs.
 
-This check does not prove project-level production readiness, .NET service
-`run-once` readiness, live source handling, or Python/.NET persisted parity.
+This check is project-level readiness evidence for the .NET Docker PostgreSQL
+E2E slice. It does not prove .NET service `run-once` readiness, live source
+handling, or Python/.NET persisted parity by itself.
 
 ## Python/.NET Persisted Parity Check
 
@@ -300,9 +300,8 @@ PASS requires:
   duplicates.
 - Volatile timestamps and generated UUIDs are not compared.
 
-This check is fixture-backed persisted parity evidence only. It does not make
-the `.NET run-once` command production-ready and does not issue the final
-project-level production-ready verdict.
+This check is fixture-backed persisted parity evidence for the final verdict.
+It does not make the `.NET run-once` command production-ready.
 
 ## Failure Blocks
 

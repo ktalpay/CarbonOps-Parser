@@ -37,7 +37,9 @@ def test_runbook_documents_python_and_dotnet_entrypoint_alignment() -> None:
     assert "src/dotnet/CarbonOps.Parser.sln" in runbook
     assert ".net scheduled-worker baseline" in normalized
     assert "ingestion_status=not_implemented" in normalized
-    assert "not production-ready yet" in normalized
+    assert "`run-once` command is still a safe" in runbook
+    assert "not-yet-implemented placeholder" in normalized
+    assert "Final Project Production-Ready Verdict" in runbook
     assert "CARBONOPS_POSTGRESQL_PASSWORD" in runbook
     assert "CARBONOPS_POSTGRESQL_DSN" in runbook
     assert "avoid in production because it is easier to leak" in runbook

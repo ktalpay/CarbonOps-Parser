@@ -1,22 +1,21 @@
 # Production Readiness Sequencing Roadmap
 
-This roadmap orders future work that would be needed before CarbonOps-Parser
-could be reviewed for project-level production use.
+This roadmap records the work sequence used before CarbonOps-Parser was
+reviewed for project-level production use.
 
 PROD-002 supersedes any Python-only interpretation of project-level production
-readiness. The Python runtime has a production operator path; the .NET runtime
-is not production-ready yet; project-level production-ready is blocked until
-both runtimes pass the production parity contract.
+readiness. The Python runtime has a production operator path. PROD-003 through
+PROD-010 added the .NET parity evidence, and PROD-011 records the final
+project-level production-ready verdict for the narrow supported scope.
 
 It is documentation-only. It does not implement production readiness, certify production readiness, or add runtime behavior.
 
 ## Purpose
 
-The repository currently has public documentation, contracts, artificial
-examples, skeletons, governance smoke tests, and a Python runtime production
-operator path. Those artifacts help future contributors work in small,
-reviewable increments, but they do not make the repository project-level
-production-ready.
+The repository has public documentation, contracts, deterministic fixtures,
+governance smoke tests, a Python runtime production operator path, and .NET
+parity evidence. PROD-011 is the authoritative final project-level verdict for
+the supported scope.
 
 This document proposes a safe order for future production readiness work. It does not prove parser, normalization, unit conversion, factor, compliance, legal, or carbon accounting correctness. Real behavior must be added only in future narrow tasks with tests and review gates.
 

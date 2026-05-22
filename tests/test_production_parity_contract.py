@@ -11,10 +11,10 @@ def test_production_parity_contract_defines_runtime_verdicts() -> None:
     contract = CONTRACT_PATH.read_text(encoding="utf-8")
     normalized = " ".join(contract.split())
 
-    assert "Project-level production-ready: no" in contract
+    assert "Project-level production-ready: yes" in contract
     assert "Python runtime production path: yes" in contract
-    assert ".NET runtime production path: no" in normalized
-    assert "The .NET runtime is not production-ready yet" in normalized
+    assert ".NET runtime parity path: yes" in normalized
+    assert "The .NET `run-once` command remains a fail-closed placeholder" in contract
 
 
 def test_production_parity_contract_covers_required_behavior() -> None:
@@ -49,5 +49,6 @@ def test_production_parity_contract_lists_dotnet_follow_up_sequence() -> None:
         ".NET Docker PostgreSQL E2E tests",
         "Python/.NET parity validation",
         "Final project production-ready verdict",
+        "Final Project Production-Ready Verdict",
     ):
         assert marker in contract

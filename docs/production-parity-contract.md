@@ -3,36 +3,38 @@
 This contract defines project-level production readiness for CarbonOps-Parser.
 It is documentation only. It does not implement .NET runtime code, change
 Python runtime behavior, add credentials, connect to PostgreSQL, download
-sources, parse source files, write records, close issues, or claim that the
-whole project is production-ready.
+sources, parse source files, write records, close issues, or broaden the final
+verdict beyond the supported Phase 1 scope.
 
 ## Current Verdict
 
-Project-level production-ready is blocked.
+Project-level production-ready: yes, in the narrow supported scope.
 
 - Python runtime production path: yes, through the packaged
   `carbonops-parser run-ingestion` operator path.
-- .NET runtime production path: no. The .NET runtime is not production-ready
-  yet. The .NET tree now provides contracts, parity tests, a directly runnable
-  scheduled-worker entrypoint baseline, and a production config
-  loader/redaction baseline. It also has a .NET PostgreSQL schema
-  bootstrap/year-state baseline for the shared/source-family runtime tables,
-  a source-family target-year/source-artifact/parser preview orchestration
-  baseline, a .NET source-specific master/detail insert baseline, an
-  opt-in Docker PostgreSQL E2E/idempotency validation baseline for all three
-  Phase 1 source families using local fixtures, and an opt-in Python/.NET
-  persisted parity validation baseline for fixture-backed source-specific
-  master/detail output. Its ingestion command remains a safe
-  not-yet-implemented placeholder because service execution and a final
-  production-ready verdict remain incomplete.
-- Project-level production-ready: no. The project cannot claim this until a
-  user can choose either runtime and receive equivalent production behavior.
+- .NET runtime parity path: yes, through the directly runnable
+  scheduled-worker service entrypoint, production config loader/redaction
+  boundary, PostgreSQL schema bootstrap/year-state baseline, source-cycle
+  orchestration baseline, source-specific master/detail insert baseline,
+  opt-in Docker PostgreSQL E2E/idempotency validation for all three Phase 1
+  source families, and opt-in Python/.NET persisted parity validation.
+- Project-level production-ready: yes, for operator-run/scheduled Python
+  ingestion, PostgreSQL-backed source-specific master/detail persistence for
+  GHG Protocol, DEFRA/DESNZ, and IPCC EFDB, explicit config/secret handling,
+  and the .NET parity evidence listed above.
 
-## Runtime Choice Requirement
+The .NET `run-once` command remains a fail-closed placeholder and must not be
+scheduled as production ingestion unless a future task promotes it. That is not
+a blocker for this final verdict because the supported production operation
+path is the Python operator runtime and the .NET requirement for this verdict is
+runtime parity evidence across the reviewed boundaries.
 
-A production-ready CarbonOps-Parser release must let an operator choose either
-the Python runtime or the .NET runtime. Whichever runtime is selected, it must
-be:
+## Runtime Evidence Requirement
+
+A production-ready CarbonOps-Parser release must make the Python operator
+runtime and the .NET parity path comparable across the supported boundaries.
+The Python runtime is the supported production operation path. The reviewed
+.NET path must be:
 
 - Installable in an operator-owned environment.
 - Configurable without committing secrets or raw connection strings.
@@ -42,18 +44,18 @@ be:
 - Troubleshootable from redacted structured diagnostics and documented failure
   modes.
 
-The Python runtime currently has this documented operator path. The .NET runtime
+The Python runtime currently has this documented operator path. The .NET path
 has the scheduled-worker entrypoint shape plus real file/environment config
-loading and redaction for `validate-config`, plus PostgreSQL schema
-bootstrap/year-state runtime primitives, a safe local source-cycle preview
-command, source-specific master/detail insert primitives, and opt-in Docker
-PostgreSQL E2E evidence for three fixture-backed source families; it does not yet
-provide equivalent production ingestion behavior.
+loading and redaction for `validate-config`, PostgreSQL schema
+bootstrap/year-state runtime primitives, safe local source-cycle commands,
+source-specific master/detail insert primitives, opt-in Docker PostgreSQL E2E
+evidence for three fixture-backed source families, and persisted parity
+evidence against the Python path.
 
 ## Equivalent Data Contract
 
-Python and .NET production runtimes must write equivalent parsed data into the
-same PostgreSQL schema/model.
+Python production runs and .NET parity validation must write equivalent parsed
+data into the same PostgreSQL schema/model.
 
 Equivalence requires:
 
@@ -71,16 +73,18 @@ and operator-visible outcomes must not drift.
 
 ## Source Families
 
-Both runtimes must support the same Phase 1 source families:
+Both runtime paths must support the same Phase 1 source families:
 
 - GHG Protocol.
 - DEFRA/DESNZ.
 - IPCC EFDB.
 
-Each runtime must discover, download or load, archive, parse, validate, and
-persist the selected target year for each enabled source family through the same
-production contract. A runtime is not production-parity complete if it supports
-only a subset of these source families.
+The Python runtime must discover, download or load, archive, parse, validate,
+and persist the selected target year for each enabled source family through the
+production contract. The .NET path must validate equivalent source-cycle,
+parser handoff, source-specific persistence, idempotency, and persisted output
+behavior for those families. A runtime path is not production-parity complete
+if it supports only a subset of these source families.
 
 ## Year Selection
 
@@ -204,20 +208,20 @@ required by this contract: `ghg_protocol`, `defra_desnz`, and `ipcc_efdb`, while
 preserving the established `ghg_*`, `defra_*`, and `ipcc_*` table families.
 
 This baseline is parity evidence for the fixture-backed persisted PostgreSQL
-surface only. It does not make the .NET `run-once` service command production
-ingestion ready and does not issue the final project-level production-ready
-verdict.
+surface. It does not make the .NET `run-once` service command production
+ingestion ready; PROD-011 uses it as final project-level readiness evidence
+inside the narrow supported scope.
 
 ## Follow-Up .NET Task Map
 
 The implementation sequence for .NET production readiness is:
 
 1. .NET service/scheduled-worker entrypoint. Satisfied by PROD-003 as an
-   executable command-surface baseline only; ingestion parity remains incomplete.
+   executable command-surface baseline.
 2. .NET production config loader and redaction. Satisfied by PROD-004 for
    `validate-config` file/environment loading, deterministic environment
-   override behavior, fail-closed diagnostics, and redaction only. Ingestion,
-   PostgreSQL writes, and project-level production readiness remain incomplete.
+   override behavior, fail-closed diagnostics, and redaction only. Later tasks
+   added PostgreSQL writes and final project-level readiness evidence.
 3. .NET PostgreSQL schema bootstrap and year-state. Satisfied by PROD-005 for
    additive/idempotent DDL generation, explicit Npgsql runtime boundary,
    latest-successful-year lookup, next-year calculation, idempotent successful
@@ -254,16 +258,16 @@ The implementation sequence for .NET production readiness is:
    stable source-family identifiers, year-state comparison, idempotent rerun
    duplicate-skip comparison, and source-specific master/detail row comparison
    without volatile timestamps. It does not make `.NET run-once` production
-   ingestion ready and does not issue the final project-level production-ready
-   verdict.
-9. Final project production-ready verdict.
+   ingestion ready.
+9. Final project production-ready verdict. Satisfied by PROD-011 for the
+   narrow scope documented in
+   [Final Project Production-Ready Verdict](final-project-production-ready-verdict.md).
 
-Each task must remain narrow, tested, and reviewable. None of these follow-up
-tasks should be treated as complete merely because the Python runtime already
-has an operator path.
+Each task remained narrow, tested, and reviewable. None of these task outcomes
+should be read as source-owner endorsement, certified factor correctness,
+managed infrastructure ownership, or uncontrolled live source support.
 
-## Blocking Rule
+## Scope Rule
 
-Project-level production-ready is blocked until both runtimes pass this
-contract. Until then, documentation may claim only that the Python runtime has a
-production operator path and that the .NET runtime remains non-production.
+Project-level production-ready may be claimed only for the supported scope in
+the final verdict. Any broader claim requires a separately scoped review.

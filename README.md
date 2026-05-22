@@ -15,7 +15,7 @@ Auditable public carbon emission factor ingestion and validation for climate-tec
 ![Package](https://img.shields.io/badge/package-not%20published%20yet-lightgrey)
 ![License](https://img.shields.io/badge/license-Apache--2.0-green)
 
-CarbonOps-Parser is a public, reviewable climate-tech data ingestion project for carbon accounting source data. It focuses on auditable ingestion, parsing, validation, diagnostics, and PostgreSQL operation for public emission factors from GHG Protocol, DEFRA/DESNZ, and IPCC EFDB, with parallel Python and .NET contract paths. The Python package includes a configured PostgreSQL ingestion runtime for operator-managed deployments. Project-level production-ready is not claimed yet: the Python runtime has a production operator path, while the .NET runtime is not production-ready and remains a contract/parity path. The repository is intentionally conservative: default examples are deterministic and local-only, production runs require explicit configuration and credentials, and the project does not claim production carbon-accounting, legal, compliance, source-owner, or factor correctness.
+CarbonOps-Parser is a public, reviewable climate-tech data ingestion project for carbon accounting source data. It focuses on auditable ingestion, parsing, validation, diagnostics, and PostgreSQL operation for public emission factors from GHG Protocol, DEFRA/DESNZ, and IPCC EFDB, with parallel Python and .NET runtime evidence. The Python package includes a configured PostgreSQL ingestion runtime for operator-managed deployments. CarbonOps-Parser is project-level production-ready in the narrow supported scope documented in the final verdict: operator-run/scheduled Python ingestion, PostgreSQL-backed source-specific persistence, and .NET parity evidence through service entrypoint, config/redaction, schema/year-state, source-cycle orchestration, persistence, Docker PostgreSQL E2E, and persisted parity validation. The repository is intentionally conservative: default examples are deterministic and local-only, production runs require explicit configuration and credentials, and the project does not claim production carbon-accounting, legal, compliance, source-owner, or factor correctness.
 
 The project is independent from `carbonops-assistant`. It is not a continuation, module, plugin, or dependency of that project.
 
@@ -25,13 +25,13 @@ Public carbon emissions workflows often depend on emission factor spreadsheets, 
 
 ## Current Status
 
-CarbonOps-Parser is in Phase 1. The repository contains Python implementation slices, .NET contract parity slices, PostgreSQL schema/runtime boundaries, deterministic examples, local dry-run validation, and a documented Python operator path. It is not a published package release and is not project-level production-ready until Python and .NET provide equivalent production behavior.
+CarbonOps-Parser is in Phase 1. The repository contains Python implementation slices, .NET parity slices, PostgreSQL schema/runtime boundaries, deterministic examples, local dry-run validation, and a documented Python operator path. It is project-level production-ready only in the narrow scope documented in [Final Project Production-Ready Verdict](docs/final-project-production-ready-verdict.md). It is not a published package release.
 
 | Area | Phase 1 completed capabilities | Phase 2 roadmap |
 | --- | --- | --- |
 | Source families | Local fixture and contract coverage for GHG Protocol, DEFRA/DESNZ, and IPCC EFDB boundaries. | Broader source onboarding rules, fixture policy, and source-family hardening slices. |
 | Python | Source acquisition contracts, parser contracts, DEFRA/DESNZ fixture parser path, normalization handoff, persistence previews, diagnostics, and local dry-run CLI. | Runtime hardening, richer validation, controlled source expansion, and opt-in execution boundaries. |
-| .NET | Contract records and tests for shared ingestion, parser, validation, diagnostics, and PostgreSQL readiness concepts. | Contract/runtime parity review where shared behavior changes; no production service command is implied. |
+| .NET | Service entrypoint, config/redaction, PostgreSQL schema/year-state, source-cycle orchestration, source-specific persistence, Docker PostgreSQL E2E, and persisted parity validation baselines. | Runtime parity review where shared behavior changes; package/service promotion remains separately scoped. |
 | PostgreSQL | Schema descriptors, DDL preview, additive runtime bootstrap, configured Python source-family writes, idempotent duplicate skipping, and opt-in integration boundaries. | Broader migration, rollback, recovery, and operational hardening slices. |
 | Safety posture | Local-only examples, non-destructive dry runs, preview-only SQL, no default network calls, and no production credentials. | Release-gate expansion and production-readiness reviews before live source or write-path promotion. |
 
@@ -90,11 +90,12 @@ The initial Python source adapter contracts and in-memory registry live under `s
 
 ### .NET
 
-The .NET implementation is an independent contract and future Worker Service path that follows the same conceptual workflow with .NET-oriented application structure.
-
-The .NET runtime is not production-ready yet. It does not currently provide an
-operator-supported service or scheduled-worker entrypoint equivalent to the
-Python runtime.
+The .NET implementation is an independent Worker Service path that follows the
+same conceptual workflow with .NET-oriented application structure. The reviewed
+production scope treats .NET as parity-validated through its service
+entrypoint, configuration/redaction, PostgreSQL schema/year-state,
+source-cycle orchestration, source-specific persistence, Docker PostgreSQL E2E,
+and persisted parity baselines.
 
 See [src/dotnet/README.md](src/dotnet/README.md).
 
@@ -267,9 +268,10 @@ See [Production Packaging And Operator Runbook](docs/production-packaging-operat
 for install, configuration, PostgreSQL readiness, cron scheduling,
 verification SQL, rerun/idempotency checks, and troubleshooting.
 
-This is a Python runtime production operator path only. Project-level
-production-ready requires Python and .NET runtime parity as defined in
-[Production Parity Contract](docs/production-parity-contract.md).
+This is the supported Python runtime production operator path. Project-level
+production-ready is limited to the scope in
+[Final Project Production-Ready Verdict](docs/final-project-production-ready-verdict.md)
+and [Production Parity Contract](docs/production-parity-contract.md).
 
 For boundary details, see [Local Dry-Run CLI Boundary](docs/local-dry-run-cli-boundary.md), [Local File Normalized Persistence Dry-Run Boundary](docs/local-file-normalized-persistence-dry-run-boundary.md), [PostgreSQL Persistence Preview Boundary](docs/postgresql-persistence-preview-boundary.md), and [Local Dry-Run Troubleshooting](docs/local-dry-run-troubleshooting.md).
 
@@ -451,6 +453,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Engineering Standards](docs/engineering-standards.md)
 - [Production Packaging And Operator Runbook](docs/production-packaging-operator-runbook.md)
 - [Production Parity Contract](docs/production-parity-contract.md)
+- [Final Project Production-Ready Verdict](docs/final-project-production-ready-verdict.md)
 - [Legacy Linux Service Planning - not supported production scheduling](docs/linux-service-setup.md)
 - [Source Support](docs/source-support.md)
 - [Source Discovery](docs/source-discovery.md)
@@ -564,7 +567,9 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 
 ## Roadmap Summary
 
-Near-term work keeps the Python operator path documented while moving .NET from contracts toward an equivalent production runtime. Project-level production-ready remains blocked until Python and .NET both satisfy the production parity contract.
+Near-term work keeps the narrow production-ready scope conservative while
+separating package publication, infrastructure ownership, live-source expansion,
+and future runtime promotion into separately reviewed tasks.
 
 See [docs/roadmap.md](docs/roadmap.md) and [docs/task-breakdown.md](docs/task-breakdown.md).
 

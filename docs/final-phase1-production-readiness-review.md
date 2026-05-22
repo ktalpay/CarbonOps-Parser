@@ -7,17 +7,16 @@ CarbonOps-Parser. It consolidates the prior Phase 1 readiness reviews, the
 production packaging/operator runbook, the release validation gate, and the
 production release-candidate dry-run verification path.
 
-PROD-002 narrows this verdict: it applies to the Python Phase 1 contract and
-operator boundary, not to project-level production-ready. The repository now has
-a focused release validation gate and a production RC dry-run verifier that
-exercise local-only, non-destructive validation without credentials, raw
-connection strings, live source calls, or destructive database operations.
+PROD-002 narrowed this historical verdict to the Python Phase 1 contract and
+operator boundary. PROD-011 now issues the separate final project-level
+production-ready verdict for the narrow supported scope in
+[Final Project Production-Ready Verdict](final-project-production-ready-verdict.md).
 
-This verdict does not claim project-level production-ready, .NET production
-runtime readiness, full production source correctness, carbon-accounting
-correctness, live-source availability, complete parser coverage for arbitrary
-upstream formats, or completed database runtime write operation hardening. Those
-remain explicit accepted risks or backlog items.
+This historical verdict does not claim full production source correctness,
+carbon-accounting correctness, live-source availability, complete parser
+coverage for arbitrary upstream formats, managed production infrastructure, or
+package registry publication. Those remain explicit accepted risks, operator
+responsibilities, or backlog items.
 
 ## Scope Reviewed
 
@@ -140,12 +139,13 @@ operator boundary.
 
 .NET runtime production path: no.
 
-Project-level production-ready: no.
+Project-level production-ready: yes, as of PROD-011 and only in the narrow
+scope documented by the final project verdict.
 
 The Phase 1 Python contract, operator, validation, and dry-run verification path
-is ready for release with the accepted risks above. Project-level
-production-ready remains blocked until Python and .NET runtime parity is
-implemented and validated.
+is ready for release with the accepted risks above. Later PROD-003 through
+PROD-010 work completed the .NET parity evidence required for the final
+project-level verdict.
 
 ## Release Recommendation
 
