@@ -19,6 +19,17 @@ CarbonOps-Parser is a public, reviewable climate-tech data ingestion project for
 
 The project is independent from `carbonops-assistant`. It is not a continuation, module, plugin, or dependency of that project.
 
+## Start Here
+
+- [Production operator runbook](docs/production-packaging-operator-runbook.md) - supported Python operator path, PostgreSQL readiness, cron scheduling, validation, and troubleshooting.
+- [Final project production-ready verdict](docs/final-project-production-ready-verdict.md) - narrow production-ready scope and explicit non-claims.
+- [Production parity contract](docs/production-parity-contract.md) - Python production path and .NET parity evidence.
+- [Python runtime docs](docs/python-ingestion-local-runbook.md) - local Docker PostgreSQL ingestion runbook for the packaged Python path.
+- [.NET runtime docs](src/dotnet/README.md) - .NET Worker Service path and parity-oriented runtime notes.
+- [Contribution guide](CONTRIBUTING.md) - issues, features, forks, branches, pull requests, validation, secrets, artifacts, and maintainer-only merge policy.
+- [Issue templates](.github/ISSUE_TEMPLATE) - bug reports, feature requests, documentation requests, and production-readiness questions.
+- [Pull request guide](.github/pull_request_template.md) - PR checklist for scope, validation, runtime impact, PostgreSQL impact, docs, secrets, artifacts, and production-ready claims.
+
 ## Problem Statement
 
 Public carbon emissions workflows often depend on emission factor spreadsheets, databases, and reference documents that change over time and vary by source family. CarbonOps-Parser exists to make carbon factor ingestion reviewable: source identity, version or checksum evidence, parser output, validation issues, persistence readiness, and diagnostics should be visible before any operational use. The project is infrastructure for data ingestion and validation, not an emissions calculator or compliance decision engine.
@@ -86,7 +97,7 @@ The Python path under `src/carbonfactor_parser` holds the current implementation
 
 The Python implementation is the active Phase 1 path for source discovery contracts, parser mapping, validation, normalization handoff, persistence previews, and data engineering workflows.
 
-The initial Python source adapter contracts and in-memory registry live under `src/carbonfactor_parser/source_adapters`.
+The active Python runtime path lives under `src/carbonfactor_parser` and exposes the local dry-run CLI plus the configured `carbonops-parser run-ingestion` operator command for PostgreSQL-backed source-family ingestion. The initial Python source adapter contracts and in-memory registry live under `src/carbonfactor_parser/source_adapters`.
 
 ### .NET
 
@@ -439,6 +450,11 @@ PostgreSQL is the Phase 1 persistence target. The model includes:
 - IPCC EFDB tables: `ipcc_sectors`, `ipcc_categories`, `ipcc_references`, `ipcc_factor_records`, and `ipcc_factor_values`.
 
 See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md](docs/database-startup.md), and [database/postgres/README.md](database/postgres/README.md).
+
+PostgreSQL persistence uses shared ingestion metadata plus source-specific
+master/detail table groups for GHG Protocol, DEFRA/DESNZ, and IPCC EFDB. That
+layout preserves source-family structure for reviewable carbon emission factor
+ingestion instead of claiming one universal carbon accounting factor model.
 
 ## Documentation Map
 

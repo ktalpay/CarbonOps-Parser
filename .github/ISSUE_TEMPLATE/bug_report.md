@@ -10,6 +10,10 @@ assignees: ""
 
 Describe the issue briefly.
 
+## Production Scope
+
+- [ ] This report does not claim broader production, compliance, legal, source-owner, or carbon-accounting correctness.
+
 ## Checklist
 
 - [ ] I have not included confidential data, credentials, or private source files.
@@ -40,3 +44,6 @@ Describe the issue briefly.
 
 
 ## Actual Result
+
+
+## Validation Tried

@@ -7,6 +7,13 @@ CarbonOps-Parser is a public climate-tech data infrastructure project for audita
 - [README](../README.md) - project positioning, safe quickstart, supported sources, status, and roadmap summary.
 - [Examples](../examples/README.md) - deterministic local examples and fixture entry points.
 - [Architecture](architecture.md) - Python, .NET, PostgreSQL, validation, diagnostics, and dry-run boundaries.
+- [Final Project Production-Ready Verdict](final-project-production-ready-verdict.md) - narrow project-level production-ready verdict and explicit non-claims.
+- [Production Packaging And Operator Runbook](production-packaging-operator-runbook.md) - supported Python operator path, PostgreSQL readiness, cron scheduling, verification, and troubleshooting.
+- [PostgreSQL Runtime Readiness Checklist](postgresql-runtime-readiness-checklist.md) - database readiness checks for the supported PostgreSQL boundary.
+- [Production Parity Contract](production-parity-contract.md) - Python production path and .NET parity evidence.
+- [Contribution Guide](../CONTRIBUTING.md) - issues, features, forks, branches, pull requests, validation, secrets, artifacts, and maintainer-only merge policy.
+- [Python Runtime Docs](python-ingestion-local-runbook.md) - local Docker PostgreSQL ingestion runbook for the packaged Python path.
+- [.NET Runtime Docs](../src/dotnet/README.md) - .NET Worker Service path and parity-oriented runtime notes.
 - [Phase 2 Roadmap And Execution Boundary](phase2-roadmap.md) - next-stage roadmap and safety gates.
 - [Release Notes Draft](release-notes-draft.md) - draft notes for a first public alpha/review release.
 
