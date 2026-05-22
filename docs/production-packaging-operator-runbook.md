@@ -14,6 +14,8 @@ production-ready requires Python and .NET runtime parity as defined in
 [Production Parity Contract](production-parity-contract.md). The .NET runtime is
 not production-ready yet.
 
+The .NET contract/test solution remains available at `src/dotnet/CarbonOps.Parser.sln`.
+
 ## Runtime Surface
 
 | Surface | Current entrypoint | Production operation status |
