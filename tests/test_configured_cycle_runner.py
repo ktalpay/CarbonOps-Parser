@@ -17,19 +17,42 @@ from carbonfactor_parser.persistence.postgresql_year_state_repository import (
 from carbonfactor_parser.persistence.postgresql_runtime import (
     PostgreSQLRuntimeStartupResult,
 )
+from carbonfactor_parser.persistence.postgresql_source_family_repository import (
+    PostgreSQLSourceFamilyRuntimeRepository,
+)
 from carbonfactor_parser.pipeline.configured_cycle_config import (
     ConfiguredCycleRunnerConfig as ExtractedConfiguredCycleRunnerConfig,
     ConfiguredSourceYearArtifact as ExtractedConfiguredSourceYearArtifact,
     load_configured_cycle_runner_config as extracted_load_configured_cycle_runner_config,
 )
+from carbonfactor_parser.pipeline.configured_cycle_dependencies import (
+    ConfiguredCycleValidationBoundary as ExtractedConfiguredCycleValidationBoundary,
+    build_configured_cycle_dependencies,
+)
 from carbonfactor_parser.pipeline.configured_cycle_runner import (
     ConfiguredCycleRunnerConfig,
     ConfiguredCycleRunnerStatus,
+    ConfiguredCycleValidationBoundary,
     ConfiguredSourceYearArtifact,
     load_configured_cycle_runner_config,
     run_configured_cycle_runner,
 )
 from carbonfactor_parser.pipeline import source_artifact_transport
+from carbonfactor_parser.pipeline.defra_desnz_production_e2e import (
+    DefraDesnzProductionParserBoundary,
+    DefraDesnzProductionSourceAdapter,
+)
+from carbonfactor_parser.pipeline.ghg_protocol_production_e2e import (
+    GHGProtocolProductionParserBoundary,
+    GHGProtocolProductionSourceAdapter,
+)
+from carbonfactor_parser.pipeline.ipcc_efdb_production_e2e import (
+    IpccEfdbProductionParserBoundary,
+    IpccEfdbProductionSourceAdapter,
+)
+from carbonfactor_parser.pipeline.production_e2e_year_orchestrator import (
+    ProductionE2EYearOrchestratorDependencies,
+)
 from carbonfactor_parser.pipeline.source_artifact_transport import (
     build_configured_artifact_transport,
 )
@@ -39,6 +62,81 @@ def test_configured_cycle_runner_imports_remain_backward_compatible() -> None:
     assert ConfiguredCycleRunnerConfig is ExtractedConfiguredCycleRunnerConfig
     assert ConfiguredSourceYearArtifact is ExtractedConfiguredSourceYearArtifact
     assert load_configured_cycle_runner_config is extracted_load_configured_cycle_runner_config
+    assert ConfiguredCycleValidationBoundary is ExtractedConfiguredCycleValidationBoundary
+
+
+def test_build_configured_cycle_dependencies_wires_configured_runtime(
+    tmp_path: Path,
+) -> None:
+    connection = _FakeConnection()
+    startup = _startup(connection)
+    config = ConfiguredCycleRunnerConfig(
+        postgresql_config_result=load_postgresql_runtime_config(
+            {"CARBONOPS_POSTGRESQL_DSN": "postgresql://user:pass@localhost/db"},
+        ),
+        archive_root=tmp_path / "archive",
+        enabled_source_families=("ghg_protocol", "defra_desnz", "ipcc_efdb"),
+        initial_year=2024,
+        cycle_interval_seconds=0,
+        max_cycles=1,
+        source_years=_source_years(tmp_path),
+        allow_live_source_access=False,
+    )
+
+    dependencies = build_configured_cycle_dependencies(config, startup)
+
+    assert isinstance(dependencies, ProductionE2EYearOrchestratorDependencies)
+    assert dependencies.year_state_repository is startup.year_state_repository
+    assert dependencies.source_adapters.keys() == {
+        "ghg_protocol",
+        "defra_desnz",
+        "ipcc_efdb",
+    }
+    assert isinstance(
+        dependencies.source_adapters["ghg_protocol"],
+        GHGProtocolProductionSourceAdapter,
+    )
+    assert isinstance(
+        dependencies.source_adapters["defra_desnz"],
+        DefraDesnzProductionSourceAdapter,
+    )
+    assert isinstance(
+        dependencies.source_adapters["ipcc_efdb"],
+        IpccEfdbProductionSourceAdapter,
+    )
+    assert dependencies.parser_boundaries.keys() == {
+        "ghg_protocol",
+        "defra_desnz",
+        "ipcc_efdb",
+    }
+    assert isinstance(
+        dependencies.parser_boundaries["ghg_protocol"],
+        GHGProtocolProductionParserBoundary,
+    )
+    assert isinstance(
+        dependencies.parser_boundaries["defra_desnz"],
+        DefraDesnzProductionParserBoundary,
+    )
+    assert isinstance(
+        dependencies.parser_boundaries["ipcc_efdb"],
+        IpccEfdbProductionParserBoundary,
+    )
+    assert isinstance(
+        dependencies.validation_boundary,
+        ExtractedConfiguredCycleValidationBoundary,
+    )
+    assert isinstance(
+        dependencies.insert_repository,
+        PostgreSQLSourceFamilyRuntimeRepository,
+    )
+    assert dependencies.insert_repository._connection is connection
+    assert (
+        dependencies.source_adapters["ghg_protocol"]._source_years[2024].year == 2024
+    )
+    assert (
+        dependencies.source_adapters["defra_desnz"]._source_years[2024].year == 2024
+    )
+    assert dependencies.source_adapters["ipcc_efdb"]._source_years[2024].year == 2024
 
 
 def test_source_artifact_transport_reads_local_file_path(tmp_path: Path) -> None:

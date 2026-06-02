@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from enum import Enum
 import time
 import uuid
-from typing import Callable, Mapping
+from typing import Callable
 
 from carbonfactor_parser.diagnostics.redaction import redact_sensitive_text
 
@@ -30,46 +30,21 @@ from carbonfactor_parser.persistence.postgresql_runtime import (
     PostgreSQLRuntimeStartupResult,
     start_postgresql_runtime,
 )
-from carbonfactor_parser.persistence.postgresql_source_family_repository import (
-    PostgreSQLSourceFamilyRuntimeRepository,
-)
 from carbonfactor_parser.pipeline.configured_cycle_config import (
     CONFIGURED_CYCLE_SOURCE_FAMILIES,
     ConfiguredCycleRunnerConfig,
     ConfiguredSourceYearArtifact,
     load_configured_cycle_runner_config,
 )
-from carbonfactor_parser.pipeline.defra_desnz_production_e2e import (
-    DEFRA_DESNZ_SOURCE_FAMILY,
-    DefraDesnzPhase2ValidationBoundary,
-    DefraDesnzProductionParserBoundary,
-    DefraDesnzProductionSourceAdapter,
-    DefraDesnzSourceYear,
-)
-from carbonfactor_parser.pipeline.ghg_protocol_production_e2e import (
-    GHG_PROTOCOL_SOURCE_FAMILY,
-    GHGProtocolPhase2ValidationBoundary,
-    GHGProtocolProductionParserBoundary,
-    GHGProtocolProductionSourceAdapter,
-    GHGProtocolSourceYear,
-)
-from carbonfactor_parser.pipeline.ipcc_efdb_production_e2e import (
-    IPCC_EFDB_SOURCE_FAMILY,
-    IpccEfdbPhase2ValidationBoundary,
-    IpccEfdbProductionParserBoundary,
-    IpccEfdbProductionSourceAdapter,
-    IpccEfdbSourceYear,
+from carbonfactor_parser.pipeline.configured_cycle_dependencies import (
+    ConfiguredCycleValidationBoundary,
+    build_configured_cycle_dependencies,
 )
 from carbonfactor_parser.pipeline.production_e2e_year_orchestrator import (
-    ProductionE2EValidationResult,
-    ProductionE2EYearOrchestratorDependencies,
     ProductionE2EYearOrchestratorRequest,
     ProductionE2EYearOrchestratorResult,
     ProductionE2EYearRunStatus,
     run_production_e2e_year_orchestrator,
-)
-from carbonfactor_parser.pipeline.source_artifact_transport import (
-    build_configured_artifact_transport,
 )
 
 
@@ -101,25 +76,6 @@ class ConfiguredCycleRunnerResult:
     schema_missing_table_names: tuple[str, ...]
 
 
-class ConfiguredCycleValidationBoundary:
-    """Route validation to the source-family-specific validation boundary."""
-
-    def __init__(self) -> None:
-        self._boundaries = {
-            GHG_PROTOCOL_SOURCE_FAMILY: GHGProtocolPhase2ValidationBoundary(),
-            DEFRA_DESNZ_SOURCE_FAMILY: DefraDesnzPhase2ValidationBoundary(),
-            IPCC_EFDB_SOURCE_FAMILY: IpccEfdbPhase2ValidationBoundary(),
-        }
-
-    def validate(self, batch: object) -> ProductionE2EValidationResult:
-        rows = tuple(getattr(batch, "rows", ()))
-        source_family = rows[0].source_family if rows else GHG_PROTOCOL_SOURCE_FAMILY
-        boundary = self._boundaries.get(source_family)
-        if boundary is None:
-            boundary = GHGProtocolPhase2ValidationBoundary()
-        return boundary.validate(batch)
-
-
 def run_configured_cycle_runner(
     config: ConfiguredCycleRunnerConfig,
     *,
@@ -137,7 +93,7 @@ def run_configured_cycle_runner(
     if emit is not None:
         _emit_startup_summary(config, runtime, emit)
 
-    dependencies = _build_dependencies(config, runtime)
+    dependencies = build_configured_cycle_dependencies(config, runtime)
     history_repository = run_history_repository
     if history_repository is None:
         history_repository_factory = (
@@ -194,7 +150,6 @@ def run_configured_cycle_runner(
         schema_created_table_names=runtime.schema_bootstrap.created_table_names,
         schema_missing_table_names=runtime.schema_bootstrap.missing_table_names,
     )
-
 
 
 def _persist_configured_cycle_history(
@@ -262,6 +217,7 @@ def _persist_configured_cycle_history(
         history_persistence_issue_count=issue_count,
     )
 
+
 def emit_configured_cycle_summary(
     cycle: ConfiguredCycleResult,
     *,
@@ -308,49 +264,6 @@ def emit_configured_cycle_summary(
             )
 
 
-def _build_dependencies(
-    config: ConfiguredCycleRunnerConfig,
-    runtime: PostgreSQLRuntimeStartupResult,
-) -> ProductionE2EYearOrchestratorDependencies:
-    transport = build_configured_artifact_transport(
-        allow_live_source_access=config.allow_live_source_access,
-    )
-    source_years = config.source_years or {}
-    return ProductionE2EYearOrchestratorDependencies(
-        year_state_repository=runtime.year_state_repository,
-        source_adapters={
-            GHG_PROTOCOL_SOURCE_FAMILY: GHGProtocolProductionSourceAdapter(
-                target_root=config.archive_root,
-                source_years=_ghg_source_years(
-                    source_years.get(GHG_PROTOCOL_SOURCE_FAMILY, {}),
-                ),
-                transport=transport,
-            ),
-            DEFRA_DESNZ_SOURCE_FAMILY: DefraDesnzProductionSourceAdapter(
-                target_root=config.archive_root,
-                source_years=_defra_source_years(
-                    source_years.get(DEFRA_DESNZ_SOURCE_FAMILY, {}),
-                ),
-                transport=transport,
-            ),
-            IPCC_EFDB_SOURCE_FAMILY: IpccEfdbProductionSourceAdapter(
-                target_root=config.archive_root,
-                source_years=_ipcc_source_years(
-                    source_years.get(IPCC_EFDB_SOURCE_FAMILY, {}),
-                ),
-                transport=transport,
-            ),
-        },
-        parser_boundaries={
-            GHG_PROTOCOL_SOURCE_FAMILY: GHGProtocolProductionParserBoundary(),
-            DEFRA_DESNZ_SOURCE_FAMILY: DefraDesnzProductionParserBoundary(),
-            IPCC_EFDB_SOURCE_FAMILY: IpccEfdbProductionParserBoundary(),
-        },
-        validation_boundary=ConfiguredCycleValidationBoundary(),
-        insert_repository=PostgreSQLSourceFamilyRuntimeRepository(runtime.connection),
-    )
-
-
 def _emit_startup_summary(
     config: ConfiguredCycleRunnerConfig,
     runtime: PostgreSQLRuntimeStartupResult,
@@ -374,57 +287,6 @@ def _redact_sensitive_text(text: str) -> str:
     return redact_sensitive_text(text)
 
 
-def _ghg_source_years(
-    values: Mapping[int, ConfiguredSourceYearArtifact],
-) -> Mapping[int, GHGProtocolSourceYear]:
-    return {
-        year: GHGProtocolSourceYear(
-            year=entry.year,
-            publication_url=entry.publication_url,
-            artifact_url=entry.artifact_url,
-            title=entry.title,
-            version_label=entry.version_label,
-            content_type=entry.content_type,
-            format_hint=entry.format_hint,
-        )
-        for year, entry in values.items()
-    }
-
-
-def _defra_source_years(
-    values: Mapping[int, ConfiguredSourceYearArtifact],
-) -> Mapping[int, DefraDesnzSourceYear]:
-    return {
-        year: DefraDesnzSourceYear(
-            year=entry.year,
-            publication_url=entry.publication_url,
-            artifact_url=entry.artifact_url,
-            title=entry.title,
-            version_label=entry.version_label,
-            content_type=entry.content_type,
-            format_hint=entry.format_hint,
-        )
-        for year, entry in values.items()
-    }
-
-
-def _ipcc_source_years(
-    values: Mapping[int, ConfiguredSourceYearArtifact],
-) -> Mapping[int, IpccEfdbSourceYear]:
-    return {
-        year: IpccEfdbSourceYear(
-            year=entry.year,
-            publication_url=entry.publication_url,
-            artifact_url=entry.artifact_url,
-            title=entry.title,
-            version_label=entry.version_label,
-            content_type=entry.content_type,
-            format_hint=entry.format_hint,
-        )
-        for year, entry in values.items()
-    }
-
-
 def _download_status_value(download_result: object | None) -> str:
     if download_result is None:
         return "not_run"
@@ -438,7 +300,10 @@ def _parse_status_value(family: object) -> str:
     if any(getattr(failure, "stage", "") == "parser" for failure in failures):
         return "failed"
     download_result = getattr(family, "download_result", None)
-    if download_result is None or _download_status_value(download_result) != "downloaded":
+    if (
+        download_result is None
+        or _download_status_value(download_result) != "downloaded"
+    ):
         return "not_run"
     return "no_rows"
 
