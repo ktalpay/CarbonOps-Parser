@@ -98,18 +98,20 @@ def _source_result_record(
         source_family=getattr(family, "source_family"),
         target_year=getattr(year_state, "target_year"),
         latest_year=getattr(year_state, "latest_year"),
-        status=getattr(getattr(family, "status", None), "value", getattr(family, "status")),
+        status=_status_value(getattr(family, "status", None)),
         download_status=configured_download_status_value(
             getattr(family, "download_result", None),
         ),
         parse_status=configured_parse_status_value(family),
         validation_status=(
-            getattr(validation_result.status, "value", validation_result.status)
+            _status_value(getattr(validation_result, "status", None))
             if validation_result is not None
             else None
         ),
         insert_status=(
-            getattr(insert_summary, "status") if insert_summary is not None else None
+            _status_value(getattr(insert_summary, "status", None))
+            if insert_summary is not None
+            else None
         ),
         parsed_rows=getattr(family, "parsed_row_count", 0),
         master_inserted=getattr(insert_summary, "master_inserted", 0),
@@ -119,6 +121,12 @@ def _source_result_record(
         issue_count=len(tuple(getattr(family, "failures", ()))),
         metadata={key: value for key, value in metadata.items() if value is not None},
     )
+
+
+def _status_value(status: object | None) -> str | None:
+    if status is None:
+        return None
+    return str(getattr(status, "value", status))
 
 
 def _issue_record(

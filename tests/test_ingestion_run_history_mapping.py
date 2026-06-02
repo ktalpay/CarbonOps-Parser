@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
 
 from carbonfactor_parser.persistence.ingestion_run_history_mapping import (
@@ -166,3 +167,91 @@ def test_configured_cycle_maps_to_ingestion_run_history_command() -> None:
     assert runner_issue.stage == "runner"
     assert runner_issue.severity == "warning"
     assert "token=abc" not in runner_issue.message
+
+
+def test_configured_cycle_mapping_normalizes_enum_like_insert_status() -> None:
+    cycle = _cycle_with_insert_status(_EnumLikeStatus("inserted"))
+
+    command = build_ingestion_run_history_command_from_configured_cycle(cycle)
+
+    assert command.source_results[0].insert_status == "inserted"
+
+
+def test_configured_cycle_mapping_keeps_string_insert_status() -> None:
+    cycle = _cycle_with_insert_status("inserted_with_duplicates")
+
+    command = build_ingestion_run_history_command_from_configured_cycle(cycle)
+
+    assert command.source_results[0].insert_status == "inserted_with_duplicates"
+
+
+def _cycle_with_insert_status(status: object) -> ConfiguredCycleResult:
+    cycle = _minimal_cycle()
+    family = cycle.result.family_results[0]
+    assert family.insert_summary is not None
+    updated_family = replace(
+        family,
+        insert_summary=replace(family.insert_summary, status=status),
+    )
+    return replace(
+        cycle,
+        result=replace(cycle.result, family_results=(updated_family,)),
+    )
+
+
+def _minimal_cycle() -> ConfiguredCycleResult:
+    return ConfiguredCycleResult(
+        cycle_number=1,
+        run_id="run-history-status",
+        result=ProductionE2EYearOrchestratorResult(
+            status=ProductionE2EYearRunStatus.COMPLETED,
+            request=ProductionE2EYearOrchestratorRequest(
+                run_id="run-history-status",
+                enabled_source_families=("ghg_protocol",),
+                initial_year=2024,
+            ),
+            selected_source_families=("ghg_protocol",),
+            family_results=(
+                ProductionE2EYearFamilyResult(
+                    source_family="ghg_protocol",
+                    status=ProductionE2EYearFamilyStatus.COMPLETED,
+                    year_state=ProductionE2EYearState(
+                        source_family="ghg_protocol",
+                        year_state_key="ghg",
+                        latest_year=None,
+                        target_year=2024,
+                        initial_year=2024,
+                        selection_status=(
+                            ProductionE2EYearSelectionStatus.INITIAL_YEAR_SELECTED
+                        ),
+                    ),
+                    parsed_row_count=1,
+                    validation_result=ProductionE2EValidationResult(
+                        status=ProductionE2EValidationStatus.VALIDATED,
+                    ),
+                    insert_summary=ProductionE2EInsertSummary(
+                        status="inserted",
+                        attempted=1,
+                        inserted=1,
+                    ),
+                ),
+            ),
+            summary=ProductionE2EYearRunSummary(
+                requested_family_count=1,
+                completed_family_count=1,
+                no_available_source_year_count=0,
+                failed_family_count=0,
+                parsed_row_count=1,
+                attempted_insert_count=1,
+                inserted_count=1,
+                skipped_duplicate_count=0,
+                failed_insert_count=0,
+                failure_count=0,
+            ),
+        ),
+    )
+
+
+class _EnumLikeStatus:
+    def __init__(self, value: str) -> None:
+        self.value = value
