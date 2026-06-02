@@ -49,6 +49,12 @@ from carbonfactor_parser.persistence.postgresql_source_family_ids import (
     master_uuid,
     source_document_uuid,
 )
+from carbonfactor_parser.persistence.postgresql_source_family_parameters import (
+    detail_parameters,
+    json_payload,
+    json_safe,
+    master_parameters,
+)
 from carbonfactor_parser.persistence.postgresql_source_family_repository import (
     PostgreSQLSourceFamilyRuntimeRepository,
     PostgreSQLSourceSpecificFactorInsertStatus,
@@ -212,6 +218,80 @@ def test_postgresql_source_family_detail_insert_sql_compatibility(
     assert "raw_fields" in sql
     assert "normalized_fields" in sql
     assert sql.count("%s::jsonb") == 2
+
+
+def test_postgresql_source_family_master_parameters_compatibility() -> None:
+    command = build_parsed_factor_persistence_command(_payload("ghg_protocol"))
+    master = command.master_records[0]
+
+    parameters = master_parameters(master)
+
+    assert len(parameters) == 18
+    assert parameters[0] == str(
+        master_uuid(master.source_family, master.source_family_master_id)
+    )
+    assert parameters[1] == "ghg_protocol"
+    assert parameters[2] == master.source_year
+    assert parameters[3] == master.source_version
+    assert parameters[5] == str(source_document_uuid(master))
+    assert parameters[6] == str(ingestion_run_uuid(master))
+    assert parameters[8] == master.master_external_key
+    assert parameters[16] == master.record_checksum_sha256
+    assert parameters[17] == json.dumps(
+        json_safe(master.metadata), sort_keys=True, separators=(",", ":")
+    )
+    assert ": " not in str(parameters[17])
+    assert ", " not in str(parameters[17])
+
+
+def test_postgresql_source_family_detail_parameters_compatibility() -> None:
+    command = build_parsed_factor_persistence_command(_payload("defra_desnz"))
+    detail = command.detail_records[0]
+
+    parameters = detail_parameters(detail)
+
+    assert len(parameters) == 12
+    assert parameters[0] == str(
+        detail_uuid(detail.source_family, detail.source_family_detail_id)
+    )
+    assert parameters[1] == str(
+        master_uuid(detail.source_family, detail.source_family_master_id)
+    )
+    assert parameters[2] == detail.detail_external_key
+    assert parameters[3] == detail.source_row_number
+    assert parameters[4] == detail.factor_id
+    assert parameters[6] == str(Decimal(str(detail.factor_value)))
+    assert parameters[9] == detail.record_checksum_sha256
+    assert parameters[10] == json.dumps(
+        json_safe(detail.raw_fields), sort_keys=True, separators=(",", ":")
+    )
+    assert parameters[11] == json.dumps(
+        json_safe(detail.normalized_fields), sort_keys=True, separators=(",", ":")
+    )
+    assert ": " not in str(parameters[10])
+    assert ", " not in str(parameters[10])
+    assert ": " not in str(parameters[11])
+    assert ", " not in str(parameters[11])
+
+
+def test_postgresql_source_family_json_helpers_preserve_legacy_behavior() -> None:
+    payload = {
+        2: (Decimal("1.20"), [Decimal("3.40"), {"b": 2, "a": Decimal("5")}]),
+        "10": "ten",
+        "a": None,
+    }
+
+    safe_payload = json_safe(payload)
+
+    assert safe_payload == {
+        "10": "ten",
+        "2": ["1.20", ["3.40", {"a": "5", "b": 2}]],
+        "a": None,
+    }
+    assert json_payload(payload) == (
+        '{"10":"ten","2":["1.20",["3.40",{"a":"5","b":2}]],"a":null}'
+    )
+
 
 def test_postgresql_source_family_repository_inserts_and_skips_idempotently() -> None:
     connection = _FakeConnection()
