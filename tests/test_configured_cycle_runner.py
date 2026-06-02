@@ -25,15 +25,23 @@ from carbonfactor_parser.pipeline.configured_cycle_config import (
     ConfiguredSourceYearArtifact as ExtractedConfiguredSourceYearArtifact,
     load_configured_cycle_runner_config as extracted_load_configured_cycle_runner_config,
 )
+from carbonfactor_parser.pipeline.configured_cycle_models import (
+    ConfiguredCycleResult as ExtractedConfiguredCycleResult,
+)
+from carbonfactor_parser.pipeline.configured_cycle_summary import (
+    emit_configured_cycle_summary as extracted_emit_configured_cycle_summary,
+)
 from carbonfactor_parser.pipeline.configured_cycle_dependencies import (
     ConfiguredCycleValidationBoundary as ExtractedConfiguredCycleValidationBoundary,
     build_configured_cycle_dependencies,
 )
 from carbonfactor_parser.pipeline.configured_cycle_runner import (
+    ConfiguredCycleResult,
     ConfiguredCycleRunnerConfig,
     ConfiguredCycleRunnerStatus,
     ConfiguredCycleValidationBoundary,
     ConfiguredSourceYearArtifact,
+    emit_configured_cycle_summary,
     load_configured_cycle_runner_config,
     run_configured_cycle_runner,
 )
@@ -63,6 +71,8 @@ def test_configured_cycle_runner_imports_remain_backward_compatible() -> None:
     assert ConfiguredSourceYearArtifact is ExtractedConfiguredSourceYearArtifact
     assert load_configured_cycle_runner_config is extracted_load_configured_cycle_runner_config
     assert ConfiguredCycleValidationBoundary is ExtractedConfiguredCycleValidationBoundary
+    assert ConfiguredCycleResult is ExtractedConfiguredCycleResult
+    assert emit_configured_cycle_summary is extracted_emit_configured_cycle_summary
 
 
 def test_build_configured_cycle_dependencies_wires_configured_runtime(
@@ -697,6 +707,53 @@ def test_configured_cycle_runner_history_failure_does_not_fail_ingestion(
     assert "POSTGRESQL_INGESTION_RUN_HISTORY_DATABASE_ERROR" in captured.out
     assert "secret" not in captured.out
     assert "token=abc" not in captured.out
+
+
+def test_configured_cycle_runner_history_exception_is_sanitized_and_non_fatal(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    connection = _FakeConnection()
+    repository = _ExceptionHistoryRepository()
+    config = ConfiguredCycleRunnerConfig(
+        postgresql_config_result=load_postgresql_runtime_config(
+            {"CARBONOPS_POSTGRESQL_DSN": "postgresql://user:pass@localhost/db"},
+        ),
+        archive_root=tmp_path / "archive",
+        enabled_source_families=("ghg_protocol",),
+        initial_year=2024,
+        cycle_interval_seconds=0,
+        max_cycles=1,
+        source_years={"ghg_protocol": {2024: _artifact(2024, tmp_path / "ghg.csv", "v2024")}},
+    )
+    (tmp_path / "ghg.csv").write_text(_ghg_csv(2024), encoding="utf-8")
+
+    result = run_configured_cycle_runner(
+        config,
+        startup=_startup(connection),
+        sleep=lambda _: None,
+        run_history_repository=repository,
+    )
+
+    captured = capsys.readouterr()
+    assert result.status is ConfiguredCycleRunnerStatus.COMPLETED
+    assert result.cycles[0].result.status.value == "completed"
+    assert result.cycles[0].history_persistence_status == "failed"
+    assert result.cycles[0].history_persistence_issue_count == 1
+    assert "INGESTION_RUN_HISTORY_PERSISTENCE_EXCEPTION" in captured.out
+    assert "secret" not in captured.out
+    assert "token=abc" not in captured.out
+
+
+class _ExceptionHistoryRepository:
+    @property
+    def provider_name(self) -> str:
+        return "fake"
+
+    def persist_ingestion_run_history(self, command):
+        raise RuntimeError(
+            "database failed dsn=postgresql://user:secret@localhost/db token=abc"
+        )
 
 
 class _FakeHistoryRepository:

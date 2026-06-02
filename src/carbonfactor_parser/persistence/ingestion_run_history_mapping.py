@@ -18,7 +18,7 @@ from carbonfactor_parser.persistence.ingestion_run_history import (
     ParserIngestionSourceResultRecord,
 )
 if TYPE_CHECKING:
-    from carbonfactor_parser.pipeline.configured_cycle_runner import ConfiguredCycleResult
+    from carbonfactor_parser.pipeline.configured_cycle_models import ConfiguredCycleResult
 
 
 def build_ingestion_run_history_command_from_configured_cycle(
