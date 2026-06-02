@@ -8,6 +8,7 @@ missing Phase 1 tables, and repeatedly runs the configured source families.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from enum import Enum
 import json
 from pathlib import Path
@@ -19,6 +20,16 @@ from urllib.request import Request, urlopen
 
 from carbonfactor_parser.diagnostics.redaction import redact_sensitive_text
 
+from carbonfactor_parser.persistence.ingestion_run_history import (
+    ParserIngestionRunHistoryRepository,
+    ParserIngestionRunHistoryStatus,
+)
+from carbonfactor_parser.persistence.ingestion_run_history_mapping import (
+    build_ingestion_run_history_command_from_configured_cycle,
+)
+from carbonfactor_parser.persistence.postgresql_ingestion_run_history_repository import (
+    PostgreSQLIngestionRunHistoryRepository,
+)
 from carbonfactor_parser.persistence.postgresql_runtime import (
     PostgreSQLRuntimeStartupResult,
     start_postgresql_runtime,
@@ -125,6 +136,8 @@ class ConfiguredCycleResult:
     cycle_number: int
     run_id: str
     result: ProductionE2EYearOrchestratorResult
+    history_persistence_status: str | None = None
+    history_persistence_issue_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -221,6 +234,10 @@ def run_configured_cycle_runner(
     startup: PostgreSQLRuntimeStartupResult | None = None,
     sleep: Callable[[float], None] = time.sleep,
     emit: Callable[[str], None] | None = print,
+    run_history_repository: ParserIngestionRunHistoryRepository | None = None,
+    run_history_repository_factory: (
+        Callable[[object], ParserIngestionRunHistoryRepository] | None
+    ) = None,
 ) -> ConfiguredCycleRunnerResult:
     """Start PostgreSQL runtime and execute configured ingestion cycles."""
 
@@ -229,10 +246,17 @@ def run_configured_cycle_runner(
         _emit_startup_summary(config, runtime, emit)
 
     dependencies = _build_dependencies(config, runtime)
+    history_repository = run_history_repository
+    if history_repository is None:
+        history_repository_factory = (
+            run_history_repository_factory or PostgreSQLIngestionRunHistoryRepository
+        )
+        history_repository = history_repository_factory(runtime.connection)
     cycles: list[ConfiguredCycleResult] = []
     cycle_number = 1
     while config.max_cycles is None or cycle_number <= config.max_cycles:
         run_id = f"configured-cycle-{cycle_number}-{uuid.uuid4().hex}"
+        started_at = datetime.now(timezone.utc)
         result = run_production_e2e_year_orchestrator(
             ProductionE2EYearOrchestratorRequest(
                 run_id=run_id,
@@ -241,14 +265,22 @@ def run_configured_cycle_runner(
             ),
             dependencies,
         )
+        finished_at = datetime.now(timezone.utc)
         cycle = ConfiguredCycleResult(
             cycle_number=cycle_number,
             run_id=run_id,
             result=result,
         )
-        cycles.append(cycle)
         if emit is not None:
             emit_configured_cycle_summary(cycle, emit=emit)
+        cycle = _persist_configured_cycle_history(
+            cycle,
+            history_repository=history_repository,
+            started_at=started_at,
+            finished_at=finished_at,
+            emit=emit,
+        )
+        cycles.append(cycle)
 
         cycle_number += 1
         if config.max_cycles is not None and cycle_number > config.max_cycles:
@@ -271,6 +303,72 @@ def run_configured_cycle_runner(
         schema_missing_table_names=runtime.schema_bootstrap.missing_table_names,
     )
 
+
+
+def _persist_configured_cycle_history(
+    cycle: ConfiguredCycleResult,
+    *,
+    history_repository: ParserIngestionRunHistoryRepository,
+    started_at: datetime,
+    finished_at: datetime,
+    emit: Callable[[str], None] | None,
+) -> ConfiguredCycleResult:
+    command = build_ingestion_run_history_command_from_configured_cycle(
+        cycle,
+        started_at=started_at,
+        finished_at=finished_at,
+    )
+    try:
+        persist_result = history_repository.persist_ingestion_run_history(command)
+    except Exception as exc:  # pragma: no cover - defensive boundary protection
+        safe_message = _redact_sensitive_text(str(exc))
+        if emit is not None:
+            emit(
+                "history_persistence "
+                f"status=failed run_id={cycle.run_id} "
+                "issue code=INGESTION_RUN_HISTORY_PERSISTENCE_EXCEPTION "
+                f"message={safe_message}"
+            )
+        return ConfiguredCycleResult(
+            cycle_number=cycle.cycle_number,
+            run_id=cycle.run_id,
+            result=cycle.result,
+            history_persistence_status="failed",
+            history_persistence_issue_count=1,
+        )
+
+    issue_count = len(persist_result.issues)
+    if persist_result.status is ParserIngestionRunHistoryStatus.DECLARED:
+        if emit is not None:
+            emit(f"history_persistence status=declared run_id={cycle.run_id}")
+    else:
+        if emit is not None:
+            for issue in persist_result.issues or ():
+                safe_message = _redact_sensitive_text(str(issue.message))
+                emit(
+                    "history_persistence "
+                    f"status=failed run_id={cycle.run_id} "
+                    f"issue code={issue.code} message={safe_message}"
+                )
+            if not persist_result.issues:
+                emit(
+                    "history_persistence "
+                    f"status=failed run_id={cycle.run_id} "
+                    "issue code=INGESTION_RUN_HISTORY_PERSISTENCE_FAILED "
+                    "message=run history persistence failed"
+                )
+                issue_count = 1
+    return ConfiguredCycleResult(
+        cycle_number=cycle.cycle_number,
+        run_id=cycle.run_id,
+        result=cycle.result,
+        history_persistence_status=(
+            "declared"
+            if persist_result.status is ParserIngestionRunHistoryStatus.DECLARED
+            else "failed"
+        ),
+        history_persistence_issue_count=issue_count,
+    )
 
 def emit_configured_cycle_summary(
     cycle: ConfiguredCycleResult,

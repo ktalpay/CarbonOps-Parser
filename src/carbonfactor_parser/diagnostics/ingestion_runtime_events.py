@@ -55,13 +55,23 @@ def build_configured_cycle_summary_payload(cycle: object) -> dict[str, object]:
             for family in getattr(result, "family_results", ())
         ],
         "issues": _deduplicated_issue_payloads(result),
+        "history_persistence_status": getattr(
+            cycle,
+            "history_persistence_status",
+            None,
+        ),
+        "history_persistence_issue_count": getattr(
+            cycle,
+            "history_persistence_issue_count",
+            0,
+        ),
     }
 
 
-def _deduplicated_issue_payloads(result: object) -> list[dict[str, object]]:
-    """Build sanitized issue payloads without duplicating flattened failures."""
+def iter_deduplicated_ingestion_issues(result: object) -> tuple[object, ...]:
+    """Return result issues without duplicating flattened family failures."""
 
-    issues: list[dict[str, object]] = []
+    issues: list[object] = []
     seen: set[tuple[object, object, object, object]] = set()
 
     def append_issue(issue: object) -> None:
@@ -75,7 +85,7 @@ def _deduplicated_issue_payloads(result: object) -> list[dict[str, object]]:
         if key in seen:
             return
         seen.add(key)
-        issues.append(payload)
+        issues.append(issue)
 
     for family in getattr(result, "family_results", ()):
         for issue in getattr(family, "failures", ()):
@@ -84,7 +94,16 @@ def _deduplicated_issue_payloads(result: object) -> list[dict[str, object]]:
     for issue in getattr(result, "failures", ()):
         append_issue(issue)
 
-    return issues
+    return tuple(issues)
+
+
+def _deduplicated_issue_payloads(result: object) -> list[dict[str, object]]:
+    """Build sanitized issue payloads without duplicating flattened failures."""
+
+    return [
+        sanitize_issue_payload(issue)
+        for issue in iter_deduplicated_ingestion_issues(result)
+    ]
 
 
 def sanitize_issue_payload(issue: object | Mapping[str, object]) -> dict[str, object]:
@@ -106,10 +125,10 @@ def _source_family_payload(family: object) -> dict[str, object]:
         "target_year": getattr(year_state, "target_year"),
         "latest_year": getattr(year_state, "latest_year"),
         "status": _status_value(getattr(family, "status", None)),
-        "download_status": _download_status_value(
+        "download_status": configured_download_status_value(
             getattr(family, "download_result", None),
         ),
-        "parse_status": _parse_status_value(family),
+        "parse_status": configured_parse_status_value(family),
         "parsed_rows": getattr(family, "parsed_row_count", 0),
         "master_inserted": getattr(insert_summary, "master_inserted", 0),
         "master_skipped": getattr(insert_summary, "master_skipped", 0),
@@ -118,13 +137,15 @@ def _source_family_payload(family: object) -> dict[str, object]:
     }
 
 
-def _download_status_value(download_result: object | None) -> str:
+def configured_download_status_value(download_result: object | None) -> str:
+    """Return the summary-compatible configured download status value."""
     if download_result is None:
         return "not_run"
     return _status_value(getattr(download_result, "status", "unknown"))
 
 
-def _parse_status_value(family: object) -> str:
+def configured_parse_status_value(family: object) -> str:
+    """Return the summary-compatible configured parse status value."""
     if getattr(family, "parsed_row_count", 0) > 0:
         return "parsed"
     failures = tuple(getattr(family, "failures", ()))
@@ -133,7 +154,7 @@ def _parse_status_value(family: object) -> str:
     download_result = getattr(family, "download_result", None)
     if (
         download_result is None
-        or _download_status_value(download_result) != "downloaded"
+        or configured_download_status_value(download_result) != "downloaded"
     ):
         return "not_run"
     return "no_rows"
@@ -152,5 +173,8 @@ def _attr_or_item(value: object | Mapping[str, object], key: str) -> object | No
 __all__ = (
     "build_configured_cycle_summary_payload",
     "build_configured_runner_summary_payload",
+    "configured_download_status_value",
+    "configured_parse_status_value",
+    "iter_deduplicated_ingestion_issues",
     "sanitize_issue_payload",
 )
