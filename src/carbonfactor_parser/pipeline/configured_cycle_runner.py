@@ -7,7 +7,6 @@ missing Phase 1 tables, and repeatedly runs the configured source families.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
 import time
@@ -18,10 +17,6 @@ from carbonfactor_parser.diagnostics.redaction import redact_sensitive_text
 
 from carbonfactor_parser.persistence.ingestion_run_history import (
     ParserIngestionRunHistoryRepository,
-    ParserIngestionRunHistoryStatus,
-)
-from carbonfactor_parser.persistence.ingestion_run_history_mapping import (
-    build_ingestion_run_history_command_from_configured_cycle,
 )
 from carbonfactor_parser.persistence.postgresql_ingestion_run_history_repository import (
     PostgreSQLIngestionRunHistoryRepository,
@@ -40,9 +35,18 @@ from carbonfactor_parser.pipeline.configured_cycle_dependencies import (
     ConfiguredCycleValidationBoundary,
     build_configured_cycle_dependencies,
 )
+from carbonfactor_parser.pipeline.configured_cycle_history import (
+    persist_configured_cycle_history,
+)
+from carbonfactor_parser.pipeline.configured_cycle_models import (
+    ConfiguredCycleResult,
+    ConfiguredCycleRunnerResult,
+)
+from carbonfactor_parser.pipeline.configured_cycle_summary import (
+    emit_configured_cycle_summary,
+)
 from carbonfactor_parser.pipeline.production_e2e_year_orchestrator import (
     ProductionE2EYearOrchestratorRequest,
-    ProductionE2EYearOrchestratorResult,
     ProductionE2EYearRunStatus,
     run_production_e2e_year_orchestrator,
 )
@@ -53,27 +57,6 @@ class ConfiguredCycleRunnerStatus(str, Enum):
 
     COMPLETED = "completed"
     COMPLETED_WITH_FAILURES = "completed_with_failures"
-
-
-@dataclass(frozen=True)
-class ConfiguredCycleResult:
-    """One completed application cycle."""
-
-    cycle_number: int
-    run_id: str
-    result: ProductionE2EYearOrchestratorResult
-    history_persistence_status: str | None = None
-    history_persistence_issue_count: int = 0
-
-
-@dataclass(frozen=True)
-class ConfiguredCycleRunnerResult:
-    """All cycles run by one application invocation."""
-
-    status: ConfiguredCycleRunnerStatus
-    cycles: tuple[ConfiguredCycleResult, ...]
-    schema_created_table_names: tuple[str, ...]
-    schema_missing_table_names: tuple[str, ...]
 
 
 def run_configured_cycle_runner(
@@ -121,7 +104,7 @@ def run_configured_cycle_runner(
         )
         if emit is not None:
             emit_configured_cycle_summary(cycle, emit=emit)
-        cycle = _persist_configured_cycle_history(
+        cycle = persist_configured_cycle_history(
             cycle,
             history_repository=history_repository,
             started_at=started_at,
@@ -152,118 +135,6 @@ def run_configured_cycle_runner(
     )
 
 
-def _persist_configured_cycle_history(
-    cycle: ConfiguredCycleResult,
-    *,
-    history_repository: ParserIngestionRunHistoryRepository,
-    started_at: datetime,
-    finished_at: datetime,
-    emit: Callable[[str], None] | None,
-) -> ConfiguredCycleResult:
-    command = build_ingestion_run_history_command_from_configured_cycle(
-        cycle,
-        started_at=started_at,
-        finished_at=finished_at,
-    )
-    try:
-        persist_result = history_repository.persist_ingestion_run_history(command)
-    except Exception as exc:  # pragma: no cover - defensive boundary protection
-        safe_message = _redact_sensitive_text(str(exc))
-        if emit is not None:
-            emit(
-                "history_persistence "
-                f"status=failed run_id={cycle.run_id} "
-                "issue code=INGESTION_RUN_HISTORY_PERSISTENCE_EXCEPTION "
-                f"message={safe_message}"
-            )
-        return ConfiguredCycleResult(
-            cycle_number=cycle.cycle_number,
-            run_id=cycle.run_id,
-            result=cycle.result,
-            history_persistence_status="failed",
-            history_persistence_issue_count=1,
-        )
-
-    issue_count = len(persist_result.issues)
-    if persist_result.status is ParserIngestionRunHistoryStatus.DECLARED:
-        if emit is not None:
-            emit(f"history_persistence status=declared run_id={cycle.run_id}")
-    else:
-        if emit is not None:
-            for issue in persist_result.issues or ():
-                safe_message = _redact_sensitive_text(str(issue.message))
-                emit(
-                    "history_persistence "
-                    f"status=failed run_id={cycle.run_id} "
-                    f"issue code={issue.code} message={safe_message}"
-                )
-            if not persist_result.issues:
-                emit(
-                    "history_persistence "
-                    f"status=failed run_id={cycle.run_id} "
-                    "issue code=INGESTION_RUN_HISTORY_PERSISTENCE_FAILED "
-                    "message=run history persistence failed"
-                )
-                issue_count = 1
-    return ConfiguredCycleResult(
-        cycle_number=cycle.cycle_number,
-        run_id=cycle.run_id,
-        result=cycle.result,
-        history_persistence_status=(
-            "declared"
-            if persist_result.status is ParserIngestionRunHistoryStatus.DECLARED
-            else "failed"
-        ),
-        history_persistence_issue_count=issue_count,
-    )
-
-
-def emit_configured_cycle_summary(
-    cycle: ConfiguredCycleResult,
-    *,
-    emit: Callable[[str], None] = print,
-) -> None:
-    """Print user-readable summary output for one cycle."""
-
-    summary = cycle.result.summary
-    emit(
-        "cycle="
-        f"{cycle.cycle_number} run_id={cycle.run_id} status={cycle.result.status.value}"
-    )
-    emit(
-        "summary "
-        f"completed={summary.completed_family_count} "
-        f"no_available_source_year={summary.no_available_source_year_count} "
-        f"failed={summary.failed_family_count} "
-        f"parsed_rows={summary.parsed_row_count} "
-        f"inserted={summary.inserted_count} "
-        f"skipped_duplicates={summary.skipped_duplicate_count}"
-    )
-    for family in cycle.result.family_results:
-        insert_summary = family.insert_summary
-        emit(
-            "source "
-            f"family={family.source_family} "
-            f"target_year={family.year_state.target_year} "
-            f"latest_year={family.year_state.latest_year} "
-            f"status={family.status.value} "
-            f"download_status={_download_status_value(family.download_result)} "
-            f"parse_status={_parse_status_value(family)} "
-            f"parsed_rows={family.parsed_row_count} "
-            f"master_inserted={getattr(insert_summary, 'master_inserted', 0)} "
-            f"master_skipped={getattr(insert_summary, 'master_skipped', 0)} "
-            f"detail_inserted={getattr(insert_summary, 'detail_inserted', 0)} "
-            f"detail_skipped={getattr(insert_summary, 'detail_skipped', 0)}"
-        )
-        for failure in family.failures:
-            safe_message = _redact_sensitive_text(str(failure.message))
-            emit(
-                "issue "
-                f"family={failure.source_family} stage={failure.stage} "
-                f"code={failure.code} message={safe_message}"
-            )
-
-
 def _emit_startup_summary(
     config: ConfiguredCycleRunnerConfig,
     runtime: PostgreSQLRuntimeStartupResult,
@@ -285,27 +156,6 @@ def _emit_startup_summary(
 
 def _redact_sensitive_text(text: str) -> str:
     return redact_sensitive_text(text)
-
-
-def _download_status_value(download_result: object | None) -> str:
-    if download_result is None:
-        return "not_run"
-    return str(getattr(getattr(download_result, "status", None), "value", "unknown"))
-
-
-def _parse_status_value(family: object) -> str:
-    if getattr(family, "parsed_row_count", 0) > 0:
-        return "parsed"
-    failures = tuple(getattr(family, "failures", ()))
-    if any(getattr(failure, "stage", "") == "parser" for failure in failures):
-        return "failed"
-    download_result = getattr(family, "download_result", None)
-    if (
-        download_result is None
-        or _download_status_value(download_result) != "downloaded"
-    ):
-        return "not_run"
-    return "no_rows"
 
 
 __all__ = (
