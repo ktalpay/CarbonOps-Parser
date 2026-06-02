@@ -8,8 +8,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from enum import Enum
-import re
 from typing import Mapping, Protocol, Sequence, runtime_checkable
+
+from carbonfactor_parser.diagnostics.redaction import redact_sensitive_text
 
 from carbonfactor_parser.parsers.normalized_output_row_contract import (
     ParserNormalizedOutputBatch,
@@ -635,14 +636,7 @@ def _status_value(status: object) -> str:
 
 
 def _redact_sensitive_text(value: str) -> str:
-    redacted = re.sub(r"postgresql://[^@\s]+@", "postgresql://***@", value)
-    redacted = re.sub(r"(://)[^/@\s]+@([^/\s]+)", r"\1***@\2", redacted)
-    redacted = re.sub(
-        r"(?i)(password|passwd|pwd|token|secret|key)=([^&\s]+)",
-        r"\1=***",
-        redacted,
-    )
-    return redacted
+    return redact_sensitive_text(value)
 
 
 def _summarize(

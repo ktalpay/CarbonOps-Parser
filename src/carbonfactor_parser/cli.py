@@ -8,6 +8,10 @@ import importlib
 import json
 from pathlib import Path
 
+from carbonfactor_parser.diagnostics.ingestion_runtime_events import (
+    build_configured_runner_summary_payload,
+)
+from carbonfactor_parser.diagnostics.redaction import redact_sensitive_text
 from carbonfactor_parser.pipeline import (
     LocalFilePersistenceDryRunResult,
     LocalFilePersistenceDryRunStatus,
@@ -91,6 +95,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help="Override cycle count. Omit in settings for one cycle.",
+    )
+    run_parser.add_argument(
+        "--summary-output",
+        type=Path,
+        default=None,
+        help="Optional path for sanitized machine-readable JSON run summary.",
     )
 
     validate_parser = subparsers.add_parser(
@@ -184,6 +194,17 @@ def main(argv: list[str] | None = None) -> int:
             max_cycles=args.cycles,
         )
         result = run_cycle_runner(runner_settings)
+        if args.summary_output is not None:
+            try:
+                _write_ingestion_summary_output(args.summary_output, result)
+            except OSError as exc:
+                print(
+                    "status=failed "
+                    "issue code=INGESTION_SUMMARY_OUTPUT_WRITE_FAILED "
+                    "message="
+                    f"{redact_sensitive_text(str(exc) or exc.__class__.__name__)}"
+                )
+                return 1
         completed_status = runner_status.COMPLETED
         return 0 if result.status is completed_status else 1
 
@@ -238,6 +259,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.print_usage()
     return 2
 
+
+def _write_ingestion_summary_output(path: Path, result: object) -> None:
+    payload = build_configured_runner_summary_payload(result)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
 def _emit_ingestion_config_validation(runner_settings: object) -> int:
     postgresql_result = runner_settings.postgresql_config_result
