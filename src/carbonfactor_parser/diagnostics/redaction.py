@@ -9,23 +9,36 @@ system.
 from __future__ import annotations
 
 import re
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.parse import urlsplit, urlunsplit
 
 _REDACTED_VALUE = "***"
-_SENSITIVE_ASSIGNMENT_KEYS = (
-    "password",
-    "passwd",
-    "pwd",
-    "token",
-    "secret",
-    "key",
-    "dsn",
-    "connection_string",
+_SENSITIVE_KEYS = frozenset(
+    (
+        "password",
+        "passwd",
+        "pwd",
+        "token",
+        "secret",
+        "key",
+        "api_key",
+        "apikey",
+        "access_key",
+        "accesskey",
+        "private_key",
+        "privatekey",
+        "dsn",
+        "connection_string",
+        "connectionstring",
+        "connection_uri",
+        "connectionuri",
+        "database_url",
+        "databaseurl",
+    )
 )
-_SENSITIVE_QUERY_KEYS = frozenset(_SENSITIVE_ASSIGNMENT_KEYS)
+_SENSITIVE_COMPACT_KEYS = frozenset(key.replace("_", "") for key in _SENSITIVE_KEYS)
 _URL_PATTERN = re.compile(r"(?P<url>[a-z][a-z0-9+.-]*://[^\s'\"<>]+)", re.I)
 _ASSIGNMENT_PATTERN = re.compile(
-    r"(?i)(?P<prefix>\b(?:password|passwd|pwd|token|secret|key|dsn|connection_string)\b\s*[:=]\s*)"
+    r"(?i)(?<![\w-])(?P<prefix>(?P<key>[a-z][a-z0-9_-]*)\s*[:=]\s*)"
     r"(?P<quote>['\"]?)"
     r"(?P<value>[^\s,;)}\]\"']+)"
     r"(?P=quote)",
@@ -59,26 +72,35 @@ def _redact_url(url: str) -> str:
         host_port = netloc.rsplit("@", 1)[1]
         netloc = f"{_REDACTED_VALUE}@{host_port}"
 
-    query = parsed.query
-    if query:
-        query_pairs = parse_qsl(query, keep_blank_values=True)
-        redacted_pairs = [
-            (
-                key,
-                _REDACTED_VALUE
-                if key.strip().lower() in _SENSITIVE_QUERY_KEYS
-                else val,
-            )
-            for key, val in query_pairs
-        ]
-        query = urlencode(redacted_pairs, doseq=True)
+    query = _redact_query(parsed.query) if parsed.query else parsed.query
 
     return urlunsplit((parsed.scheme, netloc, parsed.path, query, parsed.fragment))
 
 
+def _redact_query(query: str) -> str:
+    redacted_parts = []
+    for part in query.split("&"):
+        key, separator, _value = part.partition("=")
+        if separator and _is_sensitive_key(key):
+            redacted_parts.append(f"{key}={_REDACTED_VALUE}")
+        else:
+            redacted_parts.append(part)
+    return "&".join(redacted_parts)
+
+
 def _redact_assignment_match(match: re.Match[str]) -> str:
+    if not _is_sensitive_key(match.group("key")):
+        return match.group(0)
     quote = match.group("quote") or ""
     return f"{match.group('prefix')}{quote}{_REDACTED_VALUE}{quote}"
+
+
+def _is_sensitive_key(key: str) -> bool:
+    normalized = key.strip().lower().replace("-", "_")
+    return (
+        normalized in _SENSITIVE_KEYS
+        or normalized.replace("_", "") in _SENSITIVE_COMPACT_KEYS
+    )
 
 
 __all__ = ("redact_sensitive_text",)

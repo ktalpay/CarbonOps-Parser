@@ -54,16 +54,37 @@ def build_configured_cycle_summary_payload(cycle: object) -> dict[str, object]:
             _source_family_payload(family)
             for family in getattr(result, "family_results", ())
         ],
-        "issues": [
-            sanitize_issue_payload(issue)
-            for family in getattr(result, "family_results", ())
-            for issue in getattr(family, "failures", ())
-        ]
-        + [
-            sanitize_issue_payload(issue)
-            for issue in getattr(result, "failures", ())
-        ],
+        "issues": _deduplicated_issue_payloads(result),
     }
+
+
+def _deduplicated_issue_payloads(result: object) -> list[dict[str, object]]:
+    """Build sanitized issue payloads without duplicating flattened failures."""
+
+    issues: list[dict[str, object]] = []
+    seen: set[tuple[object, object, object, object]] = set()
+
+    def append_issue(issue: object) -> None:
+        payload = sanitize_issue_payload(issue)
+        key = (
+            payload.get("source_family"),
+            payload.get("stage"),
+            payload.get("code"),
+            payload.get("message"),
+        )
+        if key in seen:
+            return
+        seen.add(key)
+        issues.append(payload)
+
+    for family in getattr(result, "family_results", ()):
+        for issue in getattr(family, "failures", ()):
+            append_issue(issue)
+
+    for issue in getattr(result, "failures", ()):
+        append_issue(issue)
+
+    return issues
 
 
 def sanitize_issue_payload(issue: object | Mapping[str, object]) -> dict[str, object]:
