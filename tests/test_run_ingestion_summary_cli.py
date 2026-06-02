@@ -53,6 +53,8 @@ def test_run_ingestion_summary_output_writes_sanitized_json(
     assert payload["status"] == "completed"
     assert payload["cycles"][0]["run_id"] == "run-123"
     assert payload["cycles"][0]["issues"][0]["code"] == "DOWNLOAD_FAILED"
+    assert payload["cycles"][0]["history_persistence_status"] is None
+    assert payload["cycles"][0]["history_persistence_issue_count"] == 0
     serialized = json.dumps(payload)
     assert "secret" not in serialized
     assert "postgresql://user:secret" not in serialized

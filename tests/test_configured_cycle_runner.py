@@ -455,3 +455,123 @@ class _FakeConnection:
 def _table_name(normalized_statement: str) -> str:
     parts = normalized_statement.split()
     return parts[2]
+
+
+def test_configured_cycle_runner_persists_history_once_per_cycle(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    connection = _FakeConnection()
+    repository = _FakeHistoryRepository()
+    config = ConfiguredCycleRunnerConfig(
+        postgresql_config_result=load_postgresql_runtime_config(
+            {"CARBONOPS_POSTGRESQL_DSN": "postgresql://user:pass@localhost/db"},
+        ),
+        archive_root=tmp_path / "archive",
+        enabled_source_families=("ghg_protocol",),
+        initial_year=2024,
+        cycle_interval_seconds=0,
+        max_cycles=1,
+        source_years={"ghg_protocol": {2024: _artifact(2024, tmp_path / "ghg.csv", "v2024")}},
+    )
+    (tmp_path / "ghg.csv").write_text(_ghg_csv(2024), encoding="utf-8")
+
+    result = run_configured_cycle_runner(
+        config,
+        startup=_startup(connection),
+        sleep=lambda _: None,
+        run_history_repository=repository,
+    )
+
+    captured = capsys.readouterr()
+    assert result.status is ConfiguredCycleRunnerStatus.COMPLETED
+    assert len(repository.commands) == 1
+    command = repository.commands[0]
+    assert command.run.run_id == result.cycles[0].run_id
+    assert command.run.status == "completed"
+    assert command.source_results[0].source_family == "ghg_protocol"
+    assert command.source_results[0].target_year == 2024
+    assert result.cycles[0].history_persistence_status == "declared"
+    assert result.cycles[0].history_persistence_issue_count == 0
+    assert "cycle=1" in captured.out
+    assert "history_persistence status=declared" in captured.out
+
+
+def test_configured_cycle_runner_history_failure_does_not_fail_ingestion(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    connection = _FakeConnection()
+    repository = _FakeHistoryRepository(
+        status="failed_database",
+        issue_message="database failed dsn=postgresql://user:secret@localhost/db token=abc",
+    )
+    config = ConfiguredCycleRunnerConfig(
+        postgresql_config_result=load_postgresql_runtime_config(
+            {"CARBONOPS_POSTGRESQL_DSN": "postgresql://user:pass@localhost/db"},
+        ),
+        archive_root=tmp_path / "archive",
+        enabled_source_families=("ghg_protocol",),
+        initial_year=2024,
+        cycle_interval_seconds=0,
+        max_cycles=1,
+        source_years={"ghg_protocol": {2024: _artifact(2024, tmp_path / "ghg.csv", "v2024")}},
+    )
+    (tmp_path / "ghg.csv").write_text(_ghg_csv(2024), encoding="utf-8")
+
+    result = run_configured_cycle_runner(
+        config,
+        startup=_startup(connection),
+        sleep=lambda _: None,
+        run_history_repository=repository,
+    )
+
+    captured = capsys.readouterr()
+    assert result.status is ConfiguredCycleRunnerStatus.COMPLETED
+    assert result.cycles[0].result.status.value == "completed"
+    assert result.cycles[0].history_persistence_status == "failed"
+    assert result.cycles[0].history_persistence_issue_count == 1
+    assert "cycle=1" in captured.out
+    assert "history_persistence status=failed" in captured.out
+    assert "POSTGRESQL_INGESTION_RUN_HISTORY_DATABASE_ERROR" in captured.out
+    assert "secret" not in captured.out
+    assert "token=abc" not in captured.out
+
+
+class _FakeHistoryRepository:
+    def __init__(self, *, status: str = "declared", issue_message: str = "") -> None:
+        from carbonfactor_parser.persistence.ingestion_run_history import (
+            ParserIngestionRunHistoryIssue,
+            ParserIngestionRunHistoryPersistResult,
+            ParserIngestionRunHistoryStatus,
+        )
+
+        self.commands = []
+        self._result_status = ParserIngestionRunHistoryStatus(status)
+        self._issue = (
+            ParserIngestionRunHistoryIssue(
+                code="POSTGRESQL_INGESTION_RUN_HISTORY_DATABASE_ERROR",
+                message=issue_message,
+                field_name="database",
+            ),
+        ) if issue_message else ()
+        self._result_type = ParserIngestionRunHistoryPersistResult
+
+    @property
+    def provider_name(self) -> str:
+        return "fake"
+
+    def persist_ingestion_run_history(self, command):
+        self.commands.append(command)
+        return self._result_type(
+            provider_name=self.provider_name,
+            status=self._result_status,
+            persisted_run_count=1 if self._result_status.value == "declared" else 0,
+            persisted_source_result_count=(
+                len(command.source_results) if self._result_status.value == "declared" else 0
+            ),
+            persisted_issue_count=(
+                len(command.issues) if self._result_status.value == "declared" else 0
+            ),
+            issues=self._issue,
+        )
