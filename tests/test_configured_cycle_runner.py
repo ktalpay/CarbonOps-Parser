@@ -17,6 +17,11 @@ from carbonfactor_parser.persistence.postgresql_year_state_repository import (
 from carbonfactor_parser.persistence.postgresql_runtime import (
     PostgreSQLRuntimeStartupResult,
 )
+from carbonfactor_parser.pipeline.configured_cycle_config import (
+    ConfiguredCycleRunnerConfig as ExtractedConfiguredCycleRunnerConfig,
+    ConfiguredSourceYearArtifact as ExtractedConfiguredSourceYearArtifact,
+    load_configured_cycle_runner_config as extracted_load_configured_cycle_runner_config,
+)
 from carbonfactor_parser.pipeline.configured_cycle_runner import (
     ConfiguredCycleRunnerConfig,
     ConfiguredCycleRunnerStatus,
@@ -24,6 +29,64 @@ from carbonfactor_parser.pipeline.configured_cycle_runner import (
     load_configured_cycle_runner_config,
     run_configured_cycle_runner,
 )
+from carbonfactor_parser.pipeline import source_artifact_transport
+from carbonfactor_parser.pipeline.source_artifact_transport import (
+    build_configured_artifact_transport,
+)
+
+
+def test_configured_cycle_runner_imports_remain_backward_compatible() -> None:
+    assert ConfiguredCycleRunnerConfig is ExtractedConfiguredCycleRunnerConfig
+    assert ConfiguredSourceYearArtifact is ExtractedConfiguredSourceYearArtifact
+    assert load_configured_cycle_runner_config is extracted_load_configured_cycle_runner_config
+
+
+def test_source_artifact_transport_reads_local_file_path(tmp_path: Path) -> None:
+    artifact_path = tmp_path / "artifact.csv"
+    artifact_path.write_bytes(b"configured artifact")
+
+    transport = build_configured_artifact_transport(allow_live_source_access=False)
+
+    assert transport(str(artifact_path)) == b"configured artifact"
+    assert transport(f"local:{artifact_path}") == b"configured artifact"
+    assert transport(artifact_path.as_uri()) == b"configured artifact"
+
+
+def test_source_artifact_transport_blocks_https_without_live_opt_in() -> None:
+    transport = build_configured_artifact_transport(allow_live_source_access=False)
+
+    with pytest.raises(ValueError, match="Live HTTPS source access requires explicit"):
+        transport("https://example.invalid/factors.csv")
+
+
+def test_source_artifact_transport_uses_configured_https_policy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    requests = []
+
+    class _Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return None
+
+        def read(self) -> bytes:
+            return b"live artifact"
+
+    def fake_urlopen(request, *, timeout):
+        requests.append((request, timeout))
+        return _Response()
+
+    monkeypatch.setattr(source_artifact_transport, "urlopen", fake_urlopen)
+
+    transport = build_configured_artifact_transport(allow_live_source_access=True)
+
+    assert transport("https://example.invalid/factors.csv") == b"live artifact"
+    request, timeout = requests[0]
+    assert request.full_url == "https://example.invalid/factors.csv"
+    assert request.get_header("User-agent") == "carbonops-parser/0.1"
+    assert timeout == 60
 
 
 def test_configured_cycle_runner_loads_json_config(tmp_path: Path) -> None:
