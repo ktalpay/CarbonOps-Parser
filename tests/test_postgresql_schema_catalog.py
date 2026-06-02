@@ -19,6 +19,9 @@ EXPECTED_SHARED_TABLE_NAMES = (
     "source_documents",
     "parser_runs",
     "schema_bootstrap_states",
+    "parser_ingestion_runs",
+    "parser_ingestion_source_results",
+    "parser_ingestion_issues",
     "source_family_year_states",
     "normalized_factor_records",
 )

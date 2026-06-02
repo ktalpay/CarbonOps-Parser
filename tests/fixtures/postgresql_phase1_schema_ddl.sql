@@ -1,4 +1,4 @@
-CREATE TABLE ingestion_runs (
+CREATE TABLE IF NOT EXISTS ingestion_runs (
     ingestion_run_id uuid NOT NULL,
     run_status text NOT NULL,
     created_at timestamp with time zone NOT NULL,
@@ -6,9 +6,9 @@ CREATE TABLE ingestion_runs (
     CONSTRAINT pk_ingestion_runs PRIMARY KEY (ingestion_run_id)
 );
 
-CREATE INDEX idx_ingestion_runs_run_status ON ingestion_runs (run_status);
+CREATE INDEX IF NOT EXISTS idx_ingestion_runs_run_status ON ingestion_runs (run_status);
 
-CREATE TABLE source_documents (
+CREATE TABLE IF NOT EXISTS source_documents (
     source_document_id uuid NOT NULL,
     ingestion_run_id uuid NOT NULL,
     source_family text NOT NULL,
@@ -23,9 +23,9 @@ CREATE TABLE source_documents (
     CONSTRAINT fk_source_documents_ingestion_run_id FOREIGN KEY (ingestion_run_id) REFERENCES ingestion_runs (ingestion_run_id)
 );
 
-CREATE INDEX idx_source_documents_ingestion_run_id ON source_documents (ingestion_run_id);
+CREATE INDEX IF NOT EXISTS idx_source_documents_ingestion_run_id ON source_documents (ingestion_run_id);
 
-CREATE TABLE parser_runs (
+CREATE TABLE IF NOT EXISTS parser_runs (
     parser_run_id uuid NOT NULL,
     source_document_id uuid NOT NULL,
     parser_status text NOT NULL,
@@ -36,9 +36,9 @@ CREATE TABLE parser_runs (
     CONSTRAINT fk_parser_runs_source_document_id FOREIGN KEY (source_document_id) REFERENCES source_documents (source_document_id)
 );
 
-CREATE INDEX idx_parser_runs_source_document_id ON parser_runs (source_document_id);
+CREATE INDEX IF NOT EXISTS idx_parser_runs_source_document_id ON parser_runs (source_document_id);
 
-CREATE TABLE schema_bootstrap_states (
+CREATE TABLE IF NOT EXISTS schema_bootstrap_states (
     schema_bootstrap_state_id uuid NOT NULL,
     schema_contract_version text NOT NULL,
     bootstrap_status text NOT NULL,
@@ -48,7 +48,74 @@ CREATE TABLE schema_bootstrap_states (
     CONSTRAINT uq_schema_bootstrap_states_contract_version UNIQUE (schema_contract_version)
 );
 
-CREATE TABLE source_family_year_states (
+CREATE TABLE IF NOT EXISTS parser_ingestion_runs (
+    run_id text NOT NULL,
+    started_at timestamp with time zone NOT NULL,
+    finished_at timestamp with time zone,
+    status text NOT NULL,
+    trigger_type text DEFAULT 'operator' NOT NULL,
+    config_hash text,
+    enabled_source_families jsonb DEFAULT '[]'::jsonb NOT NULL,
+    initial_year integer,
+    cycle_count integer,
+    total_parsed_rows integer DEFAULT 0 NOT NULL,
+    total_inserted_count integer DEFAULT 0 NOT NULL,
+    total_skipped_duplicate_count integer DEFAULT 0 NOT NULL,
+    failure_count integer DEFAULT 0 NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT pk_parser_ingestion_runs PRIMARY KEY (run_id)
+);
+
+CREATE TABLE IF NOT EXISTS parser_ingestion_source_results (
+    parser_ingestion_source_result_id uuid NOT NULL,
+    run_id text NOT NULL,
+    source_family text NOT NULL,
+    target_year integer,
+    latest_year integer,
+    status text NOT NULL,
+    download_status text,
+    parse_status text,
+    validation_status text,
+    insert_status text,
+    parsed_rows integer DEFAULT 0 NOT NULL,
+    master_inserted integer DEFAULT 0 NOT NULL,
+    master_skipped integer DEFAULT 0 NOT NULL,
+    detail_inserted integer DEFAULT 0 NOT NULL,
+    detail_skipped integer DEFAULT 0 NOT NULL,
+    issue_count integer DEFAULT 0 NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT pk_parser_ingestion_source_results PRIMARY KEY (parser_ingestion_source_result_id),
+    CONSTRAINT uq_parser_ingestion_source_results_run_family_year UNIQUE (run_id, source_family, target_year),
+    CONSTRAINT fk_parser_ingestion_source_results_run_id FOREIGN KEY (run_id) REFERENCES parser_ingestion_runs (run_id)
+);
+
+CREATE TABLE IF NOT EXISTS parser_ingestion_issues (
+    parser_ingestion_issue_id uuid NOT NULL,
+    run_id text NOT NULL,
+    source_family text,
+    target_year integer,
+    stage text NOT NULL,
+    code text NOT NULL,
+    severity text DEFAULT 'error' NOT NULL,
+    field_name text,
+    message text NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT pk_parser_ingestion_issues PRIMARY KEY (parser_ingestion_issue_id),
+    CONSTRAINT fk_parser_ingestion_issues_run_id FOREIGN KEY (run_id) REFERENCES parser_ingestion_runs (run_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_parser_ingestion_issues_run_id ON parser_ingestion_issues (run_id);
+
+CREATE INDEX IF NOT EXISTS idx_parser_ingestion_issues_family_year ON parser_ingestion_issues (source_family, target_year);
+
+CREATE INDEX IF NOT EXISTS idx_parser_ingestion_issues_code ON parser_ingestion_issues (code);
+
+CREATE TABLE IF NOT EXISTS source_family_year_states (
     source_family_year_state_id uuid NOT NULL,
     source_family text NOT NULL,
     ingested_year integer NOT NULL,
@@ -58,9 +125,9 @@ CREATE TABLE source_family_year_states (
     CONSTRAINT uq_source_family_year_states_family_year UNIQUE (source_family, ingested_year)
 );
 
-CREATE INDEX idx_source_family_year_states_family_year ON source_family_year_states (source_family, ingested_year);
+CREATE INDEX IF NOT EXISTS idx_source_family_year_states_family_year ON source_family_year_states (source_family, ingested_year);
 
-CREATE TABLE normalized_factor_records (
+CREATE TABLE IF NOT EXISTS normalized_factor_records (
     normalized_factor_record_id text NOT NULL,
     idempotency_key_sha256 text NOT NULL,
     source_family text NOT NULL,
@@ -89,9 +156,9 @@ CREATE TABLE normalized_factor_records (
     CONSTRAINT uq_normalized_factor_records_idempotency_key UNIQUE (idempotency_key_sha256)
 );
 
-CREATE INDEX idx_normalized_factor_records_source_year ON normalized_factor_records (source_family, source_id, source_year);
+CREATE INDEX IF NOT EXISTS idx_normalized_factor_records_source_year ON normalized_factor_records (source_family, source_id, source_year);
 
-CREATE TABLE ghg_emission_factor_masters (
+CREATE TABLE IF NOT EXISTS ghg_emission_factor_masters (
     ghg_emission_factor_master_id uuid NOT NULL,
     source_family text NOT NULL,
     source_year integer NOT NULL,
@@ -118,11 +185,11 @@ CREATE TABLE ghg_emission_factor_masters (
     CONSTRAINT fk_ghg_emission_factor_masters_ingestion_run_id FOREIGN KEY (ingestion_run_id) REFERENCES ingestion_runs (ingestion_run_id)
 );
 
-CREATE INDEX idx_ghg_emission_factor_masters_source_year ON ghg_emission_factor_masters (source_family, source_year, source_version);
+CREATE INDEX IF NOT EXISTS idx_ghg_emission_factor_masters_source_year ON ghg_emission_factor_masters (source_family, source_year, source_version);
 
-CREATE INDEX idx_ghg_emission_factor_masters_ingestion_run_id ON ghg_emission_factor_masters (ingestion_run_id);
+CREATE INDEX IF NOT EXISTS idx_ghg_emission_factor_masters_ingestion_run_id ON ghg_emission_factor_masters (ingestion_run_id);
 
-CREATE TABLE ghg_emission_factor_details (
+CREATE TABLE IF NOT EXISTS ghg_emission_factor_details (
     ghg_emission_factor_detail_id uuid NOT NULL,
     ghg_emission_factor_master_id uuid NOT NULL,
     detail_external_key text NOT NULL,
@@ -142,9 +209,9 @@ CREATE TABLE ghg_emission_factor_details (
     CONSTRAINT fk_ghg_emission_factor_details_ghg_emission_factor_master_id FOREIGN KEY (ghg_emission_factor_master_id) REFERENCES ghg_emission_factor_masters (ghg_emission_factor_master_id)
 );
 
-CREATE INDEX idx_ghg_emission_factor_details_ghg_emission_factor_master_id ON ghg_emission_factor_details (ghg_emission_factor_master_id);
+CREATE INDEX IF NOT EXISTS idx_ghg_emission_factor_details_ghg_emission_factor_master_id ON ghg_emission_factor_details (ghg_emission_factor_master_id);
 
-CREATE TABLE defra_emission_factor_masters (
+CREATE TABLE IF NOT EXISTS defra_emission_factor_masters (
     defra_emission_factor_master_id uuid NOT NULL,
     source_family text NOT NULL,
     source_year integer NOT NULL,
@@ -171,11 +238,11 @@ CREATE TABLE defra_emission_factor_masters (
     CONSTRAINT fk_defra_emission_factor_masters_ingestion_run_id FOREIGN KEY (ingestion_run_id) REFERENCES ingestion_runs (ingestion_run_id)
 );
 
-CREATE INDEX idx_defra_emission_factor_masters_source_year ON defra_emission_factor_masters (source_family, source_year, source_version);
+CREATE INDEX IF NOT EXISTS idx_defra_emission_factor_masters_source_year ON defra_emission_factor_masters (source_family, source_year, source_version);
 
-CREATE INDEX idx_defra_emission_factor_masters_ingestion_run_id ON defra_emission_factor_masters (ingestion_run_id);
+CREATE INDEX IF NOT EXISTS idx_defra_emission_factor_masters_ingestion_run_id ON defra_emission_factor_masters (ingestion_run_id);
 
-CREATE TABLE defra_emission_factor_details (
+CREATE TABLE IF NOT EXISTS defra_emission_factor_details (
     defra_emission_factor_detail_id uuid NOT NULL,
     defra_emission_factor_master_id uuid NOT NULL,
     detail_external_key text NOT NULL,
@@ -195,9 +262,9 @@ CREATE TABLE defra_emission_factor_details (
     CONSTRAINT fk_defra_emission_factor_details_defra_emission_fa_98fe08fa20f4 FOREIGN KEY (defra_emission_factor_master_id) REFERENCES defra_emission_factor_masters (defra_emission_factor_master_id)
 );
 
-CREATE INDEX idx_defra_emission_factor_details_defra_emission_f_532bf4e61faf ON defra_emission_factor_details (defra_emission_factor_master_id);
+CREATE INDEX IF NOT EXISTS idx_defra_emission_factor_details_defra_emission_f_532bf4e61faf ON defra_emission_factor_details (defra_emission_factor_master_id);
 
-CREATE TABLE ipcc_emission_factor_masters (
+CREATE TABLE IF NOT EXISTS ipcc_emission_factor_masters (
     ipcc_emission_factor_master_id uuid NOT NULL,
     source_family text NOT NULL,
     source_year integer NOT NULL,
@@ -224,11 +291,11 @@ CREATE TABLE ipcc_emission_factor_masters (
     CONSTRAINT fk_ipcc_emission_factor_masters_ingestion_run_id FOREIGN KEY (ingestion_run_id) REFERENCES ingestion_runs (ingestion_run_id)
 );
 
-CREATE INDEX idx_ipcc_emission_factor_masters_source_year ON ipcc_emission_factor_masters (source_family, source_year, source_version);
+CREATE INDEX IF NOT EXISTS idx_ipcc_emission_factor_masters_source_year ON ipcc_emission_factor_masters (source_family, source_year, source_version);
 
-CREATE INDEX idx_ipcc_emission_factor_masters_ingestion_run_id ON ipcc_emission_factor_masters (ingestion_run_id);
+CREATE INDEX IF NOT EXISTS idx_ipcc_emission_factor_masters_ingestion_run_id ON ipcc_emission_factor_masters (ingestion_run_id);
 
-CREATE TABLE ipcc_emission_factor_details (
+CREATE TABLE IF NOT EXISTS ipcc_emission_factor_details (
     ipcc_emission_factor_detail_id uuid NOT NULL,
     ipcc_emission_factor_master_id uuid NOT NULL,
     detail_external_key text NOT NULL,
@@ -248,4 +315,4 @@ CREATE TABLE ipcc_emission_factor_details (
     CONSTRAINT fk_ipcc_emission_factor_details_ipcc_emission_factor_master_id FOREIGN KEY (ipcc_emission_factor_master_id) REFERENCES ipcc_emission_factor_masters (ipcc_emission_factor_master_id)
 );
 
-CREATE INDEX idx_ipcc_emission_factor_details_ipcc_emission_factor_master_id ON ipcc_emission_factor_details (ipcc_emission_factor_master_id);
+CREATE INDEX IF NOT EXISTS idx_ipcc_emission_factor_details_ipcc_emission_factor_master_id ON ipcc_emission_factor_details (ipcc_emission_factor_master_id);

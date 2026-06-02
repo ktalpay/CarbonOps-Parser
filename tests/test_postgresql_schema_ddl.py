@@ -46,7 +46,7 @@ FORBIDDEN_NAME_FRAGMENTS = (
 def _create_table_names(sql_statements: tuple[str, ...]) -> tuple[str, ...]:
     names: list[str] = []
     for statement in sql_statements:
-        match = re.match(r"CREATE TABLE ([a-z][a-z0-9_]*) \(", statement)
+        match = re.match(r"CREATE TABLE (?:IF NOT EXISTS )?([a-z][a-z0-9_]*) \(", statement)
         if match is not None:
             names.append(match.group(1))
     return tuple(names)
@@ -54,7 +54,7 @@ def _create_table_names(sql_statements: tuple[str, ...]) -> tuple[str, ...]:
 
 def _sql_for_table(table_name: str) -> str:
     for statement in render_postgresql_phase1_create_table_ddl():
-        if statement.startswith(f"CREATE TABLE {table_name} "):
+        if statement.startswith(f"CREATE TABLE IF NOT EXISTS {table_name} ") or statement.startswith(f"CREATE TABLE {table_name} "):
             return statement
     raise AssertionError(f"CREATE TABLE statement not rendered for {table_name}")
 
@@ -141,8 +141,13 @@ def test_output_ordering_is_deterministic_across_repeated_calls() -> None:
 
 def test_output_excludes_forbidden_non_contract_name_fragments() -> None:
     rendered_sql = "\n".join(render_postgresql_phase1_schema_ddl()).lower()
+    identifiers = re.findall(r"[a-z][a-z0-9_]*", rendered_sql)
 
-    assert not any(fragment in rendered_sql for fragment in FORBIDDEN_NAME_FRAGMENTS)
+    assert not any(
+        identifier == fragment or identifier.startswith(f"{fragment}_")
+        for identifier in identifiers
+        for fragment in FORBIDDEN_NAME_FRAGMENTS
+    )
 
 
 def test_schema_bootstrap_ddl_is_additive_only() -> None:

@@ -82,13 +82,25 @@ def _fetch_present_table_names(
 def _idempotent_schema_statements() -> tuple[str, ...]:
     statements: list[str] = []
     for statement in render_postgresql_phase1_create_table_ddl():
-        statements.append(
-            statement.replace("CREATE TABLE ", "CREATE TABLE IF NOT EXISTS ", 1),
-        )
+        if statement.startswith("CREATE TABLE IF NOT EXISTS "):
+            statements.append(statement)
+        else:
+            statements.append(
+                statement.replace("CREATE TABLE ", "CREATE TABLE IF NOT EXISTS ", 1),
+            )
     for statement in render_postgresql_phase1_index_ddl():
-        statements.append(
-            statement.replace("CREATE INDEX ", "CREATE INDEX IF NOT EXISTS ", 1),
-        )
+        if statement.startswith("CREATE INDEX IF NOT EXISTS ") or statement.startswith(
+            "CREATE UNIQUE INDEX IF NOT EXISTS "
+        ):
+            statements.append(statement)
+        elif statement.startswith("CREATE UNIQUE INDEX "):
+            statements.append(
+                statement.replace("CREATE UNIQUE INDEX ", "CREATE UNIQUE INDEX IF NOT EXISTS ", 1),
+            )
+        else:
+            statements.append(
+                statement.replace("CREATE INDEX ", "CREATE INDEX IF NOT EXISTS ", 1),
+            )
     return tuple(statements)
 
 
