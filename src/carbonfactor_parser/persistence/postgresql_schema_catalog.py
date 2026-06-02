@@ -56,6 +56,7 @@ class ColumnDefinition:
     data_type: PostgreSQLDataType
     nullable: bool
     is_primary_key: bool = False
+    default_sql: str | None = None
 
 
 @dataclass(frozen=True)
@@ -170,6 +171,84 @@ def _build_shared_tables() -> tuple[TableDefinition, ...]:
                     name="uq_schema_bootstrap_states_contract_version",
                     column_names=("schema_contract_version",),
                 ),
+            ),
+        ),
+        TableDefinition(
+            name="parser_ingestion_runs",
+            columns=(
+                ColumnDefinition("run_id", PostgreSQLDataType.TEXT, nullable=False, is_primary_key=True),
+                ColumnDefinition("started_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False),
+                ColumnDefinition("finished_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=True),
+                ColumnDefinition("status", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("trigger_type", PostgreSQLDataType.TEXT, nullable=False, default_sql="'operator'"),
+                ColumnDefinition("config_hash", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("enabled_source_families", PostgreSQLDataType.JSONB, nullable=False, default_sql="'[]'::jsonb"),
+                ColumnDefinition("initial_year", PostgreSQLDataType.INTEGER, nullable=True),
+                ColumnDefinition("cycle_count", PostgreSQLDataType.INTEGER, nullable=True),
+                ColumnDefinition("total_parsed_rows", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("total_inserted_count", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("total_skipped_duplicate_count", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("failure_count", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("metadata", PostgreSQLDataType.JSONB, nullable=False, default_sql="'{}'::jsonb"),
+                ColumnDefinition("created_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False, default_sql="now()"),
+                ColumnDefinition("updated_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False, default_sql="now()"),
+            ),
+        ),
+        TableDefinition(
+            name="parser_ingestion_source_results",
+            columns=(
+                ColumnDefinition("parser_ingestion_source_result_id", PostgreSQLDataType.UUID, nullable=False, is_primary_key=True),
+                ColumnDefinition("run_id", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("source_family", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("target_year", PostgreSQLDataType.INTEGER, nullable=True),
+                ColumnDefinition("latest_year", PostgreSQLDataType.INTEGER, nullable=True),
+                ColumnDefinition("status", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("download_status", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("parse_status", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("validation_status", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("insert_status", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("parsed_rows", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("master_inserted", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("master_skipped", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("detail_inserted", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("detail_skipped", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("issue_count", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("metadata", PostgreSQLDataType.JSONB, nullable=False, default_sql="'{}'::jsonb"),
+                ColumnDefinition("created_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False, default_sql="now()"),
+                ColumnDefinition("updated_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False, default_sql="now()"),
+            ),
+            foreign_keys=(
+                ForeignKeyDefinition("run_id", "parser_ingestion_runs", "run_id"),
+            ),
+            unique_constraints=(
+                UniqueConstraintDefinition(
+                    name="uq_parser_ingestion_source_results_run_family_year",
+                    column_names=("run_id", "source_family", "target_year"),
+                ),
+            ),
+        ),
+        TableDefinition(
+            name="parser_ingestion_issues",
+            columns=(
+                ColumnDefinition("parser_ingestion_issue_id", PostgreSQLDataType.UUID, nullable=False, is_primary_key=True),
+                ColumnDefinition("run_id", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("source_family", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("target_year", PostgreSQLDataType.INTEGER, nullable=True),
+                ColumnDefinition("stage", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("code", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("severity", PostgreSQLDataType.TEXT, nullable=False, default_sql="'error'"),
+                ColumnDefinition("field_name", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("message", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("metadata", PostgreSQLDataType.JSONB, nullable=False, default_sql="'{}'::jsonb"),
+                ColumnDefinition("created_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False, default_sql="now()"),
+            ),
+            foreign_keys=(
+                ForeignKeyDefinition("run_id", "parser_ingestion_runs", "run_id"),
+            ),
+            indexes=(
+                IndexDefinition(name="idx_parser_ingestion_issues_run_id", column_names=("run_id",)),
+                IndexDefinition(name="idx_parser_ingestion_issues_family_year", column_names=("source_family", "target_year")),
+                IndexDefinition(name="idx_parser_ingestion_issues_code", column_names=("code",)),
             ),
         ),
         TableDefinition(

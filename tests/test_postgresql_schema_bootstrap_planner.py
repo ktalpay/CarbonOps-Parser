@@ -70,6 +70,9 @@ def test_schema_bootstrap_plan_contains_required_phase1_metadata() -> None:
         "source_documents",
         "parser_runs",
         "schema_bootstrap_states",
+        "parser_ingestion_runs",
+        "parser_ingestion_source_results",
+        "parser_ingestion_issues",
         "source_family_year_states",
         "normalized_factor_records",
         "ghg_emission_factor_masters",
@@ -137,6 +140,9 @@ def test_schema_bootstrap_plan_orders_tables_deterministically() -> None:
         "ingestion_runs",
         "source_documents",
         "parser_runs",
+        "parser_ingestion_issues",
+        "parser_ingestion_issues",
+        "parser_ingestion_issues",
         "source_family_year_states",
         "normalized_factor_records",
         "ghg_emission_factor_masters",
@@ -225,7 +231,7 @@ def test_schema_bootstrap_idempotency_verification_detects_duplicate_definitions
         sorted(
             (
                 duplicate_table_sql(duplicate_table),
-                "CREATE INDEX idx_duplicate_business_key ON duplicate_table (business_key);",
+                "CREATE INDEX IF NOT EXISTS idx_duplicate_business_key ON duplicate_table (business_key);",
             )
         )
     )

@@ -83,6 +83,8 @@ def render_create_table_statement(table_definition: TableDefinition) -> str:
     for column in table_definition.columns:
         column_name = _render_identifier(column.name, "column")
         column_sql = f"{column_name} {_DATA_TYPE_SQL[column.data_type]}"
+        if column.default_sql is not None:
+            column_sql += f" DEFAULT {column.default_sql}"
         if not column.nullable:
             column_sql += " NOT NULL"
         lines.append(column_sql)
@@ -115,7 +117,7 @@ def render_create_table_statement(table_definition: TableDefinition) -> str:
         )
 
     inner = ",\n    ".join(lines)
-    return f"CREATE TABLE {table_name} (\n    {inner}\n);"
+    return f"CREATE TABLE IF NOT EXISTS {table_name} (\n    {inner}\n);"
 
 
 def render_create_index_statements(table_definition: TableDefinition) -> tuple[str, ...]:
@@ -131,7 +133,7 @@ def render_create_index_statements(table_definition: TableDefinition) -> tuple[s
             columns.append(_render_identifier(column_name, "column"))
         unique_prefix = "UNIQUE " if index.unique else ""
         statements.append(
-            f"CREATE {unique_prefix}INDEX {index_name} ON {table_name} ({', '.join(columns)});"
+            f"CREATE {unique_prefix}INDEX IF NOT EXISTS {index_name} ON {table_name} ({', '.join(columns)});"
         )
     return tuple(statements)
 

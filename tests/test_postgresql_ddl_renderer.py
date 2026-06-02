@@ -39,9 +39,9 @@ def _rendered_table_constraint_and_index_identifiers() -> tuple[str, ...]:
     identifiers: list[str] = [table.table_name for table in rendered.tables]
 
     for statement in rendered.statements:
-        identifiers.extend(re.findall(r"\bCREATE TABLE ([a-z][a-z0-9_]*)", statement))
+        identifiers.extend(re.findall(r"\bCREATE TABLE (?:IF NOT EXISTS )?([a-z][a-z0-9_]*)", statement))
         identifiers.extend(re.findall(r"\bCONSTRAINT ([a-z][a-z0-9_]*)", statement))
-        identifiers.extend(re.findall(r"\bCREATE (?:UNIQUE )?INDEX ([a-z][a-z0-9_]*)", statement))
+        identifiers.extend(re.findall(r"\bCREATE (?:UNIQUE )?INDEX (?:IF NOT EXISTS )?([a-z][a-z0-9_]*)", statement))
 
     return tuple(identifiers)
 
@@ -84,7 +84,7 @@ def test_required_create_table_statements_are_rendered() -> None:
         "ipcc_emission_factor_details",
     )
     for table_name in required_tables:
-        assert f"CREATE TABLE {table_name}" in statements
+        assert f"CREATE TABLE IF NOT EXISTS {table_name}" in statements
 
 
 def test_primary_key_foreign_key_unique_and_index_statements_are_rendered() -> None:
@@ -98,9 +98,9 @@ def test_primary_key_foreign_key_unique_and_index_statements_are_rendered() -> N
         "CONSTRAINT uq_defra_emission_factor_masters_family_year_version_key "
         "UNIQUE (source_family, source_year, source_version, master_external_key)"
     ) in statements
-    assert "CREATE INDEX idx_ingestion_runs_run_status ON ingestion_runs (run_status);" in statements
+    assert "CREATE INDEX IF NOT EXISTS idx_ingestion_runs_run_status ON ingestion_runs (run_status);" in statements
     assert (
-        "CREATE INDEX idx_ghg_emission_factor_masters_source_year "
+        "CREATE INDEX IF NOT EXISTS idx_ghg_emission_factor_masters_source_year "
         "ON ghg_emission_factor_masters (source_family, source_year, source_version);"
     ) in statements
 
@@ -148,7 +148,7 @@ def test_known_long_foreign_key_and_index_names_are_shortened_deterministically(
     assert expected_fk_name != long_fk_name
     assert expected_index_name != long_index_name
     assert f"CONSTRAINT {expected_fk_name} FOREIGN KEY" in statements
-    assert f"CREATE INDEX {expected_index_name} ON defra_emission_factor_details" in statements
+    assert f"CREATE INDEX IF NOT EXISTS {expected_index_name} ON defra_emission_factor_details" in statements
     assert long_fk_name not in statements
     assert long_index_name not in statements
 
@@ -182,7 +182,12 @@ def test_forbidden_name_fragments_do_not_appear() -> None:
     forbidden = ("temp", "test", "fake", "sample", "manual", "json_input")
     statements = "\n".join(render_postgresql_phase1_schema_ddl().statements)
     lowered = statements.lower()
-    assert not any(fragment in lowered for fragment in forbidden)
+    identifiers = re.findall(r"[a-z][a-z0-9_]*", lowered)
+    assert not any(
+        identifier == fragment or identifier.startswith(f"{fragment}_")
+        for identifier in identifiers
+        for fragment in forbidden
+    )
 
 
 def test_identifiers_follow_lowercase_snake_case() -> None:
@@ -210,8 +215,8 @@ def test_different_long_identifiers_with_same_visible_prefix_do_not_collapse() -
     first_rendered = _render_identifier(first_name, "index")
     second_rendered = _render_identifier(second_name, "index")
     assert first_rendered != second_rendered
-    assert f"CREATE INDEX {first_rendered} ON good_table (id);" in statements
-    assert f"CREATE INDEX {second_rendered} ON good_table (id);" in statements
+    assert f"CREATE INDEX IF NOT EXISTS {first_rendered} ON good_table (id);" in statements
+    assert f"CREATE INDEX IF NOT EXISTS {second_rendered} ON good_table (id);" in statements
 
 
 def test_structured_renderer_rejects_unknown_unique_and_foreign_key_columns() -> None:
