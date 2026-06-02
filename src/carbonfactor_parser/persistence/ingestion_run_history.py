@@ -11,9 +11,8 @@ from typing import Mapping, Protocol, runtime_checkable
 
 from carbonfactor_parser.diagnostics.redaction import redact_sensitive_text
 
-_ALLOWED_SOURCE_FAMILIES = frozenset(
-    ("ghg_protocol", "defra_desnz", "ipcc_efdb", "configured_runner")
-)
+_INGESTION_SOURCE_FAMILIES = frozenset(("ghg_protocol", "defra_desnz", "ipcc_efdb"))
+_ISSUE_SOURCE_FAMILIES = _INGESTION_SOURCE_FAMILIES | frozenset(("configured_runner",))
 _REDACTED_VALUE = "***"
 _SENSITIVE_METADATA_KEYS = frozenset(
     (
@@ -180,7 +179,7 @@ def validate_ingestion_run_history_command(
         _validate_non_negative(field_name, getattr(run, field_name), issues)
 
     for source_family in run.enabled_source_families:
-        _validate_source_family(source_family, "enabled_source_families", issues)
+        _validate_ingestion_source_family(source_family, "enabled_source_families", issues)
     _validate_json_metadata(run.metadata or {}, "metadata", issues)
 
     for index, source_result in enumerate(command.source_results):
@@ -189,8 +188,8 @@ def validate_ingestion_run_history_command(
             issues.append(_issue("INGESTION_RUN_HISTORY_SOURCE_RUN_ID_MISMATCH", "source result run_id must match command run_id.", f"{prefix}.run_id"))
         if not str(source_result.status or "").strip():
             issues.append(_issue("INGESTION_RUN_HISTORY_SOURCE_STATUS_REQUIRED", "source result status is required.", f"{prefix}.status"))
-        _validate_source_family(source_result.source_family, f"{prefix}.source_family", issues)
-        _validate_positive_optional(f"{prefix}.target_year", source_result.target_year, issues)
+        _validate_ingestion_source_family(source_result.source_family, f"{prefix}.source_family", issues)
+        _validate_source_result_target_year(f"{prefix}.target_year", source_result.target_year, issues)
         _validate_positive_optional(f"{prefix}.latest_year", source_result.latest_year, issues)
         for field_name in (
             "parsed_rows",
@@ -208,7 +207,7 @@ def validate_ingestion_run_history_command(
         if issue_record.run_id != run.run_id:
             issues.append(_issue("INGESTION_RUN_HISTORY_ISSUE_RUN_ID_MISMATCH", "issue run_id must match command run_id.", f"{prefix}.run_id"))
         if issue_record.source_family is not None:
-            _validate_source_family(issue_record.source_family, f"{prefix}.source_family", issues)
+            _validate_issue_source_family(issue_record.source_family, f"{prefix}.source_family", issues)
         _validate_positive_optional(f"{prefix}.target_year", issue_record.target_year, issues)
         if not str(issue_record.stage or "").strip():
             issues.append(_issue("INGESTION_RUN_HISTORY_ISSUE_STAGE_REQUIRED", "issue stage is required.", f"{prefix}.stage"))
@@ -295,13 +294,33 @@ def _issue(code: str, message: str, field_name: str) -> ParserIngestionRunHistor
     return ParserIngestionRunHistoryIssue(code=code, message=message, field_name=field_name)
 
 
-def _validate_source_family(
+def _validate_ingestion_source_family(
     source_family: str,
     field_name: str,
     issues: list[ParserIngestionRunHistoryIssue],
 ) -> None:
-    if source_family not in _ALLOWED_SOURCE_FAMILIES:
+    if source_family not in _INGESTION_SOURCE_FAMILIES:
         issues.append(_issue("INGESTION_RUN_HISTORY_SOURCE_FAMILY_UNSUPPORTED", "source_family is unsupported.", field_name))
+
+
+def _validate_issue_source_family(
+    source_family: str,
+    field_name: str,
+    issues: list[ParserIngestionRunHistoryIssue],
+) -> None:
+    if source_family not in _ISSUE_SOURCE_FAMILIES:
+        issues.append(_issue("INGESTION_RUN_HISTORY_SOURCE_FAMILY_UNSUPPORTED", "source_family is unsupported.", field_name))
+
+
+def _validate_source_result_target_year(
+    field_name: str,
+    value: int | None,
+    issues: list[ParserIngestionRunHistoryIssue],
+) -> None:
+    if value is None:
+        issues.append(_issue("INGESTION_RUN_HISTORY_SOURCE_TARGET_YEAR_REQUIRED", "source result target_year is required for idempotent upsert semantics.", field_name))
+    elif value <= 0:
+        issues.append(_issue("INGESTION_RUN_HISTORY_POSITIVE_INTEGER_REQUIRED", f"{field_name} must be positive when provided.", field_name))
 
 
 def _validate_positive_optional(

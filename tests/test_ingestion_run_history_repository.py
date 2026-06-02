@@ -134,6 +134,38 @@ def test_validation_rejects_invalid_source_family() -> None:
     )
 
 
+def test_validation_rejects_configured_runner_for_ingestion_source_contexts() -> None:
+    assert "INGESTION_RUN_HISTORY_SOURCE_FAMILY_UNSUPPORTED" in _codes(
+        ParserIngestionRunHistoryCommand(
+            run=_run(enabled_source_families=("configured_runner",))
+        )
+    )
+    assert "INGESTION_RUN_HISTORY_SOURCE_FAMILY_UNSUPPORTED" in _codes(
+        ParserIngestionRunHistoryCommand(
+            run=_run(),
+            source_results=(_source(source_family="configured_runner"),),
+        )
+    )
+
+
+def test_validation_allows_configured_runner_and_none_issue_source_family() -> None:
+    configured_runner_codes = _codes(
+        ParserIngestionRunHistoryCommand(
+            run=_run(),
+            issues=(_issue(source_family="configured_runner"),),
+        )
+    )
+    none_codes = _codes(
+        ParserIngestionRunHistoryCommand(
+            run=_run(),
+            issues=(_issue(source_family=None),),
+        )
+    )
+
+    assert "INGESTION_RUN_HISTORY_SOURCE_FAMILY_UNSUPPORTED" not in configured_runner_codes
+    assert "INGESTION_RUN_HISTORY_SOURCE_FAMILY_UNSUPPORTED" not in none_codes
+
+
 def test_validation_rejects_source_and_issue_run_id_mismatches() -> None:
     codes = _codes(
         ParserIngestionRunHistoryCommand(
@@ -157,6 +189,15 @@ def test_validation_rejects_non_positive_target_year() -> None:
     )
 
     assert codes.count("INGESTION_RUN_HISTORY_POSITIVE_INTEGER_REQUIRED") == 2
+
+
+def test_validation_rejects_missing_source_result_target_year() -> None:
+    assert "INGESTION_RUN_HISTORY_SOURCE_TARGET_YEAR_REQUIRED" in _codes(
+        ParserIngestionRunHistoryCommand(
+            run=_run(),
+            source_results=(_source(target_year=None),),
+        )
+    )
 
 
 def test_redaction_sanitizes_issue_message_and_metadata_before_persistence() -> None:
