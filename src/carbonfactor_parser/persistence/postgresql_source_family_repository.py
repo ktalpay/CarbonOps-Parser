@@ -3,10 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from decimal import Decimal
 from enum import Enum
-import json
-from typing import Mapping
 
 from carbonfactor_parser.diagnostics.redaction import redact_sensitive_text
 
@@ -17,10 +14,12 @@ from carbonfactor_parser.persistence.postgresql_schema_catalog import (
     source_family_postgresql_value,
 )
 from carbonfactor_parser.persistence.postgresql_source_family_ids import (
-    detail_uuid,
     ingestion_run_uuid,
-    master_uuid,
     source_document_uuid,
+)
+from carbonfactor_parser.persistence.postgresql_source_family_parameters import (
+    detail_parameters,
+    master_parameters,
 )
 from carbonfactor_parser.persistence.postgresql_source_family_sql import (
     detail_insert_sql,
@@ -152,7 +151,7 @@ class PostgreSQLSourceFamilyRuntimeRepository:
                     _execute(
                         self._connection,
                         master_insert_sql(master.source_family),
-                        _master_parameters(master),
+                        master_parameters(master),
                     )
                 ) is not None:
                     inserted_masters += 1
@@ -162,7 +161,7 @@ class PostgreSQLSourceFamilyRuntimeRepository:
                     _execute(
                         self._connection,
                         detail_insert_sql(detail.source_family),
-                        _detail_parameters(detail),
+                        detail_parameters(detail),
                     )
                 ) is not None:
                     inserted_details += 1
@@ -240,63 +239,6 @@ class PostgreSQLSourceFamilyRuntimeRepository:
                 "downloaded",
             ),
         )
-
-
-def _master_parameters(record: SourceFamilyMasterRecord) -> tuple[object, ...]:
-    return (
-        str(master_uuid(record.source_family, record.source_family_master_id)),
-        source_family_postgresql_value(record.source_family),
-        record.source_year,
-        record.source_version,
-        record.source_release,
-        str(source_document_uuid(record)),
-        str(ingestion_run_uuid(record)) if ingestion_run_uuid(record) else None,
-        record.run_id,
-        record.master_external_key,
-        record.status,
-        record.artifact_reference,
-        record.artifact_checksum_sha256,
-        record.archive_reference,
-        record.archive_checksum_sha256,
-        record.effective_from,
-        record.effective_to,
-        record.record_checksum_sha256,
-        _json_payload(record.metadata),
-    )
-
-
-def _detail_parameters(record: SourceFamilyDetailRecord) -> tuple[object, ...]:
-    return (
-        str(detail_uuid(record.source_family, record.source_family_detail_id)),
-        str(master_uuid(record.source_family, record.source_family_master_id)),
-        record.detail_external_key,
-        record.source_row_number,
-        record.factor_id,
-        record.factor_name,
-        str(Decimal(str(record.factor_value))),
-        record.factor_unit,
-        record.status,
-        record.record_checksum_sha256,
-        _json_payload(record.raw_fields),
-        _json_payload(record.normalized_fields),
-    )
-
-
-def _json_payload(value: Mapping[str, object]) -> str:
-    return json.dumps(_json_safe(value), sort_keys=True, separators=(",", ":"))
-
-
-def _json_safe(value: object) -> object:
-    if isinstance(value, Decimal):
-        return str(value)
-    if isinstance(value, Mapping):
-        return {
-            str(key): _json_safe(item)
-            for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
-        }
-    if isinstance(value, tuple | list):
-        return [_json_safe(item) for item in value]
-    return value
 
 
 def _execute(
