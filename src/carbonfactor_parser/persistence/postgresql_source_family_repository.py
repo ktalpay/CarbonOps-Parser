@@ -10,6 +10,12 @@ from carbonfactor_parser.diagnostics.redaction import redact_sensitive_text
 from carbonfactor_parser.persistence.parsed_factor_persistence_writer import (
     persist_parsed_factor_records,
 )
+from carbonfactor_parser.persistence.postgresql_execution import (
+    commit,
+    execute,
+    fetchone,
+    rollback,
+)
 from carbonfactor_parser.persistence.postgresql_source_family_parameters import (
     detail_parameters,
     master_parameters,
@@ -144,8 +150,8 @@ class PostgreSQLSourceFamilyRuntimeRepository:
             for master in master_records:
                 ensure_ingestion_run(self._connection, master)
                 ensure_source_document(self._connection, master)
-                if _fetchone(
-                    _execute(
+                if fetchone(
+                    execute(
                         self._connection,
                         master_insert_sql(master.source_family),
                         master_parameters(master),
@@ -154,8 +160,8 @@ class PostgreSQLSourceFamilyRuntimeRepository:
                     inserted_masters += 1
 
             for detail in detail_records:
-                if _fetchone(
-                    _execute(
+                if fetchone(
+                    execute(
                         self._connection,
                         detail_insert_sql(detail.source_family),
                         detail_parameters(detail),
@@ -163,9 +169,9 @@ class PostgreSQLSourceFamilyRuntimeRepository:
                 ) is not None:
                     inserted_details += 1
 
-            _commit(self._connection)
+            commit(self._connection)
         except Exception as exc:  # pragma: no cover - driver type varies
-            _rollback(self._connection)
+            rollback(self._connection)
             return SourceFamilyRepositoryPersistResult(
                 provider_name=self.provider_name,
                 status=SourceFamilyRepositoryPersistStatus.FAILED_DATABASE,
@@ -188,34 +194,6 @@ class PostgreSQLSourceFamilyRuntimeRepository:
             skipped_master_count=len(master_records) - inserted_masters,
             skipped_detail_count=len(detail_records) - inserted_details,
         )
-
-
-def _execute(
-    connection: object,
-    statement: str,
-    parameters: object | None = None,
-) -> object:
-    execute = getattr(connection, "execute")
-    if parameters is None:
-        return execute(statement)
-    return execute(statement, parameters)
-
-
-def _fetchone(cursor: object) -> object | None:
-    fetchone = getattr(cursor, "fetchone")
-    return fetchone()
-
-
-def _commit(connection: object) -> None:
-    commit = getattr(connection, "commit", None)
-    if commit is not None:
-        commit()
-
-
-def _rollback(connection: object) -> None:
-    rollback = getattr(connection, "rollback", None)
-    if rollback is not None:
-        rollback()
 
 
 def _redact_sensitive_text(value: str) -> str:
