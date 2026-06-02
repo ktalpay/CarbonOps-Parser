@@ -17,6 +17,8 @@ from typing import Callable, Mapping, Sequence
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
+from carbonfactor_parser.diagnostics.redaction import redact_sensitive_text
+
 from carbonfactor_parser.persistence.postgresql_runtime import (
     PostgreSQLRuntimeStartupResult,
     start_postgresql_runtime,
@@ -583,19 +585,7 @@ def _non_negative_float(value: object, *, field_name: str) -> float:
 
 
 def _redact_sensitive_text(text: str) -> str:
-    redacted = text
-    if "://" in redacted:
-        parsed = urlparse(redacted)
-        if parsed.scheme and (parsed.username or parsed.password or parsed.query):
-            netloc = parsed.hostname or ""
-            if parsed.port:
-                netloc = f"{netloc}:{parsed.port}"
-            redacted = parsed._replace(netloc=netloc, query="[redacted]").geturl()
-    lowered = redacted.lower()
-    for marker in ("password", "token", "secret", "key", "dsn"):
-        if marker in lowered and "=" in redacted:
-            return "[redacted sensitive value]"
-    return redacted
+    return redact_sensitive_text(text)
 
 
 def _source_family_alias(value: str) -> str | None:

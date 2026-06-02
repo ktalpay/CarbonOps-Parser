@@ -6,9 +6,10 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
 import json
-import re
 import uuid
 from typing import Mapping
+
+from carbonfactor_parser.diagnostics.redaction import redact_sensitive_text
 
 from carbonfactor_parser.persistence.parsed_factor_persistence_writer import (
     persist_parsed_factor_records,
@@ -427,8 +428,7 @@ def _rollback(connection: object) -> None:
 
 
 def _redact_sensitive_text(value: str) -> str:
-    redacted = re.sub(r"postgresql://[^@\s]+@", "postgresql://***@", value)
-    return re.sub(r"password=([^;\s]+)", "password=***", redacted, flags=re.I)
+    return redact_sensitive_text(value)
 
 
 __all__ = (

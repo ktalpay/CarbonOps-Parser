@@ -31,6 +31,7 @@ from carbonfactor_parser.persistence import (
 )
 from carbonfactor_parser.persistence.parsed_factor_persistence_writer import (
     ParsedFactorPersistenceStatus,
+    build_parsed_factor_persistence_command,
     persist_parsed_factor_records,
 )
 from carbonfactor_parser.persistence.postgresql_runtime_schema_bootstrap import (
@@ -272,3 +273,35 @@ def _content_input(source_family: str) -> ParserFileContentInput:
         content_type="text/csv",
         format_hint="csv",
     )
+
+
+def test_source_family_repository_redacts_database_errors() -> None:
+    private_dsn = "postgresql://carbonops:secret@example.invalid:5432/carbonops"
+    connection = _FailingConnection(
+        RuntimeError(f"could not connect dsn={private_dsn} password=secret token=abc")
+    )
+    repository = PostgreSQLSourceFamilyRuntimeRepository(connection)
+
+    command = build_parsed_factor_persistence_command(_payload("ghg_protocol"))
+
+    result = repository.persist_source_family_records(
+        command.master_records,
+        command.detail_records,
+    )
+
+    assert result.status.value == "failed_database"
+    assert connection.rollback_count == 1
+    message = result.issues[0].message
+    assert "secret" not in message
+    assert private_dsn not in message
+    assert "password=***" in message
+    assert "token=***" in message
+
+
+class _FailingConnection(_FakeConnection):
+    def __init__(self, exc: Exception) -> None:
+        super().__init__()
+        self._exc = exc
+
+    def execute(self, statement: str, parameters: object | None = None) -> _FakeCursor:
+        raise self._exc
