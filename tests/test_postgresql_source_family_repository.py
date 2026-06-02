@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from decimal import Decimal
+import json
 import os
 from pathlib import Path
 import uuid
@@ -36,6 +38,16 @@ from carbonfactor_parser.persistence.parsed_factor_persistence_writer import (
 )
 from carbonfactor_parser.persistence.postgresql_runtime_schema_bootstrap import (
     bootstrap_postgresql_phase1_schema,
+)
+from carbonfactor_parser.persistence.postgresql_source_family_sql import (
+    detail_insert_sql,
+    master_insert_sql,
+)
+from carbonfactor_parser.persistence.postgresql_source_family_ids import (
+    detail_uuid,
+    ingestion_run_uuid,
+    master_uuid,
+    source_document_uuid,
 )
 from carbonfactor_parser.persistence.postgresql_source_family_repository import (
     PostgreSQLSourceFamilyRuntimeRepository,
@@ -84,6 +96,122 @@ class _FakeConnection:
     def rollback(self) -> None:
         self.rollback_count += 1
 
+
+
+def test_postgresql_source_family_stable_uuid_helpers_match_legacy_payloads() -> None:
+    command = build_parsed_factor_persistence_command(_payload("ghg_protocol"))
+    master = command.master_records[0]
+    detail = command.detail_records[0]
+
+    assert source_document_uuid(master) == _legacy_stable_uuid(
+        "source_document",
+        "ghg_protocol",
+        master.source_document_id,
+    )
+    ingestion_source = master.ingestion_run_id or master.run_id
+    if ingestion_source is None:
+        ingestion_source = (
+            f"ghg_protocol:{master.source_year}:{master.source_version}"
+        )
+    assert ingestion_run_uuid(master) == _legacy_stable_uuid(
+        "ingestion_run",
+        "ghg_protocol",
+        ingestion_source,
+    )
+    assert master_uuid(master.source_family, master.source_family_master_id) == (
+        _legacy_stable_uuid(
+            "master",
+            "ghg_protocol",
+            master.source_family_master_id,
+        )
+    )
+    assert detail_uuid(detail.source_family, detail.source_family_detail_id) == (
+        _legacy_stable_uuid(
+            "detail",
+            "ghg_protocol",
+            detail.source_family_detail_id,
+        )
+    )
+    assert source_document_uuid(master) == source_document_uuid(master)
+    assert ingestion_run_uuid(master) == ingestion_run_uuid(master)
+
+
+def test_postgresql_source_family_ingestion_run_uuid_fallback_is_deterministic() -> None:
+    command = build_parsed_factor_persistence_command(_payload("defra_desnz"))
+    master = replace(command.master_records[0], ingestion_run_id=None, run_id=None)
+
+    expected = _legacy_stable_uuid(
+        "ingestion_run",
+        "defra_desnz",
+        f"defra_desnz:{master.source_year}:{master.source_version}",
+    )
+
+    assert ingestion_run_uuid(master) == expected
+    assert ingestion_run_uuid(master) == ingestion_run_uuid(master)
+
+
+@pytest.mark.parametrize(
+    ("source_family", "master_table", "master_id"),
+    (
+        ("ghg_protocol", "ghg_emission_factor_masters", "ghg_emission_factor_master_id"),
+        ("defra_desnz", "defra_emission_factor_masters", "defra_emission_factor_master_id"),
+        ("ipcc_efdb", "ipcc_emission_factor_masters", "ipcc_emission_factor_master_id"),
+    ),
+)
+def test_postgresql_source_family_master_insert_sql_compatibility(
+    source_family: str,
+    master_table: str,
+    master_id: str,
+) -> None:
+    sql = _normalized_sql(master_insert_sql(source_family))
+
+    assert f"INSERT INTO {master_table}" in sql
+    assert (
+        "ON CONFLICT (source_family, source_year, source_version, master_external_key)"
+        in sql
+    )
+    assert f"RETURNING {master_id}" in sql
+    assert "metadata" in sql
+    assert "%s::jsonb" in sql
+
+
+@pytest.mark.parametrize(
+    ("source_family", "detail_table", "master_id", "detail_id"),
+    (
+        (
+            "ghg_protocol",
+            "ghg_emission_factor_details",
+            "ghg_emission_factor_master_id",
+            "ghg_emission_factor_detail_id",
+        ),
+        (
+            "defra_desnz",
+            "defra_emission_factor_details",
+            "defra_emission_factor_master_id",
+            "defra_emission_factor_detail_id",
+        ),
+        (
+            "ipcc_efdb",
+            "ipcc_emission_factor_details",
+            "ipcc_emission_factor_master_id",
+            "ipcc_emission_factor_detail_id",
+        ),
+    ),
+)
+def test_postgresql_source_family_detail_insert_sql_compatibility(
+    source_family: str,
+    detail_table: str,
+    master_id: str,
+    detail_id: str,
+) -> None:
+    sql = _normalized_sql(detail_insert_sql(source_family))
+
+    assert f"INSERT INTO {detail_table}" in sql
+    assert f"ON CONFLICT ({master_id}, detail_external_key)" in sql
+    assert f"RETURNING {detail_id}" in sql
+    assert "raw_fields" in sql
+    assert "normalized_fields" in sql
+    assert sql.count("%s::jsonb") == 2
 
 def test_postgresql_source_family_repository_inserts_and_skips_idempotently() -> None:
     connection = _FakeConnection()
@@ -305,3 +433,13 @@ class _FailingConnection(_FakeConnection):
 
     def execute(self, statement: str, parameters: object | None = None) -> _FakeCursor:
         raise self._exc
+
+
+
+def _legacy_stable_uuid(*values: object) -> uuid.UUID:
+    payload = json.dumps(tuple(str(value) for value in values), separators=(",", ":"))
+    return uuid.uuid5(uuid.NAMESPACE_URL, payload)
+
+
+def _normalized_sql(statement: str) -> str:
+    return " ".join(statement.split())
