@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
 import json
-import uuid
 from typing import Mapping
 
 from carbonfactor_parser.diagnostics.redaction import redact_sensitive_text
@@ -15,9 +14,17 @@ from carbonfactor_parser.persistence.parsed_factor_persistence_writer import (
     persist_parsed_factor_records,
 )
 from carbonfactor_parser.persistence.postgresql_schema_catalog import (
-    SourceFamily,
     source_family_postgresql_value,
-    source_family_table_prefix,
+)
+from carbonfactor_parser.persistence.postgresql_source_family_ids import (
+    detail_uuid,
+    ingestion_run_uuid,
+    master_uuid,
+    source_document_uuid,
+)
+from carbonfactor_parser.persistence.postgresql_source_family_sql import (
+    detail_insert_sql,
+    master_insert_sql,
 )
 from carbonfactor_parser.persistence.source_family_repository import (
     SourceFamilyDetailRecord,
@@ -25,7 +32,6 @@ from carbonfactor_parser.persistence.source_family_repository import (
     SourceFamilyRepositoryIssue,
     SourceFamilyRepositoryPersistResult,
     SourceFamilyRepositoryPersistStatus,
-    source_family_repository_table_names,
     validate_source_family_repository_inputs,
 )
 
@@ -145,7 +151,7 @@ class PostgreSQLSourceFamilyRuntimeRepository:
                 if _fetchone(
                     _execute(
                         self._connection,
-                        _master_insert_sql(master.source_family),
+                        master_insert_sql(master.source_family),
                         _master_parameters(master),
                     )
                 ) is not None:
@@ -155,7 +161,7 @@ class PostgreSQLSourceFamilyRuntimeRepository:
                 if _fetchone(
                     _execute(
                         self._connection,
-                        _detail_insert_sql(detail.source_family),
+                        detail_insert_sql(detail.source_family),
                         _detail_parameters(detail),
                     )
                 ) is not None:
@@ -188,7 +194,7 @@ class PostgreSQLSourceFamilyRuntimeRepository:
         )
 
     def _ensure_ingestion_run(self, master: SourceFamilyMasterRecord) -> None:
-        ingestion_run_id = _ingestion_run_uuid(master)
+        ingestion_run_id = ingestion_run_uuid(master)
         if ingestion_run_id is None:
             return
         _execute(
@@ -226,8 +232,8 @@ class PostgreSQLSourceFamilyRuntimeRepository:
             DO NOTHING
             """,
             (
-                str(_source_document_uuid(master)),
-                str(_ingestion_run_uuid(master)),
+                str(source_document_uuid(master)),
+                str(ingestion_run_uuid(master)),
                 source_family_postgresql_value(master.source_family),
                 master.artifact_reference or master.source_document_id,
                 master.artifact_checksum_sha256 or "checksum-unavailable",
@@ -236,85 +242,15 @@ class PostgreSQLSourceFamilyRuntimeRepository:
         )
 
 
-def _master_insert_sql(source_family: SourceFamily) -> str:
-    master_table, _detail_table = source_family_repository_table_names(source_family)
-    family_prefix = source_family_table_prefix(source_family)
-    master_id = f"{family_prefix}_emission_factor_master_id"
-    return f"""
-        INSERT INTO {master_table} (
-            {master_id},
-            source_family,
-            source_year,
-            source_version,
-            source_release,
-            source_document_id,
-            ingestion_run_id,
-            run_id,
-            master_external_key,
-            status,
-            artifact_reference,
-            artifact_checksum_sha256,
-            archive_reference,
-            archive_checksum_sha256,
-            effective_from,
-            effective_to,
-            record_checksum_sha256,
-            metadata,
-            created_at,
-            updated_at
-        )
-        VALUES (
-            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s, %s, %s, %s::jsonb, NOW(), NOW()
-        )
-        ON CONFLICT (source_family, source_year, source_version, master_external_key)
-        DO NOTHING
-        RETURNING {master_id}
-        """
-
-
-def _detail_insert_sql(source_family: SourceFamily) -> str:
-    master_table, detail_table = source_family_repository_table_names(source_family)
-    del master_table
-    family_prefix = source_family_table_prefix(source_family)
-    master_id = f"{family_prefix}_emission_factor_master_id"
-    detail_id = f"{family_prefix}_emission_factor_detail_id"
-    return f"""
-        INSERT INTO {detail_table} (
-            {detail_id},
-            {master_id},
-            detail_external_key,
-            source_row_number,
-            factor_id,
-            factor_name,
-            factor_value,
-            factor_unit,
-            status,
-            record_checksum_sha256,
-            raw_fields,
-            normalized_fields,
-            created_at,
-            updated_at
-        )
-        VALUES (
-            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-            %s::jsonb, %s::jsonb, NOW(), NOW()
-        )
-        ON CONFLICT ({master_id}, detail_external_key)
-        DO NOTHING
-        RETURNING {detail_id}
-        """
-
-
 def _master_parameters(record: SourceFamilyMasterRecord) -> tuple[object, ...]:
     return (
-        str(_master_uuid(record.source_family, record.source_family_master_id)),
+        str(master_uuid(record.source_family, record.source_family_master_id)),
         source_family_postgresql_value(record.source_family),
         record.source_year,
         record.source_version,
         record.source_release,
-        str(_source_document_uuid(record)),
-        str(_ingestion_run_uuid(record)) if _ingestion_run_uuid(record) else None,
+        str(source_document_uuid(record)),
+        str(ingestion_run_uuid(record)) if ingestion_run_uuid(record) else None,
         record.run_id,
         record.master_external_key,
         record.status,
@@ -331,8 +267,8 @@ def _master_parameters(record: SourceFamilyMasterRecord) -> tuple[object, ...]:
 
 def _detail_parameters(record: SourceFamilyDetailRecord) -> tuple[object, ...]:
     return (
-        str(_detail_uuid(record.source_family, record.source_family_detail_id)),
-        str(_master_uuid(record.source_family, record.source_family_master_id)),
+        str(detail_uuid(record.source_family, record.source_family_detail_id)),
+        str(master_uuid(record.source_family, record.source_family_master_id)),
         record.detail_external_key,
         record.source_row_number,
         record.factor_id,
@@ -344,42 +280,6 @@ def _detail_parameters(record: SourceFamilyDetailRecord) -> tuple[object, ...]:
         _json_payload(record.raw_fields),
         _json_payload(record.normalized_fields),
     )
-
-
-def _source_document_uuid(record: SourceFamilyMasterRecord) -> uuid.UUID:
-    return _stable_uuid(
-        "source_document",
-        source_family_postgresql_value(record.source_family),
-        record.source_document_id,
-    )
-
-
-def _ingestion_run_uuid(record: SourceFamilyMasterRecord) -> uuid.UUID | None:
-    source = record.ingestion_run_id or record.run_id
-    if source is None:
-        source = (
-            f"{source_family_postgresql_value(record.source_family)}:"
-            f"{record.source_year}:"
-            f"{record.source_version}"
-        )
-    return _stable_uuid(
-        "ingestion_run",
-        source_family_postgresql_value(record.source_family),
-        source,
-    )
-
-
-def _master_uuid(source_family: SourceFamily, master_id: str) -> uuid.UUID:
-    return _stable_uuid("master", source_family_postgresql_value(source_family), master_id)
-
-
-def _detail_uuid(source_family: SourceFamily, detail_id: str) -> uuid.UUID:
-    return _stable_uuid("detail", source_family_postgresql_value(source_family), detail_id)
-
-
-def _stable_uuid(*values: object) -> uuid.UUID:
-    payload = json.dumps(tuple(str(value) for value in values), separators=(",", ":"))
-    return uuid.uuid5(uuid.NAMESPACE_URL, payload)
 
 
 def _json_payload(value: Mapping[str, object]) -> str:
