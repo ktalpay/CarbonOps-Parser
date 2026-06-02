@@ -10,13 +10,6 @@ from carbonfactor_parser.diagnostics.redaction import redact_sensitive_text
 from carbonfactor_parser.persistence.parsed_factor_persistence_writer import (
     persist_parsed_factor_records,
 )
-from carbonfactor_parser.persistence.postgresql_schema_catalog import (
-    source_family_postgresql_value,
-)
-from carbonfactor_parser.persistence.postgresql_source_family_ids import (
-    ingestion_run_uuid,
-    source_document_uuid,
-)
 from carbonfactor_parser.persistence.postgresql_source_family_parameters import (
     detail_parameters,
     master_parameters,
@@ -24,6 +17,10 @@ from carbonfactor_parser.persistence.postgresql_source_family_parameters import 
 from carbonfactor_parser.persistence.postgresql_source_family_sql import (
     detail_insert_sql,
     master_insert_sql,
+)
+from carbonfactor_parser.persistence.postgresql_source_family_upserts import (
+    ensure_ingestion_run,
+    ensure_source_document,
 )
 from carbonfactor_parser.persistence.source_family_repository import (
     SourceFamilyDetailRecord,
@@ -145,8 +142,8 @@ class PostgreSQLSourceFamilyRuntimeRepository:
         inserted_details = 0
         try:
             for master in master_records:
-                self._ensure_ingestion_run(master)
-                self._ensure_source_document(master)
+                ensure_ingestion_run(self._connection, master)
+                ensure_source_document(self._connection, master)
                 if _fetchone(
                     _execute(
                         self._connection,
@@ -190,54 +187,6 @@ class PostgreSQLSourceFamilyRuntimeRepository:
             persisted_detail_count=inserted_details,
             skipped_master_count=len(master_records) - inserted_masters,
             skipped_detail_count=len(detail_records) - inserted_details,
-        )
-
-    def _ensure_ingestion_run(self, master: SourceFamilyMasterRecord) -> None:
-        ingestion_run_id = ingestion_run_uuid(master)
-        if ingestion_run_id is None:
-            return
-        _execute(
-            self._connection,
-            """
-            INSERT INTO ingestion_runs (
-                ingestion_run_id,
-                run_status,
-                created_at,
-                updated_at
-            )
-            VALUES (%s, %s, NOW(), NOW())
-            ON CONFLICT (ingestion_run_id) DO NOTHING
-            """,
-            (str(ingestion_run_id), "completed"),
-        )
-
-    def _ensure_source_document(self, master: SourceFamilyMasterRecord) -> None:
-        _execute(
-            self._connection,
-            """
-            INSERT INTO source_documents (
-                source_document_id,
-                ingestion_run_id,
-                source_family,
-                source_document_uri,
-                source_checksum_sha256,
-                acquisition_status,
-                acquired_at,
-                created_at,
-                updated_at
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW(), NOW())
-            ON CONFLICT (source_family, source_document_uri, source_checksum_sha256)
-            DO NOTHING
-            """,
-            (
-                str(source_document_uuid(master)),
-                str(ingestion_run_uuid(master)),
-                source_family_postgresql_value(master.source_family),
-                master.artifact_reference or master.source_document_id,
-                master.artifact_checksum_sha256 or "checksum-unavailable",
-                "downloaded",
-            ),
         )
 
 

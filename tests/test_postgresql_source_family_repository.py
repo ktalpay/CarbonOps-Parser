@@ -39,6 +39,9 @@ from carbonfactor_parser.persistence.parsed_factor_persistence_writer import (
 from carbonfactor_parser.persistence.postgresql_runtime_schema_bootstrap import (
     bootstrap_postgresql_phase1_schema,
 )
+from carbonfactor_parser.persistence.postgresql_schema_catalog import (
+    source_family_postgresql_value,
+)
 from carbonfactor_parser.persistence.postgresql_source_family_sql import (
     detail_insert_sql,
     master_insert_sql,
@@ -58,6 +61,10 @@ from carbonfactor_parser.persistence.postgresql_source_family_parameters import 
 from carbonfactor_parser.persistence.postgresql_source_family_repository import (
     PostgreSQLSourceFamilyRuntimeRepository,
     PostgreSQLSourceSpecificFactorInsertStatus,
+)
+from carbonfactor_parser.persistence.postgresql_source_family_upserts import (
+    ensure_ingestion_run,
+    ensure_source_document,
 )
 
 
@@ -154,6 +161,90 @@ def test_postgresql_source_family_ingestion_run_uuid_fallback_is_deterministic()
 
     assert ingestion_run_uuid(master) == expected
     assert ingestion_run_uuid(master) == ingestion_run_uuid(master)
+
+
+def test_postgresql_source_family_ensure_ingestion_run_upsert_compatibility() -> None:
+    connection = _FakeConnection()
+    command = build_parsed_factor_persistence_command(_payload("ipcc_efdb"))
+    master = replace(
+        command.master_records[0],
+        source_year=2025,
+        source_version="ipcc-2025",
+        source_release="release-a",
+        ingestion_run_id=None,
+        run_id="cycle-run-001",
+    )
+
+    ensure_ingestion_run(connection, master)
+
+    assert len(connection.statements) == 1
+    statement, parameters = connection.statements[0]
+    sql = _normalized_sql(statement)
+    assert "INSERT INTO ingestion_runs" in sql
+    assert "ingestion_run_id" in sql
+    assert "run_status" in sql
+    assert "VALUES (%s, %s, NOW(), NOW())" in sql
+    assert "ON CONFLICT (ingestion_run_id) DO NOTHING" in sql
+    assert parameters == (str(ingestion_run_uuid(master)), "completed")
+    assert ingestion_run_uuid(master) == _legacy_stable_uuid(
+        "ingestion_run",
+        source_family_postgresql_value(master.source_family),
+        master.run_id,
+    )
+    assert master.source_year == 2025
+    assert master.source_version == "ipcc-2025"
+    assert master.source_release == "release-a"
+
+
+def test_postgresql_source_family_ensure_source_document_upsert_compatibility() -> None:
+    connection = _FakeConnection()
+    command = build_parsed_factor_persistence_command(_payload("ghg_protocol"))
+    master = replace(
+        command.master_records[0],
+        artifact_reference=None,
+        artifact_checksum_sha256=None,
+    )
+
+    ensure_source_document(connection, master)
+
+    assert len(connection.statements) == 1
+    statement, parameters = connection.statements[0]
+    sql = _normalized_sql(statement)
+    assert "INSERT INTO source_documents" in sql
+    assert "source_document_id" in sql
+    assert "ingestion_run_id" in sql
+    assert "source_family" in sql
+    assert "source_document_uri" in sql
+    assert "source_checksum_sha256" in sql
+    assert "acquisition_status" in sql
+    assert "VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW(), NOW())" in sql
+    assert (
+        "ON CONFLICT (source_family, source_document_uri, source_checksum_sha256)"
+        in sql
+    )
+    assert "DO NOTHING" in sql
+    assert parameters == (
+        str(source_document_uuid(master)),
+        str(ingestion_run_uuid(master)),
+        source_family_postgresql_value(master.source_family),
+        master.source_document_id,
+        "checksum-unavailable",
+        "downloaded",
+    )
+
+
+def test_postgresql_source_family_ensure_source_document_uses_artifact_values() -> None:
+    connection = _FakeConnection()
+    command = build_parsed_factor_persistence_command(_payload("defra_desnz"))
+    master = command.master_records[0]
+
+    ensure_source_document(connection, master)
+
+    _statement, parameters = connection.statements[0]
+    assert isinstance(parameters, tuple)
+    assert parameters[3] == master.artifact_reference
+    assert parameters[4] == master.artifact_checksum_sha256
+    assert parameters[2] == source_family_postgresql_value(master.source_family)
 
 
 @pytest.mark.parametrize(
