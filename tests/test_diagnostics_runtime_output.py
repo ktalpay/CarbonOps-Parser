@@ -61,6 +61,51 @@ def test_redaction_sanitizes_sensitive_assignments() -> None:
     assert "connection_string=***" in redacted
 
 
+def test_redaction_sanitizes_compound_sensitive_assignments() -> None:
+    message = (
+        "api_key=abc123 apikey=abc123 access_key=abc123 accesskey=abc123 "
+        "private_key=abc123 privatekey=abc123 "
+        "connection_uri=postgresql://user:pass@example.invalid/db "
+        "connectionstring=postgresql://user:pass@example.invalid/db "
+        "database_url=postgresql://user:pass@example.invalid/db "
+        "databaseurl=postgresql://user:pass@example.invalid/db"
+    )
+
+    redacted = redact_sensitive_text(message)
+
+    assert "abc123" not in redacted
+    assert "user:pass" not in redacted
+    assert "api_key=***" in redacted
+    assert "access_key=***" in redacted
+    assert "private_key=***" in redacted
+    assert "connection_uri=***" in redacted
+    assert "database_url=***" in redacted
+
+
+def test_redaction_sanitizes_compound_sensitive_query_parameters() -> None:
+    message = (
+        "urls https://example.invalid/path?api_key=abc123&safe=value "
+        "https://example.invalid/path?private_key=abc123 "
+        "https://example.invalid/path?access-key=abc123"
+    )
+
+    redacted = redact_sensitive_text(message)
+
+    assert "abc123" not in redacted
+    assert "api_key=***" in redacted
+    assert "private_key=***" in redacted
+    assert "access-key=***" in redacted
+    assert "safe=value" in redacted
+
+
+def test_redaction_keeps_non_sensitive_query_parameters_readable() -> None:
+    message = "https://example.invalid/path?family=ghg_protocol&safe=value"
+
+    redacted = redact_sensitive_text(message)
+
+    assert redacted == message
+
+
 def test_redaction_keeps_non_sensitive_messages_readable() -> None:
     message = "download failed because source family ghg_protocol is disabled"
 
@@ -105,6 +150,38 @@ def test_configured_cycle_summary_payload_contains_sanitized_runtime_details() -
     assert "password=***" in payload["issues"][0]["message"]
 
 
+def test_configured_cycle_summary_payload_deduplicates_flattened_failures() -> None:
+    cycle = _configured_cycle_with_secret_issue(include_top_level_duplicate=True)
+
+    payload = build_configured_cycle_summary_payload(cycle)
+
+    assert payload["issues"] == [
+        {
+            "source_family": "ghg_protocol",
+            "stage": "parser",
+            "code": "PARSER_FAILED",
+            "message": "parser failed password=*** token=***",
+        }
+    ]
+
+
+def test_configured_cycle_summary_payload_includes_top_level_only_failures() -> None:
+    cycle = _configured_cycle_with_secret_issue(include_top_level_only=True)
+
+    payload = build_configured_cycle_summary_payload(cycle)
+
+    assert [issue["code"] for issue in payload["issues"]] == [
+        "PARSER_FAILED",
+        "RUN_FAILED",
+    ]
+    assert payload["issues"][1] == {
+        "source_family": "configured_runner",
+        "stage": "orchestrator",
+        "code": "RUN_FAILED",
+        "message": "top-level failed api_key=***",
+    }
+
+
 def test_configured_runner_summary_payload_contains_schema_and_cycles() -> None:
     result = ConfiguredCycleRunnerResult(
         status=ConfiguredCycleRunnerStatus.COMPLETED_WITH_FAILURES,
@@ -122,7 +199,11 @@ def test_configured_runner_summary_payload_contains_schema_and_cycles() -> None:
     assert "secret" not in str(payload)
 
 
-def _configured_cycle_with_secret_issue() -> ConfiguredCycleResult:
+def _configured_cycle_with_secret_issue(
+    *,
+    include_top_level_duplicate: bool = False,
+    include_top_level_only: bool = False,
+) -> ConfiguredCycleResult:
     failure = ProductionE2EFailureDetail(
         source_family="ghg_protocol",
         stage="parser",
@@ -130,6 +211,20 @@ def _configured_cycle_with_secret_issue() -> ConfiguredCycleResult:
         message="parser failed password=secret token=secret-token",
         field_name="parser",
     )
+    top_level_failures = []
+    if include_top_level_duplicate:
+        top_level_failures.append(failure)
+    if include_top_level_only:
+        top_level_failures.append(
+            ProductionE2EFailureDetail(
+                source_family="configured_runner",
+                stage="orchestrator",
+                code="RUN_FAILED",
+                message="top-level failed api_key=top-secret",
+                field_name="orchestrator",
+            )
+        )
+
     family = ProductionE2EYearFamilyResult(
         source_family="ghg_protocol",
         status=ProductionE2EYearFamilyStatus.FAILED,
@@ -175,6 +270,6 @@ def _configured_cycle_with_secret_issue() -> ConfiguredCycleResult:
                 failed_insert_count=1,
                 failure_count=1,
             ),
-            failures=(),
+            failures=tuple(top_level_failures),
         ),
     )
