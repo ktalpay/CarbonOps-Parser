@@ -22,7 +22,7 @@ Phase 1 is limited to:
 - GHG Protocol, DEFRA/DESNZ, and IPCC EFDB as the supported Phase 1 source families.
 - Shared ingestion metadata tables.
 - Source-specific master/detail tables.
-- Documentation, schema, discovery, and early ingestion slices.
+- Documentation, schema, discovery, operator-run ingestion, and bounded source-family ingestion slices.
 
 The conceptual configuration model includes `mysql` and `mssql`, but those providers are not implemented in Phase 1.
 
