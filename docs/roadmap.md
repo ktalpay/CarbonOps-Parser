@@ -1,8 +1,8 @@
 # Roadmap
 
-This roadmap organizes the path from the documentation baseline to a `v0.1.0` reference release.
+This roadmap organizes the path from the current Phase 1 ingestion foundation to a `v0.1.0` reference release.
 
-## Sprint 1: Documentation Baseline
+## Sprint 1: Documentation Foundation
 
 - Add public project positioning.
 - Document architecture, configuration, database model, background job model, and source support.
