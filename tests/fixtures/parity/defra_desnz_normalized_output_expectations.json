@@ -1,0 +1,104 @@
+{
+  "header": [
+    "source_year",
+    "source_version",
+    "category",
+    "subcategory",
+    "activity",
+    "factor_id",
+    "factor_name",
+    "factor_value",
+    "unit",
+    "greenhouse_gas",
+    "provenance"
+  ],
+  "sample_fixture": "tests/fixtures/source_documents/defra_desnz/defra_desnz_normalized_factors.csv",
+  "sample_status": {
+    "python": "success",
+    "dotnet": "Completed"
+  },
+  "sample_issue_codes": [],
+  "sample_rows": [
+    {
+      "row_identifier": "defra_desnz_2024_conversion-factors-2024_DEFRA-2024-ELEC_row_2",
+      "source_row_number": 2,
+      "reporting_year": 2024,
+      "fields": [
+        ["source_family", "defra_desnz"],
+        ["source_year", "2024"],
+        ["source_version", "conversion-factors-2024"],
+        ["factor_id", "DEFRA-2024-ELEC"],
+        ["factor_name", "Electricity generated"],
+        ["factor_value", "0.20705"],
+        ["unit", "kWh"],
+        ["category", "Energy"],
+        ["subcategory", "Electricity"],
+        ["activity", "Generated"],
+        ["greenhouse_gas", "CO2e"],
+        ["provenance_artifact_reference", "tests/fixtures/source_documents/defra_desnz/defra_desnz_normalized_factors.csv"],
+        ["provenance_checksum_algorithm", "sha256"],
+        ["provenance_checksum_value", "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"],
+        ["provenance_row_number", "2"],
+        ["provenance", "worksheet:UK electricity row 10"],
+        ["source_family_master_id", "defra_master_2024_conversion-factors-2024_DEFRA-2024-ELEC"],
+        ["source_family_detail_id", "defra_detail_2024_conversion-factors-2024_DEFRA-2024-ELEC"],
+        ["master_external_key", "2024:conversion-factors-2024:DEFRA-2024-ELEC"],
+        ["detail_external_key", "DEFRA-2024-ELEC:kWh:CO2e"]
+      ]
+    },
+    {
+      "row_identifier": "defra_desnz_2024_conversion-factors-2024_DEFRA-2024-VAN_row_3",
+      "source_row_number": 3,
+      "reporting_year": 2024,
+      "fields": [
+        ["source_family", "defra_desnz"],
+        ["source_year", "2024"],
+        ["source_version", "conversion-factors-2024"],
+        ["factor_id", "DEFRA-2024-VAN"],
+        ["factor_name", "Average van distance"],
+        ["factor_value", "0.17031"],
+        ["unit", "km"],
+        ["category", "Transport"],
+        ["subcategory", "Vans"],
+        ["activity", "Average van"],
+        ["greenhouse_gas", "CO2e"],
+        ["provenance_artifact_reference", "tests/fixtures/source_documents/defra_desnz/defra_desnz_normalized_factors.csv"],
+        ["provenance_checksum_algorithm", "sha256"],
+        ["provenance_checksum_value", "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"],
+        ["provenance_row_number", "3"],
+        ["provenance", "worksheet:Business travel land row 24"],
+        ["source_family_master_id", "defra_master_2024_conversion-factors-2024_DEFRA-2024-VAN"],
+        ["source_family_detail_id", "defra_detail_2024_conversion-factors-2024_DEFRA-2024-VAN"],
+        ["master_external_key", "2024:conversion-factors-2024:DEFRA-2024-VAN"],
+        ["detail_external_key", "DEFRA-2024-VAN:km:CO2e"]
+      ]
+    }
+  ],
+  "malformed_fixture": "tests/fixtures/source_documents/defra_desnz/defra_desnz_malformed_factors.csv",
+  "malformed_status": {
+    "python": "failed",
+    "dotnet": "Failed"
+  },
+  "malformed_issues": [
+    {
+      "code": "DEFRA_DESNZ_CONTENT_INVALID_FACTOR_VALUE",
+      "field_key": "factor_value",
+      "python_location": "row[2].factor_value",
+      "source_row_number": 2
+    },
+    {
+      "code": "DEFRA_DESNZ_CONTENT_MISSING_REQUIRED_FIELD",
+      "field_key": "unit",
+      "python_location": "row[3].unit",
+      "source_row_number": 3
+    }
+  ],
+  "empty_status": {
+    "python": "no_records",
+    "dotnet": "Completed",
+    "intentional_difference": "Python exposes a no_records status for valid DEFRA/DESNZ content with no parsed rows; .NET keeps the adapter run completed and carries DEFRA_DESNZ_CONTENT_NO_RECORDS as a warning."
+  },
+  "empty_issue_codes": [
+    "DEFRA_DESNZ_CONTENT_NO_RECORDS"
+  ]
+}

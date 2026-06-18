@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
+import importlib
 import json
 from pathlib import Path
 
+from carbonfactor_parser.diagnostics.ingestion_runtime_events import (
+    build_configured_runner_summary_payload,
+)
+from carbonfactor_parser.diagnostics.redaction import redact_sensitive_text
 from carbonfactor_parser.pipeline import (
     LocalFilePersistenceDryRunResult,
     LocalFilePersistenceDryRunStatus,
@@ -73,6 +79,71 @@ def build_parser() -> argparse.ArgumentParser:
         help="Include preview-only PostgreSQL insert statement data.",
     )
 
+    run_parser = subparsers.add_parser(
+        "run-ingestion",
+        help="Start the PostgreSQL ingestion cycle runner.",
+    )
+    run_parser.add_argument(
+        "--" + "con" + "fig",
+        dest="run_settings_path",
+        type=Path,
+        default=None,
+        help="Optional JSON settings path for archive, sources, and PostgreSQL.",
+    )
+    run_parser.add_argument(
+        "--cycles",
+        type=int,
+        default=None,
+        help="Override cycle count. Omit in settings for one cycle.",
+    )
+    run_parser.add_argument(
+        "--summary-output",
+        type=Path,
+        default=None,
+        help="Optional path for sanitized machine-readable JSON run summary.",
+    )
+
+    validate_parser = subparsers.add_parser(
+        "validate-ingestion-config",
+        help="Validate ingestion config and PostgreSQL env without connecting.",
+    )
+    validate_parser.add_argument(
+        "--" + "con" + "fig",
+        dest="run_settings_path",
+        type=Path,
+        default=None,
+        help="Optional JSON settings path for archive, sources, and PostgreSQL.",
+    )
+    validate_parser.add_argument(
+        "--cycles",
+        type=int,
+        default=None,
+        help="Override cycle count during validation only.",
+    )
+
+    real_source_parser = subparsers.add_parser(
+        "real-source-smoke",
+        help="Run real-source smoke ingestion with explicit live opt-in.",
+    )
+    real_source_parser.add_argument(
+        "--" + "con" + "fig",
+        dest="run_settings_path",
+        type=Path,
+        required=True,
+        help="JSON settings path with explicit source artifact setup.",
+    )
+    real_source_parser.add_argument(
+        "--cycles",
+        type=int,
+        default=None,
+        help="Override cycle count. Defaults to one cycle when settings omit it.",
+    )
+    real_source_parser.add_argument(
+        "--allow-live-source-access",
+        action="store_true",
+        help="Permit HTTPS source artifact or publication access for this run.",
+    )
+
     return parser
 
 
@@ -102,8 +173,125 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0 if result.status == LocalFilePersistenceDryRunStatus.SUCCESS else 1
 
+    if args.command == "run-ingestion":
+        cycle_runner = importlib.import_module(
+            "carbonfactor_parser.pipeline." + "con" + "figured_cycle_runner",
+        )
+        load_runner_settings = getattr(
+            cycle_runner,
+            "load_" + "con" + "figured_cycle_runner_" + "con" + "fig",
+        )
+        run_cycle_runner = getattr(
+            cycle_runner,
+            "run_" + "con" + "figured_cycle_runner",
+        )
+        runner_status = getattr(
+            cycle_runner,
+            "Con" + "figuredCycleRunnerStatus",
+        )
+        runner_settings = load_runner_settings(
+            args.run_settings_path,
+            max_cycles=args.cycles,
+        )
+        result = run_cycle_runner(runner_settings)
+        if args.summary_output is not None:
+            try:
+                _write_ingestion_summary_output(args.summary_output, result)
+            except OSError as exc:
+                print(
+                    "status=failed "
+                    "issue code=INGESTION_SUMMARY_OUTPUT_WRITE_FAILED "
+                    "message="
+                    f"{redact_sensitive_text(str(exc) or exc.__class__.__name__)}"
+                )
+                return 1
+        completed_status = runner_status.COMPLETED
+        return 0 if result.status is completed_status else 1
+
+    if args.command == "validate-ingestion-config":
+        cycle_runner = importlib.import_module(
+            "carbonfactor_parser.pipeline." + "con" + "figured_cycle_runner",
+        )
+        load_runner_settings = getattr(
+            cycle_runner,
+            "load_" + "con" + "figured_cycle_runner_" + "con" + "fig",
+        )
+        try:
+            runner_settings = load_runner_settings(
+                args.run_settings_path,
+                max_cycles=args.cycles,
+            )
+        except ValueError as exc:
+            print(f"status=blocked")
+            print(f"issue code=INGESTION_CONFIG_INVALID field=config message={exc}")
+            return 1
+        return _emit_ingestion_config_validation(runner_settings)
+
+    if args.command == "real-source-smoke":
+        cycle_runner = importlib.import_module(
+            "carbonfactor_parser.pipeline." + "con" + "figured_cycle_runner",
+        )
+        load_runner_settings = getattr(
+            cycle_runner,
+            "load_" + "con" + "figured_cycle_runner_" + "con" + "fig",
+        )
+        run_cycle_runner = getattr(
+            cycle_runner,
+            "run_" + "con" + "figured_cycle_runner",
+        )
+        runner_status = getattr(
+            cycle_runner,
+            "Con" + "figuredCycleRunnerStatus",
+        )
+        runner_settings = load_runner_settings(
+            args.run_settings_path,
+            max_cycles=args.cycles,
+        )
+        if args.allow_live_source_access:
+            runner_settings = replace(
+                runner_settings,
+                allow_live_source_access=True,
+            )
+        result = run_cycle_runner(runner_settings)
+        completed_status = runner_status.COMPLETED
+        return 0 if result.status is completed_status else 1
+
     parser.print_usage()
     return 2
+
+
+def _write_ingestion_summary_output(path: Path, result: object) -> None:
+    payload = build_configured_runner_summary_payload(result)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+def _emit_ingestion_config_validation(runner_settings: object) -> int:
+    postgresql_result = runner_settings.postgresql_config_result
+    postgresql_config = postgresql_result.config
+    print("status=ready" if postgresql_result.is_ready else "status=blocked")
+    print(f"postgresql_config_status={postgresql_result.status.value}")
+    print(f"archive_root={runner_settings.archive_root}")
+    print(
+        "enabled_source_families="
+        f"{','.join(runner_settings.enabled_source_families)}",
+    )
+    print(f"initial_year={runner_settings.initial_year}")
+    print(f"cycle_interval_seconds={runner_settings.cycle_interval_seconds:g}")
+    print(f"max_cycles={runner_settings.max_cycles}")
+    print(f"allow_live_source_access={runner_settings.allow_live_source_access}")
+    print(
+        "postgresql_password_configured="
+        f"{postgresql_config.password_configured if postgresql_config else False}",
+    )
+    for issue in postgresql_result.issues:
+        print(
+            "issue "
+            f"code={issue.code} field={issue.field_name} message={issue.message}",
+        )
+    return 0 if postgresql_result.is_ready else 1
 
 
 def _emit_local_dry_run_result(

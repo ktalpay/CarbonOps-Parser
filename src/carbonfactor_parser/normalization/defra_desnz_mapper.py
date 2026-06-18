@@ -23,6 +23,43 @@ DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS = (
     "unit",
 )
 
+DEFRA_DESNZ_NORMALIZED_MAPPING_FIELDS = (
+    "source_family",
+    "source_id",
+    "source_year",
+    "source_version",
+    "record_index",
+    "row_number",
+    "factor_id",
+    "factor_name",
+    "factor_value",
+    "unit",
+    "category",
+    "subcategory",
+    "activity",
+    "greenhouse_gas",
+    "provenance",
+)
+
+_DEFRA_DESNZ_REQUIRED_NORMALIZED_FIELDS = (
+    "source_year",
+    "source_version",
+    "category",
+    "factor_id",
+    "factor_name",
+    "factor_value",
+    "unit",
+    "provenance",
+)
+
+_DEFRA_DESNZ_NORMALIZED_ONLY_FIELDS = (
+    "source_year",
+    "source_version",
+    "category",
+    "factor_value",
+    "provenance",
+)
+
 
 class DefraDesnzNormalizationMappingStatus(str, Enum):
     """Status for minimal DEFRA/DESNZ fixture normalization mapping."""
@@ -115,13 +152,14 @@ def _record_issues(record: NormalizationInputRecord) -> tuple[NormalizationIssue
             ),
         )
 
-    for field_name in DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS:
+    required_fields = _required_fields(record)
+    for field_name in required_fields:
         if _missing_raw_field(record, field_name):
             issues.append(
                 NormalizationIssue(
                     code="DEFRA_DESNZ_NORMALIZATION_MISSING_RAW_FIELD",
                     message=(
-                        "DEFRA/DESNZ minimal normalization input is missing "
+                        "DEFRA/DESNZ normalization input is missing "
                         f"required raw field: {field_name}."
                     ),
                     severity=NormalizationIssueSeverity.ERROR,
@@ -129,10 +167,29 @@ def _record_issues(record: NormalizationInputRecord) -> tuple[NormalizationIssue
                 ),
             )
 
+    if _is_normalized_extraction_record(record) and not _missing_raw_field(
+        record,
+        "factor_value",
+    ):
+        try:
+            float(str(record.raw_fields["factor_value"]).strip())
+        except ValueError:
+            issues.append(
+                NormalizationIssue(
+                    code="DEFRA_DESNZ_NORMALIZATION_INVALID_FACTOR_VALUE",
+                    message="DEFRA/DESNZ factor_value must be numeric.",
+                    severity=NormalizationIssueSeverity.ERROR,
+                    location=_record_location(record, "factor_value"),
+                ),
+            )
+
     return tuple(issues)
 
 
 def _normalized_record(record: NormalizationInputRecord) -> NormalizedRecord:
+    if _is_normalized_extraction_record(record):
+        return _normalized_extraction_record(record)
+
     return NormalizedRecord(
         record_id=(
             f"{record.source_family}:{record.source_id}:"
@@ -149,6 +206,50 @@ def _normalized_record(record: NormalizationInputRecord) -> NormalizedRecord:
         ),
         source_reference=_source_reference(record),
         is_artificial=True,
+    )
+
+
+def _normalized_extraction_record(record: NormalizationInputRecord) -> NormalizedRecord:
+    raw_fields = record.raw_fields
+    return NormalizedRecord(
+        record_id=(
+            f"{record.source_family}:{record.source_id}:"
+            f"{_text(raw_fields['source_year'])}:"
+            f"{_text(raw_fields['source_version'])}:"
+            f"{_text(raw_fields['factor_id'])}"
+        ),
+        fields=(
+            ("source_family", record.source_family),
+            ("source_id", record.source_id),
+            ("source_year", _text(raw_fields["source_year"])),
+            ("source_version", _text(raw_fields["source_version"])),
+            ("record_index", record.record_index),
+            ("row_number", record.row_number),
+            ("factor_id", _text(raw_fields["factor_id"])),
+            ("factor_name", _text(raw_fields["factor_name"])),
+            ("factor_value", float(_text(raw_fields["factor_value"]))),
+            ("unit", _text(raw_fields["unit"])),
+            ("category", _text(raw_fields["category"])),
+            ("subcategory", _optional_text(raw_fields.get("subcategory"))),
+            ("activity", _optional_text(raw_fields.get("activity"))),
+            ("greenhouse_gas", _optional_text(raw_fields.get("greenhouse_gas"))),
+            ("provenance", _text(raw_fields["provenance"])),
+        ),
+        source_reference=_source_reference(record),
+        is_artificial=False,
+    )
+
+
+def _required_fields(record: NormalizationInputRecord) -> tuple[str, ...]:
+    if _is_normalized_extraction_record(record):
+        return _DEFRA_DESNZ_REQUIRED_NORMALIZED_FIELDS
+    return DEFRA_DESNZ_MINIMAL_NORMALIZATION_FIELDS
+
+
+def _is_normalized_extraction_record(record: NormalizationInputRecord) -> bool:
+    return any(
+        field_name in record.raw_fields
+        for field_name in _DEFRA_DESNZ_NORMALIZED_ONLY_FIELDS
     )
 
 
@@ -173,3 +274,14 @@ def _source_reference(record: NormalizationInputRecord) -> str | None:
     if isinstance(artifact_reference, str) and artifact_reference:
         return artifact_reference
     return None
+
+
+def _text(value: object) -> str:
+    return str(value).strip()
+
+
+def _optional_text(value: object) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None

@@ -1,0 +1,4 @@
+record_type,source_year,source_version,factor_id,factor_name,factor_value,unit,category,subcategory,ipcc_sector,gas,region,technology,provenance
+emission_factor,2006,efdb-v2024,IPCC-ENERGY-CO2,Stationary combustion CO2,56.1,t CO2/TJ,Energy,Stationary combustion,1A,CO2,Global,Default,worksheet:EFDB row 12
+metadata,2006,efdb-v2024,IPCC-NOTE-001,Workbook note,0,none,Notes,,metadata,CO2,,,skip
+emission_factor,2019,efdb-v2024,IPCC-WASTE-CH4,Wastewater methane,0.25,kg CH4/kg COD,Waste,Wastewater,4D,CH4,Global,Default,worksheet:EFDB row 44

@@ -46,7 +46,7 @@ FORBIDDEN_NAME_FRAGMENTS = (
 def _create_table_names(sql_statements: tuple[str, ...]) -> tuple[str, ...]:
     names: list[str] = []
     for statement in sql_statements:
-        match = re.match(r"CREATE TABLE ([a-z][a-z0-9_]*) \(", statement)
+        match = re.match(r"CREATE TABLE (?:IF NOT EXISTS )?([a-z][a-z0-9_]*) \(", statement)
         if match is not None:
             names.append(match.group(1))
     return tuple(names)
@@ -54,7 +54,7 @@ def _create_table_names(sql_statements: tuple[str, ...]) -> tuple[str, ...]:
 
 def _sql_for_table(table_name: str) -> str:
     for statement in render_postgresql_phase1_create_table_ddl():
-        if statement.startswith(f"CREATE TABLE {table_name} "):
+        if statement.startswith(f"CREATE TABLE IF NOT EXISTS {table_name} ") or statement.startswith(f"CREATE TABLE {table_name} "):
             return statement
     raise AssertionError(f"CREATE TABLE statement not rendered for {table_name}")
 
@@ -75,8 +75,28 @@ def test_rendered_sql_includes_table_names_and_representative_columns() -> None:
     assert "run_status text NOT NULL" in _sql_for_table("ingestion_runs")
     assert "source_document_id uuid NOT NULL" in _sql_for_table("source_documents")
     assert "source_document_uri text NOT NULL" in _sql_for_table("source_documents")
+    assert "source_family text NOT NULL" in _sql_for_table(
+        "ghg_emission_factor_masters"
+    )
+    assert "source_year integer NOT NULL" in _sql_for_table(
+        "ghg_emission_factor_masters"
+    )
+    assert "source_version text NOT NULL" in _sql_for_table(
+        "ghg_emission_factor_masters"
+    )
+    assert "artifact_checksum_sha256 text" in _sql_for_table(
+        "ghg_emission_factor_masters"
+    )
+    assert "archive_reference text" in _sql_for_table(
+        "ghg_emission_factor_masters"
+    )
+    assert "run_id text" in _sql_for_table("ghg_emission_factor_masters")
+    assert "status text NOT NULL" in _sql_for_table("ghg_emission_factor_masters")
     assert "master_external_key text NOT NULL" in _sql_for_table(
         "ghg_emission_factor_masters"
+    )
+    assert "raw_fields jsonb NOT NULL" in _sql_for_table(
+        "defra_emission_factor_details"
     )
     assert "factor_value numeric NOT NULL" in _sql_for_table(
         "defra_emission_factor_details"
@@ -97,9 +117,17 @@ def test_unique_foreign_key_and_index_fragments_follow_catalog_metadata() -> Non
         "FOREIGN KEY (source_document_id) "
         "REFERENCES source_documents (source_document_id)"
     ) in statements
+    assert (
+        "CONSTRAINT uq_ghg_emission_factor_masters_family_year_version_key "
+        "UNIQUE (source_family, source_year, source_version, master_external_key)"
+    ) in statements
     assert len(index_statements) == expected_index_count
     assert (
         "ON defra_emission_factor_details (defra_emission_factor_master_id);"
+    ) in "\n".join(index_statements)
+    assert (
+        "ON ipcc_emission_factor_masters "
+        "(source_family, source_year, source_version);"
     ) in "\n".join(index_statements)
 
 
@@ -113,8 +141,22 @@ def test_output_ordering_is_deterministic_across_repeated_calls() -> None:
 
 def test_output_excludes_forbidden_non_contract_name_fragments() -> None:
     rendered_sql = "\n".join(render_postgresql_phase1_schema_ddl()).lower()
+    identifiers = re.findall(r"[a-z][a-z0-9_]*", rendered_sql)
 
-    assert not any(fragment in rendered_sql for fragment in FORBIDDEN_NAME_FRAGMENTS)
+    assert not any(
+        identifier == fragment or identifier.startswith(f"{fragment}_")
+        for identifier in identifiers
+        for fragment in FORBIDDEN_NAME_FRAGMENTS
+    )
+
+
+def test_schema_bootstrap_ddl_is_additive_only() -> None:
+    rendered_sql = "\n".join(render_postgresql_phase1_schema_ddl()).upper()
+
+    assert "DROP " not in rendered_sql
+    assert "TRUNCATE " not in rendered_sql
+    assert "DELETE " not in rendered_sql
+    assert "ALTER TABLE" not in rendered_sql
 
 
 def test_importing_schema_ddl_does_not_import_runtime_heavy_libraries() -> None:

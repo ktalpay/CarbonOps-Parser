@@ -1,14 +1,14 @@
 # PostgreSQL Opt-In Integration Runbook
 
-This runbook defines how future PostgreSQL integration tests should be prepared
-and run safely.
+This runbook defines how PostgreSQL integration tests should be prepared and
+run safely. The default test suite remains deterministic and DB-free; real
+PostgreSQL checks require explicit opt-in controls and an externally supplied
+test DSN.
 
-It is documentation and test-harness guidance only. It does not create a
-PostgreSQL connection, create a cursor, run SQL, write records, start a
-transaction, finish a transaction, roll back a transaction, create tables, run
-migrations, load environment variables in library code, load configuration
-files in library code, load credentials, perform HTTP or network calls, schedule
-work, or claim production persistence readiness.
+The current Python production runtime is documented in
+[Production Packaging And Operator Runbook](production-packaging-operator-runbook.md).
+This integration runbook is test-harness guidance; it must not be used to store
+production DSNs, passwords, tokens, or database dumps.
 
 ## Why Integration Tests Are Opt-In
 
@@ -16,10 +16,10 @@ The default test suite must remain deterministic and local-only. Normal
 `python -m pytest` runs must not require PostgreSQL, credentials, network
 access, a local database, migrations, or table setup.
 
-PostgreSQL integration tests are reserved for future runtime tasks that
-explicitly add database behavior behind the runtime execution gate. Until then,
-the repository remains unsupported/no-execution and integration test behavior is
-represented only by metadata.
+PostgreSQL integration tests are opt-in because they can open external
+connections, create isolated schemas, bootstrap Phase 1 tables, and write test
+rows. They must not run unless the operator provides the canonical controls
+described below.
 
 ## Existing Boundary
 
@@ -138,7 +138,8 @@ Allowed status values:
 - `not_run`
 - `passed`
 - `failed_sanitized`
-- `blocked_environment`
+- `blocked_environment` for historical environment-unavailable smoke attempts
+  only; completed release records should use `passed` or `failed_sanitized`.
 
 Current execution record:
 
@@ -258,6 +259,148 @@ python -m pytest -m postgresql_integration tests/test_postgresql_connection_smok
 
 This command is a future/manual integration path. It is not part of the default
 test suite and does not exist as runtime persistence enablement.
+
+## PH-011 Docker Runtime Schema And Year-State Integration
+
+PH-011 adds an opt-in integration test that proves runtime schema bootstrap and
+source-family year-state behavior against Docker PostgreSQL. The default test
+suite remains DB-free. Run this only against an isolated local test container on
+the user's M3 test machine.
+
+Start PostgreSQL locally:
+
+```bash
+docker run --rm --name carbonops-ph011-postgres \
+  -e POSTGRES_PASSWORD=carbonops_local_test \
+  -e POSTGRES_USER=carbonops \
+  -e POSTGRES_DB=carbonops_parser_integration_test \
+  -p 54329:5432 \
+  postgres:16
+```
+
+In a second shell, run the focused integration test with an externally supplied
+local DSN:
+
+```bash
+CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1 \
+CARBONOPS_POSTGRESQL_TEST_DSN='<external test DSN supplied by the runner>' \
+python -m pytest -m postgresql_integration tests/test_postgresql_runtime_year_state.py
+```
+
+The test creates a unique `carbonops_ph011_<uuid>` schema, creates missing Phase
+1 tables with `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS`,
+records minimal GHG Protocol year-state rows, verifies latest-year and next-year
+behavior, and verifies DEFRA/DESNZ no-data behavior returns the default initial
+year `2024`.
+
+Do not use production, staging, shared development, customer, or confidential
+databases. Do not commit DSNs, passwords, container logs, or machine-specific
+paths. After the run, unset both integration controls:
+
+```bash
+unset CARBONOPS_RUN_POSTGRESQL_INTEGRATION
+unset CARBONOPS_POSTGRESQL_TEST_DSN
+```
+
+## PH-017 Production E2E Docker PostgreSQL Validation
+
+PH-017 is the final production E2E release-validation pass for the source
+families `ghg_protocol`, `defra_desnz`, and `ipcc_efdb`. Run it only on the
+user's isolated Apple M3 Docker PostgreSQL test machine with an externally
+supplied local test DSN.
+
+Start PostgreSQL locally:
+
+```bash
+docker run --rm --name carbonops-ph017-postgres \
+  -e POSTGRES_PASSWORD=carbonops_local_test \
+  -e POSTGRES_USER=carbonops \
+  -e POSTGRES_DB=carbonops_parser_integration_test \
+  -p 54329:5432 \
+  postgres:16
+```
+
+In a second shell, run the focused PH-017 integration tests:
+
+```bash
+CARBONOPS_RUN_POSTGRESQL_INTEGRATION=1 \
+CARBONOPS_POSTGRESQL_TEST_DSN='<external test DSN supplied by the runner>' \
+python -m pytest -m postgresql_integration \
+  tests/test_ghg_protocol_production_e2e.py \
+  tests/test_defra_desnz_production_e2e.py \
+  tests/test_ipcc_efdb_production_e2e.py \
+  tests/test_postgresql_runtime_year_state.py
+```
+
+Then run the default release checks:
+
+```bash
+python scripts/release_validation_gate.py
+python scripts/production_rc_verification.py
+git diff --check
+```
+
+PH-017 M3 execution record:
+
+- status: `passed`
+- Docker PostgreSQL E2E integration: `4 passed, 22 deselected`.
+- `dotnet restore`: completed.
+- `python scripts/release_validation_gate.py`: passed.
+- focused .NET production-safety contract tests: `17 passed`.
+- `python scripts/production_rc_verification.py`: `Passed true`.
+- `python -m pytest`: `2062 passed`.
+- `git diff --check`: passed.
+- result: PH-017 source-family Docker PostgreSQL E2E validation passed.
+- secret handling: no DSN, password, credential, token, or secret value is
+  recorded in this runbook.
+
+Accepted risks remain explicit:
+
+- Live source URL/default discovery remains a release risk.
+- No source-owner correctness claim is made.
+- No factor correctness claim is made.
+- No legal correctness claim is made.
+- No compliance correctness claim is made.
+
+Expected PH-017 evidence shape:
+
+- GHG Protocol, DEFRA/DESNZ, and IPCC EFDB are all explicitly reported.
+- Schema bootstrap creates or verifies required tables additively.
+- No existing data selects target year `2024`.
+- Existing `2024` selects `2025`.
+- Existing `2025` selects `2026`.
+- Existing `2026` selects `2027`.
+- Unavailable target-year source data reports `no_available_source_year`
+  without inserts or year-state advancement.
+- Available target-year runs download, archive metadata, parse, validate,
+  insert, and advance latest year only after successful insert.
+- Repeated execution does not duplicate normalized factor records.
+- DB/config failures are sanitized and do not expose DSNs, passwords, tokens, or
+  raw configured values.
+
+Current PH-017 execution record:
+
+- status: `passed`
+- date: `2026-05-15`
+- environment: user's Apple M3 Docker PostgreSQL machine.
+- opt-in PostgreSQL E2E command: `4 passed, 22 deselected`.
+- release validation gate: passed.
+- production RC verification: `Passed true`.
+- default Python test suite: `2062 passed`.
+- focused .NET production-safety contract tests: `17 passed`.
+- `dotnet restore`: completed.
+- `git diff --check`: passed.
+- validation record:
+  [PH-017 Production E2E Docker PostgreSQL Release Validation](ph-017-production-e2e-docker-postgresql-release-validation.md).
+- boundaries: live source URL/default discovery remains operator-reviewed; no
+  source-owner, factor, legal, or compliance correctness claim is made.
+
+After the manual run, unset both integration controls:
+
+```bash
+unset CARBONOPS_RUN_POSTGRESQL_INTEGRATION
+unset CARBONOPS_POSTGRESQL_TEST_DSN
+```
 
 ## Verifying Default Tests Remain DB-Free
 

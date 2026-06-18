@@ -15,6 +15,29 @@ class SourceFamily(str, Enum):
     IPCC = "ipcc"
 
 
+_SOURCE_FAMILY_ALIASES: Mapping[str, SourceFamily] = {
+    SourceFamily.GHG.value: SourceFamily.GHG,
+    "ghg_protocol": SourceFamily.GHG,
+    SourceFamily.DEFRA.value: SourceFamily.DEFRA,
+    "defra_desnz": SourceFamily.DEFRA,
+    "desnz": SourceFamily.DEFRA,
+    SourceFamily.IPCC.value: SourceFamily.IPCC,
+    "ipcc_efdb": SourceFamily.IPCC,
+}
+
+_SOURCE_FAMILY_POSTGRESQL_VALUES: Mapping[SourceFamily, str] = {
+    SourceFamily.GHG: "ghg_protocol",
+    SourceFamily.DEFRA: "defra_desnz",
+    SourceFamily.IPCC: "ipcc_efdb",
+}
+
+_SOURCE_FAMILY_TABLE_PREFIXES: Mapping[SourceFamily, str] = {
+    SourceFamily.GHG: "ghg",
+    SourceFamily.DEFRA: "defra",
+    SourceFamily.IPCC: "ipcc",
+}
+
+
 class PostgreSQLDataType(str, Enum):
     """Conceptual PostgreSQL-oriented data types used by catalog definitions."""
 
@@ -33,6 +56,7 @@ class ColumnDefinition:
     data_type: PostgreSQLDataType
     nullable: bool
     is_primary_key: bool = False
+    default_sql: str | None = None
 
 
 @dataclass(frozen=True)
@@ -149,11 +173,214 @@ def _build_shared_tables() -> tuple[TableDefinition, ...]:
                 ),
             ),
         ),
+        TableDefinition(
+            name="parser_ingestion_runs",
+            columns=(
+                ColumnDefinition("run_id", PostgreSQLDataType.TEXT, nullable=False, is_primary_key=True),
+                ColumnDefinition("started_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False),
+                ColumnDefinition("finished_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=True),
+                ColumnDefinition("status", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("trigger_type", PostgreSQLDataType.TEXT, nullable=False, default_sql="'operator'"),
+                ColumnDefinition("config_hash", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("enabled_source_families", PostgreSQLDataType.JSONB, nullable=False, default_sql="'[]'::jsonb"),
+                ColumnDefinition("initial_year", PostgreSQLDataType.INTEGER, nullable=True),
+                ColumnDefinition("cycle_count", PostgreSQLDataType.INTEGER, nullable=True),
+                ColumnDefinition("total_parsed_rows", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("total_inserted_count", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("total_skipped_duplicate_count", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("failure_count", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("metadata", PostgreSQLDataType.JSONB, nullable=False, default_sql="'{}'::jsonb"),
+                ColumnDefinition("created_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False, default_sql="now()"),
+                ColumnDefinition("updated_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False, default_sql="now()"),
+            ),
+        ),
+        TableDefinition(
+            name="parser_ingestion_source_results",
+            columns=(
+                ColumnDefinition("parser_ingestion_source_result_id", PostgreSQLDataType.UUID, nullable=False, is_primary_key=True),
+                ColumnDefinition("run_id", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("source_family", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("target_year", PostgreSQLDataType.INTEGER, nullable=True),
+                ColumnDefinition("latest_year", PostgreSQLDataType.INTEGER, nullable=True),
+                ColumnDefinition("status", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("download_status", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("parse_status", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("validation_status", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("insert_status", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("parsed_rows", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("master_inserted", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("master_skipped", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("detail_inserted", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("detail_skipped", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("issue_count", PostgreSQLDataType.INTEGER, nullable=False, default_sql="0"),
+                ColumnDefinition("metadata", PostgreSQLDataType.JSONB, nullable=False, default_sql="'{}'::jsonb"),
+                ColumnDefinition("created_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False, default_sql="now()"),
+                ColumnDefinition("updated_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False, default_sql="now()"),
+            ),
+            foreign_keys=(
+                ForeignKeyDefinition("run_id", "parser_ingestion_runs", "run_id"),
+            ),
+            unique_constraints=(
+                UniqueConstraintDefinition(
+                    name="uq_parser_ingestion_source_results_run_family_year",
+                    column_names=("run_id", "source_family", "target_year"),
+                ),
+            ),
+        ),
+        TableDefinition(
+            name="parser_ingestion_issues",
+            columns=(
+                ColumnDefinition("parser_ingestion_issue_id", PostgreSQLDataType.UUID, nullable=False, is_primary_key=True),
+                ColumnDefinition("run_id", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("source_family", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("target_year", PostgreSQLDataType.INTEGER, nullable=True),
+                ColumnDefinition("stage", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("code", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("severity", PostgreSQLDataType.TEXT, nullable=False, default_sql="'error'"),
+                ColumnDefinition("field_name", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("message", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("metadata", PostgreSQLDataType.JSONB, nullable=False, default_sql="'{}'::jsonb"),
+                ColumnDefinition("created_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False, default_sql="now()"),
+            ),
+            foreign_keys=(
+                ForeignKeyDefinition("run_id", "parser_ingestion_runs", "run_id"),
+            ),
+            indexes=(
+                IndexDefinition(name="idx_parser_ingestion_issues_run_id", column_names=("run_id",)),
+                IndexDefinition(name="idx_parser_ingestion_issues_family_year", column_names=("source_family", "target_year")),
+                IndexDefinition(name="idx_parser_ingestion_issues_code", column_names=("code",)),
+            ),
+        ),
+        TableDefinition(
+            name="source_family_year_states",
+            columns=(
+                ColumnDefinition(
+                    "source_family_year_state_id",
+                    PostgreSQLDataType.UUID,
+                    nullable=False,
+                    is_primary_key=True,
+                ),
+                ColumnDefinition("source_family", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("ingested_year", PostgreSQLDataType.INTEGER, nullable=False),
+                ColumnDefinition("created_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False),
+                ColumnDefinition("updated_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False),
+            ),
+            unique_constraints=(
+                UniqueConstraintDefinition(
+                    name="uq_source_family_year_states_family_year",
+                    column_names=("source_family", "ingested_year"),
+                ),
+            ),
+            indexes=(
+                IndexDefinition(
+                    name="idx_source_family_year_states_family_year",
+                    column_names=("source_family", "ingested_year"),
+                ),
+            ),
+        ),
+        TableDefinition(
+            name="normalized_factor_records",
+            columns=(
+                ColumnDefinition(
+                    "normalized_factor_record_id",
+                    PostgreSQLDataType.TEXT,
+                    nullable=False,
+                    is_primary_key=True,
+                ),
+                ColumnDefinition(
+                    "idempotency_key_sha256",
+                    PostgreSQLDataType.TEXT,
+                    nullable=False,
+                ),
+                ColumnDefinition(
+                    "source_family",
+                    PostgreSQLDataType.TEXT,
+                    nullable=False,
+                ),
+                ColumnDefinition("source_id", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition(
+                    "source_year",
+                    PostgreSQLDataType.INTEGER,
+                    nullable=True,
+                ),
+                ColumnDefinition(
+                    "source_version",
+                    PostgreSQLDataType.TEXT,
+                    nullable=True,
+                ),
+                ColumnDefinition("record_id", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition(
+                    "source_row_number",
+                    PostgreSQLDataType.INTEGER,
+                    nullable=True,
+                ),
+                ColumnDefinition(
+                    "source_document_reference",
+                    PostgreSQLDataType.TEXT,
+                    nullable=True,
+                ),
+                ColumnDefinition(
+                    "source_artifact_reference",
+                    PostgreSQLDataType.TEXT,
+                    nullable=True,
+                ),
+                ColumnDefinition(
+                    "source_checksum_sha256",
+                    PostgreSQLDataType.TEXT,
+                    nullable=True,
+                ),
+                ColumnDefinition("factor_id", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("factor_name", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition(
+                    "factor_value",
+                    PostgreSQLDataType.NUMERIC,
+                    nullable=False,
+                ),
+                ColumnDefinition("factor_unit", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition(
+                    "validation_status",
+                    PostgreSQLDataType.TEXT,
+                    nullable=False,
+                ),
+                ColumnDefinition("run_id", PostgreSQLDataType.TEXT, nullable=True),
+                ColumnDefinition("parser_key", PostgreSQLDataType.TEXT, nullable=False),
+                ColumnDefinition("metadata", PostgreSQLDataType.JSONB, nullable=False),
+                ColumnDefinition(
+                    "normalized_fields",
+                    PostgreSQLDataType.JSONB,
+                    nullable=False,
+                ),
+                ColumnDefinition("warnings", PostgreSQLDataType.JSONB, nullable=False),
+                ColumnDefinition("errors", PostgreSQLDataType.JSONB, nullable=False),
+                ColumnDefinition(
+                    "created_at",
+                    PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE,
+                    nullable=False,
+                ),
+                ColumnDefinition(
+                    "updated_at",
+                    PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE,
+                    nullable=False,
+                ),
+            ),
+            unique_constraints=(
+                UniqueConstraintDefinition(
+                    name="uq_normalized_factor_records_idempotency_key",
+                    column_names=("idempotency_key_sha256",),
+                ),
+            ),
+            indexes=(
+                IndexDefinition(
+                    name="idx_normalized_factor_records_source_year",
+                    column_names=("source_family", "source_id", "source_year"),
+                ),
+            ),
+        ),
     )
 
 
 def _build_source_family_tables(source_family: SourceFamily) -> tuple[TableDefinition, TableDefinition]:
-    family = source_family.value
+    family = source_family_table_prefix(source_family)
     master_table_name = f"{family}_emission_factor_masters"
     detail_table_name = f"{family}_emission_factor_details"
     master_id = f"{family}_emission_factor_master_id"
@@ -163,22 +390,49 @@ def _build_source_family_tables(source_family: SourceFamily) -> tuple[TableDefin
         name=master_table_name,
         columns=(
             ColumnDefinition(master_id, PostgreSQLDataType.UUID, nullable=False, is_primary_key=True),
+            ColumnDefinition("source_family", PostgreSQLDataType.TEXT, nullable=False),
+            ColumnDefinition("source_year", PostgreSQLDataType.INTEGER, nullable=False),
+            ColumnDefinition("source_version", PostgreSQLDataType.TEXT, nullable=False),
+            ColumnDefinition("source_release", PostgreSQLDataType.TEXT, nullable=True),
             ColumnDefinition("source_document_id", PostgreSQLDataType.UUID, nullable=False),
+            ColumnDefinition("ingestion_run_id", PostgreSQLDataType.UUID, nullable=True),
+            ColumnDefinition("run_id", PostgreSQLDataType.TEXT, nullable=True),
             ColumnDefinition("master_external_key", PostgreSQLDataType.TEXT, nullable=False),
-            ColumnDefinition("lifecycle_status", PostgreSQLDataType.TEXT, nullable=False),
+            ColumnDefinition("status", PostgreSQLDataType.TEXT, nullable=False),
+            ColumnDefinition("artifact_reference", PostgreSQLDataType.TEXT, nullable=True),
+            ColumnDefinition("artifact_checksum_sha256", PostgreSQLDataType.TEXT, nullable=True),
+            ColumnDefinition("archive_reference", PostgreSQLDataType.TEXT, nullable=True),
+            ColumnDefinition("archive_checksum_sha256", PostgreSQLDataType.TEXT, nullable=True),
             ColumnDefinition("effective_from", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=True),
             ColumnDefinition("effective_to", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=True),
             ColumnDefinition("record_checksum_sha256", PostgreSQLDataType.TEXT, nullable=False),
+            ColumnDefinition("metadata", PostgreSQLDataType.JSONB, nullable=False),
             ColumnDefinition("created_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False),
             ColumnDefinition("updated_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False),
         ),
         foreign_keys=(
             ForeignKeyDefinition("source_document_id", "source_documents", "source_document_id"),
+            ForeignKeyDefinition("ingestion_run_id", "ingestion_runs", "ingestion_run_id"),
         ),
         unique_constraints=(
             UniqueConstraintDefinition(
-                name=f"uq_{master_table_name}_external_key",
-                column_names=("master_external_key",),
+                name=f"uq_{master_table_name}_family_year_version_key",
+                column_names=(
+                    "source_family",
+                    "source_year",
+                    "source_version",
+                    "master_external_key",
+                ),
+            ),
+        ),
+        indexes=(
+            IndexDefinition(
+                name=f"idx_{master_table_name}_source_year",
+                column_names=("source_family", "source_year", "source_version"),
+            ),
+            IndexDefinition(
+                name=f"idx_{master_table_name}_ingestion_run_id",
+                column_names=("ingestion_run_id",),
             ),
         ),
     )
@@ -189,10 +443,15 @@ def _build_source_family_tables(source_family: SourceFamily) -> tuple[TableDefin
             ColumnDefinition(detail_id, PostgreSQLDataType.UUID, nullable=False, is_primary_key=True),
             ColumnDefinition(master_id, PostgreSQLDataType.UUID, nullable=False),
             ColumnDefinition("detail_external_key", PostgreSQLDataType.TEXT, nullable=False),
+            ColumnDefinition("source_row_number", PostgreSQLDataType.INTEGER, nullable=True),
+            ColumnDefinition("factor_id", PostgreSQLDataType.TEXT, nullable=True),
+            ColumnDefinition("factor_name", PostgreSQLDataType.TEXT, nullable=True),
             ColumnDefinition("factor_value", PostgreSQLDataType.NUMERIC, nullable=False),
             ColumnDefinition("factor_unit", PostgreSQLDataType.TEXT, nullable=False),
-            ColumnDefinition("lifecycle_status", PostgreSQLDataType.TEXT, nullable=False),
+            ColumnDefinition("status", PostgreSQLDataType.TEXT, nullable=False),
             ColumnDefinition("record_checksum_sha256", PostgreSQLDataType.TEXT, nullable=False),
+            ColumnDefinition("raw_fields", PostgreSQLDataType.JSONB, nullable=False),
+            ColumnDefinition("normalized_fields", PostgreSQLDataType.JSONB, nullable=False),
             ColumnDefinition("created_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False),
             ColumnDefinition("updated_at", PostgreSQLDataType.TIMESTAMP_WITH_TIME_ZONE, nullable=False),
         ),
@@ -242,5 +501,28 @@ def get_required_table_names() -> tuple[str, ...]:
 def get_source_family_table_names(source_family: SourceFamily | str) -> tuple[str, ...]:
     """Return deterministic master/detail table names for a source family."""
 
-    family = SourceFamily(source_family)
+    family = coerce_source_family(source_family)
     return get_postgresql_phase1_schema_catalog().source_family_tables[family]
+
+
+def coerce_source_family(source_family: SourceFamily | str) -> SourceFamily:
+    """Return the internal table-prefix enum for any supported family alias."""
+
+    if isinstance(source_family, SourceFamily):
+        return source_family
+    try:
+        return _SOURCE_FAMILY_ALIASES[source_family.strip().lower()]
+    except KeyError as exc:
+        raise ValueError(f"Unsupported source family: {source_family}") from exc
+
+
+def source_family_postgresql_value(source_family: SourceFamily | str) -> str:
+    """Return the persisted PostgreSQL source-family identifier."""
+
+    return _SOURCE_FAMILY_POSTGRESQL_VALUES[coerce_source_family(source_family)]
+
+
+def source_family_table_prefix(source_family: SourceFamily | str) -> str:
+    """Return the source-family table/id prefix."""
+
+    return _SOURCE_FAMILY_TABLE_PREFIXES[coerce_source_family(source_family)]

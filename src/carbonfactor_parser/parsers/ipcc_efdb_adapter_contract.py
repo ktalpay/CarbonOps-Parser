@@ -22,6 +22,7 @@ class ParserAdapterSkeletonReadiness(str, Enum):
     """Runtime-passive parser adapter skeleton readiness values."""
 
     CONTRACT_ONLY = "contract_only"
+    CONTENT_PARSER_READY = "content_parser_ready"
 
 
 @dataclass(frozen=True)
@@ -39,7 +40,7 @@ class ParserAdapterCapability:
 
 @dataclass(frozen=True)
 class IpccEfdbParserAdapterDescriptor:
-    """Runtime-passive IPCC EFDB parser adapter skeleton descriptor."""
+    """Runtime-passive IPCC EFDB parser adapter descriptor."""
 
     source_family: str
     parser_key: str
@@ -49,22 +50,22 @@ class IpccEfdbParserAdapterDescriptor:
 
 
 def describe_ipcc_efdb_parser_adapter() -> IpccEfdbParserAdapterDescriptor:
-    """Return deterministic IPCC EFDB parser adapter skeleton metadata only."""
+    """Return deterministic IPCC EFDB parser adapter metadata only."""
 
     capability = ParserAdapterCapability(
         source_family=IPCC_EFDB_SOURCE_FAMILY,
         parser_key=IPCC_EFDB_PARSER_KEY,
         parser_source_format=ParserSourceFormat.DISCOVERY_REFERENCE,
-        format_hint="discovery",
-        supports_parser_execution=False,
+        format_hint="csv",
+        supports_parser_execution=True,
         supports_file_reads=False,
-        supports_content_inspection=False,
+        supports_content_inspection=True,
     )
 
     return IpccEfdbParserAdapterDescriptor(
         source_family=IPCC_EFDB_SOURCE_FAMILY,
         parser_key=IPCC_EFDB_PARSER_KEY,
-        readiness=ParserAdapterSkeletonReadiness.CONTRACT_ONLY,
+        readiness=ParserAdapterSkeletonReadiness.CONTENT_PARSER_READY,
         capability=capability,
         mode=SourceAcquisitionPlanMode.DRY_RUN,
     )

@@ -15,6 +15,7 @@ from carbonfactor_parser.parsers.input_artifact_contract import (
     create_phase1_parser_input_artifact,
 )
 from carbonfactor_parser.parsers.normalized_output_row_contract import (
+    ParserNormalizedOutputRowStatus,
     create_parser_normalized_output_row,
 )
 from carbonfactor_parser.parsers.parser_run_contract import (
@@ -549,6 +550,7 @@ def _row_for_artifact(
     return create_parser_normalized_output_row(
         artifact=artifact,
         row_id=row_id,
+        status=ParserNormalizedOutputRowStatus.VALIDATED,
         normalized_fields={
             "activity_name": artifact.source_family,
             "unit": "kg",

@@ -1,0 +1,135 @@
+{
+  "phase2_source_families": [
+    "ghg_protocol",
+    "defra_desnz",
+    "ipcc_efdb"
+  ],
+  "entries": [
+    {
+      "source_id": "ghg_protocol",
+      "source_family": "ghg_protocol",
+      "display_name": "GHG Protocol",
+      "documents": [
+        {
+          "document_id": "ghg_protocol_declared_reference",
+          "display_name": "GHG Protocol declared reference",
+          "source_reference": "discovery://ghg_protocol/onboarding",
+          "expected_format": "discovery",
+          "required": true
+        }
+      ],
+      "discovery_strategy": "declared_reference",
+      "parser_capability": {
+        "parser_key": "ghg_protocol_phase1_parser",
+        "parser_source_format": "discovery_reference",
+        "supports_parser_execution": false,
+        "capability_notes": "Registry metadata only; parser execution is outside this onboarding contract."
+      },
+      "validation_expectations": {
+        "required_document_fields": [
+          "document_id",
+          "display_name",
+          "source_reference",
+          "expected_format"
+        ],
+        "checksum_required": false,
+        "schema_validation_required": false,
+        "validation_notes": "Declared discovery references are validated for contract shape only."
+      },
+      "update_cadence": "unknown",
+      "runtime_safety": {
+        "allows_network_calls": false,
+        "allows_file_reads": false,
+        "allows_database_writes": false,
+        "requires_credentials": false,
+        "safety_notes": "Default onboarding registry is runtime-passive and local-only."
+      },
+      "enabled": true
+    },
+    {
+      "source_id": "defra_desnz",
+      "source_family": "defra_desnz",
+      "display_name": "DEFRA/DESNZ",
+      "documents": [
+        {
+          "document_id": "defra_desnz_declared_reference",
+          "display_name": "DEFRA/DESNZ declared reference",
+          "source_reference": "discovery://defra_desnz/onboarding",
+          "expected_format": "discovery",
+          "required": true
+        }
+      ],
+      "discovery_strategy": "declared_reference",
+      "parser_capability": {
+        "parser_key": "defra_desnz_phase1_parser",
+        "parser_source_format": "discovery_reference",
+        "supports_parser_execution": false,
+        "capability_notes": "Registry metadata only; parser execution is outside this onboarding contract."
+      },
+      "validation_expectations": {
+        "required_document_fields": [
+          "document_id",
+          "display_name",
+          "source_reference",
+          "expected_format"
+        ],
+        "checksum_required": false,
+        "schema_validation_required": false,
+        "validation_notes": "Declared discovery references are validated for contract shape only."
+      },
+      "update_cadence": "unknown",
+      "runtime_safety": {
+        "allows_network_calls": false,
+        "allows_file_reads": false,
+        "allows_database_writes": false,
+        "requires_credentials": false,
+        "safety_notes": "Default onboarding registry is runtime-passive and local-only."
+      },
+      "enabled": true
+    },
+    {
+      "source_id": "ipcc_efdb",
+      "source_family": "ipcc_efdb",
+      "display_name": "IPCC EFDB",
+      "documents": [
+        {
+          "document_id": "ipcc_efdb_declared_reference",
+          "display_name": "IPCC EFDB declared reference",
+          "source_reference": "discovery://ipcc_efdb/onboarding",
+          "expected_format": "discovery",
+          "required": true
+        }
+      ],
+      "discovery_strategy": "declared_reference",
+      "parser_capability": {
+        "parser_key": "ipcc_efdb_phase1_parser",
+        "parser_source_format": "discovery_reference",
+        "supports_parser_execution": false,
+        "capability_notes": "Registry metadata only; parser execution is outside this onboarding contract."
+      },
+      "validation_expectations": {
+        "required_document_fields": [
+          "document_id",
+          "display_name",
+          "source_reference",
+          "expected_format"
+        ],
+        "checksum_required": false,
+        "schema_validation_required": false,
+        "validation_notes": "Declared discovery references are validated for contract shape only."
+      },
+      "update_cadence": "unknown",
+      "runtime_safety": {
+        "allows_network_calls": false,
+        "allows_file_reads": false,
+        "allows_database_writes": false,
+        "requires_credentials": false,
+        "safety_notes": "Default onboarding registry is runtime-passive and local-only."
+      },
+      "enabled": true
+    }
+  ],
+  "accepted_asymmetries": [
+    "Python validation raises TypeError or ValueError for invalid registries; .NET validation returns ContractValidationResult errors and lookup helpers throw ArgumentException when an invalid custom registry is supplied."
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "header": [
+    "record_type",
+    "source_year",
+    "source_version",
+    "factor_id",
+    "factor_name",
+    "factor_value",
+    "unit",
+    "category",
+    "subcategory",
+    "scope",
+    "gas",
+    "provenance_note"
+  ],
+  "sample_fixture": "tests/fixtures/source_documents/ghg_protocol/ghg_protocol_sample_factors.csv",
+  "sample_status": {
+    "python": "success",
+    "dotnet": "Completed"
+  },
+  "sample_issue_codes": [
+    "GHG_PROTOCOL_CONTENT_UNSUPPORTED_ROW_SKIPPED"
+  ],
+  "sample_rows": [
+    {
+      "row_identifier": "ghg_protocol_2024_v1_GHG-ELEC-001_row_2",
+      "source_row_number": 2,
+      "reporting_year": 2024,
+      "fields": [
+        ["source_family", "ghg_protocol"],
+        ["source_year", "2024"],
+        ["source_version", "v1"],
+        ["factor_id", "GHG-ELEC-001"],
+        ["factor_name", "Grid electricity"],
+        ["factor_value", "0.233"],
+        ["unit", "kg CO2e/kWh"],
+        ["category", "Stationary combustion"],
+        ["subcategory", "Electricity"],
+        ["scope", "Scope 2"],
+        ["gas", "CO2e"],
+        ["provenance_artifact_reference", "tests/fixtures/source_documents/ghg_protocol/ghg_protocol_sample_factors.csv"],
+        ["provenance_checksum_algorithm", "sha256"],
+        ["provenance_checksum_value", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],
+        ["provenance_row_number", "2"],
+        ["provenance_note", "fixture row 1"],
+        ["source_family_master_id", "ghg_master_2024_v1_GHG-ELEC-001"],
+        ["source_family_detail_id", "ghg_detail_2024_v1_GHG-ELEC-001"],
+        ["master_external_key", "2024:v1:GHG-ELEC-001"],
+        ["detail_external_key", "GHG-ELEC-001:kg CO2e/kWh"]
+      ]
+    },
+    {
+      "row_identifier": "ghg_protocol_2024_v1_GHG-GAS-001_row_4",
+      "source_row_number": 4,
+      "reporting_year": 2024,
+      "fields": [
+        ["source_family", "ghg_protocol"],
+        ["source_year", "2024"],
+        ["source_version", "v1"],
+        ["factor_id", "GHG-GAS-001"],
+        ["factor_name", "Natural gas"],
+        ["factor_value", "0.184"],
+        ["unit", "kg CO2e/kWh"],
+        ["category", "Stationary combustion"],
+        ["subcategory", "Natural gas"],
+        ["scope", "Scope 1"],
+        ["gas", "CO2e"],
+        ["provenance_artifact_reference", "tests/fixtures/source_documents/ghg_protocol/ghg_protocol_sample_factors.csv"],
+        ["provenance_checksum_algorithm", "sha256"],
+        ["provenance_checksum_value", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],
+        ["provenance_row_number", "4"],
+        ["provenance_note", "fixture row 3"],
+        ["source_family_master_id", "ghg_master_2024_v1_GHG-GAS-001"],
+        ["source_family_detail_id", "ghg_detail_2024_v1_GHG-GAS-001"],
+        ["master_external_key", "2024:v1:GHG-GAS-001"],
+        ["detail_external_key", "GHG-GAS-001:kg CO2e/kWh"]
+      ]
+    }
+  ],
+  "malformed_fixture": "tests/fixtures/source_documents/ghg_protocol/ghg_protocol_malformed_factors.csv",
+  "malformed_status": {
+    "python": "failed",
+    "dotnet": "Failed"
+  },
+  "malformed_issues": [
+    {
+      "code": "GHG_PROTOCOL_CONTENT_INVALID_FACTOR_VALUE",
+      "field_key": "factor_value",
+      "python_location": "row[2].factor_value",
+      "source_row_number": 2
+    },
+    {
+      "code": "GHG_PROTOCOL_CONTENT_INVALID_SOURCE_YEAR",
+      "field_key": "source_year",
+      "python_location": "row[3].source_year",
+      "source_row_number": 3
+    }
+  ],
+  "unsupported_only_status": {
+    "python": "no_records",
+    "dotnet": "Completed",
+    "intentional_difference": "Python exposes a no_records status when all content rows are skipped; .NET keeps the adapter run completed and carries GHG_PROTOCOL_CONTENT_NO_RECORDS as a warning."
+  },
+  "unsupported_only_issue_codes": [
+    "GHG_PROTOCOL_CONTENT_UNSUPPORTED_ROW_SKIPPED",
+    "GHG_PROTOCOL_CONTENT_NO_RECORDS"
+  ]
+}

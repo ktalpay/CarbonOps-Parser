@@ -2,9 +2,9 @@
 
 This task list tracks the documentation and implementation path from CO-001 through CO-033.
 
-## Sprint 1: Documentation Baseline
+## Sprint 1: Documentation Foundation
 
-- CO-001: Add project documentation baseline.
+- CO-001: Add initial project documentation foundation.
 - CO-002: Review public wording and README navigation.
 - CO-003: Add initial release note skeleton.
 - CO-004: Add examples directory notes for future service files.

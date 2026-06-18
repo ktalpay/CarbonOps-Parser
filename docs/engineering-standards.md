@@ -32,7 +32,7 @@ Phase 1 should remain focused on scheduled source ingestion, raw file archiving,
 
 Changes should be small enough to review in one pass.
 
-Each change should have a clear purpose, such as documentation baseline work, schema documentation, source discovery, parser mapping, validation behavior, or implementation-specific service wiring.
+Each change should have a clear purpose, such as repository documentation, schema documentation, source discovery, parser mapping, validation behavior, or implementation-specific service wiring.
 
 Contributors should avoid combining unrelated work in one change. Documentation updates, schema changes, parser behavior, and service runtime changes should be split when practical.
 

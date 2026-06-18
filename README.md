@@ -2,41 +2,73 @@
 
 ![CarbonOps-Parser banner](docs/assets/carbonops-parser-banner.svg)
 
-Scheduled carbon factor ingestion and parsing reference project with Python and .NET implementation options.
+Auditable public carbon emission factor ingestion and validation for climate-tech data infrastructure.
 
-![Status](https://img.shields.io/badge/status-documentation%20baseline-2f6f88)
+![Status](https://img.shields.io/badge/status-narrow%20production--ready-2f6f88)
 ![Phase](https://img.shields.io/badge/phase-Phase%201%20ingestion-4f7cac)
-![Python](https://img.shields.io/badge/Python-planned-3776ab)
-![.NET](https://img.shields.io/badge/.NET-planned-512bd4)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Phase%201-336791)
-![Docs](https://img.shields.io/badge/docs-in%20progress-5c7cfa)
+![Python](https://img.shields.io/badge/Python-operator%20path-3776ab)
+![.NET](https://img.shields.io/badge/.NET-parity%20evidence-512bd4)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-source--specific%20persistence-336791)
 ![Release](https://img.shields.io/badge/release-not%20published%20yet-lightgrey)
-![CI](https://img.shields.io/badge/CI-not%20configured%20yet-lightgrey)
+[![Release validation](https://github.com/ktalpay/CarbonOps-Parser/actions/workflows/release-validation.yml/badge.svg)](https://github.com/ktalpay/CarbonOps-Parser/actions/workflows/release-validation.yml)
 ![Package](https://img.shields.io/badge/package-not%20published%20yet-lightgrey)
 ![License](https://img.shields.io/badge/license-Apache--2.0-green)
 
-CarbonOps-Parser is a standalone public technical project for scheduled carbon factor source ingestion and parsing. It checks selected public emission factor sources, detects source version or hash changes, archives raw source files, parses source-specific structures, validates parsed records, and stores ingestion metadata and source-specific records in PostgreSQL.
+CarbonOps-Parser is a public, reviewable climate-tech data ingestion project for carbon accounting source data. It focuses on auditable ingestion, parsing, validation, diagnostics, and PostgreSQL operation for public emission factors from GHG Protocol, DEFRA/DESNZ, and IPCC EFDB, with parallel Python and .NET runtime evidence. The Python package includes a configured PostgreSQL ingestion runtime for operator-managed deployments. CarbonOps-Parser is project-level production-ready in the narrow supported scope documented in the final verdict: operator-run/scheduled Python ingestion, PostgreSQL-backed source-specific persistence, and .NET parity evidence through service entrypoint, config/redaction, schema/year-state, source-cycle orchestration, persistence, Docker PostgreSQL E2E, and persisted parity validation. The repository is intentionally conservative: default examples are deterministic and local-only, production runs require explicit configuration and credentials, and the project does not claim production carbon-accounting, legal, compliance, source-owner, or factor correctness.
 
 The project is independent from `carbonops-assistant`. It is not a continuation, module, plugin, or dependency of that project.
 
+## Start Here
+
+- [Production operator runbook](docs/production-packaging-operator-runbook.md) - supported Python operator path, PostgreSQL readiness, cron scheduling, validation, and troubleshooting.
+- [Final project production-ready verdict](docs/final-project-production-ready-verdict.md) - narrow production-ready scope and explicit non-claims.
+- [Production parity contract](docs/production-parity-contract.md) - Python production path and .NET parity evidence.
+- [Python runtime docs](docs/python-ingestion-local-runbook.md) - local Docker PostgreSQL ingestion runbook for the packaged Python path.
+- [.NET runtime docs](src/dotnet/README.md) - .NET Worker Service path and parity-oriented runtime notes.
+- [Database model](docs/database-model.md) and [PostgreSQL startup](docs/database-startup.md) - shared metadata plus source-specific table groups.
+- [Documentation index](docs/index.md) - curated documentation map for operators, contributors, and reviewers.
+- [Maintainer release/sync checklist](docs/maintainer-release-checklist.md) - develop-to-main, stale PR/issue cleanup, and first alpha/review readiness.
+- [Contribution guide](CONTRIBUTING.md) - issues, features, forks, branches, pull requests, validation, secrets, artifacts, and maintainer-only merge policy.
+- [Issue templates](.github/ISSUE_TEMPLATE) - bug reports, feature requests, documentation requests, and production-readiness questions.
+- [Pull request guide](.github/pull_request_template.md) - PR checklist for scope, validation, runtime impact, PostgreSQL impact, docs, secrets, artifacts, and production-ready claims.
+
+## Problem Statement
+
+Public carbon emissions workflows often depend on emission factor spreadsheets, databases, and reference documents that change over time and vary by source family. CarbonOps-Parser exists to make carbon factor ingestion reviewable: source identity, version or checksum evidence, parser output, validation issues, persistence readiness, and diagnostics should be visible before any operational use. The project is infrastructure for data ingestion and validation, not an emissions calculator or compliance decision engine.
+
 ## Current Status
 
-CarbonOps-Parser is in early Phase 1. The repository currently emphasizes project documentation, architecture, schema contract notes, source support planning, and public contribution structure before parser implementation begins.
+CarbonOps-Parser is in Phase 1 and has a narrow project-level production-ready status for the documented operator path. The repository contains an active Python ingestion runtime, .NET parity evidence, PostgreSQL schema/runtime boundaries, deterministic examples, local dry-run validation, and production operator documentation. The production-ready claim applies only to the scope documented in [Final Project Production-Ready Verdict](docs/final-project-production-ready-verdict.md) and [Production Parity Contract](docs/production-parity-contract.md). It is not a published package release.
 
-Implementation work is planned for two independent paths:
+### Explicit Non-Claims
 
-- Python in `src/python`
-- .NET in `src/dotnet`
+CarbonOps-Parser does not claim to be:
 
-Users who clone or fork the repository should be able to choose either implementation path.
+- A production carbon-accounting calculator or emissions reporting engine.
+- Legal, compliance, audit, or regulatory advice.
+- A source-owner correctness guarantee for GHG Protocol, DEFRA/DESNZ, IPCC EFDB, or any source document.
+- A universal carbon factor model across all source families.
+- A published package, unless release/package files and repository releases prove otherwise.
+
+| Area | Phase 1 completed capabilities | Phase 2 roadmap |
+| --- | --- | --- |
+| Source families | Local fixture and contract coverage for GHG Protocol, DEFRA/DESNZ, and IPCC EFDB boundaries. | Broader source onboarding rules, fixture policy, and source-family hardening slices. |
+| Python | Source acquisition contracts, parser contracts, DEFRA/DESNZ fixture parser path, normalization handoff, persistence previews, diagnostics, and local dry-run CLI. | Runtime hardening, richer validation, controlled source expansion, and opt-in execution boundaries. |
+| .NET | Service entrypoint, config/redaction, PostgreSQL schema/year-state, source-cycle orchestration, source-specific persistence, Docker PostgreSQL E2E, and persisted parity validation baselines. | Runtime parity review where shared behavior changes; package/service promotion remains separately scoped. |
+| PostgreSQL | Schema descriptors, DDL preview, additive runtime bootstrap, configured Python source-family writes, idempotent duplicate skipping, and opt-in integration boundaries. | Broader migration, rollback, recovery, and operational hardening slices. |
+| Safety posture | Local-only examples, non-destructive dry runs, preview-only SQL, no default network calls, and no production credentials. | Release-gate expansion and production-readiness reviews before live source or write-path promotion. |
+
+Users who clone or fork the repository should be able to inspect either implementation path without relying on production infrastructure.
 
 ## Phase 1 Scope
 
 Phase 1 focuses on scheduled ingestion and parsing for:
 
-- GHG Protocol
-- DEFRA/DESNZ
-- IPCC EFDB
+| Source family | Public discovery value | Phase 1 posture |
+| --- | --- | --- |
+| GHG Protocol | Greenhouse Gas Protocol tools and factor workbooks used in carbon accounting workflows. | Source discovery/download contracts, parser contracts, normalized content parser boundaries, and parity tests. |
+| DEFRA/DESNZ | UK government conversion factors used for carbon emissions and greenhouse gas reporting workflows. | Deterministic local fixture parser and normalization path plus source discovery/download contracts. |
+| IPCC EFDB | IPCC Emission Factor Database source family with heterogeneous emission factor records. | Source discovery/download contracts, parser contracts, normalized content parser boundaries, and parity tests. |
 
 The intended Phase 1 workflow is:
 
@@ -69,19 +101,24 @@ source schedule
 
 Phase 1 uses shared ingestion metadata tables plus source-specific master/detail tables. It does not force GHG Protocol, DEFRA/DESNZ, and IPCC EFDB into one canonical factor table. A normalized or search-oriented projection may be considered in a later phase.
 
+The Python path under `src/carbonfactor_parser` holds the current implementation boundaries for source acquisition, parser execution, normalization, PostgreSQL persistence previews, configured PostgreSQL ingestion, local dry-run composition, and diagnostics. The .NET path under `src/dotnet` holds shared contract records and parity tests for the same public concepts. PostgreSQL support includes schema descriptors, bootstrap/readiness checks, DDL previews, opt-in integration boundaries, and the Python configured cycle runner. Parity, validation, diagnostics, and non-destructive dry-run behavior are part of the public architecture so reviewers can inspect the handoff from source artifact to parser output to persistence input without connecting to a database or making network calls.
+
 ## Implementation Options
 
 ### Python
 
-The Python implementation is planned first because it is practical for source discovery, spreadsheet inspection, parser mapping, validation, and data engineering workflows.
+The Python implementation is the active Phase 1 path for source discovery contracts, parser mapping, validation, normalization handoff, persistence previews, and data engineering workflows.
 
-The initial Python source adapter contracts and in-memory registry live under `src/carbonfactor_parser/source_adapters`.
-
-See [src/python/README.md](src/python/README.md).
+The active Python runtime path lives under `src/carbonfactor_parser` and exposes the local dry-run CLI plus the configured `carbonops-parser run-ingestion` operator command for PostgreSQL-backed source-family ingestion. The initial Python source adapter contracts and in-memory registry live under `src/carbonfactor_parser/source_adapters`.
 
 ### .NET
 
-The .NET implementation is planned as an independent Worker Service path that follows the same conceptual workflow with .NET-oriented application structure.
+The .NET implementation is an independent Worker Service path that follows the
+same conceptual workflow with .NET-oriented application structure. The reviewed
+production scope treats .NET as parity-validated through its service
+entrypoint, configuration/redaction, PostgreSQL schema/year-state,
+source-cycle orchestration, source-specific persistence, Docker PostgreSQL E2E,
+and persisted parity baselines.
 
 See [src/dotnet/README.md](src/dotnet/README.md).
 
@@ -230,7 +267,40 @@ required.
 
 This quickstart is local dry-run only. It does not connect to PostgreSQL, write records, execute SQL, run migrations, perform network calls, trigger source acquisition, load config files, or require credentials. It does not make production DEFRA/DESNZ correctness claims.
 
+## Production Operator Command
+
+The supported Python production entrypoint is:
+
+```bash
+carbonops-parser run-ingestion \
+  --config /etc/carbonops-parser/ingestion.production.json \
+  --cycles 1
+```
+
+Before running it, operators must provide explicit `CARBONOPS_POSTGRESQL_*`
+environment values, including the password through an external secret boundary,
+and validate the config:
+
+```bash
+carbonops-parser validate-ingestion-config \
+  --config /etc/carbonops-parser/ingestion.production.json \
+  --cycles 1
+```
+
+See [Production Packaging And Operator Runbook](docs/production-packaging-operator-runbook.md)
+for install, configuration, PostgreSQL readiness, cron scheduling,
+verification SQL, rerun/idempotency checks, and troubleshooting.
+
+This is the supported Python runtime production operator path. Project-level
+production-ready is limited to the scope in
+[Final Project Production-Ready Verdict](docs/final-project-production-ready-verdict.md)
+and [Production Parity Contract](docs/production-parity-contract.md).
+
 For boundary details, see [Local Dry-Run CLI Boundary](docs/local-dry-run-cli-boundary.md), [Local File Normalized Persistence Dry-Run Boundary](docs/local-file-normalized-persistence-dry-run-boundary.md), [PostgreSQL Persistence Preview Boundary](docs/postgresql-persistence-preview-boundary.md), and [Local Dry-Run Troubleshooting](docs/local-dry-run-troubleshooting.md).
+
+To run the packaged Python ingestion cycle against local Docker PostgreSQL with
+the three checked-in source fixture families, see
+[Python Ingestion Local Runbook](docs/python-ingestion-local-runbook.md).
 
 ## Developer Tests
 
@@ -351,6 +421,10 @@ See [examples/example_acquisition_artifact_parser_input_mapping.py](examples/exa
 
 The parser package exposes `ParserInputContract`, `create_parser_input_contract()`, `validate_parser_input_contract()`, `ParserFileContentInput`, local parser file content loading helpers, parser file content validation helpers, `parse_defra_desnz_file_content()`, raw parsed record payload contracts, the `ParserAdapter` protocol, `NoopParserAdapter`, `ArtificialParserAdapter`, `DefraDesnzParserAdapter`, parser adapter registry helpers, parser execution planning and runner helpers, and parser execution result contracts for future parser adapter input handoff. The normalization package exposes parser execution handoff helpers, normalization input helpers for successful parser results with raw payloads, and a minimal DEFRA/DESNZ fixture normalization mapper. The persistence package exposes normalized result persistence input contracts, a logical PostgreSQL schema descriptor, a review-only DDL preview helper, a deterministic insert SQL builder, PostgreSQL persistence preview helpers, repository protocol/result contracts, an explicit caller-provided PostgreSQL options contract, a default-disabled PostgreSQL integration test boundary, and a PostgreSQL repository skeleton that returns unsupported results without database runtime behavior. The pipeline package exposes a local DEFRA/DESNZ fixture dry-run helper that composes those boundaries to produce `PersistenceInput` plus DDL preview metadata without DB or network behavior. These contracts keep acquisition metadata, already-loaded content, raw parser output, parser output metadata, normalization input, normalization handoff metadata, persistence input metadata, schema metadata, repository options metadata, integration test metadata, preview metadata, and repository result metadata separate; they do not include database connection behavior or full source-specific correctness claims.
 
+## Examples And Fixtures
+
+The examples entry point is [examples/README.md](examples/README.md). It identifies deterministic local examples, including the checked-in DEFRA/DESNZ fixture used by the local dry-run quickstart, and separates real examples from future placeholders.
+
 ## Source Support
 
 Each Phase 1 source family will have its own schedule, source version/hash check, parser, validation rules, archive layout, and source-specific tables.
@@ -358,7 +432,7 @@ Each Phase 1 source family will have its own schedule, source version/hash check
 | Source family | Phase 1 role | Table group |
 | --- | --- | --- |
 | GHG Protocol | Source-specific parser and workbook/tool mapping | `ghg_*` |
-| DEFRA/DESNZ | First planned ingestion slice after discovery | `defra_*` |
+| DEFRA/DESNZ | Active checked-in fixture and source-specific ingestion slice | `defra_*` |
 | IPCC EFDB | Heterogeneous source discovery and parser mapping | `ipcc_*` |
 
 See [docs/source-support.md](docs/source-support.md) and [docs/source-discovery.md](docs/source-discovery.md).
@@ -389,6 +463,11 @@ PostgreSQL is the Phase 1 persistence target. The model includes:
 
 See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md](docs/database-startup.md), and [database/postgres/README.md](database/postgres/README.md).
 
+PostgreSQL persistence uses shared ingestion metadata plus source-specific
+master/detail table groups for GHG Protocol, DEFRA/DESNZ, and IPCC EFDB. That
+layout preserves source-family structure for reviewable carbon emission factor
+ingestion instead of claiming one universal carbon accounting factor model.
+
 ## Documentation Map
 
 - [Architecture](docs/architecture.md)
@@ -400,7 +479,11 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [Ingestion Metadata Model](docs/ingestion-metadata-model.md)
 - [Codex-Assisted Runs](docs/codex-runs/README.md)
 - [Engineering Standards](docs/engineering-standards.md)
-- [Linux Service Setup](docs/linux-service-setup.md)
+- [Production Packaging And Operator Runbook](docs/production-packaging-operator-runbook.md)
+- [Maintainer Release/Sync Checklist](docs/maintainer-release-checklist.md)
+- [Production Parity Contract](docs/production-parity-contract.md)
+- [Final Project Production-Ready Verdict](docs/final-project-production-ready-verdict.md)
+- [Legacy Linux Service Planning - not supported production scheduling](docs/linux-service-setup.md)
 - [Source Support](docs/source-support.md)
 - [Source Discovery](docs/source-discovery.md)
 - [Source Ingestion Boundaries](docs/source-ingestion-boundaries.md)
@@ -484,6 +567,7 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 - [PostgreSQL Repository Disabled Execution Preview Boundary](docs/postgresql-repository-disabled-execution-preview-boundary.md)
 - [PostgreSQL Runtime Execution Gate Boundary](docs/postgresql-runtime-execution-gate-boundary.md)
 - [PostgreSQL Runtime Readiness Checklist](docs/postgresql-runtime-readiness-checklist.md)
+- [Real-Source Smoke Mode](docs/real-source-smoke-mode.md)
 - [Parser To Normalization Handoff Boundary](docs/parser-to-normalization-handoff-boundary.md)
 - [Parser To Normalization Integration Recap](docs/parser-to-normalization-integration-recap.md)
 - [Source To Normalization Pipeline Recap](docs/source-to-normalization-pipeline-recap.md)
@@ -512,7 +596,9 @@ See [docs/database-model.md](docs/database-model.md), [docs/database-startup.md]
 
 ## Roadmap Summary
 
-Near-term work moves from documentation polish to schema scripts, Python source discovery, PostgreSQL startup checks, raw archive handling, and the first DEFRA/DESNZ ingestion slice. The .NET Worker Service path follows as an independent implementation option.
+Near-term work keeps the narrow production-ready scope conservative while
+separating package publication, infrastructure ownership, live-source expansion,
+and future runtime promotion into separately reviewed tasks.
 
 See [docs/roadmap.md](docs/roadmap.md) and [docs/task-breakdown.md](docs/task-breakdown.md).
 

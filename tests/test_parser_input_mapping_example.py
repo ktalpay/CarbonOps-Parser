@@ -29,7 +29,7 @@ def test_parser_input_mapping_example_returns_deterministic_fields() -> None:
 def test_parser_input_mapping_example_includes_expected_document_count() -> None:
     mapping = build_parser_input_mapping_example()
 
-    assert mapping["document_count"] == 2
+    assert mapping["document_count"] == 4
     assert mapping["warnings"] == ()
 
 
@@ -40,7 +40,9 @@ def test_parser_input_mapping_example_derives_file_names_and_extensions() -> Non
         (entry["file_name"], entry["file_extension"])
         for entry in mapping["entries"]
     ] == [
+        ("defra_desnz_malformed_factors.csv", ".csv"),
         ("defra_desnz_metadata.json", ".json"),
+        ("defra_desnz_normalized_factors.csv", ".csv"),
         ("defra_desnz_sample_factors.csv", ".csv"),
     ]
 
@@ -76,7 +78,7 @@ def test_parser_input_mapping_example_does_not_require_content_parsing(
 
     mapping = build_parser_input_mapping_example()
 
-    assert mapping["document_count"] == 2
+    assert mapping["document_count"] == 4
 
 
 def test_parser_input_mapping_example_does_not_use_real_source_data() -> None:
@@ -95,6 +97,8 @@ def test_parser_input_mapping_example_does_not_change_mapping_behavior() -> None
     assert mapping["source_family"] == "defra_desnz"
     assert mapping["source_name"] == "fixture_parser_input_mapping"
     assert [entry["document_id"] for entry in mapping["entries"]] == [
+        "defra_desnz:defra_desnz_malformed_factors.csv",
         "defra_desnz:defra_desnz_metadata.json",
+        "defra_desnz:defra_desnz_normalized_factors.csv",
         "defra_desnz:defra_desnz_sample_factors.csv",
     ]

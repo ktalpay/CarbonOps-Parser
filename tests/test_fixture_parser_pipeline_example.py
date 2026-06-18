@@ -34,7 +34,7 @@ def test_fixture_parser_pipeline_example_returns_deterministic_fields() -> None:
 def test_fixture_parser_pipeline_counts_are_consistent() -> None:
     result = build_fixture_parser_pipeline_example()
 
-    assert result["discovered_document_count"] == 2
+    assert result["discovered_document_count"] == 4
     assert result["mapping_document_count"] == result["discovered_document_count"]
     assert result["parser_record_count"] == result["mapping_document_count"]
     assert result["parser_warning_count"] == 0
@@ -51,9 +51,21 @@ def test_fixture_parser_pipeline_returns_expected_mapping_metadata() -> None:
 
     assert result["mapping_entries"] == (
         {
+            "document_id": "defra_desnz:defra_desnz_malformed_factors.csv",
+            "file_name": "defra_desnz_malformed_factors.csv",
+            "file_extension": ".csv",
+            "is_artificial_fixture": True,
+        },
+        {
             "document_id": "defra_desnz:defra_desnz_metadata.json",
             "file_name": "defra_desnz_metadata.json",
             "file_extension": ".json",
+            "is_artificial_fixture": True,
+        },
+        {
+            "document_id": "defra_desnz:defra_desnz_normalized_factors.csv",
+            "file_name": "defra_desnz_normalized_factors.csv",
+            "file_extension": ".csv",
             "is_artificial_fixture": True,
         },
         {
@@ -70,10 +82,24 @@ def test_fixture_parser_pipeline_returns_expected_artificial_records() -> None:
 
     assert result["records"] == (
         {
+            "record_id": "defra_desnz:defra_desnz_malformed_factors.csv",
+            "file_name": "defra_desnz_malformed_factors.csv",
+            "file_extension": ".csv",
+            "source_label": "defra_desnz:defra_desnz_malformed_factors.csv",
+            "value_label": "artificial-fixture",
+        },
+        {
             "record_id": "defra_desnz:defra_desnz_metadata.json",
             "file_name": "defra_desnz_metadata.json",
             "file_extension": ".json",
             "source_label": "defra_desnz:defra_desnz_metadata.json",
+            "value_label": "artificial-fixture",
+        },
+        {
+            "record_id": "defra_desnz:defra_desnz_normalized_factors.csv",
+            "file_name": "defra_desnz_normalized_factors.csv",
+            "file_extension": ".csv",
+            "source_label": "defra_desnz:defra_desnz_normalized_factors.csv",
             "value_label": "artificial-fixture",
         },
         {
@@ -90,7 +116,7 @@ def test_fixture_parser_pipeline_uses_artificial_fixture_directory() -> None:
     result = build_fixture_parser_pipeline_example()
 
     assert FIXTURE_DIRECTORY.is_dir()
-    assert result["discovered_document_count"] == 2
+    assert result["discovered_document_count"] == 4
 
 
 def test_fixture_parser_pipeline_does_not_read_file_contents(monkeypatch) -> None:
@@ -101,7 +127,7 @@ def test_fixture_parser_pipeline_does_not_read_file_contents(monkeypatch) -> Non
 
     result = build_fixture_parser_pipeline_example()
 
-    assert result["parser_record_count"] == 2
+    assert result["parser_record_count"] == 4
 
 
 def test_fixture_parser_pipeline_does_not_use_real_source_data() -> None:

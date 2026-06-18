@@ -200,7 +200,12 @@ def _queue_runner(
 
 def _assert_no_forbidden_commands(calls: list[tuple[str, ...]]) -> None:
     for call in calls:
-        joined = " ".join(call).lower()
+        command_parts = tuple(
+            part
+            for index, part in enumerate(call)
+            if part != "--body" and (index == 0 or call[index - 1] != "--body")
+        )
+        joined = " ".join(command_parts).lower()
         assert call[1:3] not in {
             ("pr", "merge"),
             ("pr", "review"),
@@ -470,6 +475,14 @@ def test_claim_mode_emits_expected_issue_edit_command(tmp_path: Path) -> None:
         "--add-label",
         "status:in-progress",
     ) in calls
+    body_edit_calls = [
+        call
+        for call in calls
+        if call[1:3] == ("issue", "edit") and "--body" in call
+    ]
+    assert len(body_edit_calls) == 1
+    assert "Status: in-progress" in body_edit_calls[0][-1]
+    assert body_edit_calls[0][-1].splitlines().count("Status: in-progress") == 1
     assert "## Label Mutation Performed" in report
     assert "- Removed label: `status:ready`" in report
     assert "- Added label: `status:in-progress`" in report
@@ -577,9 +590,13 @@ def test_claim_mode_claims_exactly_one_issue_by_lane_priority_and_number(tmp_pat
     )
 
     issue_edit_calls = [call for call in calls if call[1:3] == ("issue", "edit")]
+    label_edit_calls = [call for call in issue_edit_calls if "--body" not in call]
+    body_edit_calls = [call for call in issue_edit_calls if "--body" in call]
     assert exit_code == 0
-    assert len(issue_edit_calls) == 1
-    assert issue_edit_calls[0][3] == "407"
+    assert len(label_edit_calls) == 1
+    assert label_edit_calls[0][3] == "407"
+    assert len(body_edit_calls) == 1
+    assert body_edit_calls[0][3] == "407"
     assert "Selected issue number: #407" in report
 
 
@@ -1464,7 +1481,7 @@ def test_run_once_claims_one_ready_task_only_with_explicit_opt_in(tmp_path: Path
     assert exit_code == 0
     assert "claimed_task_created" in report
     assert "Task claimed: yes" in report
-    assert len(issue_edit_calls) == 1
+    assert len(issue_edit_calls) == 2
     assert issue_edit_calls[0] == (
         "gh",
         "issue",
@@ -1477,6 +1494,16 @@ def test_run_once_claims_one_ready_task_only_with_explicit_opt_in(tmp_path: Path
         "--add-label",
         "status:in-progress",
     )
+    assert issue_edit_calls[1][:6] == (
+        "gh",
+        "issue",
+        "edit",
+        "415",
+        "--repo",
+        "example/repo",
+    )
+    assert issue_edit_calls[1][-2] == "--body"
+    assert "Status: in-progress" in issue_edit_calls[1][-1]
     assert (tmp_path / "OPS-020-415-prompt.md").exists()
     _assert_no_forbidden_commands(calls)
 

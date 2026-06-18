@@ -1,0 +1,48 @@
+{
+  "archive_root": "/var/lib/carbonops-parser/raw-archive",
+  "enabled_source_families": [
+    "ghg_protocol",
+    "defra_desnz",
+    "ipcc_efdb"
+  ],
+  "initial_year": 2024,
+  "cycle": {
+    "interval_seconds": 0,
+    "max_cycles": 1
+  },
+  "real_source_smoke": {
+    "allow_live_source_access": false
+  },
+  "source_years": {
+    "ghg_protocol": {
+      "2024": {
+        "artifact_url": "/var/lib/carbonops-parser/sources/ghg_protocol_2024.csv",
+        "publication_url": "https://<reviewed-publication-url>",
+        "title": "GHG Protocol reviewed artifact 2024",
+        "version_label": "<reviewed-version-label>",
+        "content_type": "text/csv",
+        "format_hint": "csv"
+      }
+    },
+    "defra_desnz": {
+      "2024": {
+        "artifact_url": "/var/lib/carbonops-parser/sources/defra_desnz_2024.csv",
+        "publication_url": "https://<reviewed-publication-url>",
+        "title": "DEFRA/DESNZ reviewed artifact 2024",
+        "version_label": "<reviewed-version-label>",
+        "content_type": "text/csv",
+        "format_hint": "csv"
+      }
+    },
+    "ipcc_efdb": {
+      "2024": {
+        "artifact_url": "/var/lib/carbonops-parser/sources/ipcc_efdb_2024.csv",
+        "publication_url": "https://<reviewed-publication-url>",
+        "title": "IPCC EFDB reviewed artifact 2024",
+        "version_label": "<reviewed-version-label>",
+        "content_type": "text/csv",
+        "format_hint": "csv"
+      }
+    }
+  }
+}

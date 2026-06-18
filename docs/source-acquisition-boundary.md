@@ -10,7 +10,7 @@ Source acquisition is the future boundary responsible for obtaining or locating 
 
 The current repository has local and artificial examples that help demonstrate contract shape and deterministic workflows. Existing local/artificial examples do not imply production source acquisition coverage, real source coverage, parser correctness for real external sources, normalization correctness, factor correctness, legal/compliance interpretation, official carbon accounting correctness, or readiness for production use.
 
-This document records the concepts that future tasks should define before implementation begins.
+This document records the concepts that source-acquisition tasks should preserve or refine as implementation evolves.
 
 ## Current Baseline
 

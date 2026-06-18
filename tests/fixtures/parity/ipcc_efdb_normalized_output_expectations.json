@@ -1,0 +1,120 @@
+{
+  "header": [
+    "record_type",
+    "source_year",
+    "source_version",
+    "factor_id",
+    "factor_name",
+    "factor_value",
+    "unit",
+    "category",
+    "subcategory",
+    "ipcc_sector",
+    "gas",
+    "region",
+    "technology",
+    "provenance"
+  ],
+  "sample_fixture": "tests/fixtures/source_documents/ipcc_efdb/ipcc_efdb_sample_factors.csv",
+  "sample_status": {
+    "python": "success",
+    "dotnet": "Completed"
+  },
+  "sample_issue_codes": [
+    "IPCC_EFDB_CONTENT_UNSUPPORTED_ROW_SKIPPED"
+  ],
+  "sample_rows": [
+    {
+      "row_identifier": "ipcc_efdb_2006_efdb-v2024_IPCC-ENERGY-CO2_row_2",
+      "source_row_number": 2,
+      "reporting_year": 2006,
+      "fields": [
+        ["source_family", "ipcc_efdb"],
+        ["source_year", "2006"],
+        ["source_version", "efdb-v2024"],
+        ["factor_id", "IPCC-ENERGY-CO2"],
+        ["factor_name", "Stationary combustion CO2"],
+        ["factor_value", "56.1"],
+        ["unit", "t CO2/TJ"],
+        ["category", "Energy"],
+        ["subcategory", "Stationary combustion"],
+        ["ipcc_sector", "1A"],
+        ["gas", "CO2"],
+        ["region", "Global"],
+        ["technology", "Default"],
+        ["provenance_artifact_reference", "tests/fixtures/source_documents/ipcc_efdb/ipcc_efdb_sample_factors.csv"],
+        ["provenance_checksum_algorithm", "sha256"],
+        ["provenance_checksum_value", "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"],
+        ["provenance_row_number", "2"],
+        ["provenance", "worksheet:EFDB row 12"],
+        ["source_family_master_id", "ipcc_master_2006_efdb-v2024_IPCC-ENERGY-CO2"],
+        ["source_family_detail_id", "ipcc_detail_2006_efdb-v2024_IPCC-ENERGY-CO2"],
+        ["master_external_key", "2006:efdb-v2024:IPCC-ENERGY-CO2"],
+        ["detail_external_key", "IPCC-ENERGY-CO2:t CO2/TJ:CO2:1A"]
+      ]
+    },
+    {
+      "row_identifier": "ipcc_efdb_2019_efdb-v2024_IPCC-WASTE-CH4_row_4",
+      "source_row_number": 4,
+      "reporting_year": 2019,
+      "fields": [
+        ["source_family", "ipcc_efdb"],
+        ["source_year", "2019"],
+        ["source_version", "efdb-v2024"],
+        ["factor_id", "IPCC-WASTE-CH4"],
+        ["factor_name", "Wastewater methane"],
+        ["factor_value", "0.25"],
+        ["unit", "kg CH4/kg COD"],
+        ["category", "Waste"],
+        ["subcategory", "Wastewater"],
+        ["ipcc_sector", "4D"],
+        ["gas", "CH4"],
+        ["region", "Global"],
+        ["technology", "Default"],
+        ["provenance_artifact_reference", "tests/fixtures/source_documents/ipcc_efdb/ipcc_efdb_sample_factors.csv"],
+        ["provenance_checksum_algorithm", "sha256"],
+        ["provenance_checksum_value", "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"],
+        ["provenance_row_number", "4"],
+        ["provenance", "worksheet:EFDB row 44"],
+        ["source_family_master_id", "ipcc_master_2019_efdb-v2024_IPCC-WASTE-CH4"],
+        ["source_family_detail_id", "ipcc_detail_2019_efdb-v2024_IPCC-WASTE-CH4"],
+        ["master_external_key", "2019:efdb-v2024:IPCC-WASTE-CH4"],
+        ["detail_external_key", "IPCC-WASTE-CH4:kg CH4/kg COD:CH4:4D"]
+      ]
+    }
+  ],
+  "malformed_fixture": "tests/fixtures/source_documents/ipcc_efdb/ipcc_efdb_malformed_factors.csv",
+  "malformed_status": {
+    "python": "failed",
+    "dotnet": "Failed"
+  },
+  "malformed_issues": [
+    {
+      "code": "IPCC_EFDB_CONTENT_INVALID_SOURCE_YEAR",
+      "field_key": "source_year",
+      "python_location": "row[2].source_year",
+      "source_row_number": 2
+    },
+    {
+      "code": "IPCC_EFDB_CONTENT_INVALID_FACTOR_VALUE",
+      "field_key": "factor_value",
+      "python_location": "row[3].factor_value",
+      "source_row_number": 3
+    },
+    {
+      "code": "IPCC_EFDB_CONTENT_MISSING_REQUIRED_FIELD",
+      "field_key": "factor_id",
+      "python_location": "row[4].factor_id",
+      "source_row_number": 4
+    }
+  ],
+  "unsupported_only_status": {
+    "python": "no_records",
+    "dotnet": "Completed",
+    "intentional_difference": "Python exposes a no_records status when all IPCC EFDB content rows are skipped; .NET keeps the adapter run completed and carries IPCC_EFDB_CONTENT_NO_RECORDS as a warning."
+  },
+  "unsupported_only_issue_codes": [
+    "IPCC_EFDB_CONTENT_UNSUPPORTED_ROW_SKIPPED",
+    "IPCC_EFDB_CONTENT_NO_RECORDS"
+  ]
+}

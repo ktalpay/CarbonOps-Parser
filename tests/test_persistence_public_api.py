@@ -13,13 +13,17 @@ from carbonfactor_parser.persistence import (
     postgresql_psycopg_session_adapter,
     postgresql_repository,
     postgresql_repository_disabled_execution_preview,
+    postgresql_runtime_config_gate,
     postgresql_runtime_execution_gate,
     postgresql_schema_bootstrap,
     postgresql_schema_bootstrap_planner,
     postgresql_schema_isolation_strategy,
     postgresql_transaction_policy,
+    parsed_factor_persistence_writer,
     repository,
     schema,
+    source_document_repository,
+    source_family_repository,
 )
 from carbonfactor_parser.persistence import (
     PersistenceInput,
@@ -40,6 +44,22 @@ from carbonfactor_parser.persistence import (
     PersistenceRepository,
     PersistenceResult,
     PersistenceResultStatus,
+    ParsedFactorPersistenceCommand,
+    ParsedFactorPersistenceIssue,
+    ParsedFactorPersistenceStatus,
+    ParsedFactorPersistenceWriterResult,
+    SourceDocumentRepository,
+    SourceDocumentRepositoryIssue,
+    SourceDocumentRepositoryPersistResult,
+    SourceDocumentRepositoryPersistStatus,
+    SourceDocumentRepositoryValidationResult,
+    SourceFamilyDetailRecord,
+    SourceFamilyMasterRecord,
+    SourceFamilyRepository,
+    SourceFamilyRepositoryIssue,
+    SourceFamilyRepositoryPersistResult,
+    SourceFamilyRepositoryPersistStatus,
+    SourceFamilyRepositoryValidationResult,
     PsycopgPostgreSQLSessionAdapter,
     PsycopgPostgreSQLSessionAdapterBoundaryResult,
     PsycopgPostgreSQLSessionAdapterMetadata,
@@ -98,6 +118,11 @@ from carbonfactor_parser.persistence import (
     PostgreSQLRepositoryRuntimeSafetyGateDescription,
     PostgreSQLRepositoryRuntimeSafetyGateIssue,
     PostgreSQLRepositoryRuntimeSafetyGateStatus,
+    PostgreSQLRuntimeConfigGate,
+    PostgreSQLRuntimeConfigGateDecision,
+    PostgreSQLRuntimeConfigGateDescription,
+    PostgreSQLRuntimeConfigGateIssue,
+    PostgreSQLRuntimeConfigGateStatus,
     PostgreSQLRuntimeExecutionGate,
     PostgreSQLRuntimeExecutionGateDecision,
     PostgreSQLRuntimeExecutionGateDescription,
@@ -131,6 +156,7 @@ from carbonfactor_parser.persistence import (
     PostgreSQLTransactionPolicyValidationResult,
     PostgreSQLTransactionRuntimeBoundary,
     build_persistence_input_from_normalization_result,
+    build_parsed_factor_persistence_command,
     build_default_postgresql_transaction_policy,
     build_default_postgresql_idempotency_conflict_strategy,
     build_disabled_postgresql_execution_result,
@@ -147,6 +173,8 @@ from carbonfactor_parser.persistence import (
     build_postgresql_transaction_plan,
     build_default_postgresql_schema_isolation_strategy,
     create_persistence_result,
+    create_source_document_repository_persist_result,
+    create_source_family_repository_persist_result,
     create_postgresql_connection_session_runtime_contract,
     create_postgresql_integration_test_boundary,
     create_postgresql_persistence_options,
@@ -157,15 +185,21 @@ from carbonfactor_parser.persistence import (
     describe_postgresql_idempotency_conflict_strategy_boundary,
     describe_postgresql_repository_disabled_execution_preview,
     describe_postgresql_repository_runtime_safety_gate,
+    describe_postgresql_runtime_config_gate,
     describe_postgresql_runtime_execution_gate,
     describe_postgresql_schema_isolation_strategy,
     describe_postgresql_transaction_policy_boundary,
     evaluate_postgresql_integration_test_opt_in_config,
+    evaluate_postgresql_runtime_config_gate,
     evaluate_postgresql_runtime_execution_gate,
     evaluate_postgresql_repository_runtime_safety_gate,
     get_normalized_record_postgresql_schema,
     render_postgresql_ddl_preview,
     should_skip_postgresql_integration_tests,
+    source_family_repository_table_names,
+    persist_parsed_factor_records,
+    validate_source_document_repository_inputs,
+    validate_source_family_repository_inputs,
     validate_psycopg_session_adapter_boundary,
     validate_postgresql_connection_session_runtime_contract,
     validate_postgresql_persistence_options,
@@ -195,6 +229,22 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PersistenceRepository",
     "PersistenceResult",
     "PersistenceResultStatus",
+    "ParsedFactorPersistenceCommand",
+    "ParsedFactorPersistenceIssue",
+    "ParsedFactorPersistenceStatus",
+    "ParsedFactorPersistenceWriterResult",
+    "SourceDocumentRepository",
+    "SourceDocumentRepositoryIssue",
+    "SourceDocumentRepositoryPersistResult",
+    "SourceDocumentRepositoryPersistStatus",
+    "SourceDocumentRepositoryValidationResult",
+    "SourceFamilyDetailRecord",
+    "SourceFamilyMasterRecord",
+    "SourceFamilyRepository",
+    "SourceFamilyRepositoryIssue",
+    "SourceFamilyRepositoryPersistResult",
+    "SourceFamilyRepositoryPersistStatus",
+    "SourceFamilyRepositoryValidationResult",
     "PsycopgPostgreSQLSessionAdapter",
     "PsycopgPostgreSQLSessionAdapterBoundaryResult",
     "PsycopgPostgreSQLSessionAdapterMetadata",
@@ -253,6 +303,11 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLRepositoryRuntimeSafetyGateDescription",
     "PostgreSQLRepositoryRuntimeSafetyGateIssue",
     "PostgreSQLRepositoryRuntimeSafetyGateStatus",
+    "PostgreSQLRuntimeConfigGate",
+    "PostgreSQLRuntimeConfigGateDecision",
+    "PostgreSQLRuntimeConfigGateDescription",
+    "PostgreSQLRuntimeConfigGateIssue",
+    "PostgreSQLRuntimeConfigGateStatus",
     "PostgreSQLRuntimeExecutionGate",
     "PostgreSQLRuntimeExecutionGateDecision",
     "PostgreSQLRuntimeExecutionGateDescription",
@@ -286,6 +341,7 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "PostgreSQLTransactionPolicyValidationResult",
     "PostgreSQLTransactionRuntimeBoundary",
     "build_persistence_input_from_normalization_result",
+    "build_parsed_factor_persistence_command",
     "build_default_postgresql_transaction_policy",
     "build_default_postgresql_idempotency_conflict_strategy",
     "build_disabled_postgresql_execution_result",
@@ -302,6 +358,8 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "build_postgresql_transaction_plan",
     "build_default_postgresql_schema_isolation_strategy",
     "create_persistence_result",
+    "create_source_document_repository_persist_result",
+    "create_source_family_repository_persist_result",
     "create_postgresql_connection_session_runtime_contract",
     "create_postgresql_integration_test_boundary",
     "create_postgresql_persistence_options",
@@ -312,15 +370,21 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "describe_postgresql_idempotency_conflict_strategy_boundary",
     "describe_postgresql_repository_disabled_execution_preview",
     "describe_postgresql_repository_runtime_safety_gate",
+    "describe_postgresql_runtime_config_gate",
     "describe_postgresql_runtime_execution_gate",
     "describe_postgresql_schema_isolation_strategy",
     "describe_postgresql_transaction_policy_boundary",
+    "evaluate_postgresql_runtime_config_gate",
     "evaluate_postgresql_runtime_execution_gate",
     "evaluate_postgresql_repository_runtime_safety_gate",
     "evaluate_postgresql_integration_test_opt_in_config",
     "get_normalized_record_postgresql_schema",
     "render_postgresql_ddl_preview",
+    "persist_parsed_factor_records",
     "should_skip_postgresql_integration_tests",
+    "source_family_repository_table_names",
+    "validate_source_document_repository_inputs",
+    "validate_source_family_repository_inputs",
     "validate_psycopg_session_adapter_boundary",
     "validate_postgresql_connection_session_runtime_contract",
     "validate_postgresql_persistence_options",
@@ -365,6 +429,46 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PersistenceRepository": repository.PersistenceRepository,
     "PersistenceResult": repository.PersistenceResult,
     "PersistenceResultStatus": repository.PersistenceResultStatus,
+    "ParsedFactorPersistenceCommand": (
+        parsed_factor_persistence_writer.ParsedFactorPersistenceCommand
+    ),
+    "ParsedFactorPersistenceIssue": (
+        parsed_factor_persistence_writer.ParsedFactorPersistenceIssue
+    ),
+    "ParsedFactorPersistenceStatus": (
+        parsed_factor_persistence_writer.ParsedFactorPersistenceStatus
+    ),
+    "ParsedFactorPersistenceWriterResult": (
+        parsed_factor_persistence_writer.ParsedFactorPersistenceWriterResult
+    ),
+    "SourceDocumentRepository": source_document_repository.SourceDocumentRepository,
+    "SourceDocumentRepositoryIssue": (
+        source_document_repository.SourceDocumentRepositoryIssue
+    ),
+    "SourceDocumentRepositoryPersistResult": (
+        source_document_repository.SourceDocumentRepositoryPersistResult
+    ),
+    "SourceDocumentRepositoryPersistStatus": (
+        source_document_repository.SourceDocumentRepositoryPersistStatus
+    ),
+    "SourceDocumentRepositoryValidationResult": (
+        source_document_repository.SourceDocumentRepositoryValidationResult
+    ),
+    "SourceFamilyDetailRecord": source_family_repository.SourceFamilyDetailRecord,
+    "SourceFamilyMasterRecord": source_family_repository.SourceFamilyMasterRecord,
+    "SourceFamilyRepository": source_family_repository.SourceFamilyRepository,
+    "SourceFamilyRepositoryIssue": (
+        source_family_repository.SourceFamilyRepositoryIssue
+    ),
+    "SourceFamilyRepositoryPersistResult": (
+        source_family_repository.SourceFamilyRepositoryPersistResult
+    ),
+    "SourceFamilyRepositoryPersistStatus": (
+        source_family_repository.SourceFamilyRepositoryPersistStatus
+    ),
+    "SourceFamilyRepositoryValidationResult": (
+        source_family_repository.SourceFamilyRepositoryValidationResult
+    ),
     "PsycopgPostgreSQLSessionAdapter": (
         postgresql_psycopg_session_adapter.PsycopgPostgreSQLSessionAdapter
     ),
@@ -558,6 +662,21 @@ EXPECTED_PUBLIC_EXPORTS = {
     "PostgreSQLRepositoryRuntimeSafetyGateStatus": (
         postgresql_repository.PostgreSQLRepositoryRuntimeSafetyGateStatus
     ),
+    "PostgreSQLRuntimeConfigGate": (
+        postgresql_runtime_config_gate.PostgreSQLRuntimeConfigGate
+    ),
+    "PostgreSQLRuntimeConfigGateDecision": (
+        postgresql_runtime_config_gate.PostgreSQLRuntimeConfigGateDecision
+    ),
+    "PostgreSQLRuntimeConfigGateDescription": (
+        postgresql_runtime_config_gate.PostgreSQLRuntimeConfigGateDescription
+    ),
+    "PostgreSQLRuntimeConfigGateIssue": (
+        postgresql_runtime_config_gate.PostgreSQLRuntimeConfigGateIssue
+    ),
+    "PostgreSQLRuntimeConfigGateStatus": (
+        postgresql_runtime_config_gate.PostgreSQLRuntimeConfigGateStatus
+    ),
     "PostgreSQLRuntimeExecutionGate": (
         postgresql_runtime_execution_gate.PostgreSQLRuntimeExecutionGate
     ),
@@ -662,6 +781,9 @@ EXPECTED_PUBLIC_EXPORTS = {
     "build_persistence_input_from_normalization_result": (
         input.build_persistence_input_from_normalization_result
     ),
+    "build_parsed_factor_persistence_command": (
+        parsed_factor_persistence_writer.build_parsed_factor_persistence_command
+    ),
     "build_default_postgresql_transaction_policy": (
         postgresql_transaction_policy.build_default_postgresql_transaction_policy
     ),
@@ -718,6 +840,12 @@ EXPECTED_PUBLIC_EXPORTS = {
         .build_default_postgresql_schema_isolation_strategy
     ),
     "create_persistence_result": repository.create_persistence_result,
+    "create_source_document_repository_persist_result": (
+        source_document_repository.create_source_document_repository_persist_result
+    ),
+    "create_source_family_repository_persist_result": (
+        source_family_repository.create_source_family_repository_persist_result
+    ),
     "create_postgresql_connection_session_runtime_contract": (
         postgresql_connection_session_contract
         .create_postgresql_connection_session_runtime_contract
@@ -755,6 +883,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     "describe_postgresql_repository_runtime_safety_gate": (
         postgresql_repository.describe_postgresql_repository_runtime_safety_gate
     ),
+    "describe_postgresql_runtime_config_gate": (
+        postgresql_runtime_config_gate
+        .describe_postgresql_runtime_config_gate
+    ),
     "describe_postgresql_runtime_execution_gate": (
         postgresql_runtime_execution_gate
         .describe_postgresql_runtime_execution_gate
@@ -770,6 +902,10 @@ EXPECTED_PUBLIC_EXPORTS = {
     "evaluate_postgresql_integration_test_opt_in_config": (
         integration_test_boundary.evaluate_postgresql_integration_test_opt_in_config
     ),
+    "evaluate_postgresql_runtime_config_gate": (
+        postgresql_runtime_config_gate
+        .evaluate_postgresql_runtime_config_gate
+    ),
     "evaluate_postgresql_runtime_execution_gate": (
         postgresql_runtime_execution_gate
         .evaluate_postgresql_runtime_execution_gate
@@ -783,6 +919,18 @@ EXPECTED_PUBLIC_EXPORTS = {
     "render_postgresql_ddl_preview": ddl_preview.render_postgresql_ddl_preview,
     "should_skip_postgresql_integration_tests": (
         integration_test_boundary.should_skip_postgresql_integration_tests
+    ),
+    "source_family_repository_table_names": (
+        source_family_repository.source_family_repository_table_names
+    ),
+    "persist_parsed_factor_records": (
+        parsed_factor_persistence_writer.persist_parsed_factor_records
+    ),
+    "validate_source_document_repository_inputs": (
+        source_document_repository.validate_source_document_repository_inputs
+    ),
+    "validate_source_family_repository_inputs": (
+        source_family_repository.validate_source_family_repository_inputs
     ),
     "validate_psycopg_session_adapter_boundary": (
         postgresql_psycopg_session_adapter
@@ -843,6 +991,34 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PersistenceRepository": PersistenceRepository,
         "PersistenceResult": PersistenceResult,
         "PersistenceResultStatus": PersistenceResultStatus,
+        "ParsedFactorPersistenceCommand": ParsedFactorPersistenceCommand,
+        "ParsedFactorPersistenceIssue": ParsedFactorPersistenceIssue,
+        "ParsedFactorPersistenceStatus": ParsedFactorPersistenceStatus,
+        "ParsedFactorPersistenceWriterResult": ParsedFactorPersistenceWriterResult,
+        "SourceDocumentRepository": SourceDocumentRepository,
+        "SourceDocumentRepositoryIssue": SourceDocumentRepositoryIssue,
+        "SourceDocumentRepositoryPersistResult": (
+            SourceDocumentRepositoryPersistResult
+        ),
+        "SourceDocumentRepositoryPersistStatus": (
+            SourceDocumentRepositoryPersistStatus
+        ),
+        "SourceDocumentRepositoryValidationResult": (
+            SourceDocumentRepositoryValidationResult
+        ),
+        "SourceFamilyDetailRecord": SourceFamilyDetailRecord,
+        "SourceFamilyMasterRecord": SourceFamilyMasterRecord,
+        "SourceFamilyRepository": SourceFamilyRepository,
+        "SourceFamilyRepositoryIssue": SourceFamilyRepositoryIssue,
+        "SourceFamilyRepositoryPersistResult": (
+            SourceFamilyRepositoryPersistResult
+        ),
+        "SourceFamilyRepositoryPersistStatus": (
+            SourceFamilyRepositoryPersistStatus
+        ),
+        "SourceFamilyRepositoryValidationResult": (
+            SourceFamilyRepositoryValidationResult
+        ),
         "PsycopgPostgreSQLSessionAdapter": PsycopgPostgreSQLSessionAdapter,
         "PsycopgPostgreSQLSessionAdapterBoundaryResult": (
             PsycopgPostgreSQLSessionAdapterBoundaryResult
@@ -957,6 +1133,11 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "PostgreSQLRepositoryRuntimeSafetyGateStatus": (
             PostgreSQLRepositoryRuntimeSafetyGateStatus
         ),
+        "PostgreSQLRuntimeConfigGate": PostgreSQLRuntimeConfigGate,
+        "PostgreSQLRuntimeConfigGateDecision": PostgreSQLRuntimeConfigGateDecision,
+        "PostgreSQLRuntimeConfigGateDescription": PostgreSQLRuntimeConfigGateDescription,
+        "PostgreSQLRuntimeConfigGateIssue": PostgreSQLRuntimeConfigGateIssue,
+        "PostgreSQLRuntimeConfigGateStatus": PostgreSQLRuntimeConfigGateStatus,
         "PostgreSQLRuntimeExecutionGate": PostgreSQLRuntimeExecutionGate,
         "PostgreSQLRuntimeExecutionGateDecision": (
             PostgreSQLRuntimeExecutionGateDecision
@@ -1026,6 +1207,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "build_persistence_input_from_normalization_result": (
             build_persistence_input_from_normalization_result
         ),
+        "build_parsed_factor_persistence_command": (
+            build_parsed_factor_persistence_command
+        ),
         "build_default_postgresql_transaction_policy": (
             build_default_postgresql_transaction_policy
         ),
@@ -1066,6 +1250,12 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
             build_default_postgresql_schema_isolation_strategy
         ),
         "create_persistence_result": create_persistence_result,
+        "create_source_document_repository_persist_result": (
+            create_source_document_repository_persist_result
+        ),
+        "create_source_family_repository_persist_result": (
+            create_source_family_repository_persist_result
+        ),
         "create_postgresql_connection_session_runtime_contract": (
             create_postgresql_connection_session_runtime_contract
         ),
@@ -1096,6 +1286,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         "describe_postgresql_repository_runtime_safety_gate": (
             describe_postgresql_repository_runtime_safety_gate
         ),
+        "describe_postgresql_runtime_config_gate": (
+            describe_postgresql_runtime_config_gate
+        ),
         "describe_postgresql_runtime_execution_gate": (
             describe_postgresql_runtime_execution_gate
         ),
@@ -1104,6 +1297,9 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
         ),
         "describe_postgresql_transaction_policy_boundary": (
             describe_postgresql_transaction_policy_boundary
+        ),
+        "evaluate_postgresql_runtime_config_gate": (
+            evaluate_postgresql_runtime_config_gate
         ),
         "evaluate_postgresql_runtime_execution_gate": (
             evaluate_postgresql_runtime_execution_gate
@@ -1118,8 +1314,16 @@ def test_expected_persistence_public_symbols_import_from_package() -> None:
             get_normalized_record_postgresql_schema
         ),
         "render_postgresql_ddl_preview": render_postgresql_ddl_preview,
+        "persist_parsed_factor_records": persist_parsed_factor_records,
         "should_skip_postgresql_integration_tests": (
             should_skip_postgresql_integration_tests
+        ),
+        "source_family_repository_table_names": source_family_repository_table_names,
+        "validate_source_document_repository_inputs": (
+            validate_source_document_repository_inputs
+        ),
+        "validate_source_family_repository_inputs": (
+            validate_source_family_repository_inputs
         ),
         "validate_psycopg_session_adapter_boundary": (
             validate_psycopg_session_adapter_boundary

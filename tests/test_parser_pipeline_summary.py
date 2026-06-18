@@ -21,6 +21,13 @@ FIXTURE_DIRECTORY = (
     Path(__file__).resolve().parents[0] / "fixtures" / "source_documents" / "defra_desnz"
 )
 
+EXPECTED_DEFRA_DESNZ_FIXTURE_SOURCE_NAMES = (
+    "defra_desnz:defra_desnz_malformed_factors.csv",
+    "defra_desnz:defra_desnz_metadata.json",
+    "defra_desnz:defra_desnz_normalized_factors.csv",
+    "defra_desnz:defra_desnz_sample_factors.csv",
+)
+
 
 def _document(
     *,
@@ -178,9 +185,9 @@ def test_summary_works_with_existing_fixture_only_pipeline_components() -> None:
 
     summary = summarize_parser_pipeline(documents, mapping, parser_result)
 
-    assert summary.discovered_document_count == 2
-    assert summary.mapping_entry_count == 2
-    assert summary.parser_record_count == 2
+    assert summary.discovered_document_count == 4
+    assert summary.mapping_entry_count == 4
+    assert summary.parser_record_count == 4
     assert summary.parser_warning_count == 0
     assert summary.parser_error_count == 0
     assert summary.has_discovered_documents is True
@@ -188,10 +195,7 @@ def test_summary_works_with_existing_fixture_only_pipeline_components() -> None:
     assert summary.has_parser_records is True
     assert summary.is_clean is True
     assert summary.source_families == (SourceFamily.DEFRA_DESNZ,)
-    assert summary.source_names == (
-        "defra_desnz:defra_desnz_metadata.json",
-        "defra_desnz:defra_desnz_sample_factors.csv",
-    )
+    assert summary.source_names == EXPECTED_DEFRA_DESNZ_FIXTURE_SOURCE_NAMES
 
 
 def test_summary_does_not_perform_file_io(monkeypatch, tmp_path) -> None:

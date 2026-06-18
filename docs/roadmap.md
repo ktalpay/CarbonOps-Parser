@@ -1,8 +1,8 @@
 # Roadmap
 
-This roadmap organizes the path from the documentation baseline to a `v0.1.0` reference release.
+This roadmap organizes the path from the current Phase 1 ingestion foundation to a `v0.1.0` reference release.
 
-## Sprint 1: Documentation Baseline
+## Sprint 1: Documentation Foundation
 
 - Add public project positioning.
 - Document architecture, configuration, database model, background job model, and source support.
@@ -42,6 +42,23 @@ This roadmap organizes the path from the documentation baseline to a `v0.1.0` re
 - Add configuration model.
 - Add database startup check design.
 - Add background schedule skeleton.
+
+## Production Parity Sequence
+
+Project-level production-ready is claimed only in the narrow scope documented
+by the final verdict. The Python runtime has a production operator path; the
+.NET runtime contributes parity evidence through the sequence below:
+
+- Add .NET service/scheduled-worker entrypoint. Added by PROD-003 as a
+  scheduled-worker command-surface baseline only.
+- Add .NET production config loader and redaction.
+- Add .NET PostgreSQL schema bootstrap and year-state.
+- Add .NET source discovery/download/parsing orchestration.
+- Add .NET source-specific master/detail insert.
+- Add .NET idempotency and rerun behavior.
+- Add .NET Docker PostgreSQL E2E tests.
+- Add Python/.NET parity validation.
+- Record the final project production-ready verdict. Completed by PROD-011.
 
 ## Sprint 7: GHG Protocol and IPCC Preparation
 

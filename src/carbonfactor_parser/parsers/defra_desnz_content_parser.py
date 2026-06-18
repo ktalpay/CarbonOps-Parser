@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+from decimal import Decimal, InvalidOperation
 from io import StringIO
 
 from carbonfactor_parser.parsers.execution_result import (
@@ -27,6 +28,31 @@ DEFRA_DESNZ_MINIMAL_CONTENT_HEADER = (
     "factor_id",
     "factor_name",
     "unit",
+)
+
+DEFRA_DESNZ_NORMALIZED_CONTENT_HEADER = (
+    "source_year",
+    "source_version",
+    "category",
+    "subcategory",
+    "activity",
+    "factor_id",
+    "factor_name",
+    "factor_value",
+    "unit",
+    "greenhouse_gas",
+    "provenance",
+)
+
+_DEFRA_DESNZ_REQUIRED_NORMALIZED_FIELDS = (
+    "source_year",
+    "source_version",
+    "category",
+    "factor_id",
+    "factor_name",
+    "factor_value",
+    "unit",
+    "provenance",
 )
 
 
@@ -107,7 +133,10 @@ def _parse_minimal_csv(
     parser_input,
 ) -> ParserExecutionResult:
     reader = csv.DictReader(StringIO(content_text))
-    if tuple(reader.fieldnames or ()) != DEFRA_DESNZ_MINIMAL_CONTENT_HEADER:
+    fieldnames = tuple(reader.fieldnames or ())
+    if fieldnames == DEFRA_DESNZ_NORMALIZED_CONTENT_HEADER:
+        return _parse_normalized_csv(reader, parser_input)
+    if fieldnames != DEFRA_DESNZ_MINIMAL_CONTENT_HEADER:
         return create_parser_execution_result(
             status=ParserExecutionResultStatus.FAILED,
             parser_input=parser_input,
@@ -115,8 +144,8 @@ def _parse_minimal_csv(
                 ParserExecutionIssue(
                     code="DEFRA_DESNZ_CONTENT_INVALID_HEADER",
                     message=(
-                        "DEFRA/DESNZ minimal content header must be "
-                        "factor_id,factor_name,unit."
+                        "DEFRA/DESNZ content header must match either the "
+                        "minimal fixture shape or normalized extraction shape."
                     ),
                     severity=ParserExecutionIssueSeverity.ERROR,
                     location="header",
@@ -190,6 +219,222 @@ def _parse_minimal_csv(
     )
 
 
+def _parse_normalized_csv(
+    reader: csv.DictReader,
+    parser_input,
+) -> ParserExecutionResult:
+    parser_metadata = _parser_metadata(
+        parser_kind="defra_desnz_normalized_csv_extraction",
+        is_real_source_parser=True,
+        normalization_executed=True,
+    )
+    issues: list[ParserExecutionIssue] = []
+    raw_records = []
+    parsed_record_count = 0
+
+    for row_number, row in enumerate(reader, start=2):
+        if None in row:
+            return create_parser_execution_result(
+                status=ParserExecutionResultStatus.FAILED,
+                parser_input=parser_input,
+                issues=(
+                    ParserExecutionIssue(
+                        code="DEFRA_DESNZ_CONTENT_INVALID_ROW",
+                        message="DEFRA/DESNZ normalized content row has an unexpected column count.",
+                        severity=ParserExecutionIssueSeverity.ERROR,
+                        location=f"row[{row_number}]",
+                    ),
+                ),
+                parser_metadata=parser_metadata,
+            )
+        if not any((value or "").strip() for value in row.values()):
+            continue
+
+        row_issues = _normalized_row_issues(row, row_number)
+        issues.extend(row_issues)
+        if row_issues:
+            continue
+
+        parsed_record_count += 1
+        raw_records.append(
+            create_parsed_raw_record(
+                source_family=parser_input.source_family,
+                source_id=parser_input.source_id,
+                record_index=parsed_record_count,
+                row_number=row_number,
+                raw_fields=_normalized_raw_fields(row, parser_input, row_number),
+                parser_metadata=parser_metadata,
+                source_context={
+                    "artifact_reference": parser_input.artifact_reference,
+                    "source_year": (row.get("source_year") or "").strip(),
+                    "source_version": (row.get("source_version") or "").strip(),
+                    "provenance": (row.get("provenance") or "").strip(),
+                },
+            ),
+        )
+
+    if issues:
+        return create_parser_execution_result(
+            status=ParserExecutionResultStatus.FAILED,
+            parser_input=parser_input,
+            parsed_record_count=parsed_record_count,
+            issues=tuple(issues),
+            parser_metadata=parser_metadata,
+            raw_record_payload=(
+                create_parsed_raw_record_payload(
+                    source_family=parser_input.source_family,
+                    source_id=parser_input.source_id,
+                    records=tuple(raw_records),
+                    parser_metadata=parser_metadata,
+                    source_context={
+                        "artifact_reference": parser_input.artifact_reference,
+                    },
+                )
+                if raw_records
+                else None
+            ),
+        )
+
+    if parsed_record_count == 0:
+        return create_parser_execution_result(
+            status=ParserExecutionResultStatus.NO_RECORDS,
+            parser_input=parser_input,
+            issues=(
+                ParserExecutionIssue(
+                    code="DEFRA_DESNZ_CONTENT_NO_RECORDS",
+                    message="DEFRA/DESNZ normalized content header was present but no rows were parsed.",
+                    severity=ParserExecutionIssueSeverity.WARNING,
+                    location="content",
+                ),
+            ),
+            parser_metadata=parser_metadata,
+        )
+
+    return create_parser_execution_result(
+        status=ParserExecutionResultStatus.SUCCESS,
+        parser_input=parser_input,
+        parsed_record_count=parsed_record_count,
+        parser_metadata=parser_metadata,
+        raw_record_payload=create_parsed_raw_record_payload(
+            source_family=parser_input.source_family,
+            source_id=parser_input.source_id,
+            records=tuple(raw_records),
+            parser_metadata=parser_metadata,
+            source_context={
+                "artifact_reference": parser_input.artifact_reference,
+            },
+        ),
+    )
+
+
+def _normalized_row_issues(
+    row: dict[str, str],
+    row_number: int,
+) -> tuple[ParserExecutionIssue, ...]:
+    issues: list[ParserExecutionIssue] = []
+    for field_name in _DEFRA_DESNZ_REQUIRED_NORMALIZED_FIELDS:
+        if not (row.get(field_name) or "").strip():
+            issues.append(
+                ParserExecutionIssue(
+                    code="DEFRA_DESNZ_CONTENT_MISSING_REQUIRED_FIELD",
+                    message=(
+                        "DEFRA/DESNZ normalized content row is missing "
+                        f"required field: {field_name}."
+                    ),
+                    severity=ParserExecutionIssueSeverity.ERROR,
+                    location=f"row[{row_number}].{field_name}",
+                    context={"row_number": row_number, "field_name": field_name},
+                ),
+            )
+
+    source_year = (row.get("source_year") or "").strip()
+    parsed_source_year = int(source_year) if source_year.isdecimal() else 0
+    if parsed_source_year < 1:
+        issues.append(
+            ParserExecutionIssue(
+                code="DEFRA_DESNZ_CONTENT_INVALID_SOURCE_YEAR",
+                message="DEFRA/DESNZ source_year must be a positive integer.",
+                severity=ParserExecutionIssueSeverity.ERROR,
+                location=f"row[{row_number}].source_year",
+                context={
+                    "row_number": row_number,
+                    "field_name": "source_year",
+                    "raw_value": source_year,
+                },
+            ),
+        )
+
+    factor_value = (row.get("factor_value") or "").strip()
+    parsed_factor_value = _parse_factor_decimal(factor_value)
+    if parsed_factor_value is None or not parsed_factor_value.is_finite():
+        issues.append(
+            ParserExecutionIssue(
+                code="DEFRA_DESNZ_CONTENT_INVALID_FACTOR_VALUE",
+                message="DEFRA/DESNZ normalized factor_value must be numeric.",
+                severity=ParserExecutionIssueSeverity.ERROR,
+                location=f"row[{row_number}].factor_value",
+                context={
+                    "row_number": row_number,
+                    "field_name": "factor_value",
+                    "raw_value": factor_value,
+                },
+            ),
+        )
+
+    return tuple(issues)
+
+
+def _parse_factor_decimal(raw_value: str) -> Decimal | None:
+    if "e" in raw_value.lower():
+        return None
+    try:
+        parsed_value = Decimal(raw_value.replace(",", ""))
+    except InvalidOperation:
+        return None
+    return parsed_value if parsed_value.is_finite() else None
+
+
+def _normalized_raw_fields(
+    row: dict[str, str],
+    parser_input,
+    row_number: int,
+) -> dict[str, object]:
+    normalized_row = {key: (value or "").strip() for key, value in row.items()}
+    source_year = normalized_row["source_year"]
+    source_version = normalized_row["source_version"]
+    factor_id = normalized_row["factor_id"]
+    unit = normalized_row["unit"]
+    greenhouse_gas = normalized_row["greenhouse_gas"]
+    master_id = f"defra_master_{source_year}_{source_version}_{factor_id}"
+    detail_id = f"defra_detail_{source_year}_{source_version}_{factor_id}"
+
+    return {
+        "source_family": parser_input.source_family,
+        "source_id": parser_input.source_id,
+        "source_year": int(source_year),
+        "source_version": source_version,
+        "factor_id": factor_id,
+        "factor_name": normalized_row["factor_name"],
+        "factor_value": _parse_factor_decimal(normalized_row["factor_value"]),
+        "unit": unit,
+        "category": normalized_row["category"],
+        "subcategory": normalized_row["subcategory"] or None,
+        "activity": normalized_row["activity"] or None,
+        "greenhouse_gas": greenhouse_gas or None,
+        "provenance_artifact_reference": parser_input.artifact_reference,
+        "provenance_checksum_algorithm": "sha256"
+        if parser_input.checksum_sha256
+        else None,
+        "provenance_checksum_value": parser_input.checksum_sha256,
+        "provenance_row_number": row_number,
+        "provenance": normalized_row["provenance"],
+        "source_family_master_id": master_id,
+        "source_family_detail_id": detail_id,
+        "master_external_key": f"{source_year}:{source_version}:{factor_id}",
+        "detail_external_key": f"{factor_id}:{unit}:{greenhouse_gas}",
+    }
+
+
 def _content_text(content_input: ParserFileContentInput) -> str | None:
     if isinstance(content_input.content, str):
         return content_input.content
@@ -217,9 +462,14 @@ def _parser_input_from_content_input(content_input: ParserFileContentInput):
     )
 
 
-def _parser_metadata() -> dict[str, object]:
+def _parser_metadata(
+    *,
+    parser_kind: str = "minimal_defra_desnz_content_fixture",
+    is_real_source_parser: bool = False,
+    normalization_executed: bool = False,
+) -> dict[str, object]:
     return {
-        "parser_kind": "minimal_defra_desnz_content_fixture",
-        "is_real_source_parser": False,
-        "normalization_executed": False,
+        "parser_kind": parser_kind,
+        "is_real_source_parser": is_real_source_parser,
+        "normalization_executed": normalization_executed,
     }

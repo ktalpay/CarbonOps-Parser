@@ -49,6 +49,88 @@ public static class ContractWireNames
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown source discovery status."),
         };
 
+    public static string ToWireName(this GhgSourceDiscoveryMode value) =>
+        value switch
+        {
+            GhgSourceDiscoveryMode.RuntimePassive => "runtime_passive",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown GHG source discovery mode."),
+        };
+
+    public static string ToWireName(this GhgSourceDiscoveryStatus value) =>
+        value switch
+        {
+            GhgSourceDiscoveryStatus.Declared => "declared",
+            GhgSourceDiscoveryStatus.Invalid => "invalid",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown GHG source discovery status."),
+        };
+
+    public static string ToWireName(this DefraSourceDiscoveryMode value) =>
+        value switch
+        {
+            DefraSourceDiscoveryMode.RuntimePassive => "runtime_passive",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown DEFRA source discovery mode."),
+        };
+
+    public static string ToWireName(this DefraSourceDiscoveryStatus value) =>
+        value switch
+        {
+            DefraSourceDiscoveryStatus.Declared => "declared",
+            DefraSourceDiscoveryStatus.Invalid => "invalid",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown DEFRA source discovery status."),
+        };
+
+    public static string ToWireName(this IpccSourceDiscoveryMode value) =>
+        value switch
+        {
+            IpccSourceDiscoveryMode.RuntimePassive => "runtime_passive",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown IPCC source discovery mode."),
+        };
+
+    public static string ToWireName(this IpccSourceDiscoveryStatus value) =>
+        value switch
+        {
+            IpccSourceDiscoveryStatus.Declared => "declared",
+            IpccSourceDiscoveryStatus.Invalid => "invalid",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown IPCC source discovery status."),
+        };
+
+    public static string ToWireName(this GhgSourceDownloadExecutionStatus value) =>
+        value switch
+        {
+            GhgSourceDownloadExecutionStatus.Blocked => "blocked",
+            GhgSourceDownloadExecutionStatus.Downloaded => "downloaded",
+            GhgSourceDownloadExecutionStatus.Failed => "failed",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(value),
+                value,
+                "Unknown GHG source download execution status."),
+        };
+
+    public static string ToWireName(this DefraSourceDownloadExecutionStatus value) =>
+        value switch
+        {
+            DefraSourceDownloadExecutionStatus.Blocked => "blocked",
+            DefraSourceDownloadExecutionStatus.Downloaded => "downloaded",
+            DefraSourceDownloadExecutionStatus.Failed => "failed",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(value),
+                value,
+                "Unknown DEFRA source download execution status."),
+        };
+
+    public static string ToWireName(this IpccSourceDownloadExecutionStatus value) =>
+        value switch
+        {
+            IpccSourceDownloadExecutionStatus.Blocked => "blocked",
+            IpccSourceDownloadExecutionStatus.Downloaded => "downloaded",
+            IpccSourceDownloadExecutionStatus.Failed => "failed",
+            IpccSourceDownloadExecutionStatus.AlreadyKnown => "already_known",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(value),
+                value,
+                "Unknown IPCC source download execution status."),
+        };
+
     public static string ToWireName(this ParserSourceFormat value) =>
         value switch
         {
@@ -72,6 +154,33 @@ public static class ContractWireNames
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown parser validation issue severity."),
         };
 
+    public static string ToWireName(this DataQualityValidationSeverity value) =>
+        value switch
+        {
+            DataQualityValidationSeverity.BlockingError => "blocking_error",
+            DataQualityValidationSeverity.Warning => "warning",
+            DataQualityValidationSeverity.Info => "info",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(value),
+                value,
+                "Unknown data quality validation severity."),
+        };
+
+    public static string ToWireName(this DataQualityValidationCheck value) =>
+        value switch
+        {
+            DataQualityValidationCheck.RequiredField => "required_field",
+            DataQualityValidationCheck.NumericValue => "numeric_value",
+            DataQualityValidationCheck.Unit => "unit",
+            DataQualityValidationCheck.DuplicateFactorIdentity => "duplicate_factor_identity",
+            DataQualityValidationCheck.Provenance => "provenance",
+            DataQualityValidationCheck.Structure => "structure",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(value),
+                value,
+                "Unknown data quality validation check."),
+        };
+
     public static string ToWireName(this ParserDryRunStatus value) =>
         value switch
         {
@@ -79,6 +188,31 @@ public static class ContractWireNames
             ParserDryRunStatus.InvalidRequest => "invalid_request",
             ParserDryRunStatus.ExecutionNotImplemented => "execution_not_implemented",
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown parser dry-run status."),
+        };
+
+    public static string ToWireName(this SourceCycleRunStatus value) =>
+        value switch
+        {
+            SourceCycleRunStatus.Ready => "ready",
+            SourceCycleRunStatus.Blocked => "blocked",
+            SourceCycleRunStatus.NoAvailableSourceYear => "no_available_source_year",
+            SourceCycleRunStatus.ParserNotAvailable => "parser_not_available",
+            SourceCycleRunStatus.Parsed => "parsed",
+            SourceCycleRunStatus.PersistenceNotImplemented => "persistence_not_implemented",
+            SourceCycleRunStatus.NotImplemented => "not_implemented",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown source cycle run status."),
+        };
+
+    public static string ToWireName(this PostgreSQLRuntimeConfigGateStatus value) =>
+        value switch
+        {
+            PostgreSQLRuntimeConfigGateStatus.Disabled => "disabled",
+            PostgreSQLRuntimeConfigGateStatus.Blocked => "blocked",
+            PostgreSQLRuntimeConfigGateStatus.NotEnabled => "not_enabled",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(value),
+                value,
+                "Unknown PostgreSQL runtime config gate status."),
         };
 
     public static bool TryParseSourceFamilyWireName(string? wireName, out SourceFamily value)
@@ -148,6 +282,129 @@ public static class ContractWireNames
         return wireName is "declared";
     }
 
+    public static bool TryParseGhgSourceDiscoveryModeWireName(string? wireName, out GhgSourceDiscoveryMode value)
+    {
+        value = wireName switch
+        {
+            "runtime_passive" => GhgSourceDiscoveryMode.RuntimePassive,
+            _ => default,
+        };
+
+        return wireName is "runtime_passive";
+    }
+
+    public static bool TryParseGhgSourceDiscoveryStatusWireName(string? wireName, out GhgSourceDiscoveryStatus value)
+    {
+        value = wireName switch
+        {
+            "declared" => GhgSourceDiscoveryStatus.Declared,
+            "invalid" => GhgSourceDiscoveryStatus.Invalid,
+            _ => default,
+        };
+
+        return wireName is "declared" or "invalid";
+    }
+
+    public static bool TryParseDefraSourceDiscoveryModeWireName(
+        string? wireName,
+        out DefraSourceDiscoveryMode value)
+    {
+        value = wireName switch
+        {
+            "runtime_passive" => DefraSourceDiscoveryMode.RuntimePassive,
+            _ => default,
+        };
+
+        return wireName is "runtime_passive";
+    }
+
+    public static bool TryParseDefraSourceDiscoveryStatusWireName(
+        string? wireName,
+        out DefraSourceDiscoveryStatus value)
+    {
+        value = wireName switch
+        {
+            "declared" => DefraSourceDiscoveryStatus.Declared,
+            "invalid" => DefraSourceDiscoveryStatus.Invalid,
+            _ => default,
+        };
+
+        return wireName is "declared" or "invalid";
+    }
+
+    public static bool TryParseIpccSourceDiscoveryModeWireName(
+        string? wireName,
+        out IpccSourceDiscoveryMode value)
+    {
+        value = wireName switch
+        {
+            "runtime_passive" => IpccSourceDiscoveryMode.RuntimePassive,
+            _ => default,
+        };
+
+        return wireName is "runtime_passive";
+    }
+
+    public static bool TryParseIpccSourceDiscoveryStatusWireName(
+        string? wireName,
+        out IpccSourceDiscoveryStatus value)
+    {
+        value = wireName switch
+        {
+            "declared" => IpccSourceDiscoveryStatus.Declared,
+            "invalid" => IpccSourceDiscoveryStatus.Invalid,
+            _ => default,
+        };
+
+        return wireName is "declared" or "invalid";
+    }
+
+    public static bool TryParseGhgSourceDownloadExecutionStatusWireName(
+        string? wireName,
+        out GhgSourceDownloadExecutionStatus value)
+    {
+        value = wireName switch
+        {
+            "blocked" => GhgSourceDownloadExecutionStatus.Blocked,
+            "downloaded" => GhgSourceDownloadExecutionStatus.Downloaded,
+            "failed" => GhgSourceDownloadExecutionStatus.Failed,
+            _ => default,
+        };
+
+        return wireName is "blocked" or "downloaded" or "failed";
+    }
+
+    public static bool TryParseDefraSourceDownloadExecutionStatusWireName(
+        string? wireName,
+        out DefraSourceDownloadExecutionStatus value)
+    {
+        value = wireName switch
+        {
+            "blocked" => DefraSourceDownloadExecutionStatus.Blocked,
+            "downloaded" => DefraSourceDownloadExecutionStatus.Downloaded,
+            "failed" => DefraSourceDownloadExecutionStatus.Failed,
+            _ => default,
+        };
+
+        return wireName is "blocked" or "downloaded" or "failed";
+    }
+
+    public static bool TryParseIpccSourceDownloadExecutionStatusWireName(
+        string? wireName,
+        out IpccSourceDownloadExecutionStatus value)
+    {
+        value = wireName switch
+        {
+            "blocked" => IpccSourceDownloadExecutionStatus.Blocked,
+            "downloaded" => IpccSourceDownloadExecutionStatus.Downloaded,
+            "failed" => IpccSourceDownloadExecutionStatus.Failed,
+            "already_known" => IpccSourceDownloadExecutionStatus.AlreadyKnown,
+            _ => default,
+        };
+
+        return wireName is "blocked" or "downloaded" or "failed" or "already_known";
+    }
+
     public static bool TryParseParserSourceFormatWireName(string? wireName, out ParserSourceFormat value)
     {
         value = wireName switch
@@ -185,6 +442,44 @@ public static class ContractWireNames
         return wireName is "info" or "warning" or "error";
     }
 
+    public static bool TryParseDataQualityValidationSeverityWireName(
+        string? wireName,
+        out DataQualityValidationSeverity value)
+    {
+        value = wireName switch
+        {
+            "blocking_error" => DataQualityValidationSeverity.BlockingError,
+            "warning" => DataQualityValidationSeverity.Warning,
+            "info" => DataQualityValidationSeverity.Info,
+            _ => default,
+        };
+
+        return wireName is "blocking_error" or "warning" or "info";
+    }
+
+    public static bool TryParseDataQualityValidationCheckWireName(
+        string? wireName,
+        out DataQualityValidationCheck value)
+    {
+        value = wireName switch
+        {
+            "required_field" => DataQualityValidationCheck.RequiredField,
+            "numeric_value" => DataQualityValidationCheck.NumericValue,
+            "unit" => DataQualityValidationCheck.Unit,
+            "duplicate_factor_identity" => DataQualityValidationCheck.DuplicateFactorIdentity,
+            "provenance" => DataQualityValidationCheck.Provenance,
+            "structure" => DataQualityValidationCheck.Structure,
+            _ => default,
+        };
+
+        return wireName is "required_field"
+            or "numeric_value"
+            or "unit"
+            or "duplicate_factor_identity"
+            or "provenance"
+            or "structure";
+    }
+
     public static bool TryParseParserDryRunStatusWireName(string? wireName, out ParserDryRunStatus value)
     {
         value = wireName switch
@@ -196,5 +491,38 @@ public static class ContractWireNames
         };
 
         return wireName is "planned" or "invalid_request" or "execution_not_implemented";
+    }
+
+    public static bool TryParseSourceCycleRunStatusWireName(string? wireName, out SourceCycleRunStatus value)
+    {
+        value = wireName switch
+        {
+            "ready" => SourceCycleRunStatus.Ready,
+            "blocked" => SourceCycleRunStatus.Blocked,
+            "no_available_source_year" => SourceCycleRunStatus.NoAvailableSourceYear,
+            "parser_not_available" => SourceCycleRunStatus.ParserNotAvailable,
+            "parsed" => SourceCycleRunStatus.Parsed,
+            "persistence_not_implemented" => SourceCycleRunStatus.PersistenceNotImplemented,
+            "not_implemented" => SourceCycleRunStatus.NotImplemented,
+            _ => default,
+        };
+
+        return wireName is "ready" or "blocked" or "no_available_source_year" or "parser_not_available" or
+            "parsed" or "persistence_not_implemented" or "not_implemented";
+    }
+
+    public static bool TryParsePostgreSQLRuntimeConfigGateStatusWireName(
+        string? wireName,
+        out PostgreSQLRuntimeConfigGateStatus value)
+    {
+        value = wireName switch
+        {
+            "disabled" => PostgreSQLRuntimeConfigGateStatus.Disabled,
+            "blocked" => PostgreSQLRuntimeConfigGateStatus.Blocked,
+            "not_enabled" => PostgreSQLRuntimeConfigGateStatus.NotEnabled,
+            _ => default,
+        };
+
+        return wireName is "disabled" or "blocked" or "not_enabled";
     }
 }

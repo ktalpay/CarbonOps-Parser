@@ -1,5 +1,57 @@
 # Documentation Index
 
+CarbonOps-Parser is a public climate-tech data infrastructure project for auditable carbon accounting source ingestion and validation. It documents Python, .NET, and PostgreSQL boundaries for public emission factors from GHG Protocol, DEFRA/DESNZ, and IPCC EFDB without claiming production carbon-accounting correctness.
+
+## Start Here
+
+- [README](../README.md) - project positioning, safe quickstart, supported source families, status, and roadmap summary.
+- [Final Project Production-Ready Verdict](final-project-production-ready-verdict.md) - narrow project-level production-ready verdict and explicit non-claims.
+- [Production Parity Contract](production-parity-contract.md) - Python production path and .NET parity evidence.
+- [Production Packaging And Operator Runbook](production-packaging-operator-runbook.md) - supported Python operator path, PostgreSQL readiness, cron scheduling, verification, and troubleshooting.
+
+## Runtime Runbooks
+
+- [Python Ingestion Local Runbook](python-ingestion-local-runbook.md) - local Docker PostgreSQL ingestion runbook for the packaged Python path.
+- [.NET Runtime Docs](../src/dotnet/README.md) - .NET Worker Service path and parity-oriented runtime notes.
+- [Architecture](architecture.md) - Python, .NET, PostgreSQL, validation, diagnostics, and dry-run boundaries.
+- [Examples](../examples/README.md) - deterministic local examples and fixture entry points.
+
+## Database Model And PostgreSQL Startup
+
+- [Database Model](database-model.md) - shared ingestion metadata and source-specific table groups for GHG Protocol, DEFRA/DESNZ, and IPCC EFDB.
+- [Database Startup](database-startup.md) - PostgreSQL startup expectations and local database notes.
+- [PostgreSQL Runtime Readiness Checklist](postgresql-runtime-readiness-checklist.md) - database readiness checks for the supported PostgreSQL boundary.
+- [PostgreSQL Phase 1 Schema Contract](postgresql-phase1-schema-contract.md) - Phase 1 schema contract details.
+
+## Phase 2 Roadmap And Review Gate
+
+- [Phase 2 Roadmap And Execution Boundary](phase2-roadmap.md) - next-stage roadmap and safety gates.
+- [Phase 2 Runtime And Source Expansion Review Gate](phase2-review-gate.md) - review gate before runtime or source-family expansion.
+- [Release Notes Draft](release-notes-draft.md) - draft notes for a first public alpha/review release.
+- [Maintainer Release And Sync Checklist](maintainer-release-checklist.md) - develop-to-main alignment, stale PR/issue cleanup, and alpha/review tag readiness.
+
+## Contribution, Support, And Security
+
+- [Contribution Guide](../CONTRIBUTING.md) - issues, features, forks, branches, pull requests, validation, secrets, artifacts, and maintainer-only merge policy.
+- [Support Policy](../SUPPORT.md) - support boundaries and safe information-sharing guidance.
+- [Security Policy](../SECURITY.md) - responsible disclosure and no-secret expectations.
+- [Issue Templates](../.github/ISSUE_TEMPLATE) - bug reports, feature requests, documentation requests, and production-readiness questions.
+- [Pull Request Template](../.github/pull_request_template.md) - PR checklist for scope, validation, runtime impact, PostgreSQL impact, docs, secrets, artifacts, and production-ready claims.
+
+## Public Discoverability
+
+Repository topics cannot be configured through repository files, but maintainers can use these suggested GitHub topics when publishing or reviewing the public repository:
+
+`carbon-accounting`, `emission-factors`, `carbon-emissions`, `ghg-protocol`, `defra-desnz`, `ipcc-efdb`, `climate-tech`, `data-ingestion`, `python`, `dotnet`, `postgresql`, `postgres`, `etl`, `data-validation`, `open-source`
+
+Search-friendly project description:
+
+> Auditable public carbon emission factor ingestion and validation for climate-tech data infrastructure, with Python and .NET contracts, PostgreSQL readiness, non-destructive dry runs, and documented support boundaries for GHG Protocol, DEFRA/DESNZ, and IPCC EFDB.
+
+Discovery wording should stay conservative. The repository may describe source ingestion, parsing, validation, diagnostics, dry-run previews, and reviewable PostgreSQL readiness. It should not claim production carbon-accounting correctness, compliance correctness, legal correctness, source-owner correctness, or factor correctness.
+
+## Full Map
+
 - [Architecture](architecture.md)
 - [Configuration Model](configuration-model.md)
 - [Background Job Model](background-job-model.md)
@@ -8,6 +60,8 @@
 - [Ingestion Metadata Model](ingestion-metadata-model.md)
 - [Ingestion Contracts](ingestion-contracts.md)
 - [Engineering Standards](engineering-standards.md)
+- [Production Packaging And Operator Runbook](production-packaging-operator-runbook.md)
+- [Python Ingestion Local Runbook](python-ingestion-local-runbook.md)
 - [Source Support](source-support.md)
 - [Source Discovery](source-discovery.md)
 - [Source Ingestion Boundaries](source-ingestion-boundaries.md)
@@ -118,6 +172,15 @@
 - [Stabilization Checkpoint](stabilization-checkpoint.md)
 - [Production Readiness Gap Analysis](production-readiness-gap-analysis.md)
 - [Production Readiness Sequencing Roadmap](production-readiness-sequencing-roadmap.md)
+- [Production Parity Contract](production-parity-contract.md)
+- [Final Project Production-Ready Verdict](final-project-production-ready-verdict.md)
+- [Production E2E Ingestion Readiness Contract](production-e2e-ingestion-readiness-contract.md)
+- [PH-017 Production E2E Docker PostgreSQL Release Validation](ph-017-production-e2e-docker-postgresql-release-validation.md)
+- [PH-018 Real Production-Ready Ingestion Contract](ph-018-real-production-ready-ingestion-contract.md)
+- [Final Phase 1 Production Readiness Review](final-phase1-production-readiness-review.md)
+- [Phase 2 Roadmap And Execution Boundary](phase2-roadmap.md)
+- [Phase 2 Runtime And Source Expansion Review Gate](phase2-review-gate.md)
+- [Release Notes Draft](release-notes-draft.md)
 - [Repository Navigation Guide](repository-navigation-guide.md)
 - [Review Readiness Checklist](review-readiness-checklist.md)
 - [Documentation Map Consistency Checklist](documentation-map-consistency-checklist.md)

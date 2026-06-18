@@ -9,6 +9,10 @@ from carbonfactor_parser.parsers import (
     defra_desnz_parser,
     example_parser,
     example_source_specific_parser,
+    ghg_protocol_adapter,
+    ghg_protocol_content_parser,
+    ipcc_efdb_adapter,
+    ipcc_efdb_content_parser,
     execution_plan,
     execution_result,
     execution_runner,
@@ -26,10 +30,15 @@ from carbonfactor_parser.parsers import (
     ArtificialParserAdapter,
     DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES,
     DEFRA_DESNZ_MINIMAL_CONTENT_HEADER,
+    DEFRA_DESNZ_NORMALIZED_CONTENT_HEADER,
     DefraDesnzParserAdapter,
     DefraDesnzParser,
     ExampleInMemoryParser,
     ExampleSourceSpecificParser,
+    GHGProtocolParserAdapter,
+    GHG_PROTOCOL_NORMALIZED_CONTENT_HEADER,
+    IPCC_EFDB_NORMALIZED_CONTENT_HEADER,
+    IpccEfdbParserAdapter,
     NoopParserAdapter,
     ParserAdapter,
     ParserAdapterRegistry,
@@ -70,6 +79,8 @@ from carbonfactor_parser.parsers import (
     load_parser_file_content_from_local_path,
     plan_parser_execution,
     parse_defra_desnz_file_content,
+    parse_ghg_protocol_file_content,
+    parse_ipcc_efdb_file_content,
     register_parser_adapter,
     resolve_parser_adapters,
     run_parser_execution,
@@ -85,10 +96,15 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "ArtificialFixtureParser",
     "ArtificialParserAdapter",
     "DEFRA_DESNZ_MINIMAL_CONTENT_HEADER",
+    "DEFRA_DESNZ_NORMALIZED_CONTENT_HEADER",
     "DefraDesnzParserAdapter",
     "DefraDesnzParser",
     "ExampleInMemoryParser",
     "ExampleSourceSpecificParser",
+    "GHGProtocolParserAdapter",
+    "GHG_PROTOCOL_NORMALIZED_CONTENT_HEADER",
+    "IPCC_EFDB_NORMALIZED_CONTENT_HEADER",
+    "IpccEfdbParserAdapter",
     "DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES",
     "NoopParserAdapter",
     "ParserAdapter",
@@ -129,6 +145,8 @@ EXPECTED_PUBLIC_SYMBOLS = (
     "load_parser_file_content_from_local_path",
     "plan_parser_execution",
     "parse_defra_desnz_file_content",
+    "parse_ghg_protocol_file_content",
+    "parse_ipcc_efdb_file_content",
     "register_parser_adapter",
     "resolve_parser_adapters",
     "run_parser_execution",
@@ -146,12 +164,23 @@ EXPECTED_PUBLIC_EXPORTS = {
     "DEFRA_DESNZ_MINIMAL_CONTENT_HEADER": (
         defra_desnz_content_parser.DEFRA_DESNZ_MINIMAL_CONTENT_HEADER
     ),
+    "DEFRA_DESNZ_NORMALIZED_CONTENT_HEADER": (
+        defra_desnz_content_parser.DEFRA_DESNZ_NORMALIZED_CONTENT_HEADER
+    ),
     "DefraDesnzParserAdapter": defra_desnz_adapter.DefraDesnzParserAdapter,
     "DefraDesnzParser": defra_desnz_parser.DefraDesnzParser,
     "ExampleInMemoryParser": example_parser.ExampleInMemoryParser,
     "ExampleSourceSpecificParser": (
         example_source_specific_parser.ExampleSourceSpecificParser
     ),
+    "GHGProtocolParserAdapter": ghg_protocol_adapter.GHGProtocolParserAdapter,
+    "GHG_PROTOCOL_NORMALIZED_CONTENT_HEADER": (
+        ghg_protocol_content_parser.GHG_PROTOCOL_NORMALIZED_CONTENT_HEADER
+    ),
+    "IPCC_EFDB_NORMALIZED_CONTENT_HEADER": (
+        ipcc_efdb_content_parser.IPCC_EFDB_NORMALIZED_CONTENT_HEADER
+    ),
+    "IpccEfdbParserAdapter": ipcc_efdb_adapter.IpccEfdbParserAdapter,
     "DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES": (
         file_content_loader.DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES
     ),
@@ -220,6 +249,12 @@ EXPECTED_PUBLIC_EXPORTS = {
     "parse_defra_desnz_file_content": (
         defra_desnz_content_parser.parse_defra_desnz_file_content
     ),
+    "parse_ghg_protocol_file_content": (
+        ghg_protocol_content_parser.parse_ghg_protocol_file_content
+    ),
+    "parse_ipcc_efdb_file_content": (
+        ipcc_efdb_content_parser.parse_ipcc_efdb_file_content
+    ),
     "register_parser_adapter": adapter_registry.register_parser_adapter,
     "resolve_parser_adapters": adapter_registry.resolve_parser_adapters,
     "run_parser_execution": execution_runner.run_parser_execution,
@@ -245,10 +280,21 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         "DEFRA_DESNZ_MINIMAL_CONTENT_HEADER": (
             DEFRA_DESNZ_MINIMAL_CONTENT_HEADER
         ),
+        "DEFRA_DESNZ_NORMALIZED_CONTENT_HEADER": (
+            DEFRA_DESNZ_NORMALIZED_CONTENT_HEADER
+        ),
         "DefraDesnzParserAdapter": DefraDesnzParserAdapter,
         "DefraDesnzParser": DefraDesnzParser,
         "ExampleInMemoryParser": ExampleInMemoryParser,
         "ExampleSourceSpecificParser": ExampleSourceSpecificParser,
+        "GHGProtocolParserAdapter": GHGProtocolParserAdapter,
+        "GHG_PROTOCOL_NORMALIZED_CONTENT_HEADER": (
+            GHG_PROTOCOL_NORMALIZED_CONTENT_HEADER
+        ),
+        "IPCC_EFDB_NORMALIZED_CONTENT_HEADER": (
+            IPCC_EFDB_NORMALIZED_CONTENT_HEADER
+        ),
+        "IpccEfdbParserAdapter": IpccEfdbParserAdapter,
         "DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES": (
             DEFAULT_PARSER_FILE_CONTENT_MAX_BYTES
         ),
@@ -293,6 +339,8 @@ def test_expected_parser_public_symbols_import_from_package() -> None:
         ),
         "plan_parser_execution": plan_parser_execution,
         "parse_defra_desnz_file_content": parse_defra_desnz_file_content,
+        "parse_ghg_protocol_file_content": parse_ghg_protocol_file_content,
+        "parse_ipcc_efdb_file_content": parse_ipcc_efdb_file_content,
         "register_parser_adapter": register_parser_adapter,
         "resolve_parser_adapters": resolve_parser_adapters,
         "run_parser_execution": run_parser_execution,
@@ -343,6 +391,8 @@ def test_parser_all_excludes_internal_module_names() -> None:
     assert "fixture_parser" not in parsers.__all__
     assert "input_contract" not in parsers.__all__
     assert "input_mapping" not in parsers.__all__
+    assert "ipcc_efdb_adapter" not in parsers.__all__
+    assert "ipcc_efdb_content_parser" not in parsers.__all__
     assert "noop_adapter" not in parsers.__all__
     assert "pipeline_summary" not in parsers.__all__
     assert "raw_record" not in parsers.__all__

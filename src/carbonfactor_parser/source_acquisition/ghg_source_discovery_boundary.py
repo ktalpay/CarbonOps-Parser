@@ -403,6 +403,15 @@ def validate_ghg_source_discovery_result(
     issues: list[GHGSourceDiscoveryIssue] = []
     issues.extend(validate_ghg_source_discovery_request(result.request).issues)
 
+    if not isinstance(result.status, GHGSourceDiscoveryStatus):
+        issues.append(
+            GHGSourceDiscoveryIssue(
+                code="GHG_SOURCE_DISCOVERY_RESULT_INVALID_STATUS",
+                message="status must be a defined GHG source discovery status.",
+                field_name="status",
+            )
+        )
+
     for field_name, value in (
         ("no_network", result.no_network),
         ("no_download", result.no_download),
@@ -431,6 +440,17 @@ def validate_ghg_source_discovery_result(
                 )
             )
 
+    if (
+        result.status is GHGSourceDiscoveryStatus.DECLARED
+        and len(result.issues) > 0
+    ):
+        issues.append(
+            GHGSourceDiscoveryIssue(
+                code="GHG_SOURCE_DISCOVERY_RESULT_DECLARED_WITH_ISSUES",
+                message="declared result status must not include issue metadata.",
+                field_name="issues",
+            )
+        )
     if result.status is GHGSourceDiscoveryStatus.DECLARED and issues:
         issues.append(
             GHGSourceDiscoveryIssue(

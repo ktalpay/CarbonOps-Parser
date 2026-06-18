@@ -90,6 +90,18 @@ CREATE TABLE IF NOT EXISTS carbonops.carbon_job_locks (
     CONSTRAINT uq_carbon_job_locks_source_lock UNIQUE (source_code, lock_key)
 );
 
+CREATE TABLE IF NOT EXISTS carbonops.source_family_year_states (
+    source_family_year_state_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    source_family TEXT NOT NULL,
+    ingested_year INTEGER NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_source_family_year_states_family_year UNIQUE (source_family, ingested_year)
+);
+
+CREATE INDEX IF NOT EXISTS idx_source_family_year_states_family_year
+    ON carbonops.source_family_year_states (source_family, ingested_year);
+
 CREATE TABLE IF NOT EXISTS carbonops.defra_categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     source_version_id UUID NOT NULL REFERENCES carbonops.carbon_source_versions(id),

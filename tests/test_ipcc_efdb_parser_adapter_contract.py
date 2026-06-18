@@ -47,15 +47,15 @@ def test_ipcc_parser_adapter_descriptor_is_exact() -> None:
     assert descriptor == IpccEfdbParserAdapterDescriptor(
         source_family="ipcc_efdb",
         parser_key="ipcc_efdb_phase1_parser",
-        readiness=ParserAdapterSkeletonReadiness.CONTRACT_ONLY,
+        readiness=ParserAdapterSkeletonReadiness.CONTENT_PARSER_READY,
         capability=ParserAdapterCapability(
             source_family="ipcc_efdb",
             parser_key="ipcc_efdb_phase1_parser",
             parser_source_format=ParserSourceFormat.DISCOVERY_REFERENCE,
-            format_hint="discovery",
-            supports_parser_execution=False,
+            format_hint="csv",
+            supports_parser_execution=True,
             supports_file_reads=False,
-            supports_content_inspection=False,
+            supports_content_inspection=True,
         ),
         mode=SourceAcquisitionPlanMode.DRY_RUN,
     )
@@ -95,16 +95,16 @@ def test_ipcc_parser_adapter_descriptor_is_deterministic() -> None:
     assert first.capability.parser_source_format is (
         ParserSourceFormat.DISCOVERY_REFERENCE
     )
-    assert first.capability.format_hint == "discovery"
+    assert first.capability.format_hint == "csv"
 
 
-def test_ipcc_parser_adapter_readiness_is_contract_only() -> None:
+def test_ipcc_parser_adapter_readiness_is_content_parser_ready() -> None:
     descriptor = describe_ipcc_efdb_parser_adapter()
 
-    assert descriptor.readiness is ParserAdapterSkeletonReadiness.CONTRACT_ONLY
-    assert descriptor.capability.supports_parser_execution is False
+    assert descriptor.readiness is ParserAdapterSkeletonReadiness.CONTENT_PARSER_READY
+    assert descriptor.capability.supports_parser_execution is True
     assert descriptor.capability.supports_file_reads is False
-    assert descriptor.capability.supports_content_inspection is False
+    assert descriptor.capability.supports_content_inspection is True
 
 
 def test_ipcc_parser_adapter_descriptor_exposes_no_execution_methods() -> None:
