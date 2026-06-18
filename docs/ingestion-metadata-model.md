@@ -138,7 +138,7 @@ The intended architecture is shared ingestion metadata plus source-specific stor
 
 ## Python And .NET Implementation Expectations
 
-Python is expected to implement the first ingestion metadata behavior because it is planned first for source discovery, file handling, and parser experimentation.
+Python implements the first ingestion metadata behavior because it is the active runtime path for source discovery, file handling, parser experimentation, and the current operator-run ingestion workflow.
 
 The .NET implementation should aim for conceptual parity later. It should use language-appropriate structure while preserving the same metadata concepts and source traceability expectations.
 

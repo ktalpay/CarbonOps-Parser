@@ -19,7 +19,7 @@ CarbonOps-Parser does not:
 Phase 1 is limited to:
 
 - PostgreSQL as the implemented database provider.
-- GHG Protocol, DEFRA/DESNZ, and IPCC EFDB as the planned source families.
+- GHG Protocol, DEFRA/DESNZ, and IPCC EFDB as the supported Phase 1 source families.
 - Shared ingestion metadata tables.
 - Source-specific master/detail tables.
 - Documentation, schema, discovery, and early ingestion slices.

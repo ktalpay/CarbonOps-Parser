@@ -56,7 +56,7 @@ Python production hardening should remain deferred until boundary documents and 
 
 ## .NET Production Readiness Gaps
 
-The .NET path is currently a planned implementation option rather than a parity implementation.
+The .NET path now has parity evidence for the reviewed production scope; remaining gaps should be tracked as explicit parity or runtime-promotion review items.
 
 The .NET path still needs explicitly scoped future work for:
 

@@ -4,12 +4,11 @@
 
 Auditable public carbon emission factor ingestion and validation for climate-tech data infrastructure.
 
-![Status](https://img.shields.io/badge/status-documentation%20baseline-2f6f88)
+![Status](https://img.shields.io/badge/status-narrow%20production--ready-2f6f88)
 ![Phase](https://img.shields.io/badge/phase-Phase%201%20ingestion-4f7cac)
-![Python](https://img.shields.io/badge/Python-Phase%201-3776ab)
-![.NET](https://img.shields.io/badge/.NET-contracts-512bd4)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Phase%201-336791)
-![Docs](https://img.shields.io/badge/docs-in%20progress-5c7cfa)
+![Python](https://img.shields.io/badge/Python-operator%20path-3776ab)
+![.NET](https://img.shields.io/badge/.NET-parity%20evidence-512bd4)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-source--specific%20persistence-336791)
 ![Release](https://img.shields.io/badge/release-not%20published%20yet-lightgrey)
 [![Release validation](https://github.com/ktalpay/CarbonOps-Parser/actions/workflows/release-validation.yml/badge.svg)](https://github.com/ktalpay/CarbonOps-Parser/actions/workflows/release-validation.yml)
 ![Package](https://img.shields.io/badge/package-not%20published%20yet-lightgrey)
@@ -26,6 +25,9 @@ The project is independent from `carbonops-assistant`. It is not a continuation,
 - [Production parity contract](docs/production-parity-contract.md) - Python production path and .NET parity evidence.
 - [Python runtime docs](docs/python-ingestion-local-runbook.md) - local Docker PostgreSQL ingestion runbook for the packaged Python path.
 - [.NET runtime docs](src/dotnet/README.md) - .NET Worker Service path and parity-oriented runtime notes.
+- [Database model](docs/database-model.md) and [PostgreSQL startup](docs/database-startup.md) - shared metadata plus source-specific table groups.
+- [Documentation index](docs/index.md) - curated documentation map for operators, contributors, and reviewers.
+- [Maintainer release/sync checklist](docs/maintainer-release-checklist.md) - develop-to-main, stale PR/issue cleanup, and first alpha/review readiness.
 - [Contribution guide](CONTRIBUTING.md) - issues, features, forks, branches, pull requests, validation, secrets, artifacts, and maintainer-only merge policy.
 - [Issue templates](.github/ISSUE_TEMPLATE) - bug reports, feature requests, documentation requests, and production-readiness questions.
 - [Pull request guide](.github/pull_request_template.md) - PR checklist for scope, validation, runtime impact, PostgreSQL impact, docs, secrets, artifacts, and production-ready claims.
@@ -36,7 +38,17 @@ Public carbon emissions workflows often depend on emission factor spreadsheets, 
 
 ## Current Status
 
-CarbonOps-Parser is in Phase 1. The repository contains Python implementation slices, .NET parity slices, PostgreSQL schema/runtime boundaries, deterministic examples, local dry-run validation, and a documented Python operator path. It is project-level production-ready only in the narrow scope documented in [Final Project Production-Ready Verdict](docs/final-project-production-ready-verdict.md). It is not a published package release.
+CarbonOps-Parser is in Phase 1 and has a narrow project-level production-ready status for the documented operator path. The repository contains an active Python ingestion runtime, .NET parity evidence, PostgreSQL schema/runtime boundaries, deterministic examples, local dry-run validation, and production operator documentation. The production-ready claim applies only to the scope documented in [Final Project Production-Ready Verdict](docs/final-project-production-ready-verdict.md) and [Production Parity Contract](docs/production-parity-contract.md). It is not a published package release.
+
+### Explicit Non-Claims
+
+CarbonOps-Parser does not claim to be:
+
+- A production carbon-accounting calculator or emissions reporting engine.
+- Legal, compliance, audit, or regulatory advice.
+- A source-owner correctness guarantee for GHG Protocol, DEFRA/DESNZ, IPCC EFDB, or any source document.
+- A universal carbon factor model across all source families.
+- A published package, unless release/package files and repository releases prove otherwise.
 
 | Area | Phase 1 completed capabilities | Phase 2 roadmap |
 | --- | --- | --- |
@@ -420,7 +432,7 @@ Each Phase 1 source family will have its own schedule, source version/hash check
 | Source family | Phase 1 role | Table group |
 | --- | --- | --- |
 | GHG Protocol | Source-specific parser and workbook/tool mapping | `ghg_*` |
-| DEFRA/DESNZ | First planned ingestion slice after discovery | `defra_*` |
+| DEFRA/DESNZ | Active checked-in fixture and source-specific ingestion slice | `defra_*` |
 | IPCC EFDB | Heterogeneous source discovery and parser mapping | `ipcc_*` |
 
 See [docs/source-support.md](docs/source-support.md) and [docs/source-discovery.md](docs/source-discovery.md).
@@ -468,6 +480,7 @@ ingestion instead of claiming one universal carbon accounting factor model.
 - [Codex-Assisted Runs](docs/codex-runs/README.md)
 - [Engineering Standards](docs/engineering-standards.md)
 - [Production Packaging And Operator Runbook](docs/production-packaging-operator-runbook.md)
+- [Maintainer Release/Sync Checklist](docs/maintainer-release-checklist.md)
 - [Production Parity Contract](docs/production-parity-contract.md)
 - [Final Project Production-Ready Verdict](docs/final-project-production-ready-verdict.md)
 - [Legacy Linux Service Planning - not supported production scheduling](docs/linux-service-setup.md)

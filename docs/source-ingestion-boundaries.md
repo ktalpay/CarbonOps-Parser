@@ -119,7 +119,7 @@ Metadata should support idempotency, traceability, and operational review. It sh
 
 The Python and .NET implementations are independent implementation options for the same conceptual workflow.
 
-Python is planned first because it is better suited for early source discovery, file handling, spreadsheet inspection, and parser experimentation.
+Python is the active first runtime path because it is well suited for source discovery, file handling, spreadsheet inspection, parser experimentation, and the current operator-run ingestion workflow.
 
 The .NET implementation should aim for conceptual parity later. It should not define a different product scope, source boundary, or assurance model.
 
